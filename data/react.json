@@ -1,0 +1,133 @@
+{
+  "name": "React",
+  "questions": [
+    {
+      "id": "react-1",
+      "question": "What is the virtual DOM and how does reconciliation work?",
+      "answer": "React keeps a lightweight tree of JS objects describing the UI. On each render it builds a new tree, **diffs** it against the previous one, and applies only the minimal DOM changes.\n\nDiffing heuristics:\n- Elements of different types produce different subtrees (old one is unmounted, new one mounted).\n- Lists are matched by `key`; stable keys let React move items instead of re-creating them.\n- Same type + same position means the node is updated in place.",
+      "level": "basic",
+      "tags": [
+        "fundamentals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-2",
+      "question": "Why do list items need a stable `key`, and why is the array index a bad key?",
+      "answer": "`key` is how React identifies an item across renders. With index keys, inserting/removing/reordering shifts every index, so React reuses the wrong component instances, causing wrong state (e.g. input text sticking to the wrong row) and wasted renders. Use a stable unique id from the data.",
+      "level": "basic",
+      "tags": [
+        "lists"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-3",
+      "question": "Controlled vs uncontrolled components?",
+      "answer": "- **Controlled:** form value lives in React state; `value` + `onChange` drive the input. Single source of truth, easy validation.\n- **Uncontrolled:** the DOM keeps the value; you read it via a `ref` (or `FormData`) when needed. Less re-rendering, simpler for big forms or file inputs.",
+      "level": "basic",
+      "tags": [
+        "forms"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-4",
+      "question": "How do `useEffect` dependencies work, and what is cleanup for?",
+      "answer": "The effect runs after render, and re-runs when any value in the dependency array changed (`Object.is`). `[]` runs once on mount; no array runs after every render. The returned cleanup runs before the next run and on unmount (unsubscribe, clear timers, abort fetches).\n\nCommon bug: stale closures from missing deps. Fix by adding the dep, using the functional setter (`setX(x => x + 1)`), or a ref. Don't silence the lint rule.",
+      "level": "basic",
+      "tags": [
+        "hooks"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-5",
+      "question": "When do `useMemo`, `useCallback` and `React.memo` actually help?",
+      "answer": "They help only when a re-render is measurably expensive or when referential equality matters:\n- `React.memo` skips re-rendering a child if props are shallow-equal.\n- `useCallback`/`useMemo` keep function/object identity stable so memoized children and effect deps don't change every render.\n\nThey cost memory and comparisons, so don't wrap everything. Profile first. Often better: move state down, lift content up (`children`), or split components.",
+      "level": "intermediate",
+      "tags": [
+        "performance",
+        "hooks"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-6",
+      "question": "How do you avoid unnecessary re-renders with Context?",
+      "answer": "Every consumer re-renders when the context value identity changes. Mitigations:\n- Memoize the provider value (`useMemo`).\n- Split contexts (state vs dispatch, or by domain).\n- Keep fast-changing state out of context (use a store with selectors such as Redux, Zustand or `useSyncExternalStore`).\n- Wrap expensive children in `React.memo`.",
+      "level": "intermediate",
+      "tags": [
+        "context",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-7",
+      "question": "Redux vs Context vs local state: how do you decide?",
+      "answer": "- **Local state** by default.\n- **Context** for low-frequency, app-wide values (theme, auth user, locale).\n- **Redux (Toolkit)** when state is large, shared, updated often, needs devtools/time-travel, middleware, or predictable patterns across a big team.\n- **Server state** (React Query/RTK Query) for fetched data: caching, dedup, refetch, invalidation, instead of hand-rolling in Redux.",
+      "level": "intermediate",
+      "tags": [
+        "state",
+        "redux"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-8",
+      "question": "Explain how React 18 concurrent features work (`useTransition`, `useDeferredValue`, Suspense).",
+      "answer": "Rendering became interruptible. Updates can be marked **non-urgent**:\n- `useTransition` / `startTransition`: keeps the UI responsive (typing) while a heavy update (filtering a big list) renders in the background and can be discarded.\n- `useDeferredValue`: gives a lagging copy of a value for expensive children.\n- **Suspense** lets a subtree show a fallback while data/code loads, and works with streaming SSR.\n\nRendering must be pure, because React may call it multiple times or throw work away.",
+      "level": "intermediate",
+      "tags": [
+        "react-18",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-9",
+      "question": "How would you structure and optimise a large React + TypeScript app (e.g. an Nx monorepo)?",
+      "answer": "- **Nx/monorepo:** apps + shared libs (ui, data-access, utils, feature libs) with enforced module boundaries (tags and lint rules); affected-only builds/tests and remote caching in CI.\n- **Code splitting:** `React.lazy` + route-level splitting, bundle analysis, tree-shakeable imports.\n- **Types:** strict TS, shared API types (generated from OpenAPI/GraphQL), discriminated unions for UI states.\n- **Perf:** virtualization for long lists (react-window), image/asset optimisation, memoization where profiled, Web Vitals tracking (Datadog RUM).\n- **Quality:** component tests (RTL), E2E (Selenium/Cypress/Playwright), visual regression (Percy).",
+      "level": "intermediate",
+      "tags": [
+        "architecture",
+        "typescript",
+        "nx"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-10",
+      "question": "What causes a stale closure in hooks, and how do you fix it?",
+      "answer": "A function captures the values from the render it was created in. If an effect/timer/event listener lives longer than that render, it sees old state.\n\n```js\nuseEffect(() => {\n  const id = setInterval(() => setCount(count + 1), 1000); // stuck on initial count\n  return () => clearInterval(id);\n}, []);\n```\nFixes: functional update `setCount(c => c + 1)`, add the dependency, or keep the latest value in a `ref` that's updated each render.",
+      "level": "advanced",
+      "tags": [
+        "hooks",
+        "closures"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-11",
+      "question": "How does Server-Side Rendering / hydration work, and what are the pitfalls?",
+      "answer": "The server renders HTML (fast first paint, SEO), the client then **hydrates**: React attaches event handlers to the existing markup, expecting identical output.\n\nPitfalls: hydration mismatches (using `window`, `Date.now()`, `Math.random()` during render), large JS before interactivity, and duplicate data fetching. Mitigations: `useEffect` for browser-only work, streaming SSR + Suspense, selective hydration, and Server Components to ship less JS.",
+      "level": "advanced",
+      "tags": [
+        "ssr",
+        "react-18"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "react-12",
+      "question": "How do you test React components and what do you avoid?",
+      "answer": "Test behaviour as the user sees it: React Testing Library (`getByRole`, `userEvent`), mock the network boundary (MSW) rather than internal modules, and assert on visible output. Avoid testing implementation details (state names, internals, snapshot overuse). Pyramid: many unit/component tests, fewer integration tests, a few E2E flows (Selenium/Cypress on BrowserStack for cross-browser), plus visual diffs for UI regressions.",
+      "level": "advanced",
+      "tags": [
+        "testing"
+      ],
+      "favorite": false
+    }
+  ]
+}

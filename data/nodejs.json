@@ -1,0 +1,111 @@
+{
+  "name": "Node.js",
+  "questions": [
+    {
+      "id": "nodejs-1",
+      "question": "How does the Node.js event loop work?",
+      "answer": "Node runs JS on a single thread with libuv handling async I/O (and a thread pool for fs, crypto, DNS). The loop phases: **timers** -> pending callbacks -> poll (I/O) -> **check** (`setImmediate`) -> close callbacks.\n\nBetween each callback, `process.nextTick` runs first, then promise microtasks. Never block the loop with CPU-heavy synchronous work.",
+      "level": "basic",
+      "tags": [
+        "event-loop"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "nodejs-2",
+      "question": "What is the difference between `process.nextTick`, `setImmediate` and `setTimeout(fn, 0)`?",
+      "answer": "- `nextTick`: runs right after the current operation, before promise microtasks and before the loop continues. Can starve I/O if abused.\n- `setImmediate`: runs in the check phase, after the poll phase.\n- `setTimeout(0)`: runs in the timers phase after at least ~1ms.\n\nFrom the main module, `timeout` vs `immediate` order is non-deterministic; inside an I/O callback, `setImmediate` always runs first.",
+      "level": "basic",
+      "tags": [
+        "event-loop",
+        "async"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "nodejs-3",
+      "question": "CommonJS vs ES modules in Node?",
+      "answer": "CJS: `require`, synchronous, dynamic, `module.exports`. ESM: `import`/`export`, static analysis (tree-shaking), async loading, top-level `await`, enabled with `.mjs` or `\"type\": \"module\"`. ESM has no `__dirname` (use `import.meta.url`), and `require`-ing ESM isn't straightforward. Interop is the main migration pain.",
+      "level": "basic",
+      "tags": [
+        "modules"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "nodejs-4",
+      "question": "What are Streams and why use them?",
+      "answer": "Streams process data in chunks instead of loading it all into memory: Readable, Writable, Duplex, Transform. They give **backpressure** (a slow consumer signals the producer to pause).\n\n```js\nimport { pipeline } from 'node:stream/promises';\nawait pipeline(fs.createReadStream('big.csv'), parseTransform, zlib.createGzip(), fs.createWriteStream('out.gz'));\n```\nUse `pipeline` (handles errors and cleanup) rather than manual `.pipe()`.",
+      "level": "intermediate",
+      "tags": [
+        "streams",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "nodejs-5",
+      "question": "How do you scale a Node.js app to use all CPU cores?",
+      "answer": "- **`cluster`** module / PM2: multiple processes sharing a port.\n- **`worker_threads`** for CPU-bound tasks inside one process (shared memory via `SharedArrayBuffer`).\n- In containers, prefer **one process per container** and scale horizontally with Kubernetes replicas + a load balancer; keep apps stateless (sessions in Redis, not memory).",
+      "level": "intermediate",
+      "tags": [
+        "scaling",
+        "concurrency"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "nodejs-6",
+      "question": "How do you handle errors properly in async Node code?",
+      "answer": "- Use `async/await` with `try/catch`; always return/await promises (no floating promises).\n- Centralised Express/Nest error middleware or exception filters; custom error classes with status codes.\n- Listen to `unhandledRejection`/`uncaughtException` only to log and **exit**, letting the orchestrator restart. State may be corrupt after an uncaught exception.\n- Distinguish operational errors (bad input, timeouts) from programmer errors (bugs).",
+      "level": "intermediate",
+      "tags": [
+        "errors",
+        "async"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "nodejs-7",
+      "question": "Express vs NestJS vs Fastify: how do you choose?",
+      "answer": "- **Express:** minimal, huge ecosystem, but you define structure yourself.\n- **Fastify:** faster, schema-based validation/serialisation, good plugin model.\n- **NestJS:** opinionated (modules, DI, decorators, guards, pipes, interceptors), TypeScript-first; scales well for big teams and microservices. (You used it in MyLiveCV.)\n\nChoose structure vs freedom based on team size and codebase lifespan.",
+      "level": "intermediate",
+      "tags": [
+        "frameworks",
+        "nestjs"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "nodejs-8",
+      "question": "How do you secure a Node.js API?",
+      "answer": "- Validate all input (zod/class-validator), parameterised queries, escape output.\n- AuthN/AuthZ: short-lived JWT or sessions, refresh rotation, RBAC/ABAC checks server-side.\n- `helmet`, strict CORS, rate limiting, request size limits.\n- Secrets from a vault/env, never in git; `npm audit`/dependency pinning, lockfiles.\n- Don't run as root in the container; keep images minimal.",
+      "level": "intermediate",
+      "tags": [
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "nodejs-9",
+      "question": "How do you find and fix a memory leak or high CPU in a Node service?",
+      "answer": "1. Observe: RSS/heap growth, GC pauses, event-loop lag (Datadog / `perf_hooks.monitorEventLoopDelay`).\n2. Capture heap snapshots (`--inspect`, Chrome DevTools, `v8.writeHeapSnapshot`) at two points and diff; look at retained size.\n3. CPU: `--cpu-prof` or `clinic.js` flamegraphs.\n\nUsual leaks: unbounded caches/Maps, listeners never removed, closures holding large objects, unresolved promises, timers never cleared.",
+      "level": "advanced",
+      "tags": [
+        "debugging",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "nodejs-10",
+      "question": "How does backpressure work with HTTP and what happens if you ignore it?",
+      "answer": "`writable.write()` returns `false` when its buffer exceeds `highWaterMark`; you should wait for `'drain'`. If ignored, data piles up in memory, causing high RSS and potential OOM when a client is slow. `pipeline` / `pipe` handle this automatically.",
+      "level": "advanced",
+      "tags": [
+        "streams"
+      ],
+      "favorite": false
+    }
+  ]
+}

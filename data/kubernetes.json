@@ -1,0 +1,140 @@
+{
+  "name": "Kubernetes",
+  "questions": [
+    {
+      "id": "kubernetes-1",
+      "question": "Explain the main components of a Kubernetes cluster.",
+      "answer": "**Control plane:** `kube-apiserver` (front door), `etcd` (state store), `kube-scheduler` (places pods), `kube-controller-manager` (reconciliation loops), `cloud-controller-manager`. **Nodes:** `kubelet` (runs pods), `kube-proxy` (service networking), container runtime (containerd). Everything is declarative: you declare desired state; controllers continuously reconcile actual to desired.",
+      "level": "basic",
+      "tags": [
+        "architecture"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-2",
+      "question": "Pod vs Deployment vs ReplicaSet vs StatefulSet vs DaemonSet vs Job?",
+      "answer": "- **Pod:** smallest unit, one or more containers sharing network/volumes.\n- **ReplicaSet:** keeps N identical pods running.\n- **Deployment:** manages ReplicaSets; rolling updates and rollbacks (for stateless apps).\n- **StatefulSet:** stable identity/hostnames and per-pod persistent volumes, ordered rollout (databases).\n- **DaemonSet:** one pod per node (log/monitoring agents).\n- **Job/CronJob:** run-to-completion/scheduled work.",
+      "level": "basic",
+      "tags": [
+        "workloads"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-3",
+      "question": "What are Service types and how does Ingress differ?",
+      "answer": "A Service gives pods a stable virtual IP/DNS name and load-balances.\n- **ClusterIP:** internal only (default).\n- **NodePort:** exposes on each node's port.\n- **LoadBalancer:** provisions a cloud LB.\n- **ExternalName:** DNS alias.\n\n**Ingress** is an L7 (HTTP/S) routing layer (host/path rules, TLS) implemented by an Ingress controller (NGINX, etc.); one LB can front many services. Gateway API is the successor.",
+      "level": "basic",
+      "tags": [
+        "networking"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-4",
+      "question": "ConfigMap vs Secret, and how do you manage secrets safely?",
+      "answer": "Both inject config as env vars or mounted files. Secrets are only base64-encoded by default, **not encrypted**. Improve with etcd encryption at rest, RBAC limits, and external managers (Azure Key Vault + CSI driver, External Secrets, Sealed Secrets). Never commit them to git.",
+      "level": "basic",
+      "tags": [
+        "config",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-5",
+      "question": "Liveness vs readiness vs startup probes?",
+      "answer": "- **Readiness:** is the pod ready for traffic? Failure removes it from Service endpoints (no restart).\n- **Liveness:** is it stuck? Failure makes kubelet restart the container.\n- **Startup:** delays the other probes for slow-starting apps.\n\nDon't make liveness depend on downstream services, or an outage restarts everything.",
+      "level": "intermediate",
+      "tags": [
+        "probes",
+        "reliability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-6",
+      "question": "Requests vs limits, QoS classes, and what happens on OOM or CPU throttling?",
+      "answer": "**Requests** are used for scheduling (guaranteed minimum); **limits** are the cap. Exceeding the memory limit gets the container **OOMKilled**; exceeding the CPU limit gets it **throttled**. QoS: *Guaranteed* (requests = limits), *Burstable*, *BestEffort* (evicted first). Set sensible requests and be careful with CPU limits (they can cause latency). Use `LimitRange` and `ResourceQuota` per namespace.",
+      "level": "intermediate",
+      "tags": [
+        "resources"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-7",
+      "question": "How do rolling updates work, and how do you roll back or do canary/blue-green?",
+      "answer": "A Deployment replaces pods gradually, governed by `maxSurge` and `maxUnavailable`, and waits for readiness. `kubectl rollout status|history|undo` handles rollback. **Blue-green:** two environments, switch the Service/Ingress selector. **Canary:** route a small traffic % to the new version (Argo Rollouts, Flagger, ingress weights, mesh). Combine with PodDisruptionBudgets and good readiness probes.",
+      "level": "intermediate",
+      "tags": [
+        "deployments"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-8",
+      "question": "How does autoscaling work (HPA, VPA, Cluster Autoscaler)?",
+      "answer": "- **HPA:** scales pod replicas on CPU/memory/custom metrics (needs resource requests set).\n- **VPA:** adjusts pod requests/limits.\n- **Cluster Autoscaler (or Karpenter):** adds/removes nodes when pods are unschedulable or nodes idle.\n- **KEDA:** event-driven scaling (queue length) including scale-to-zero.",
+      "level": "intermediate",
+      "tags": [
+        "scaling"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-9",
+      "question": "A pod is in `CrashLoopBackOff` / `Pending` / `ImagePullBackOff`. How do you debug?",
+      "answer": "1. `kubectl get pod -o wide`, then `kubectl describe pod` (events are key).\n2. `kubectl logs <pod> [--previous]`, and `kubectl exec`/`kubectl debug` for a shell.\n\n- **CrashLoopBackOff:** app crash/bad config/failing probe/OOMKilled: check previous logs and exit code.\n- **Pending:** insufficient resources, taints/affinity mismatch, unbound PVC.\n- **ImagePullBackOff:** wrong image/tag, missing imagePullSecret, registry auth.\nAlso check Datadog dashboards and node conditions.",
+      "level": "intermediate",
+      "tags": [
+        "troubleshooting"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-10",
+      "question": "What are Helm and Kustomize, and how do you handle CI/CD to Kubernetes?",
+      "answer": "**Helm:** package manager with templated charts and values, releases and rollbacks. **Kustomize:** template-free overlays/patches on plain YAML. Pipeline (GitLab CI): build + test, build image, scan, push to registry, then deploy either by `helm upgrade --install` or **GitOps** (Argo CD/Flux watching a config repo). Promote the same immutable image tag across dev/stage/prod with per-env values.",
+      "level": "intermediate",
+      "tags": [
+        "helm",
+        "cicd"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-11",
+      "question": "Explain Kubernetes networking: pod-to-pod, CNI, DNS, and NetworkPolicy.",
+      "answer": "Every pod gets its own IP and can reach any other pod without NAT (flat network), implemented by a **CNI** plugin (Calico, Cilium, Azure CNI). CoreDNS resolves `svc.namespace.svc.cluster.local`. kube-proxy (iptables/IPVS) or eBPF implements Service load-balancing. By default all traffic is allowed; **NetworkPolicy** restricts it (needs a CNI that enforces it): start with default-deny then allow explicitly.",
+      "level": "advanced",
+      "tags": [
+        "networking",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-12",
+      "question": "How does RBAC work, and how do you harden a cluster?",
+      "answer": "RBAC: `Role`/`ClusterRole` (verbs on resources) bound to subjects via `RoleBinding`/`ClusterRoleBinding`; use least privilege and per-workload ServiceAccounts. Hardening: Pod Security Standards (non-root, read-only rootfs, drop capabilities), NetworkPolicies, image scanning/signing, private registry, secrets encryption, admission control (OPA Gatekeeper/Kyverno), keep nodes/cluster patched, and audit logs.",
+      "level": "advanced",
+      "tags": [
+        "security",
+        "rbac"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-13",
+      "question": "What happens when you run `kubectl apply -f deployment.yaml`?",
+      "answer": "kubectl sends the object to the **API server** (authN, authZ, admission controllers, validation) which persists it in **etcd**. The Deployment controller creates a ReplicaSet; the ReplicaSet controller creates Pods. The **scheduler** binds each unscheduled pod to a node (filtering + scoring). The node's **kubelet** sees the assignment, asks the runtime to pull images and start containers, sets up networking via CNI, and reports status back. Endpoints controllers add ready pods to Services.",
+      "level": "advanced",
+      "tags": [
+        "internals"
+      ],
+      "favorite": false
+    }
+  ]
+}

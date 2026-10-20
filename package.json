@@ -1,0 +1,8 @@
+{
+  "name": "interview-preparation",
+  "private": true,
+  "scripts": {
+    "start": "node app/server.js",
+    "build": "node app/build.js"
+  }
+}
