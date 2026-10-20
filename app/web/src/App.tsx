@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import * as api from './api';
 import AudioSettings from './AudioSettings';
 import Editor, { type EditorResult } from './Editor';
-import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, LayoutIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon } from './Icons';
+import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, LayoutIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon, UpIcon } from './Icons';
 import Inline from './Inline';
 import Markdown from './Markdown';
 import Notes from './Notes';
@@ -82,6 +82,7 @@ export default function App() {
     mq.addEventListener('change', on);
     return () => mq.removeEventListener('change', on);
   }, []);
+  const [scrolled, setScrolled] = useState(false);
   const lastListSide = useRef<'left' | 'right'>('left');
   const touch = useRef<{ x: number; y: number } | null>(null);
   const readerRef = useRef<HTMLElement>(null);
@@ -355,7 +356,7 @@ export default function App() {
   const listShown = layout.list !== 'hidden';
   const leftTabStyle: React.CSSProperties = narrow ? {} : { left: sideW };
   const listTabLeft = !narrow && !listOnRight; // the list sits next to the topics menu
-  const listTabStyle: React.CSSProperties = narrow ? {} : listTabLeft ? { left: sideW + (listShown ? 360 : 0) } : { right: listShown ? 360 : 0 };
+  const listTabStyle: React.CSSProperties = narrow ? {} : listTabLeft ? { left: sideW + (listShown ? 360 : 0), ...(sideW === 0 ? { top: 'calc(45% + 64px)' } : {}) } : { right: listShown ? 360 : 0 };
   const playingId = player.status === 'playing' ? items[player.index]?.q.id : undefined;
 
   return (
@@ -503,9 +504,19 @@ export default function App() {
           </ol>
         </section>
 
-        <main className="reader" ref={readerRef}>
+        <main className="reader" ref={readerRef} onScroll={(e) => { const v = e.currentTarget.scrollTop > 180; if (v !== scrolled) setScrolled(v); }}>
           {selected ? (
             <article key={selected.q.id}>
+              <div className="mini-head-wrap">
+                <div className={'mini-head' + (scrolled ? ' show' : '')} aria-hidden={!scrolled}>
+                  <button className="mini-title" tabIndex={scrolled ? 0 : -1} onClick={() => readerRef.current?.scrollTo({ top: 0 })} title="Back to the top">
+                    <UpIcon /><span className="muted">#{selected.number}</span><span className="mini-q"><Inline text={selected.q.question} /></span>
+                  </button>
+                  <button className="icon-btn" tabIndex={scrolled ? 0 : -1} onClick={() => player.play(selIndex)} aria-label="Listen" title="Listen"><PlayIcon /></button>
+                  <button className={'icon-btn' + (selected.q.favorite ? ' on-fav' : '')} tabIndex={scrolled ? 0 : -1} onClick={() => toggleFav(selected)} aria-label="Favorite" title="Favorite"><StarIcon filled={selected.q.favorite} /></button>
+                  {tracking && <button className={'icon-btn' + (progress.isRead(selected.q.id) ? ' on-read' : '')} tabIndex={scrolled ? 0 : -1} onClick={() => toggleRead(selected.q.id, !progress.isRead(selected.q.id))} aria-label="Mark as read" title="Mark as read"><CheckIcon /></button>}
+                </div>
+              </div>
               <div className="crumbs">
                 <span>{selected.topic.name}</span>
                 {selected.q.module && <button className="crumb-module" onClick={() => { setGroupBy('module'); setModuleFilter(selected.q.module ?? ''); }} title="Show only this module">{selected.q.module}</button>}
@@ -555,6 +566,13 @@ export default function App() {
               {selected.q.tags.length > 0 && (
                 <div className="tags">{selected.q.tags.map((t) => <button key={t} className="tag" onClick={() => setSearch(t)}>#{t}</button>)}</div>
               )}
+              <div className="mini-foot-wrap">
+                <div className="mini-foot">
+                  <button className="icon-btn" onClick={() => step(-1)} disabled={selIndex === 0} aria-label="Previous question" title="Previous"><PrevIcon /></button>
+                  <span className="muted">{selIndex + 1} / {items.length}</span>
+                  <button className="icon-btn" onClick={() => step(1)} disabled={selIndex >= items.length - 1} aria-label="Next question" title="Next"><NextIcon /></button>
+                </div>
+              </div>
               <nav className="pager">
                 <button className="btn" onClick={() => step(-1)} disabled={selIndex === 0}><PrevIcon /> Previous</button>
                 <button className="btn" onClick={() => step(1)} disabled={selIndex >= items.length - 1}>Next <NextIcon /></button>

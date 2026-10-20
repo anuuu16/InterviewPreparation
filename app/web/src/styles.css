@@ -482,3 +482,17 @@ button { cursor: pointer; }
 .edge-tab:hover { opacity: 1; color: var(--accent); }
 .edge-tab.left { left: 0; border-left: 0; border-radius: 0 10px 10px 0; }
 .edge-tab.right { right: 0; border-right: 0; border-radius: 10px 0 0 10px; }
+
+/* ---------- compact header and footer inside the reader ---------- */
+.mini-head-wrap, .mini-foot-wrap { position: sticky; height: 0; z-index: 4; }
+.mini-head-wrap { top: 0; }
+.mini-foot-wrap { bottom: 0; }
+.mini-head { position: absolute; left: 0; right: 0; top: -36px; display: flex; align-items: center; gap: 2px; padding: 4px 6px 4px 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 0 0 12px 12px; box-shadow: var(--shadow); transform: translateY(-140%); opacity: 0; pointer-events: none; transition: transform 0.18s ease, opacity 0.18s ease; }
+.mini-head.show { transform: translateY(36px); opacity: 1; pointer-events: auto; }
+.mini-title { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; border: 0; background: transparent; padding: 4px 6px; text-align: left; font-size: 14px; font-weight: 600; }
+.mini-q { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-head .icon-btn.on-fav { color: var(--accent); }
+.mini-head .icon-btn.on-read { color: var(--good); }
+.mini-foot { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 99px; box-shadow: var(--shadow); font-size: 13px; opacity: 0.92; }
+.mini-foot .icon-btn:disabled { opacity: 0.35; }
+@media (prefers-reduced-motion: reduce) { .mini-head { transition: none; } }
