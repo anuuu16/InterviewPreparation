@@ -5,6 +5,8 @@
     "setup": "npm --prefix app/web install && npm --prefix app/web run build",
     "start": "node app/server.js",
     "dev": "npm --prefix app/web run dev",
-    "build": "node app/build.js"
+    "build": "node app/build.js",
+    "validate": "node app/validate.js",
+    "import": "node app/import.js"
   }
 }
