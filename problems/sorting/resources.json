@@ -1,0 +1,79 @@
+[
+  {
+    "title": "VisuAlgo: sorting",
+    "url": "https://visualgo.net/en/sorting",
+    "type": "tool",
+    "description": "Step-by-step animations of every common sort with your own input.",
+    "level": "beginner"
+  },
+  {
+    "title": "Big-O Cheat Sheet",
+    "url": "https://www.bigocheatsheet.com",
+    "type": "reference",
+    "description": "Time and space complexity of common algorithms and data structures at a glance.",
+    "level": "beginner"
+  },
+  {
+    "title": "Sorting algorithms animations (Toptal)",
+    "url": "https://www.toptal.com/developers/sorting-algorithms",
+    "type": "tool",
+    "description": "Side-by-side race of sorts on random, nearly sorted and reversed data.",
+    "level": "beginner"
+  },
+  {
+    "title": "Sorting algorithm (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Sorting_algorithm",
+    "type": "reference",
+    "description": "Comparison table, stability, history and the comparison-sort lower bound.",
+    "level": "intermediate"
+  },
+  {
+    "title": "MDN: Array.prototype.sort",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort",
+    "type": "official-docs",
+    "description": "Default string ordering, comparator rules and stability in JavaScript.",
+    "level": "beginner"
+  },
+  {
+    "title": "Python Sorting HOWTO",
+    "url": "https://docs.python.org/3/howto/sorting.html",
+    "type": "official-docs",
+    "description": "sorted, list.sort, key functions and multi-key sorting.",
+    "level": "beginner"
+  },
+  {
+    "title": "Go: slices.SortFunc",
+    "url": "https://pkg.go.dev/slices#SortFunc",
+    "type": "official-docs",
+    "description": "Generic sorting with a comparison function in the standard library.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Java: Arrays (sort)",
+    "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html",
+    "type": "official-docs",
+    "description": "Arrays.sort for primitives and objects, and the algorithms behind them.",
+    "level": "intermediate"
+  },
+  {
+    "title": "C++: std::sort",
+    "url": "https://en.cppreference.com/w/cpp/algorithm/sort",
+    "type": "reference",
+    "description": "Requirements, complexity guarantees and examples.",
+    "level": "intermediate"
+  },
+  {
+    "title": ".NET: Array.Sort",
+    "url": "https://learn.microsoft.com/dotnet/api/system.array.sort",
+    "type": "official-docs",
+    "description": "Overloads, comparers and the introsort remarks.",
+    "level": "intermediate"
+  },
+  {
+    "title": "CPython list sort notes (Timsort)",
+    "url": "https://github.com/python/cpython/blob/main/Objects/listsort.txt",
+    "type": "reference",
+    "description": "Tim Peters' detailed write-up of Timsort: runs, galloping and merge rules.",
+    "level": "advanced"
+  }
+]

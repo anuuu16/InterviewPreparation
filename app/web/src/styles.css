@@ -400,3 +400,45 @@ button { cursor: pointer; }
 .pgroup .qitem { margin-bottom: 2px; }
 .qnum { font-size: 13px; }
 .qmeta.nocap { text-transform: none; }
+
+/* ---------- resources ---------- */
+.res-modal { width: min(720px, 100%); }
+.res-type { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin: 14px 0 6px; }
+.res-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.res-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.res-row a { font-weight: 600; color: var(--accent); text-underline-offset: 3px; }
+.res-host { margin-left: 8px; font-size: 12.5px; }
+.res-row p { margin: 2px 0 0; font-size: 14px; color: var(--text); }
+.res-form { display: grid; gap: 8px; margin-top: 12px; }
+.res-form input, .res-form select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; color: var(--text); }
+.further { margin: 28px 0 8px; padding: 12px 16px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; background: var(--panel); font-size: 15px; }
+.further ul { list-style: none; margin: 6px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.further a { color: var(--accent); text-underline-offset: 3px; }
+.further-list h2 { margin-top: 36px; }
+
+/* ---------- progress ---------- */
+.btn.done { border-color: var(--good); color: var(--good); }
+.nav.has-bar { flex-direction: column; align-items: stretch; gap: 5px; }
+.nav-line { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.nav-bar, .bar { display: block; height: 3px; background: var(--panel-2); border-radius: 99px; overflow: hidden; }
+.nav-bar i, .bar i { display: block; height: 100%; background: var(--good); border-radius: 99px; }
+.nav.active .nav-bar { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.qdone { color: var(--good); display: grid; align-self: center; }
+.qdone svg { width: 17px; height: 17px; }
+.list-progress { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); margin: -4px 0 8px; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 99px; background: var(--text); color: var(--bg); box-shadow: var(--shadow); font-size: 14px; }
+.toast svg { width: 17px; height: 17px; }
+.toast .link-btn { color: var(--accent-text); background: var(--accent); border-radius: 99px; padding: 2px 10px; margin: 0; }
+.progress-modal { width: min(620px, 100%); }
+.progress-total { display: flex; flex-direction: column; gap: 8px; }
+.progress-total .bar { height: 8px; }
+.progress-topic { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: var(--panel); }
+.progress-topic summary { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; cursor: pointer; list-style: none; }
+.progress-topic summary .bar { grid-column: 1 / -1; }
+.pt-name { font-weight: 600; }
+.pt-modules { list-style: none; margin: 12px 0 8px; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.pt-modules li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; }
+.pt-modules li .bar { grid-column: 1 / -1; height: 2px; }
+.pt-actions { display: flex; gap: 8px; margin-top: 8px; }
+.progress-auto { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; font-weight: 500; color: var(--text); }
+.progress-auto .hint { display: block; font-weight: 400; margin-top: 4px; }

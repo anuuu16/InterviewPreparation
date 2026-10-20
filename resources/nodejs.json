@@ -1,0 +1,137 @@
+[
+  {
+    "title": "Node.js API documentation",
+    "url": "https://nodejs.org/docs/latest/api/",
+    "type": "official-docs",
+    "description": "Complete reference for every core module.",
+    "level": "beginner"
+  },
+  {
+    "title": "Learn Node.js",
+    "url": "https://nodejs.org/en/learn",
+    "type": "tutorial",
+    "description": "Official guides: getting started, asynchronous work, diagnostics, TypeScript.",
+    "level": "beginner",
+    "module": "Core Runtime"
+  },
+  {
+    "title": "The Node.js event loop, timers and process.nextTick",
+    "url": "https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick",
+    "type": "official-docs",
+    "description": "The phases of the event loop explained by the Node team.",
+    "level": "intermediate",
+    "module": "Async & Event Loop"
+  },
+  {
+    "title": "Don't block the event loop",
+    "url": "https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop",
+    "type": "official-docs",
+    "description": "How to keep a server responsive: partitioning and offloading work.",
+    "level": "intermediate",
+    "module": "Performance & Memory"
+  },
+  {
+    "title": "Node.js diagnostics guides",
+    "url": "https://nodejs.org/en/learn/diagnostics/user-journey",
+    "type": "official-docs",
+    "description": "Profiling, memory leaks, flame graphs and live debugging.",
+    "level": "intermediate",
+    "module": "Performance & Memory"
+  },
+  {
+    "title": "Node.js security best practices",
+    "url": "https://nodejs.org/en/learn/getting-started/security-best-practices",
+    "type": "official-docs",
+    "description": "Threat model and practical hardening steps.",
+    "level": "intermediate",
+    "module": "Security"
+  },
+  {
+    "title": "Node.js release schedule",
+    "url": "https://nodejs.org/en/about/previous-releases",
+    "type": "reference",
+    "description": "Which versions are Current, Active LTS or end of life.",
+    "level": "intermediate",
+    "module": "Operations & Deployment"
+  },
+  {
+    "title": "Node.js test runner",
+    "url": "https://nodejs.org/api/test.html",
+    "type": "official-docs",
+    "description": "The built-in node:test module: tests, mocks and coverage.",
+    "level": "intermediate",
+    "module": "Testing & Quality"
+  },
+  {
+    "title": "Node.js best practices (community)",
+    "url": "https://github.com/goldbergyoni/nodebestpractices",
+    "type": "repo",
+    "description": "A very large, well-organised checklist for structure, errors, security and production.",
+    "level": "intermediate",
+    "module": "Architecture & NestJS"
+  },
+  {
+    "title": "NestJS documentation",
+    "url": "https://docs.nestjs.com",
+    "type": "official-docs",
+    "description": "Modules, providers, guards, pipes, interceptors and testing.",
+    "level": "intermediate",
+    "module": "Architecture & NestJS"
+  },
+  {
+    "title": "Express documentation",
+    "url": "https://expressjs.com",
+    "type": "official-docs",
+    "description": "Routing, middleware and error handling.",
+    "level": "beginner",
+    "module": "HTTP & APIs"
+  },
+  {
+    "title": "Fastify documentation",
+    "url": "https://fastify.dev/docs/latest/",
+    "type": "official-docs",
+    "description": "Fast framework with schemas, plugins and hooks.",
+    "level": "intermediate",
+    "module": "HTTP & APIs"
+  },
+  {
+    "title": "libuv design overview",
+    "url": "https://docs.libuv.org/en/v1.x/design.html",
+    "type": "reference",
+    "description": "How the event loop and thread pool work underneath Node.",
+    "level": "advanced",
+    "module": "Internals"
+  },
+  {
+    "title": "V8 blog",
+    "url": "https://v8.dev/blog",
+    "type": "article",
+    "description": "How the engine behind Node works: GC, JIT and new features.",
+    "level": "advanced",
+    "module": "Internals"
+  },
+  {
+    "title": "OWASP Node.js Security Cheat Sheet",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html",
+    "type": "reference",
+    "description": "Focused checklist for securing Node apps.",
+    "level": "intermediate",
+    "module": "Security"
+  },
+  {
+    "title": "BullMQ documentation",
+    "url": "https://docs.bullmq.io",
+    "type": "official-docs",
+    "description": "Redis-backed queues: jobs, retries, rate limits and flows.",
+    "level": "intermediate",
+    "module": "Data & Persistence"
+  },
+  {
+    "title": "Pino logger",
+    "url": "https://getpino.io",
+    "type": "official-docs",
+    "description": "Fast structured JSON logging for Node.",
+    "level": "intermediate",
+    "module": "Operations & Deployment"
+  }
+]

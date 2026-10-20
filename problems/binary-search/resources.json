@@ -1,0 +1,51 @@
+[
+  {
+    "title": "Binary search (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Binary_search_algorithm",
+    "type": "reference",
+    "description": "Algorithm, variants, complexity and the history of bugs in implementations.",
+    "level": "beginner"
+  },
+  {
+    "title": "LeetCode Explore: Binary Search",
+    "url": "https://leetcode.com/explore/learn/card/binary-search/",
+    "type": "course",
+    "description": "Guided card with templates and practice problems.",
+    "level": "intermediate"
+  },
+  {
+    "title": "cp-algorithms: Binary search",
+    "url": "https://cp-algorithms.com/num_methods/binary_search.html",
+    "type": "tutorial",
+    "description": "Binary search on the answer, lower and upper bound, and floating point.",
+    "level": "advanced"
+  },
+  {
+    "title": "Python: bisect",
+    "url": "https://docs.python.org/3/library/bisect.html",
+    "type": "official-docs",
+    "description": "bisect_left, bisect_right and insort in the standard library.",
+    "level": "beginner"
+  },
+  {
+    "title": "Go: sort.Search",
+    "url": "https://pkg.go.dev/sort#Search",
+    "type": "official-docs",
+    "description": "Generic binary search over a predicate, with examples.",
+    "level": "intermediate"
+  },
+  {
+    "title": "C++: std::lower_bound",
+    "url": "https://en.cppreference.com/w/cpp/algorithm/lower_bound",
+    "type": "reference",
+    "description": "Lower and upper bound semantics for sorted ranges.",
+    "level": "intermediate"
+  },
+  {
+    "title": "git bisect",
+    "url": "https://git-scm.com/docs/git-bisect",
+    "type": "official-docs",
+    "description": "Binary search over commit history to find the one that broke the build.",
+    "level": "beginner"
+  }
+]

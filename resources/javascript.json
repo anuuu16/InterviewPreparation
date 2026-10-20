@@ -1,0 +1,119 @@
+[
+  {
+    "title": "MDN JavaScript",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
+    "type": "official-docs",
+    "description": "The most trusted reference for the language, with compatibility tables.",
+    "level": "beginner"
+  },
+  {
+    "title": "MDN JavaScript Guide",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide",
+    "type": "tutorial",
+    "description": "Step-by-step guide from basics to advanced features.",
+    "level": "beginner",
+    "module": "Core Language"
+  },
+  {
+    "title": "The Modern JavaScript Tutorial",
+    "url": "https://javascript.info",
+    "type": "tutorial",
+    "description": "Clear, example-driven tutorial covering the language, the browser and more.",
+    "level": "beginner"
+  },
+  {
+    "title": "ECMAScript Language Specification",
+    "url": "https://tc39.es/ecma262/",
+    "type": "reference",
+    "description": "The definitive rules of the language. Hard to read but final.",
+    "level": "advanced",
+    "module": "Engine Internals"
+  },
+  {
+    "title": "TC39 proposals",
+    "url": "https://github.com/tc39/proposals",
+    "type": "repo",
+    "description": "Every proposed language feature and its stage: what is coming next.",
+    "level": "advanced"
+  },
+  {
+    "title": "You Don't Know JS Yet",
+    "url": "https://github.com/getify/You-Dont-Know-JS",
+    "type": "book",
+    "description": "Free book series that goes deep on scope, closures, this and types.",
+    "level": "intermediate",
+    "module": "Functions & Scope"
+  },
+  {
+    "title": "The event loop (MDN)",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Event_loop",
+    "type": "article",
+    "description": "The call stack, task queue and microtasks explained.",
+    "level": "intermediate",
+    "module": "Async & Event Loop"
+  },
+  {
+    "title": "Using promises (MDN)",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises",
+    "type": "tutorial",
+    "description": "Chaining, error handling and common mistakes.",
+    "level": "beginner",
+    "module": "Async & Event Loop"
+  },
+  {
+    "title": "Jake Archibald: In The Loop",
+    "url": "https://www.youtube.com/watch?v=cCOL7MC4Pl0",
+    "type": "video",
+    "description": "A famous talk that makes tasks, microtasks and rendering click.",
+    "level": "intermediate",
+    "module": "Async & Event Loop"
+  },
+  {
+    "title": "JavaScript modules (MDN)",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules",
+    "type": "tutorial",
+    "description": "import and export, dynamic import and how browsers load modules.",
+    "level": "intermediate",
+    "module": "Modules & Tooling"
+  },
+  {
+    "title": "npm documentation",
+    "url": "https://docs.npmjs.com",
+    "type": "official-docs",
+    "description": "package.json, scripts, versions, workspaces and publishing.",
+    "level": "beginner",
+    "module": "Modules & Tooling"
+  },
+  {
+    "title": "web.dev",
+    "url": "https://web.dev",
+    "type": "official-docs",
+    "description": "Google's guides on performance, Core Web Vitals, accessibility and security.",
+    "level": "intermediate",
+    "module": "Performance & Memory"
+  },
+  {
+    "title": "V8 blog",
+    "url": "https://v8.dev/blog",
+    "type": "article",
+    "description": "How the V8 engine works and gets faster: JIT, GC, new features.",
+    "level": "advanced",
+    "module": "Engine Internals"
+  },
+  {
+    "title": "OWASP Cheat Sheet Series",
+    "url": "https://cheatsheetseries.owasp.org/",
+    "type": "reference",
+    "description": "Practical security guidance: XSS, CSRF, authentication, dependencies.",
+    "level": "intermediate",
+    "module": "Security & Quality"
+  },
+  {
+    "title": "Can I use",
+    "url": "https://caniuse.com",
+    "type": "tool",
+    "description": "Browser support tables for web features.",
+    "level": "beginner",
+    "module": "Browser & DOM"
+  }
+]

@@ -1,0 +1,51 @@
+[
+  {
+    "title": "LeetCode: Two Sum",
+    "url": "https://leetcode.com/problems/two-sum/",
+    "type": "tool",
+    "description": "The original problem statement to practise with an online judge.",
+    "level": "beginner"
+  },
+  {
+    "title": "Hash table (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Hash_table",
+    "type": "reference",
+    "description": "How hashing, collisions and load factor work.",
+    "level": "beginner"
+  },
+  {
+    "title": "MDN: Map",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map",
+    "type": "official-docs",
+    "description": "JavaScript's Map: key equality, ordering and when to prefer it over objects.",
+    "level": "beginner"
+  },
+  {
+    "title": "Go maps in action",
+    "url": "https://go.dev/blog/maps",
+    "type": "article",
+    "description": "How Go maps work: lookup, deletion, iteration and concurrency.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Python: dictionaries",
+    "url": "https://docs.python.org/3/tutorial/datastructures.html#dictionaries",
+    "type": "official-docs",
+    "description": "Dict basics, insertion order and common operations.",
+    "level": "beginner"
+  },
+  {
+    "title": "C++: std::unordered_map",
+    "url": "https://en.cppreference.com/w/cpp/container/unordered_map",
+    "type": "reference",
+    "description": "Hash map interface and complexity guarantees.",
+    "level": "intermediate"
+  },
+  {
+    "title": ".NET: Dictionary<TKey,TValue>",
+    "url": "https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2",
+    "type": "official-docs",
+    "description": "The .NET hash map: usage, equality comparers and performance notes.",
+    "level": "intermediate"
+  }
+]

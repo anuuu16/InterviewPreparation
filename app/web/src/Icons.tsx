@@ -24,3 +24,6 @@ export const ListIcon = make(<><path d="M8 6h13M8 12h13M8 18h13" /><circle cx="4
 export const HeadphonesIcon = make(<><path d="M4 14v-2a8 8 0 0 1 16 0v2" /><rect x="3" y="14" width="4" height="7" rx="1.5" /><rect x="17" y="14" width="4" height="7" rx="1.5" /></>);
 export const FilterIcon = make(<path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />);
 export const NoteIcon = make(<><path d="M5 3h10l4 4v14H5V3Z" /><path d="M14 3v5h5M8 13h8M8 17h6" /></>);
+export const BookIcon = make(<><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Z" /><path d="M4 19a2 2 0 0 1 2-2h13" /></>);
+export const CheckIcon = make(<path d="m5 12.5 4.5 4.5L19 7" />);
+export const ProgressIcon = make(<><circle cx="12" cy="12" r="9" /><path d="m8 12.5 3 3 5-6" /></>);

@@ -167,6 +167,30 @@ Two more things worth saying in an interview. First, the standard sorts are hybr
 4. **Merge intervals**: sort by start, then sweep once.
 5. **Sort by frequency** (or "largest number" from a list of integers): a custom comparator on top of a stable sort.
 
+## Further reading
+
+Where to read more at the source. Official docs and references come first.
+
+**Official docs**
+
+- [MDN: Array.prototype.sort](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort) — Default string ordering, comparator rules and stability in JavaScript. _(beginner)_
+- [Python Sorting HOWTO](https://docs.python.org/3/howto/sorting.html) — sorted, list.sort, key functions and multi-key sorting. _(beginner)_
+- [Go: slices.SortFunc](https://pkg.go.dev/slices#SortFunc) — Generic sorting with a comparison function in the standard library. _(intermediate)_
+- [Java: Arrays (sort)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html) — Arrays.sort for primitives and objects, and the algorithms behind them. _(intermediate)_
+- [.NET: Array.Sort](https://learn.microsoft.com/dotnet/api/system.array.sort) — Overloads, comparers and the introsort remarks. _(intermediate)_
+
+**Reference**
+
+- [Big-O Cheat Sheet](https://www.bigocheatsheet.com) — Time and space complexity of common algorithms and data structures at a glance. _(beginner)_
+- [Sorting algorithm (Wikipedia)](https://en.wikipedia.org/wiki/Sorting_algorithm) — Comparison table, stability, history and the comparison-sort lower bound. _(intermediate)_
+- [C++: std::sort](https://en.cppreference.com/w/cpp/algorithm/sort) — Requirements, complexity guarantees and examples. _(intermediate)_
+- [CPython list sort notes (Timsort)](https://github.com/python/cpython/blob/main/Objects/listsort.txt) — Tim Peters' detailed write-up of Timsort: runs, galloping and merge rules. _(advanced)_
+
+**Tool**
+
+- [VisuAlgo: sorting](https://visualgo.net/en/sorting) — Step-by-step animations of every common sort with your own input. _(beginner)_
+- [Sorting algorithms animations (Toptal)](https://www.toptal.com/developers/sorting-algorithms) — Side-by-side race of sorts on random, nearly sorted and reversed data. _(beginner)_
+
 ## Approaches
 
 | Approach | Best | Average | Worst | Space | Stable | In place | Languages |

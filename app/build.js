@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { loadProblems } = require('./problems-lib');
+const resourcesLib = require('./resources-lib');
 
 const ROOT = path.join(__dirname, '..');
 const DATA_DIR = path.join(ROOT, 'data');
@@ -33,6 +34,24 @@ function anchorFor(heading, seen) {
   return n ? `${base}-${n}` : base;
 }
 
+
+// ---- resources ("go and check the source") ----------------------------------------------------
+const TYPE_LABEL = { 'official-docs': 'Official docs', tutorial: 'Tutorial', article: 'Article', video: 'Video', book: 'Book', course: 'Course', reference: 'Reference', tool: 'Tool', repo: 'Repository' };
+
+function renderResources(items, heading = '## Resources') {
+  if (!items || !items.length) return [];
+  const out = [heading, '', 'Where to read more at the source. Official docs and references come first.', ''];
+  const order = ['official-docs', 'reference', 'tutorial', 'course', 'book', 'article', 'video', 'tool', 'repo'];
+  for (const type of order) {
+    const group = items.filter((e) => e.type === type);
+    if (!group.length) continue;
+    out.push(`**${TYPE_LABEL[type]}**`, '');
+    for (const e of group) out.push(`- [${e.title}](${e.url}) — ${e.description}${e.level ? ` _(${e.level})_` : ''}`);
+    out.push('');
+  }
+  return out;
+}
+
 function renderQuestion(q, number) {
   const star = q.favorite ? '⭐ ' : '';
   const parts = [q.module && `Module: ${q.module}`, q.tags && q.tags.length && `Tags: ${q.tags.join(', ')}`].filter(Boolean);
@@ -44,7 +63,8 @@ function renderQuestion(q, number) {
 function renderTopic(topic) {
   const qs = topic.questions;
   const out = [`# ${topic.name}`, '', `[← Back to index](../README.md) · [⭐ Favorites](favorites.md)`, ''];
-  out.push(`${qs.length} questions · ${qs.filter((q) => q.favorite).length} favorites`, '');
+  const hasRes = resourcesLib.read(topic.slug).length > 0;
+  out.push(`${qs.length} questions · ${qs.filter((q) => q.favorite).length} favorites${hasRes ? ' · [📚 Resources](#resources)' : ''}`, '');
   const groups = LEVELS.map((level) => ({ level, items: qs.filter((q) => q.level === level) })).filter((g) => g.items.length);
   let n = 0;
   const seen = new Map(LEVELS.map((l) => [cap(l).toLowerCase(), 0]));
@@ -68,7 +88,8 @@ function renderTopic(topic) {
     ? ['## Browse by module', '', '| Module | Questions |', '| --- | --- |',
         ...[...byModule].sort((a, b) => a[0].localeCompare(b[0])).map(([m, list]) => `| ${m} (${list.length}) | ${list.map((x) => `[${x.n}](#${x.anchor})`).join(' · ')} |`), '']
     : [];
-  return [...out, ...toc, ...modules, ...body].join('\n');
+  const res = renderResources(resourcesLib.read(topic.slug));
+  return [...out, ...toc, ...modules, ...body, ...(res.length ? ['---', '', ...res] : [])].join('\n');
 }
 
 function renderFavorites(topics) {
@@ -122,6 +143,8 @@ function renderProblem(p, topics) {
     `**Level:** ${p.level}${p.tags?.length ? ` · **Tags:** ${p.tags.join(', ')}` : ''}`, ''];
   if (related.length) out.push('**Related interview questions:**', '', ...related.map((r) => `- ${r}`), '');
   out.push(p.overview.trim(), '');
+  const res = renderResources(resourcesLib.read(`problem-${p.slug}`), '## Further reading');
+  if (res.length) out.push(...res);
 
   if (p.variants.length) {
     out.push('## Approaches', '', '| Approach | Best | Average | Worst | Space | Stable | In place | Languages |', '| --- | --- | --- | --- | --- | --- | --- | --- |');

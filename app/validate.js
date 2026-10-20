@@ -10,12 +10,13 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { DATA_DIR, LEVELS } = require('./build');
 const { loadProblems, loadLanguages } = require('./problems-lib');
+const resourcesLib = require('./resources-lib');
 
 const args = process.argv.slice(2);
 const strict = args.includes('--strict');
 const checkGo = args.includes('--go');
 const only = args.filter((a) => !a.startsWith('--'));
-const topicsOnly = only.filter((a) => a !== 'problems');
+const topicsOnly = only.filter((a) => a !== 'problems' && a !== 'resources');
 
 const MERMAID_TYPES = /^(flowchart|graph|sequenceDiagram|stateDiagram(-v2)?|classDiagram|erDiagram|gantt|pie|journey|mindmap|timeline|gitGraph)\b/;
 const errors = [];
@@ -156,6 +157,32 @@ function checkProblems() {
   console.log(`Problems: ${problems.length} problem(s), ${problems.reduce((n, p) => n + p.variants.length, 0)} approach(es)`);
 }
 
+// ---- resources ------------------------------------------------------------------------------
+function checkResources() {
+  const all = resourcesLib.listAll();
+  const topicSlugs = new Set(fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json')).map((f) => f.replace('.json', '')));
+  let n = 0;
+  for (const [key, items] of Object.entries(all)) {
+    const where = `resources/${key}`;
+    if (!key.startsWith('problem-') && !topicSlugs.has(key)) warn(where, 'no topic with this name (typo?)');
+    if (!Array.isArray(items)) { err(where, 'must be an array'); continue; }
+    const urls = new Set();
+    items.forEach((e, i) => {
+      n += 1;
+      const why = resourcesLib.problem(e);
+      if (why) return err(`${where}[${i}]`, why);
+      if (urls.has(e.url)) err(`${where}[${i}]`, `duplicate url ${e.url}`);
+      urls.add(e.url);
+      if (e.description.length > 220) warn(`${where}[${i}]`, 'description is long; one sentence is enough');
+    });
+    if (items.length < 4) warn(where, 'only a few resources; aim for 8-20');
+    if (!items.some((e) => e.type === 'official-docs' || e.type === 'reference')) warn(where, 'no official-docs or reference entry; list the authoritative source first');
+  }
+  const missing = [...topicSlugs].filter((s) => !all[s]);
+  if (missing.length) warn('resources', `topics without a resources file: ${missing.join(', ')}`);
+  console.log(`Resources: ${n} link(s) in ${Object.keys(all).length} list(s)`);
+}
+
 const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json') && ((!only.length) || topicsOnly.includes(f.replace('.json', ''))));
 let total = 0;
 for (const f of files) {
@@ -199,6 +226,7 @@ for (const f of files) {
 }
 
 if (!only.length || only.includes('problems')) checkProblems();
+if (!only.length || only.includes('resources')) checkResources();
 
 for (const w of warnings.slice(0, 60)) console.warn(`warn  ${w}`);
 if (warnings.length > 60) console.warn(`warn  … and ${warnings.length - 60} more warnings`);

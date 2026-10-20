@@ -2,17 +2,21 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import * as api from './api';
 import AudioSettings from './AudioSettings';
 import Editor, { type EditorResult } from './Editor';
-import { CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, ListIcon, MenuIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon } from './Icons';
+import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, ListIcon, MenuIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon } from './Icons';
 import Inline from './Inline';
 import Markdown from './Markdown';
 import Notes from './Notes';
 import { warmMermaid } from './Mermaid';
 import PlayerBar from './PlayerBar';
+import ProgressDialog from './ProgressDialog';
+import { useProgress } from './progress';
+import { useReadTracker } from './useReadTracker';
+import { FurtherReading, ResourcesDialog } from './Resources';
 import Problems from './Problems';
 import { Speaker, type SpeakOptions } from './speaker';
 import { usePiper } from './speech';
 import { buildSteps, type PlayerSettings } from './tts';
-import { LEVELS, type FeedbackEntry, type FeedbackType, type Item, type Level, type Problem, type Question, type Topic, type View } from './types';
+import { LEVELS, type FeedbackEntry, type FeedbackType, type Item, type Level, type Problem, type Question, type Resource, type Topic, type View } from './types';
 import { useLocal } from './useLocal';
 import { usePlayer } from './usePlayer';
 
@@ -48,9 +52,16 @@ export default function App() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
   const [problems, setProblems] = useState<Problem[]>([]);
+  const [resources, setResources] = useState<Record<string, Resource[]>>({});
+  const [resourcesOpen, setResourcesOpen] = useState(false);
   const [problemSel, setProblemSel] = useLocal<{ slug: string; part: string }>('ip.problem', { slug: '', part: 'overview' });
   const [codeLang, setCodeLang] = useLocal<string>('ip.codeLang', 'javascript');
   const [audioOpen, setAudioOpen] = useState(false);
+  const [progressOpen, setProgressOpen] = useState(false);
+  const [readFilter, setReadFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [toast, setToast] = useState<{ id: string; text: string } | null>(null);
+  const progress = useProgress();
+  const problemsReaderRef = useRef<HTMLElement>(null);
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useLocal<string>('ip.selected', '');
   const [themePref, setThemePref] = useLocal<ThemePref>('ip.theme', 'system');
@@ -63,9 +74,16 @@ export default function App() {
 
   const reload = useCallback(() => api.getAll().then(setTopics).catch((e: Error) => setLoadError(e.message)), []);
   useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => { api.getResources().then(setResources).catch(() => {}); }, []);
   useEffect(() => { api.getProblems().then(setProblems).catch(() => {}); }, []);
   useEffect(() => { api.getFeedback().then(setFeedback).catch(() => {}); }, []);
   useEffect(() => { const t = window.setTimeout(warmMermaid, 800); return () => window.clearTimeout(t); }, []);
+
+  // The Unread/Read filter uses a snapshot, so the list does not change under you while you read.
+  const readSnapshot = useMemo(
+    () => new Set(Object.keys(progress.state.read).filter((id) => progress.state.read[id].at)),
+    [readFilter, view, topics, groupBy, level, moduleFilter, search], // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   // ---- derive the visible list ------------------------------------------------------------
   const items = useMemo<Item[]>(() => {
@@ -80,6 +98,7 @@ export default function App() {
       (view.kind !== 'favorites' || q.favorite) &&
       (!level || q.level === level) &&
       (!moduleFilter || (q.module ?? 'Other') === moduleFilter) &&
+      (readFilter === 'all' || (readFilter === 'read') === readSnapshot.has(q.id)) &&
       (!needle || `${q.question} ${q.answer} ${q.tags.join(' ')} ${topic.name}`.toLowerCase().includes(needle)));
     // numbers match the Markdown pages inside a topic; elsewhere they are just list positions
     const numbered = view.kind === 'topic' ? out : out.map((it, i) => ({ ...it, number: i + 1 }));
@@ -87,7 +106,7 @@ export default function App() {
     // module view: modules in order of first appearance (so fundamentals come first), questions keep their level order inside
     const order = [...new Set(numbered.map((it) => it.q.module ?? 'Other'))];
     return order.flatMap((m) => numbered.filter((it) => (it.q.module ?? 'Other') === m));
-  }, [topics, view, level, search, groupBy, moduleFilter]);
+  }, [topics, view, level, search, groupBy, moduleFilter, readFilter, readSnapshot]);
 
   // modules available in the current scope (ignoring the module filter itself) for the filter dropdown
   const modules = useMemo(() => {
@@ -120,6 +139,10 @@ export default function App() {
     settings: () => settings,
     speaker,
     speakOptions,
+    onDone: (i) => {
+      const it = items[i];
+      if (it && progress.state.autoTrack && settings.style !== 'brief' && progress.markRead(it.q.id, 'audio')) setToast({ id: it.q.id, text: 'Marked as read' });
+    },
   });
   // changing the reading style mid-playback restarts the current question in the new style
   const firstStyle = useRef(settings.style);
@@ -184,6 +207,15 @@ export default function App() {
     setFeedback((f) => f.filter((x) => x.id !== id));
   };
 
+  const addResource = async (key: string, r: Resource) => {
+    const created = await api.addResource(key, r);
+    setResources((all) => ({ ...all, [key]: [...(all[key] ?? []), created] }));
+  };
+  const removeResource = async (key: string, url: string) => {
+    await api.removeResource(key, url);
+    setResources((all) => ({ ...all, [key]: (all[key] ?? []).filter((x) => x.url !== url) }));
+  };
+
   const newTopic = async () => {
     const name = window.prompt('New topic name (e.g. TypeScript, System Design):')?.trim();
     if (!name) return;
@@ -192,6 +224,44 @@ export default function App() {
       await reload();
       setView({ kind: 'topic', slug: t.slug });
     } catch (e) { window.alert(e instanceof Error ? e.message : 'Could not create topic'); }
+  };
+
+  // ---- reading progress -------------------------------------------------------------------
+  const inQuestions = view.kind !== 'problems';
+  const selWords = selected ? selected.q.answer.split(/\s+/).length : 0;
+  const problemObj = problems.find((p) => p.slug === (problemSel.slug || problems[0]?.slug));
+  const problemVariant = problemObj?.variants.find((v) => v.slug === problemSel.part);
+  const problemId = problemObj ? (problemVariant ? `problem:${problemObj.slug}/${problemVariant.slug}` : `problem:${problemObj.slug}`) : null;
+  const problemWords = problemObj ? (problemVariant ? problemVariant.notes : problemObj.overview).split(/\s+/).length : 0;
+  const dialogOpen = editor !== null || audioOpen || progressOpen || resourcesOpen;
+  const trackId = dialogOpen ? null : inQuestions ? selected?.q.id ?? null : problemId;
+  useReadTracker({
+    id: trackId,
+    words: inQuestions ? selWords : problemWords,
+    container: inQuestions ? readerRef : problemsReaderRef,
+    enabled: progress.state.autoTrack,
+    listening: inQuestions && player.status === 'playing' && player.index === selIndex,
+    onRead: (id) => { if (progress.markRead(id, 'auto')) setToast({ id, text: 'Marked as read' }); },
+  });
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 6000);
+    return () => window.clearTimeout(t);
+  }, [toast]);
+  const toggleRead = (id: string, read: boolean) => {
+    if (read) progress.markRead(id, 'manual');
+    else progress.unmark(id);
+    setToast(null);
+  };
+  const orderedQuestions = (t: Topic) => LEVELS.flatMap((l) => t.questions.filter((q) => q.level === l));
+  const continueTopic = (t: Topic) => {
+    const next = orderedQuestions(t).find((q) => !progress.isRead(q.id)) ?? orderedQuestions(t)[0];
+    if (!next) return;
+    setView({ kind: 'topic', slug: t.slug });
+    setModuleFilter(''); setLevel(''); setSearch(''); setReadFilter('all');
+    setSelectedId(next.id);
+    setProgressOpen(false);
+    setDrawer('');
   };
 
   // ---- keyboard shortcuts -----------------------------------------------------------------
@@ -220,7 +290,7 @@ export default function App() {
   const isView = (v: View) => v.kind === view.kind && (v.kind !== 'topic' || (view.kind === 'topic' && v.slug === view.slug));
   const nextTheme = () => setThemePref(themePref === 'system' ? (dark ? 'light' : 'dark') : themePref === 'dark' ? 'light' : 'dark');
   const openNotes = selected ? feedback.filter((f) => f.topic === selected.topic.slug && (f.question === selected.q.id || f.question === null) && f.status === 'open').length : 0;
-  const activeFilters = (level ? 1 : 0) + (moduleFilter ? 1 : 0) + (groupBy === 'module' ? 1 : 0);
+  const activeFilters = (level ? 1 : 0) + (moduleFilter ? 1 : 0) + (groupBy === 'module' ? 1 : 0) + (readFilter !== 'all' ? 1 : 0);
   const openQuestion = (id: string) => {
     const t = topics.find((x) => x.questions.some((q) => q.id === id));
     if (!t) return;
@@ -261,14 +331,16 @@ export default function App() {
           <div className="nav-title">Topics</div>
           <div className="nav-group">
             {topics.map((t) => (
-              <button key={t.slug} className={'nav' + (isView({ kind: 'topic', slug: t.slug }) ? ' active' : '')} onClick={() => go({ kind: 'topic', slug: t.slug })}>
-                <span>{t.name}</span><span className="count">{t.questions.length}</span>
+              <button key={t.slug} className={'nav has-bar' + (isView({ kind: 'topic', slug: t.slug }) ? ' active' : '')} onClick={() => go({ kind: 'topic', slug: t.slug })}>
+                <span className="nav-line"><span>{t.name}</span><span className="count">{progress.readCount(t.questions.map((q) => q.id))}/{t.questions.length}</span></span>
+                <span className="nav-bar"><i style={{ width: t.questions.length ? `${(progress.readCount(t.questions.map((q) => q.id)) / t.questions.length) * 100}%` : 0 }} /></span>
               </button>
             ))}
           </div>
           <div className="sidebar-foot">
             <button className="btn" onClick={newTopic}><PlusIcon /> New topic</button>
             <span className="foot-icons">
+              <button className="icon-btn" onClick={() => setProgressOpen(true)} aria-label="My progress" title="My progress"><ProgressIcon /></button>
               <button className="icon-btn" onClick={() => setAudioOpen(true)} aria-label="Audio settings" title="Audio settings"><SettingsIcon /></button>
               <button className="icon-btn" onClick={nextTheme} aria-label="Toggle theme" title={`Theme: ${themePref}`}>{dark ? <SunIcon /> : <MoonIcon />}</button>
             </span>
@@ -278,12 +350,16 @@ export default function App() {
         {view.kind === 'problems' ? (
           <Problems
             problems={problems}
+            resources={resources}
             topics={topics}
             slug={problemSel.slug || problems[0]?.slug || ''}
             part={problemSel.part}
             language={codeLang}
             dark={dark}
             drawer={drawer === 'list'}
+            readerRef={problemsReaderRef}
+            isRead={progress.isRead}
+            onToggleRead={toggleRead}
             onSelect={(slug, part) => { setProblemSel({ slug, part }); setDrawer(''); }}
             onLanguage={setCodeLang}
             onOpenQuestion={openQuestion}
@@ -296,10 +372,24 @@ export default function App() {
             <div className="list-title">
               <h2>{title}</h2>
               <span>
+                {view.kind === 'topic' && (
+                  <button className="icon-btn" onClick={() => setResourcesOpen(true)} aria-label="Resources" title="Resources: docs and tutorials"><BookIcon /></button>
+                )}
                 <button className="icon-btn" onClick={() => setEditor({ topicSlug: view.kind === 'topic' ? view.slug : topics[0]?.slug ?? '' })} aria-label="Add question" title="Add question"><PlusIcon /></button>
                 <button className="icon-btn mobile-only" onClick={() => setDrawer('')} aria-label="Close"><CloseIcon /></button>
               </span>
             </div>
+            {view.kind === 'topic' && (() => {
+              const t = topics.find((x) => x.slug === view.slug);
+              if (!t) return null;
+              const done = progress.readCount(t.questions.map((q) => q.id));
+              return (
+                <div className="list-progress">
+                  <span>{done} of {t.questions.length} read</span>
+                  {done < t.questions.length && <button className="link-btn" onClick={() => continueTopic(t)}>Continue</button>}
+                </div>
+              );
+            })()}
             <div className="search-row">
               <label className="search">
                 <SearchIcon />
@@ -323,12 +413,16 @@ export default function App() {
                 </select>
               )}
             </div>
+            <div className="segmented" role="group" aria-label="Show">
+              <span>Show</span>
+              {(['all', 'unread', 'read'] as const).map((f) => <button key={f} className={readFilter === f ? 'active' : ''} onClick={() => setReadFilter(f)}>{f === 'all' ? 'All' : f === 'unread' ? 'Unread' : 'Read'}</button>)}
+            </div>
             <div className="chips" role="group" aria-label="Level">
               {(['', ...LEVELS] as const).map((l) => (
                 <button key={l || 'all'} className={'chip' + (level === l ? ' active' : '')} onClick={() => setLevel(l)}>{l || 'All'}</button>
               ))}
             </div>
-            {activeFilters > 0 && <button className="link-btn" onClick={() => { setLevel(''); setModuleFilter(''); setGroupBy('level'); }}>Clear filters</button>}
+            {activeFilters > 0 && <button className="link-btn" onClick={() => { setLevel(''); setModuleFilter(''); setGroupBy('level'); setReadFilter('all'); }}>Clear filters</button>}
             </div>)}
           </div>
           <ol className="qlist">
@@ -348,6 +442,7 @@ export default function App() {
                     </span>
                   </span>
                   {it.q.favorite && <span className="qstar"><StarIcon filled /></span>}
+                  {progress.isRead(it.q.id) && <span className="qdone" aria-label="Read"><CheckIcon /></span>}
                 </button>
                 <button className="qplay" onClick={() => { player.play(i); setDrawer(''); }} aria-label={`Play question ${it.number}`} title="Play from this question"><PlayIcon /></button>
               </li>
@@ -372,6 +467,9 @@ export default function App() {
                 <button className={'btn' + (selected.q.favorite ? ' fav' : '')} onClick={() => toggleFav(selected)} aria-pressed={selected.q.favorite}>
                   <StarIcon filled={selected.q.favorite} /> {selected.q.favorite ? 'Favorite' : 'Favorite'}
                 </button>
+                <button className={'btn' + (progress.isRead(selected.q.id) ? ' done' : '')} onClick={() => toggleRead(selected.q.id, !progress.isRead(selected.q.id))} aria-pressed={progress.isRead(selected.q.id)}>
+                  <CheckIcon /> {progress.isRead(selected.q.id) ? 'Read' : 'Mark as read'}
+                </button>
                 <button className="btn" onClick={() => setEditor({ topicSlug: selected.topic.slug, question: selected.q })}><EditIcon /> Edit</button>
                 <button className={'btn' + (notesOpen ? ' on' : '')} onClick={() => setNotesOpen(!notesOpen)} aria-expanded={notesOpen}>
                   <NoteIcon /> Notes{openNotes > 0 && <span className="btn-count">{openNotes}</span>}
@@ -394,6 +492,11 @@ export default function App() {
                 activeBlock={player.status !== 'idle' && player.index === selIndex && player.now?.part === 'answer' ? player.now.block ?? null : null}
                 follow={settings.follow}
               />
+              {(() => {
+                const all = resources[selected.topic.slug] ?? [];
+                const near = all.filter((r) => r.module && r.module === selected.q.module).slice(0, 4);
+                return all.length ? <FurtherReading items={near.length ? near : all.filter((r) => r.type === 'official-docs').slice(0, 2)} onAll={() => { setView({ kind: 'topic', slug: selected.topic.slug }); setResourcesOpen(true); }} /> : null;
+              })()}
               {selected.q.tags.length > 0 && (
                 <div className="tags">{selected.q.tags.map((t) => <button key={t} className="tag" onClick={() => setSearch(t)}>#{t}</button>)}</div>
               )}
@@ -429,6 +532,36 @@ export default function App() {
           onNext={() => step(1)}
           onSettings={() => setAudioOpen(true)}
         />
+      )}
+
+      {resourcesOpen && view.kind === 'topic' && (
+        <ResourcesDialog
+          title={topics.find((t) => t.slug === view.slug)?.name ?? ''}
+          items={resources[view.slug] ?? []}
+          onAdd={(r) => addResource(view.slug, r)}
+          onRemove={(url) => removeResource(view.slug, url)}
+          onClose={() => setResourcesOpen(false)}
+        />
+      )}
+
+      {progressOpen && (
+        <ProgressDialog
+          topics={topics}
+          read={progress.state.read}
+          autoTrack={progress.state.autoTrack}
+          onAutoTrack={progress.setAutoTrack}
+          onContinue={continueTopic}
+          onClearTopic={(t) => progress.clear(t.questions.map((q) => q.id))}
+          onClearAll={() => progress.clear()}
+          onClose={() => setProgressOpen(false)}
+        />
+      )}
+
+      {toast && (
+        <div className="toast" role="status">
+          <CheckIcon /> {toast.text}
+          <button className="link-btn" onClick={() => { progress.unmark(toast.id); setToast(null); }}>Undo</button>
+        </div>
       )}
 
       {audioOpen && (

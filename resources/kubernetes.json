@@ -1,0 +1,151 @@
+[
+  {
+    "title": "Kubernetes documentation",
+    "url": "https://kubernetes.io/docs/home/",
+    "type": "official-docs",
+    "description": "The official docs: concepts, tasks, tutorials and reference.",
+    "level": "beginner"
+  },
+  {
+    "title": "Kubernetes concepts",
+    "url": "https://kubernetes.io/docs/concepts/",
+    "type": "official-docs",
+    "description": "What each object is and how it works: Pods, Services, Deployments, storage.",
+    "level": "beginner",
+    "module": "Core Concepts"
+  },
+  {
+    "title": "Learn Kubernetes Basics",
+    "url": "https://kubernetes.io/docs/tutorials/kubernetes-basics/",
+    "type": "tutorial",
+    "description": "Interactive tutorial: create, expose, scale and update an app.",
+    "level": "beginner",
+    "module": "Core Concepts"
+  },
+  {
+    "title": "kubectl quick reference",
+    "url": "https://kubernetes.io/docs/reference/kubectl/quick-reference/",
+    "type": "reference",
+    "description": "The commands you need every day, in one page.",
+    "level": "beginner",
+    "module": "Operations & Troubleshooting"
+  },
+  {
+    "title": "Kubernetes API reference",
+    "url": "https://kubernetes.io/docs/reference/kubernetes-api/",
+    "type": "reference",
+    "description": "Every field of every resource.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Debug applications",
+    "url": "https://kubernetes.io/docs/tasks/debug/debug-application/",
+    "type": "official-docs",
+    "description": "How to debug Pods, Services and failing deployments step by step.",
+    "level": "intermediate",
+    "module": "Operations & Troubleshooting"
+  },
+  {
+    "title": "Configure liveness, readiness and startup probes",
+    "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+    "type": "official-docs",
+    "description": "Probe types, timings and common mistakes.",
+    "level": "beginner",
+    "module": "Workloads"
+  },
+  {
+    "title": "Resource management for Pods and containers",
+    "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+    "type": "official-docs",
+    "description": "Requests, limits, QoS classes and how the kernel enforces them.",
+    "level": "intermediate",
+    "module": "Scheduling & Scaling"
+  },
+  {
+    "title": "Horizontal Pod Autoscaler walkthrough",
+    "url": "https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/",
+    "type": "tutorial",
+    "description": "Set up and watch HPA scale a Deployment.",
+    "level": "intermediate",
+    "module": "Scheduling & Scaling"
+  },
+  {
+    "title": "Production best practices",
+    "url": "https://kubernetes.io/docs/setup/best-practices/",
+    "type": "official-docs",
+    "description": "Checklists for running clusters in production.",
+    "level": "intermediate",
+    "module": "Operations & Troubleshooting"
+  },
+  {
+    "title": "Security overview",
+    "url": "https://kubernetes.io/docs/concepts/security/",
+    "type": "official-docs",
+    "description": "RBAC, Pod Security Standards, network policies, secrets and supply chain.",
+    "level": "intermediate",
+    "module": "Security"
+  },
+  {
+    "title": "Gateway API",
+    "url": "https://gateway-api.sigs.k8s.io",
+    "type": "official-docs",
+    "description": "The successor to Ingress: routes, gateways and policies.",
+    "level": "intermediate",
+    "module": "Networking"
+  },
+  {
+    "title": "Helm documentation",
+    "url": "https://helm.sh/docs/",
+    "type": "official-docs",
+    "description": "Charts, values, templates and releases.",
+    "level": "intermediate",
+    "module": "Delivery & GitOps"
+  },
+  {
+    "title": "Argo CD documentation",
+    "url": "https://argo-cd.readthedocs.io/en/stable/",
+    "type": "official-docs",
+    "description": "GitOps continuous delivery to Kubernetes.",
+    "level": "intermediate",
+    "module": "Delivery & GitOps"
+  },
+  {
+    "title": "Azure Kubernetes Service (AKS) documentation",
+    "url": "https://learn.microsoft.com/azure/aks/",
+    "type": "official-docs",
+    "description": "Node pools, identity, networking, upgrades and operations on AKS.",
+    "level": "intermediate",
+    "module": "Cloud & AKS"
+  },
+  {
+    "title": "Kubebuilder Book",
+    "url": "https://book.kubebuilder.io",
+    "type": "tutorial",
+    "description": "Build operators and controllers with controller-runtime.",
+    "level": "advanced",
+    "module": "Internals"
+  },
+  {
+    "title": "Kubernetes the Hard Way",
+    "url": "https://github.com/kelseyhightower/kubernetes-the-hard-way",
+    "type": "repo",
+    "description": "Bootstrap a cluster by hand to understand every component.",
+    "level": "advanced",
+    "module": "Internals"
+  },
+  {
+    "title": "Kubernetes blog",
+    "url": "https://kubernetes.io/blog/",
+    "type": "article",
+    "description": "Release notes, deprecations and design explanations.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Datadog: Kubernetes monitoring",
+    "url": "https://docs.datadoghq.com/containers/kubernetes/",
+    "type": "tool",
+    "description": "Install the agent, collect metrics, logs and traces from a cluster.",
+    "level": "intermediate",
+    "module": "Operations & Troubleshooting"
+  }
+]

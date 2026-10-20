@@ -1,4 +1,4 @@
-import type { FeedbackEntry, Problem, Question, Topic } from './types';
+import type { FeedbackEntry, Problem, Question, Resource, Topic } from './types';
 
 async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -24,3 +24,7 @@ export const updateFeedback = (id: string, patch: { text?: string; status?: 'ope
 export const deleteFeedback = (id: string) => call<{ ok: boolean }>(`/feedback/${id}`, 'DELETE');
 
 export const getProblems = () => call<Problem[]>('/problems');
+
+export const getResources = () => call<Record<string, Resource[]>>('/resources');
+export const addResource = (key: string, r: Resource) => call<Resource>(`/resources/${key}`, 'POST', r);
+export const removeResource = (key: string, url: string) => call<{ ok: boolean }>(`/resources/${key}/remove`, 'PUT', { url });

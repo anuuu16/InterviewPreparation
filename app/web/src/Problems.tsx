@@ -1,17 +1,22 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, type RefObject } from 'react';
 import Markdown from './Markdown';
 import Inline from './Inline';
-import { CloseIcon } from './Icons';
-import type { Problem, Question, Topic, Variant } from './types';
+import { CheckIcon, CloseIcon } from './Icons';
+import { ResourceList } from './Resources';
+import type { Problem, Question, Resource, Topic, Variant } from './types';
 
 interface Props {
   problems: Problem[];
+  resources: Record<string, Resource[]>;
   topics: Topic[];
   slug: string; // selected problem
   part: string; // 'overview' or a variant slug
   language: string; // preferred language id
   dark: boolean;
   drawer: boolean; // list open on small screens
+  readerRef: RefObject<HTMLElement>; // the scrolling reader (read tracking needs it)
+  isRead: (id: string) => boolean;
+  onToggleRead: (id: string, read: boolean) => void;
   onSelect: (slug: string, part: string) => void;
   onLanguage: (id: string) => void;
   onOpenQuestion: (id: string) => void;
@@ -33,8 +38,7 @@ function Complexity({ v }: { v: Variant }) {
 }
 
 /** The code library: a guide per problem, then each approach with code in the reader's language. */
-export default function Problems({ problems, topics, slug, part, language, dark, drawer, onSelect, onLanguage, onOpenQuestion, onCloseDrawer }: Props) {
-  const reader = useRef<HTMLElement>(null);
+export default function Problems({ problems, resources, topics, slug, part, language, dark, drawer, readerRef: reader, isRead, onToggleRead, onSelect, onLanguage, onOpenQuestion, onCloseDrawer }: Props) {
   const problem = problems.find((p) => p.slug === slug) ?? problems[0];
   const variant = problem?.variants.find((v) => v.slug === part);
   useEffect(() => { reader.current?.scrollTo({ top: 0 }); }, [problem?.slug, part]);
@@ -58,6 +62,7 @@ export default function Problems({ problems, topics, slug, part, language, dark,
               <button className={'qitem' + (p.slug === problem?.slug && part === 'overview' ? ' active' : '')} onClick={() => onSelect(p.slug, 'overview')}>
                 <span className="qnum">📖</span>
                 <span className="qtext"><span className="qtitle">Guide: how it is asked, real-life uses, how to choose</span></span>
+                {isRead(`problem:${p.slug}`) && <span className="qdone" aria-label="Read"><CheckIcon /></span>}
               </button>
               {p.variants.map((v) => (
                 <button key={v.slug} className={'qitem' + (p.slug === problem?.slug && part === v.slug ? ' active' : '')} onClick={() => onSelect(p.slug, v.slug)}>
@@ -66,6 +71,7 @@ export default function Problems({ problems, topics, slug, part, language, dark,
                     <span className="qtitle">{v.title}</span>
                     <span className="qmeta nocap">{v.complexity?.average ?? v.summary}</span>
                   </span>
+                  {isRead(`problem:${p.slug}/${v.slug}`) && <span className="qdone" aria-label="Read"><CheckIcon /></span>}
                 </button>
               ))}
             </li>
@@ -84,6 +90,11 @@ export default function Problems({ problems, topics, slug, part, language, dark,
             </div>
             <h1>{variant ? variant.title : problem.title}</h1>
             <p className="lead">{variant ? variant.summary : problem.summary}</p>
+            {(() => {
+              const id = variant ? `problem:${problem.slug}/${variant.slug}` : `problem:${problem.slug}`;
+              const read = isRead(id);
+              return <div className="actions"><button className={'btn' + (read ? ' done' : '')} onClick={() => onToggleRead(id, !read)} aria-pressed={read}><CheckIcon /> {read ? 'Read' : 'Mark as read'}</button></div>;
+            })()}
 
             {!variant && (
               <>
@@ -133,6 +144,7 @@ export default function Problems({ problems, topics, slug, part, language, dark,
               </>
             )}
 
+            {!variant && <ResourceList items={resources[`problem-${problem.slug}`] ?? []} />}
             <nav className="pager">
               {(() => {
                 const order = ['overview', ...problem.variants.map((v) => v.slug)];

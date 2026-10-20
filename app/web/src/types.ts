@@ -72,3 +72,15 @@ export interface Problem {
   overview: string;
   variants: Variant[];
 }
+
+export type ResourceType = 'official-docs' | 'tutorial' | 'article' | 'video' | 'book' | 'course' | 'reference' | 'tool' | 'repo';
+
+/** A link to read at the source: official docs, a tutorial, a reference. */
+export interface Resource {
+  title: string;
+  url: string;
+  type: ResourceType;
+  description: string;
+  level?: 'beginner' | 'intermediate' | 'advanced';
+  module?: string; // matches a question module, used for "Further reading"
+}

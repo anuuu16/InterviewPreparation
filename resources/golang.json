@@ -1,0 +1,151 @@
+[
+  {
+    "title": "A Tour of Go",
+    "url": "https://go.dev/tour/",
+    "type": "tutorial",
+    "description": "Interactive, in-browser walkthrough of the language basics. The best first hour with Go.",
+    "level": "beginner",
+    "module": "Language Fundamentals"
+  },
+  {
+    "title": "Go documentation",
+    "url": "https://go.dev/doc/",
+    "type": "official-docs",
+    "description": "Official starting point: tutorials, guides, the FAQ and release notes.",
+    "level": "beginner"
+  },
+  {
+    "title": "Effective Go",
+    "url": "https://go.dev/doc/effective_go",
+    "type": "reference",
+    "description": "The classic guide to writing idiomatic Go: naming, interfaces, concurrency, errors.",
+    "level": "intermediate",
+    "module": "Design & Patterns"
+  },
+  {
+    "title": "The Go Programming Language Specification",
+    "url": "https://go.dev/ref/spec",
+    "type": "reference",
+    "description": "The exact rules of the language. Use it to settle arguments about slices, method sets or conversions.",
+    "level": "advanced",
+    "module": "Language Fundamentals"
+  },
+  {
+    "title": "The Go Memory Model",
+    "url": "https://go.dev/ref/mem",
+    "type": "reference",
+    "description": "What one goroutine is guaranteed to see of another's writes (happens-before).",
+    "level": "advanced",
+    "module": "Concurrency"
+  },
+  {
+    "title": "Go by Example",
+    "url": "https://gobyexample.com",
+    "type": "tutorial",
+    "description": "Short annotated programs for each feature: goroutines, channels, JSON, testing.",
+    "level": "beginner"
+  },
+  {
+    "title": "Standard library reference (pkg.go.dev)",
+    "url": "https://pkg.go.dev/std",
+    "type": "reference",
+    "description": "Searchable docs for every standard package with runnable examples.",
+    "level": "intermediate",
+    "module": "Standard Library & Data"
+  },
+  {
+    "title": "The Go Blog",
+    "url": "https://go.dev/blog/",
+    "type": "article",
+    "description": "Articles by the Go team: design decisions, new features, patterns.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Go Concurrency Patterns: Pipelines and cancellation",
+    "url": "https://go.dev/blog/pipelines",
+    "type": "article",
+    "description": "Pipelines, fan-out/fan-in and stopping goroutines cleanly.",
+    "level": "intermediate",
+    "module": "Concurrency"
+  },
+  {
+    "title": "Working with Errors in Go 1.13",
+    "url": "https://go.dev/blog/go1.13-errors",
+    "type": "article",
+    "description": "How wrapping with %w, errors.Is and errors.As work and why they exist.",
+    "level": "intermediate",
+    "module": "Errors & Panics"
+  },
+  {
+    "title": "An Introduction to Generics",
+    "url": "https://go.dev/blog/intro-generics",
+    "type": "article",
+    "description": "What generics are, constraints, and when to use them.",
+    "level": "intermediate",
+    "module": "Interfaces & Generics"
+  },
+  {
+    "title": "Diagnostics",
+    "url": "https://go.dev/doc/diagnostics",
+    "type": "official-docs",
+    "description": "Profiling, tracing, debugging and runtime statistics: which tool answers which question.",
+    "level": "intermediate",
+    "module": "Performance & Load"
+  },
+  {
+    "title": "A Guide to the Go Garbage Collector",
+    "url": "https://go.dev/doc/gc-guide",
+    "type": "official-docs",
+    "description": "How the GC works and how GOGC and GOMEMLIMIT tune it.",
+    "level": "advanced",
+    "module": "Runtime & Memory"
+  },
+  {
+    "title": "Profiling Go Programs",
+    "url": "https://go.dev/blog/pprof",
+    "type": "article",
+    "description": "A worked pprof session: find and fix a CPU hot spot.",
+    "level": "intermediate",
+    "module": "Performance & Load"
+  },
+  {
+    "title": "Go Modules Reference",
+    "url": "https://go.dev/ref/mod",
+    "type": "reference",
+    "description": "go.mod, versions, replace, workspaces and private modules in detail.",
+    "level": "intermediate",
+    "module": "Tooling & Delivery"
+  },
+  {
+    "title": "Tutorial: Getting started with fuzzing",
+    "url": "https://go.dev/doc/tutorial/fuzz",
+    "type": "tutorial",
+    "description": "Write your first fuzz test with the built-in fuzzer.",
+    "level": "intermediate",
+    "module": "Testing"
+  },
+  {
+    "title": "Structured logging with slog",
+    "url": "https://go.dev/blog/slog",
+    "type": "article",
+    "description": "The standard structured logger introduced in Go 1.21.",
+    "level": "intermediate",
+    "module": "Observability & Operations"
+  },
+  {
+    "title": "Go Code Review Comments",
+    "url": "https://go.dev/wiki/CodeReviewComments",
+    "type": "reference",
+    "description": "The checklist Go reviewers use: naming, errors, interfaces, concurrency.",
+    "level": "intermediate",
+    "module": "Design & Patterns"
+  },
+  {
+    "title": "Uber Go Style Guide",
+    "url": "https://github.com/uber-go/guide/blob/master/style.md",
+    "type": "reference",
+    "description": "A widely used team style guide with reasons for each rule.",
+    "level": "intermediate",
+    "module": "Design & Patterns"
+  }
+]

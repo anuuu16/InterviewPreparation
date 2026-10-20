@@ -152,6 +152,29 @@ Example of the negative return values on `[1, 3, 5, 7]`, looking for `4`: Java g
 - **Sqrt(x)** and **first bad version**: binary search on the answer.
 - **Koko eating bananas** or **capacity to ship packages within D days**: binary search on the answer with a yes/no check.
 
+## Further reading
+
+Where to read more at the source. Official docs and references come first.
+
+**Official docs**
+
+- [Python: bisect](https://docs.python.org/3/library/bisect.html) — bisect_left, bisect_right and insort in the standard library. _(beginner)_
+- [Go: sort.Search](https://pkg.go.dev/sort#Search) — Generic binary search over a predicate, with examples. _(intermediate)_
+- [git bisect](https://git-scm.com/docs/git-bisect) — Binary search over commit history to find the one that broke the build. _(beginner)_
+
+**Reference**
+
+- [Binary search (Wikipedia)](https://en.wikipedia.org/wiki/Binary_search_algorithm) — Algorithm, variants, complexity and the history of bugs in implementations. _(beginner)_
+- [C++: std::lower_bound](https://en.cppreference.com/w/cpp/algorithm/lower_bound) — Lower and upper bound semantics for sorted ranges. _(intermediate)_
+
+**Tutorial**
+
+- [cp-algorithms: Binary search](https://cp-algorithms.com/num_methods/binary_search.html) — Binary search on the answer, lower and upper bound, and floating point. _(advanced)_
+
+**Course**
+
+- [LeetCode Explore: Binary Search](https://leetcode.com/explore/learn/card/binary-search/) — Guided card with templates and practice problems. _(intermediate)_
+
 ## Approaches
 
 | Approach | Best | Average | Worst | Space | Stable | In place | Languages |

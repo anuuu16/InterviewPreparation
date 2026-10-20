@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { build, DATA_DIR, LEVELS } = require('./build');
 const feedback = require('./feedback-lib');
+const resources = require('./resources-lib');
 const problemsLib = require('./problems-lib');
 
 const PORT = process.env.PORT || 3000;
@@ -50,6 +51,9 @@ route('GET', '/api/feedback', () => feedback.listAll());
 route('POST', '/api/feedback', ({ body }) => feedback.add(body));
 route('PUT', '/api/feedback/(fb-[a-z0-9]+)', ({ m, body }) => feedback.update(m[1], body));
 route('DELETE', '/api/feedback/(fb-[a-z0-9]+)', ({ m }) => { feedback.remove(m[1]); return { ok: true }; });
+route('GET', '/api/resources', () => resources.listAll());
+route('POST', '/api/resources/((?:problem-)?[a-z0-9-]+)', ({ m, body }) => { const e = resources.add(m[1], body); build(); return e; });
+route('PUT', '/api/resources/((?:problem-)?[a-z0-9-]+)/remove', ({ m, body }) => { resources.remove(m[1], String(body.url || '')); build(); return { ok: true }; });
 route('GET', '/api/problems', () => problemsLib.loadProblems());
 route('POST', '/api/topics', ({ body }) => {
   const name = String(body.name || '').trim();

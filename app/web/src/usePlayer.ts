@@ -11,6 +11,8 @@ interface Options {
   settings: () => PlayerSettings;
   speaker: Speaker;
   speakOptions: () => SpeakOptions;
+  /** A question was read aloud from its start to its end (not skipped, not started mid-way). */
+  onDone?: (index: number) => void;
 }
 
 /**
@@ -26,6 +28,7 @@ export function usePlayer(opts: Options) {
   const token = useRef(0); // bumped on every stop/pause/jump so stale callbacks are ignored
   const pos = useRef({ q: 0, s: 0 });
   const timers = useRef<{ wait?: number; tick?: number }>({});
+  const began = useRef(-1); // question that was started from its first sentence
 
   const [status, setStatus] = useState<Status>('idle');
   const [index, setIndex] = useState(0);
@@ -58,12 +61,14 @@ export function usePlayer(opts: Options) {
 
     pos.current = { q, s };
     if (s === 0) {
+      began.current = q;
       setIndex(q);
       cur.onIndex(q);
     }
 
     const steps = cur.steps(q);
     if (s >= steps.length) {
+      if (began.current === q) cur.onDone?.(q);
       if (cur.settings().autoNext) return run(q + 1, 0, my);
       return finish();
     }
@@ -106,6 +111,7 @@ export function usePlayer(opts: Options) {
     if (status === 'paused' && q === undefined) return resume();
     const qi = q ?? pos.current.q;
     if (block === undefined) return start(qi, 0);
+    began.current = -1; // starting mid-answer: do not count it as fully listened
     const steps = o.current.steps(qi);
     let si = steps.findIndex((st) => st.kind === 'speak' && st.block !== undefined && st.block >= block);
     if (si < 0) si = steps.length; // nothing left to read here: move on to the next question

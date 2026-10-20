@@ -1,0 +1,152 @@
+[
+  {
+    "title": "React documentation",
+    "url": "https://react.dev",
+    "type": "official-docs",
+    "description": "The official docs: learn, reference, blog. Start here for any React question.",
+    "level": "beginner"
+  },
+  {
+    "title": "Learn React",
+    "url": "https://react.dev/learn",
+    "type": "tutorial",
+    "description": "The official course: components, state, effects, thinking in React.",
+    "level": "beginner",
+    "module": "Core Concepts"
+  },
+  {
+    "title": "Tutorial: Tic-Tac-Toe",
+    "url": "https://react.dev/learn/tutorial-tic-tac-toe",
+    "type": "tutorial",
+    "description": "Build a small game and learn the core ideas by doing.",
+    "level": "beginner",
+    "module": "Core Concepts"
+  },
+  {
+    "title": "Thinking in React",
+    "url": "https://react.dev/learn/thinking-in-react",
+    "type": "article",
+    "description": "How to break a UI into components and decide where state lives.",
+    "level": "beginner",
+    "module": "State Management"
+  },
+  {
+    "title": "React API reference",
+    "url": "https://react.dev/reference/react",
+    "type": "reference",
+    "description": "Every hook and API with parameters, caveats and examples.",
+    "level": "intermediate",
+    "module": "Hooks"
+  },
+  {
+    "title": "You Might Not Need an Effect",
+    "url": "https://react.dev/learn/you-might-not-need-an-effect",
+    "type": "article",
+    "description": "When not to use useEffect and what to do instead. Required reading.",
+    "level": "intermediate",
+    "module": "Hooks"
+  },
+  {
+    "title": "Synchronizing with Effects",
+    "url": "https://react.dev/learn/synchronizing-with-effects",
+    "type": "article",
+    "description": "How effects, dependencies and cleanup really work.",
+    "level": "intermediate",
+    "module": "Hooks"
+  },
+  {
+    "title": "Using TypeScript with React",
+    "url": "https://react.dev/learn/typescript",
+    "type": "official-docs",
+    "description": "Typing props, state, events and hooks.",
+    "level": "intermediate",
+    "module": "Styling & TypeScript"
+  },
+  {
+    "title": "React blog",
+    "url": "https://react.dev/blog",
+    "type": "article",
+    "description": "Release notes and announcements (React 19, Compiler, Server Components).",
+    "level": "intermediate"
+  },
+  {
+    "title": "A Complete Guide to useEffect (Overreacted)",
+    "url": "https://overreacted.io/a-complete-guide-to-useeffect/",
+    "type": "article",
+    "description": "Dan Abramov's deep dive into effects, closures and dependencies.",
+    "level": "advanced",
+    "module": "Hooks"
+  },
+  {
+    "title": "TanStack Query docs",
+    "url": "https://tanstack.com/query/latest",
+    "type": "official-docs",
+    "description": "Server-state caching, invalidation and mutations.",
+    "level": "intermediate",
+    "module": "Data Fetching"
+  },
+  {
+    "title": "React Router docs",
+    "url": "https://reactrouter.com",
+    "type": "official-docs",
+    "description": "Routing, nested routes, loaders and actions.",
+    "level": "intermediate",
+    "module": "Forms & Routing"
+  },
+  {
+    "title": "Redux Toolkit docs",
+    "url": "https://redux-toolkit.js.org",
+    "type": "official-docs",
+    "description": "The modern way to write Redux: slices, thunks, RTK Query.",
+    "level": "intermediate",
+    "module": "State Management"
+  },
+  {
+    "title": "React Testing Library",
+    "url": "https://testing-library.com/docs/react-testing-library/intro/",
+    "type": "official-docs",
+    "description": "Test components the way users use them.",
+    "level": "intermediate",
+    "module": "Architecture & Quality"
+  },
+  {
+    "title": "Core Web Vitals (web.dev)",
+    "url": "https://web.dev/articles/vitals",
+    "type": "article",
+    "description": "LCP, INP and CLS: what they measure and how to improve them.",
+    "level": "intermediate",
+    "module": "Rendering & Performance"
+  },
+  {
+    "title": "Nx documentation",
+    "url": "https://nx.dev/getting-started/intro",
+    "type": "official-docs",
+    "description": "Monorepo tooling: project graph, caching, module boundaries.",
+    "level": "intermediate",
+    "module": "Architecture & Quality"
+  },
+  {
+    "title": "Material UI docs",
+    "url": "https://mui.com/material-ui/getting-started/",
+    "type": "official-docs",
+    "description": "Component library, theming and styling system.",
+    "level": "beginner",
+    "module": "Styling & TypeScript"
+  },
+  {
+    "title": "Tailwind CSS docs",
+    "url": "https://tailwindcss.com/docs",
+    "type": "official-docs",
+    "description": "Utility-first CSS: setup, responsive design and customisation.",
+    "level": "beginner",
+    "module": "Styling & TypeScript"
+  },
+  {
+    "title": "WAI-ARIA Authoring Practices Guide",
+    "url": "https://www.w3.org/WAI/ARIA/apg/",
+    "type": "reference",
+    "description": "Accessible patterns for dialogs, tabs, menus and more.",
+    "level": "intermediate",
+    "module": "Architecture & Quality"
+  }
+]

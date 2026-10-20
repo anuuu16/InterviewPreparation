@@ -141,6 +141,29 @@ A **hash map** (also called a dictionary or associative array) stores key-value 
 - Contains duplicate and valid anagram (hash set and hash map counts).
 - Two sum with a data stream: `add(number)` and `find(value)`.
 
+## Further reading
+
+Where to read more at the source. Official docs and references come first.
+
+**Official docs**
+
+- [MDN: Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map) — JavaScript's Map: key equality, ordering and when to prefer it over objects. _(beginner)_
+- [Python: dictionaries](https://docs.python.org/3/tutorial/datastructures.html#dictionaries) — Dict basics, insertion order and common operations. _(beginner)_
+- [.NET: Dictionary<TKey,TValue>](https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2) — The .NET hash map: usage, equality comparers and performance notes. _(intermediate)_
+
+**Reference**
+
+- [Hash table (Wikipedia)](https://en.wikipedia.org/wiki/Hash_table) — How hashing, collisions and load factor work. _(beginner)_
+- [C++: std::unordered_map](https://en.cppreference.com/w/cpp/container/unordered_map) — Hash map interface and complexity guarantees. _(intermediate)_
+
+**Article**
+
+- [Go maps in action](https://go.dev/blog/maps) — How Go maps work: lookup, deletion, iteration and concurrency. _(intermediate)_
+
+**Tool**
+
+- [LeetCode: Two Sum](https://leetcode.com/problems/two-sum/) — The original problem statement to practise with an online judge. _(beginner)_
+
 ## Approaches
 
 | Approach | Best | Average | Worst | Space | Stable | In place | Languages |

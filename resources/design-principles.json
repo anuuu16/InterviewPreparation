@@ -1,0 +1,130 @@
+[
+  {
+    "title": "Refactoring.Guru: Design patterns",
+    "url": "https://refactoring.guru/design-patterns",
+    "type": "tutorial",
+    "description": "Clear explanations and diagrams for every classic pattern, with examples in many languages.",
+    "level": "beginner",
+    "module": "Design Patterns"
+  },
+  {
+    "title": "Refactoring.Guru: Code smells",
+    "url": "https://refactoring.guru/refactoring/smells",
+    "type": "tutorial",
+    "description": "Catalogue of code smells and the refactoring that fixes each.",
+    "level": "intermediate",
+    "module": "Code Smells & Refactoring"
+  },
+  {
+    "title": "Refactoring catalog (Martin Fowler)",
+    "url": "https://refactoring.com/catalog/",
+    "type": "reference",
+    "description": "Every named refactoring with a short before/after.",
+    "level": "intermediate",
+    "module": "Code Smells & Refactoring"
+  },
+  {
+    "title": "Yagni (Martin Fowler)",
+    "url": "https://martinfowler.com/bliki/Yagni.html",
+    "type": "article",
+    "description": "What YAGNI means, and when building ahead is fine.",
+    "level": "beginner",
+    "module": "Simplicity & Pragmatism"
+  },
+  {
+    "title": "The Wrong Abstraction (Sandi Metz)",
+    "url": "https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction",
+    "type": "article",
+    "description": "Why duplication is cheaper than the wrong abstraction. Source of the AHA idea.",
+    "level": "intermediate",
+    "module": "Simplicity & Pragmatism"
+  },
+  {
+    "title": "AHA Programming (Kent C. Dodds)",
+    "url": "https://kentcdodds.com/blog/aha-programming",
+    "type": "article",
+    "description": "Avoid Hasty Abstractions: the rule of waiting for the pattern.",
+    "level": "intermediate",
+    "module": "Simplicity & Pragmatism"
+  },
+  {
+    "title": "Technical Debt (Martin Fowler)",
+    "url": "https://martinfowler.com/bliki/TechnicalDebt.html",
+    "type": "article",
+    "description": "The debt metaphor, interest and when taking debt is wise.",
+    "level": "intermediate",
+    "module": "Technical Debt & Leadership"
+  },
+  {
+    "title": "The Clean Architecture (Robert C. Martin)",
+    "url": "https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html",
+    "type": "article",
+    "description": "The dependency rule and concentric layers, in the author's words.",
+    "level": "intermediate",
+    "module": "Architecture"
+  },
+  {
+    "title": "Hexagonal Architecture (Alistair Cockburn)",
+    "url": "https://alistair.cockburn.us/hexagonal-architecture/",
+    "type": "article",
+    "description": "Ports and adapters from the person who named it.",
+    "level": "intermediate",
+    "module": "Architecture"
+  },
+  {
+    "title": "Inversion of Control Containers and the Dependency Injection pattern",
+    "url": "https://martinfowler.com/articles/injection.html",
+    "type": "article",
+    "description": "The classic article separating IoC, DI and service locator.",
+    "level": "intermediate",
+    "module": "SOLID"
+  },
+  {
+    "title": "Patterns of Enterprise Application Architecture catalog",
+    "url": "https://martinfowler.com/eaaCatalog/",
+    "type": "reference",
+    "description": "Repository, Unit of Work, Service Layer and more, with short descriptions.",
+    "level": "advanced",
+    "module": "Architecture"
+  },
+  {
+    "title": "Game Programming Patterns",
+    "url": "https://gameprogrammingpatterns.com",
+    "type": "book",
+    "description": "Free book with the best plain-English explanations of Observer, State, Command and more.",
+    "level": "intermediate",
+    "module": "Design Patterns"
+  },
+  {
+    "title": "SourceMaking: Design patterns",
+    "url": "https://sourcemaking.com/design_patterns",
+    "type": "tutorial",
+    "description": "Pattern catalogue with intent, structure and code.",
+    "level": "beginner",
+    "module": "Design Patterns"
+  },
+  {
+    "title": "SourceMaking: Anti-patterns",
+    "url": "https://sourcemaking.com/antipatterns",
+    "type": "reference",
+    "description": "Software development, architecture and management anti-patterns.",
+    "level": "intermediate",
+    "module": "Code Smells & Refactoring"
+  },
+  {
+    "title": "OODesign: Low-level design",
+    "url": "https://www.oodesign.com",
+    "type": "tutorial",
+    "description": "Object-oriented design principles, patterns and case studies useful for LLD interviews.",
+    "level": "intermediate",
+    "module": "Low-Level Design"
+  },
+  {
+    "title": "DDD Reference (Eric Evans)",
+    "url": "https://www.domainlanguage.com/ddd/reference/",
+    "type": "reference",
+    "description": "Short, free summary of the domain-driven design patterns.",
+    "level": "advanced",
+    "module": "Architecture"
+  }
+]
