@@ -2,15 +2,16 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import * as api from './api';
 import AudioSettings from './AudioSettings';
 import Editor, { type EditorResult } from './Editor';
-import { CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, ListIcon, MenuIcon, MoonIcon, NextIcon, PlayIcon, PlusIcon, PrevIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon } from './Icons';
+import { CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, ListIcon, MenuIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon } from './Icons';
 import Inline from './Inline';
 import Markdown from './Markdown';
+import Notes from './Notes';
 import { warmMermaid } from './Mermaid';
 import PlayerBar from './PlayerBar';
 import { Speaker, type SpeakOptions } from './speaker';
 import { usePiper } from './speech';
 import { buildSteps, type PlayerSettings } from './tts';
-import { LEVELS, type Item, type Level, type Question, type Topic, type View } from './types';
+import { LEVELS, type FeedbackEntry, type FeedbackType, type Item, type Level, type Question, type Topic, type View } from './types';
 import { useLocal } from './useLocal';
 import { usePlayer } from './usePlayer';
 
@@ -43,6 +44,8 @@ export default function App() {
   const [groupBy, setGroupBy] = useLocal<'level' | 'module'>('ip.group', 'level');
   const [moduleFilter, setModuleFilter] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
   const [audioOpen, setAudioOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useLocal<string>('ip.selected', '');
@@ -56,6 +59,7 @@ export default function App() {
 
   const reload = useCallback(() => api.getAll().then(setTopics).catch((e: Error) => setLoadError(e.message)), []);
   useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => { api.getFeedback().then(setFeedback).catch(() => {}); }, []);
   useEffect(() => { const t = window.setTimeout(warmMermaid, 800); return () => window.clearTimeout(t); }, []);
 
   // ---- derive the visible list ------------------------------------------------------------
@@ -162,6 +166,19 @@ export default function App() {
     await reload();
   };
 
+  const addNote = async (topic: string, e: { question: string | null; kind: 'note' | 'feedback'; type?: FeedbackType; text: string }) => {
+    const created = await api.addFeedback({ topic, ...e });
+    setFeedback((f) => [...f, created]);
+  };
+  const updateNote = async (id: string, patch: { status: 'open' | 'resolved' }) => {
+    const updated = await api.updateFeedback(id, patch);
+    setFeedback((f) => f.map((x) => (x.id === id ? updated : x)));
+  };
+  const deleteNote = async (id: string) => {
+    await api.deleteFeedback(id);
+    setFeedback((f) => f.filter((x) => x.id !== id));
+  };
+
   const newTopic = async () => {
     const name = window.prompt('New topic name (e.g. TypeScript, System Design):')?.trim();
     if (!name) return;
@@ -197,6 +214,7 @@ export default function App() {
   const go = (v: View) => { setView(v); setModuleFilter(''); setDrawer(''); };
   const isView = (v: View) => v.kind === view.kind && (v.kind !== 'topic' || (view.kind === 'topic' && v.slug === view.slug));
   const nextTheme = () => setThemePref(themePref === 'system' ? (dark ? 'light' : 'dark') : themePref === 'dark' ? 'light' : 'dark');
+  const openNotes = selected ? feedback.filter((f) => f.topic === selected.topic.slug && (f.question === selected.q.id || f.question === null) && f.status === 'open').length : 0;
   const activeFilters = (level ? 1 : 0) + (moduleFilter ? 1 : 0) + (groupBy === 'module' ? 1 : 0);
   const playingId = player.status === 'playing' ? items[player.index]?.q.id : undefined;
 
@@ -318,7 +336,20 @@ export default function App() {
                   <StarIcon filled={selected.q.favorite} /> {selected.q.favorite ? 'Favorite' : 'Favorite'}
                 </button>
                 <button className="btn" onClick={() => setEditor({ topicSlug: selected.topic.slug, question: selected.q })}><EditIcon /> Edit</button>
+                <button className={'btn' + (notesOpen ? ' on' : '')} onClick={() => setNotesOpen(!notesOpen)} aria-expanded={notesOpen}>
+                  <NoteIcon /> Notes{openNotes > 0 && <span className="btn-count">{openNotes}</span>}
+                </button>
               </div>
+              {notesOpen && (
+                <Notes
+                  topic={selected.topic}
+                  question={selected.q}
+                  entries={feedback.filter((f) => f.topic === selected.topic.slug)}
+                  onAdd={(e) => addNote(selected.topic.slug, e)}
+                  onUpdate={updateNote}
+                  onDelete={deleteNote}
+                />
+              )}
               <Markdown
                 source={selected.q.answer}
                 dark={dark}

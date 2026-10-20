@@ -6,6 +6,8 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { build, DATA_DIR, LEVELS } = require('./build');
+const feedback = require('./feedback-lib');
+const problemsLib = require('./problems-lib');
 
 const PORT = process.env.PORT || 3000;
 const DIST = path.join(__dirname, 'web', 'dist');
@@ -44,6 +46,11 @@ route('GET', '/api/all', () =>
     const slug = f.replace(/\.json$/, '');
     return { slug, ...read(slug) };
   }).sort((a, b) => a.name.localeCompare(b.name)));
+route('GET', '/api/feedback', () => feedback.listAll());
+route('POST', '/api/feedback', ({ body }) => feedback.add(body));
+route('PUT', '/api/feedback/(fb-[a-z0-9]+)', ({ m, body }) => feedback.update(m[1], body));
+route('DELETE', '/api/feedback/(fb-[a-z0-9]+)', ({ m }) => { feedback.remove(m[1]); return { ok: true }; });
+route('GET', '/api/problems', () => problemsLib.loadProblems());
 route('POST', '/api/topics', ({ body }) => {
   const name = String(body.name || '').trim();
   const slug = slugify(name);

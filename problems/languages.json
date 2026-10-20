@@ -1,0 +1,14 @@
+[
+  { "id": "javascript", "name": "JavaScript", "fence": "js",         "file": "solution.js",  "core": true,  "run": ["node", "{file}"] },
+  { "id": "typescript", "name": "TypeScript", "fence": "ts",         "file": "solution.ts",  "core": true,  "run": ["node", "--experimental-strip-types", "--no-warnings", "{file}"] },
+  { "id": "python",     "name": "Python",     "fence": "python",     "file": "solution.py",  "core": true,  "run": ["python3", "{file}"] },
+  { "id": "go",         "name": "Go",         "fence": "go",         "file": "solution.go",  "core": true,  "run": ["go", "run", "{file}"] },
+  { "id": "java",       "name": "Java",       "fence": "java",       "file": "Main.java",    "core": true,  "run": ["java", "{file}"] },
+  { "id": "csharp",     "name": "C#",         "fence": "csharp",     "file": "Program.cs",   "core": true,  "run": ["dotnet"], "special": "dotnet" },
+  { "id": "cpp",        "name": "C++",        "fence": "cpp",        "file": "solution.cpp", "core": true,  "compile": ["clang++", "-std=c++17", "-O1", "{file}", "-o", "{out}"], "run": ["{out}"] },
+  { "id": "swift",      "name": "Swift",      "fence": "swift",      "file": "solution.swift", "core": false, "compile": ["swiftc", "{file}", "-o", "{out}"], "run": ["{out}"] },
+  { "id": "ruby",       "name": "Ruby",       "fence": "ruby",       "file": "solution.rb",  "core": false, "run": ["ruby", "{file}"] },
+  { "id": "php",        "name": "PHP",        "fence": "php",        "file": "solution.php", "core": false, "run": ["php", "{file}"] },
+  { "id": "rust",       "name": "Rust",       "fence": "rust",       "file": "solution.rs",  "core": false, "compile": ["rustc", "-O", "{file}", "-o", "{out}"], "run": ["{out}"] },
+  { "id": "kotlin",     "name": "Kotlin",     "fence": "kotlin",     "file": "solution.kt",  "core": false, "compile": ["kotlinc", "{file}", "-include-runtime", "-d", "{out}.jar"], "run": ["java", "-jar", "{out}.jar"] }
+]

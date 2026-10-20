@@ -23,3 +23,4 @@ export const MoonIcon = make(<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.
 export const ListIcon = make(<><path d="M8 6h13M8 12h13M8 18h13" /><circle cx="4" cy="6" r="1" /><circle cx="4" cy="12" r="1" /><circle cx="4" cy="18" r="1" /></>);
 export const HeadphonesIcon = make(<><path d="M4 14v-2a8 8 0 0 1 16 0v2" /><rect x="3" y="14" width="4" height="7" rx="1.5" /><rect x="17" y="14" width="4" height="7" rx="1.5" /></>);
 export const FilterIcon = make(<path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />);
+export const NoteIcon = make(<><path d="M5 3h10l4 4v14H5V3Z" /><path d="M14 3v5h5M8 13h8M8 17h6" /></>);

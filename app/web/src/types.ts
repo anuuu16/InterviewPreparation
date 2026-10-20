@@ -25,3 +25,19 @@ export interface Item {
 }
 
 export type View = { kind: 'topic'; slug: string } | { kind: 'favorites' } | { kind: 'all' };
+
+export type FeedbackType = 'more-detail' | 'code-issue' | 'incorrect' | 'unclear' | 'missing' | 'other';
+
+/** A personal note, or feedback for the author/agent, on a question (or a whole topic when `question` is null). */
+export interface FeedbackEntry {
+  id: string;
+  topic: string; // topic slug
+  question: string | null; // question id, or null for the whole topic
+  kind: 'note' | 'feedback';
+  type?: FeedbackType;
+  text: string;
+  status: 'open' | 'resolved';
+  createdAt: string;
+  resolvedAt?: string;
+  resolution?: string;
+}

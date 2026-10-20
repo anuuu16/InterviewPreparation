@@ -8,6 +8,7 @@
     "build": "node app/build.js",
     "validate": "node app/validate.js",
     "import": "node app/import.js",
-    "tts:setup": "sh tools/piper/setup.sh"
+    "tts:setup": "sh tools/piper/setup.sh",
+    "feedback": "node app/feedback.js"
   }
 }
