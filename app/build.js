@@ -2,6 +2,7 @@
 // Usage: node app/build.js
 const fs = require('fs');
 const path = require('path');
+const { loadProblems } = require('./problems-lib');
 
 const ROOT = path.join(__dirname, '..');
 const DATA_DIR = path.join(ROOT, 'data');
@@ -10,6 +11,9 @@ const README = path.join(ROOT, 'README.md');
 const LEVELS = ['basic', 'intermediate', 'advanced'];
 const START = '<!-- TOPICS:START -->';
 const END = '<!-- TOPICS:END -->';
+const P_START = '<!-- PROBLEMS:START -->';
+const P_END = '<!-- PROBLEMS:END -->';
+const PROBLEMS_DIR = path.join(ROOT, 'problems');
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -97,6 +101,71 @@ function renderIndex(topics) {
   ].join('\n');
 }
 
+
+// ---- problems (code library) -------------------------------------------------------------------
+/** Move "## " headings down by `by` levels, leaving code fences alone, so notes nest under the page structure. */
+function shiftHeadings(md, by) {
+  let fence = false;
+  return md.split('\n').map((line) => {
+    if (/^\s*```/.test(line)) fence = !fence;
+    return !fence && /^#{1,6}\s/.test(line) ? '#'.repeat(Math.min(6, line.match(/^#+/)[0].length + by)) + line.replace(/^#+/, '') : line;
+  }).join('\n');
+}
+
+const yesNo = (v) => (v === true ? 'yes' : v === false ? 'no' : '–');
+
+function renderProblem(p, topics) {
+  const byId = new Map(topics.flatMap((t) => t.questions.map((q) => [q.id, { q, t }])));
+  const related = (p.related || []).map((id) => byId.get(id)).filter(Boolean)
+    .map(({ q, t }) => `[${t.name}: ${q.question.replace(/[[\]]/g, '')}](../../questions/${t.slug}.md)`);
+  const out = [`# ${p.title}`, '', '[← All problems](../README.md)', '', `> ${p.summary}`, '',
+    `**Level:** ${p.level}${p.tags?.length ? ` · **Tags:** ${p.tags.join(', ')}` : ''}`, ''];
+  if (related.length) out.push('**Related interview questions:**', '', ...related.map((r) => `- ${r}`), '');
+  out.push(p.overview.trim(), '');
+
+  if (p.variants.length) {
+    out.push('## Approaches', '', '| Approach | Best | Average | Worst | Space | Stable | In place | Languages |', '| --- | --- | --- | --- | --- | --- | --- | --- |');
+    for (const v of p.variants) {
+      const c = v.complexity || {};
+      out.push(`| [${v.title}](#${anchorFor(v.title, new Map())}) | ${c.best || '–'} | ${c.average || '–'} | ${c.worst || '–'} | ${c.space || '–'} | ${yesNo(v.stable)} | ${yesNo(v.inPlace)} | ${v.files.map((f) => f.name).join(', ')} |`);
+    }
+    out.push('');
+    for (const v of p.variants) {
+      out.push(`## ${v.title}`, '', `> ${v.summary}`, '', shiftHeadings(v.notes.trim(), 1), '');
+      if (v.files.length) {
+        out.push('### Code', '', 'Every example prints the same output and is tested (`npm run problems:test`).', '');
+        for (const f of v.files) out.push(`<details><summary>${f.name}</summary>`, '', '```' + f.fence, f.code.trimEnd(), '```', '', '</details>', '');
+      }
+      if (v.expected.trim()) out.push('### Expected output', '', '```text', v.expected.trim(), '```', '');
+    }
+  }
+  return out.join('\n');
+}
+
+function renderProblemsIndex(problems) {
+  const out = ['# Problems', '', '[← Back to the main index](../README.md)', '',
+    'Popular interview problems with a written guide and tested code in several languages. Each problem explains the idea, how interviewers ask it, real-life uses, and every common approach from simple to optimal.', ''];
+  if (!problems.length) return [...out, '_No problems yet._'].join('\n');
+  out.push('| Problem | Level | Approaches | Languages | Summary |', '| --- | --- | --- | --- | --- |');
+  for (const p of problems) {
+    const langs = new Set(p.variants.flatMap((v) => v.files.map((f) => f.name)));
+    out.push(`| [${p.title}](${p.slug}/README.md) | ${p.level} | ${p.variants.length} | ${langs.size} | ${p.summary} |`);
+  }
+  return out.join('\n');
+}
+
+function buildProblems(topics, readme) {
+  const problems = loadProblems();
+  if (!fs.existsSync(PROBLEMS_DIR)) return readme;
+  for (const p of problems) fs.writeFileSync(path.join(PROBLEMS_DIR, p.slug, 'README.md'), renderProblem(p, topics));
+  fs.writeFileSync(path.join(PROBLEMS_DIR, 'README.md'), renderProblemsIndex(problems));
+  const block = [P_START, problems.length
+    ? ['| Problem | Approaches | Languages |', '| --- | ---: | ---: |', ...problems.map((p) => `| [${p.title}](problems/${p.slug}/README.md) | ${p.variants.length} | ${new Set(p.variants.flatMap((v) => v.files.map((f) => f.name))).size} |`)].join('\n')
+    : '_No problems yet._', P_END].join('\n');
+  const re = new RegExp(`${P_START}[\\s\\S]*?${P_END}`);
+  return re.test(readme) ? readme.replace(re, () => block) : readme;
+}
+
 function build() {
   const topics = loadTopics();
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -107,7 +176,7 @@ function build() {
 
   const readme = fs.readFileSync(README, 'utf8');
   const re = new RegExp(`${START}[\\s\\S]*?${END}`);
-  fs.writeFileSync(README, readme.replace(re, () => renderIndex(topics)));
+  fs.writeFileSync(README, buildProblems(topics, readme.replace(re, () => renderIndex(topics))));
   return topics;
 }
 

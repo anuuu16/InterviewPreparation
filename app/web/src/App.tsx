@@ -8,10 +8,11 @@ import Markdown from './Markdown';
 import Notes from './Notes';
 import { warmMermaid } from './Mermaid';
 import PlayerBar from './PlayerBar';
+import Problems from './Problems';
 import { Speaker, type SpeakOptions } from './speaker';
 import { usePiper } from './speech';
 import { buildSteps, type PlayerSettings } from './tts';
-import { LEVELS, type FeedbackEntry, type FeedbackType, type Item, type Level, type Question, type Topic, type View } from './types';
+import { LEVELS, type FeedbackEntry, type FeedbackType, type Item, type Level, type Problem, type Question, type Topic, type View } from './types';
 import { useLocal } from './useLocal';
 import { usePlayer } from './usePlayer';
 
@@ -46,6 +47,9 @@ export default function App() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
+  const [problems, setProblems] = useState<Problem[]>([]);
+  const [problemSel, setProblemSel] = useLocal<{ slug: string; part: string }>('ip.problem', { slug: '', part: 'overview' });
+  const [codeLang, setCodeLang] = useLocal<string>('ip.codeLang', 'javascript');
   const [audioOpen, setAudioOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useLocal<string>('ip.selected', '');
@@ -59,6 +63,7 @@ export default function App() {
 
   const reload = useCallback(() => api.getAll().then(setTopics).catch((e: Error) => setLoadError(e.message)), []);
   useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => { api.getProblems().then(setProblems).catch(() => {}); }, []);
   useEffect(() => { api.getFeedback().then(setFeedback).catch(() => {}); }, []);
   useEffect(() => { const t = window.setTimeout(warmMermaid, 800); return () => window.clearTimeout(t); }, []);
 
@@ -210,12 +215,21 @@ export default function App() {
   }, []);
 
   // ---- render -----------------------------------------------------------------------------
-  const title = view.kind === 'favorites' ? 'Favorites' : view.kind === 'all' ? 'All questions' : topics.find((t) => t.slug === view.slug)?.name ?? '';
+  const title = view.kind === 'problems' ? 'Problems' : view.kind === 'favorites' ? 'Favorites' : view.kind === 'all' ? 'All questions' : topics.find((t) => t.slug === view.slug)?.name ?? '';
   const go = (v: View) => { setView(v); setModuleFilter(''); setDrawer(''); };
   const isView = (v: View) => v.kind === view.kind && (v.kind !== 'topic' || (view.kind === 'topic' && v.slug === view.slug));
   const nextTheme = () => setThemePref(themePref === 'system' ? (dark ? 'light' : 'dark') : themePref === 'dark' ? 'light' : 'dark');
   const openNotes = selected ? feedback.filter((f) => f.topic === selected.topic.slug && (f.question === selected.q.id || f.question === null) && f.status === 'open').length : 0;
   const activeFilters = (level ? 1 : 0) + (moduleFilter ? 1 : 0) + (groupBy === 'module' ? 1 : 0);
+  const openQuestion = (id: string) => {
+    const t = topics.find((x) => x.questions.some((q) => q.id === id));
+    if (!t) return;
+    setView({ kind: 'topic', slug: t.slug });
+    setModuleFilter('');
+    setLevel('');
+    setSearch('');
+    setSelectedId(id);
+  };
   const playingId = player.status === 'playing' ? items[player.index]?.q.id : undefined;
 
   return (
@@ -237,6 +251,13 @@ export default function App() {
               <span>Favorites</span><span className="count">{favCount}</span>
             </button>
           </div>
+          {problems.length > 0 && (
+            <div className="nav-group">
+              <button className={'nav' + (isView({ kind: 'problems' }) ? ' active' : '')} onClick={() => go({ kind: 'problems' })}>
+                <span>Code problems</span><span className="count">{problems.length}</span>
+              </button>
+            </div>
+          )}
           <div className="nav-title">Topics</div>
           <div className="nav-group">
             {topics.map((t) => (
@@ -254,6 +275,22 @@ export default function App() {
           </div>
         </nav>
 
+        {view.kind === 'problems' ? (
+          <Problems
+            problems={problems}
+            topics={topics}
+            slug={problemSel.slug || problems[0]?.slug || ''}
+            part={problemSel.part}
+            language={codeLang}
+            dark={dark}
+            drawer={drawer === 'list'}
+            onSelect={(slug, part) => { setProblemSel({ slug, part }); setDrawer(''); }}
+            onLanguage={setCodeLang}
+            onOpenQuestion={openQuestion}
+            onCloseDrawer={() => setDrawer('')}
+          />
+        ) : (
+          <>
         <section className={'list' + (drawer === 'list' ? ' open' : '')} aria-label="Questions">
           <div className="list-head">
             <div className="list-title">
@@ -372,6 +409,8 @@ export default function App() {
             </div>
           )}
         </main>
+          </>
+        )}
       </div>
 
       {player.status !== 'idle' && (

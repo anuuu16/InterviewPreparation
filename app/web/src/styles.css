@@ -374,3 +374,28 @@ button { cursor: pointer; }
 .badge-lite.done { color: var(--good); }
 .note-actions { display: flex; gap: 14px; }
 .danger-link { color: var(--bad); }
+
+/* ---------- problems ---------- */
+.lead { font-size: 18px; color: var(--muted); margin: -6px 0 18px; }
+.chips-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px; }
+.stat { display: inline-flex; gap: 8px; align-items: baseline; border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 4px 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.stat.plain { color: var(--muted); font-weight: 500; }
+.related { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 24px; }
+.related .tag { text-align: left; }
+.approach-title { margin-top: 36px; }
+.approach-cards { display: grid; gap: 10px; }
+.approach-card { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.approach-card:hover { border-color: var(--accent); }
+.approach-card .chips-row { margin: 4px 0 0; }
+.code-section { margin-top: 36px; }
+.code-section h2 { border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.lang-tabs { margin-bottom: 4px; overflow-x: auto; }
+.lang-tabs button { white-space: nowrap; }
+.expected { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; }
+.expected summary { cursor: pointer; color: var(--muted); }
+.expected pre { margin: 8px 0 2px; font: 13.5px/1.6 ui-monospace, Menlo, monospace; overflow-x: auto; }
+.qgroup.static { position: static; margin-top: 14px; }
+.pgroup { list-style: none; }
+.pgroup .qitem { margin-bottom: 2px; }
+.qnum { font-size: 13px; }

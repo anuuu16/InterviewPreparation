@@ -9,6 +9,7 @@
     "validate": "node app/validate.js",
     "import": "node app/import.js",
     "tts:setup": "sh tools/piper/setup.sh",
-    "feedback": "node app/feedback.js"
+    "feedback": "node app/feedback.js",
+    "problems:test": "node app/problems-test.js"
   }
 }

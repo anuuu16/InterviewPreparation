@@ -9,11 +9,13 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { DATA_DIR, LEVELS } = require('./build');
+const { loadProblems, loadLanguages } = require('./problems-lib');
 
 const args = process.argv.slice(2);
 const strict = args.includes('--strict');
 const checkGo = args.includes('--go');
 const only = args.filter((a) => !a.startsWith('--'));
+const topicsOnly = only.filter((a) => a !== 'problems');
 
 const MERMAID_TYPES = /^(flowchart|graph|sequenceDiagram|stateDiagram(-v2)?|classDiagram|erDiagram|gantt|pie|journey|mindmap|timeline|gitGraph)\b/;
 const errors = [];
@@ -85,7 +87,76 @@ function goCheck(topic) {
   console.log(`  ${topic.slug}: compiled ${n} Go example(s)`);
 }
 
-const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json') && (!only.length || only.includes(f.replace('.json', ''))));
+
+// ---- problems -------------------------------------------------------------------------------
+const OVERVIEW_SECTIONS = [
+  ['How interviewers ask it', /interview/i],
+  ['Real-life scenarios', /real[- ]life/i],
+  ['Approaches compared', /compar|approach/i],
+  ['How to choose', /choose|which/i],
+  ['Built-ins', /built-?in|standard library/i],
+  ['Common mistakes', /mistake|pitfall|bug/i],
+  ['How to answer', /how to answer|answer in/i],
+  ['Follow-up questions', /follow-?up/i],
+];
+const NOTES_SECTIONS = [
+  ['Intuition', /intuition|idea/i],
+  ['Walkthrough', /walk-?through|trace|step by step|worked example/i],
+  ['Complexity', /complexity/i],
+  ['Code explanation', /code (explanation|walk)|explaining the code|how the code works/i],
+  ['Edge cases', /edge case/i],
+  ['When to use', /when (to|should)|use it/i],
+  ['Interview notes', /interview/i],
+  ['Real-life usage', /real[- ]life|in practice|production/i],
+];
+
+function headings(md) {
+  const out = [];
+  let fence = false;
+  for (const line of md.split('\n')) {
+    if (/^\s*```/.test(line)) fence = !fence;
+    const m = !fence && line.match(/^#{2,4}\s+(.+)$/);
+    if (m) out.push(m[1]);
+  }
+  return out;
+}
+
+function checkProblems() {
+  const problems = loadProblems();
+  const langs = loadLanguages();
+  const core = langs.filter((l) => l.core);
+  const allIds = new Set(fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json')).flatMap((f) => JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8')).questions.map((q) => q.id)));
+  for (const p of problems) {
+    const where = `problems/${p.slug}`;
+    if (!p.title || !p.summary) err(where, 'problem.json needs title and summary');
+    if (!LEVELS.includes(p.level)) err(where, `level must be one of ${LEVELS.join(', ')}`);
+    if (!Array.isArray(p.tags)) err(where, 'tags must be an array');
+    for (const id of p.related || []) if (!allIds.has(id)) err(where, `related question "${id}" does not exist`);
+    if (!p.overview.trim()) err(where, 'missing overview.md');
+    else {
+      const h = headings(p.overview);
+      for (const [name, re] of OVERVIEW_SECTIONS) if (!h.some((x) => re.test(x))) warn(where, `overview.md has no "${name}" section`);
+      if (!/\|.+\|/.test(p.overview)) warn(where, 'overview.md has no comparison table');
+    }
+    if (!p.variants.length) err(where, 'needs at least one approach folder with variant.json');
+    for (const v of p.variants) {
+      const vw = `${where}/${v.slug}`;
+      if (!v.title || !v.summary) err(vw, 'variant.json needs title and summary');
+      if (!v.complexity || !v.complexity.average || !v.complexity.space) warn(vw, 'variant.json should have complexity: { best, average, worst, space }');
+      if (!v.expected.trim()) err(vw, 'missing expected.txt (the shared expected output)');
+      if (!v.notes.trim()) err(vw, 'missing notes.md');
+      else {
+        const h = headings(v.notes);
+        for (const [name, re] of NOTES_SECTIONS) if (!h.some((x) => re.test(x))) warn(vw, `notes.md has no "${name}" section`);
+      }
+      for (const l of core) if (!v.files.some((f) => f.language === l.id)) warn(vw, `missing ${l.name} solution (${l.file})`);
+      if (v.files.length && !v.files.some((f) => f.core)) err(vw, 'no solution in a core language');
+    }
+  }
+  console.log(`Problems: ${problems.length} problem(s), ${problems.reduce((n, p) => n + p.variants.length, 0)} approach(es)`);
+}
+
+const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json') && ((!only.length) || topicsOnly.includes(f.replace('.json', ''))));
 let total = 0;
 for (const f of files) {
   const slug = f.replace('.json', '');
@@ -126,6 +197,8 @@ for (const f of files) {
   console.log(`${topic.name}: ${topic.questions.length} questions (${counts})`);
   if (checkGo && slug === 'golang') goCheck(topic);
 }
+
+if (!only.length || only.includes('problems')) checkProblems();
 
 for (const w of warnings.slice(0, 60)) console.warn(`warn  ${w}`);
 if (warnings.length > 60) console.warn(`warn  … and ${warnings.length - 60} more warnings`);

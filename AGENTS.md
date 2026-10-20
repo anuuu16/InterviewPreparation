@@ -15,6 +15,8 @@ This file is the rulebook for anyone (human or AI agent) adding content to this 
 - [11. Topic outlines and coverage](#11-topic-outlines-and-coverage)
 - [12. Validate, review, commit](#12-validate-review-commit)
 - [13. Reference: commands and files](#13-reference-commands-and-files)
+- [14. Feedback loop: fix what the reader reported](#14-feedback-loop-fix-what-the-reader-reported)
+- [15. Problems: code in many languages, with a guide](#15-problems-code-in-many-languages-with-a-guide)
 
 ## 1. What this repo is
 
@@ -33,7 +35,12 @@ questions/*.md         GENERATED Markdown pages (never edit by hand)
 README.md              entry point; the topic table is GENERATED between markers
 app/build.js           JSON -> Markdown
 app/import.js          Markdown file -> JSON (the easy way to author)
-app/validate.js        quality checks
+app/validate.js        quality checks (questions and problems)
+app/feedback.js        list/resolve feedback left in the app
+app/problems-test.js   runs every code file in problems/ and checks its output
+feedback/<topic>.json  notes and feedback entries written in the app
+problems/              code problems: guide + tested solutions in many languages
+tools/piper/           optional local text-to-speech (not content)
 app/server.js          local API + serves the UI
 app/web/               the React + TypeScript UI
 ```
@@ -53,6 +60,12 @@ app/web/               the React + TypeScript UI
 
 Authoring in Markdown is much easier than editing JSON (no escaping of quotes or newlines). Use the importer.
 
+### Step 0: read the feedback
+```sh
+npm run feedback
+```
+The reader may have left notes asking for more detail, a code fix, a correction. Handle those first (section 14).
+
 ### Step 1: plan the outline
 Decide the topic, then list the questions before writing them. Group by level and by theme (see [section 11](#11-topic-outlines-and-coverage)). Check `data/<topic>.json` so you do not duplicate an existing question (search by keywords).
 
@@ -62,6 +75,7 @@ Anywhere outside the repo (for example your scratch directory), one file per bat
 ````markdown
 ## What is the difference between `let`, `const` and `var`?
 level: basic
+module: Functions & Scope
 tags: variables, scope
 
 **Short answer:** `var` is function scoped and hoisted. `let` and `const` are block scoped…
@@ -77,7 +91,7 @@ const items = [1, 2, 3];
 
 Format rules for the file:
 - One `## Question` per question. The text after `## ` is the question.
-- Directly below it, `level:` (`basic`, `intermediate` or `advanced`) and `tags:` (comma separated). Then a blank line, then the answer in Markdown.
+- Directly below it, `level:` (`basic`, `intermediate` or `advanced`), `module:` (see section 4) and `tags:` (comma separated). Then a blank line, then the answer in Markdown.
 - Inside answers use only `####` headings (or bold). `##` inside a code fence is fine.
 - Order matters: within each level the file order is the reading order. Put prerequisites first.
 
@@ -114,6 +128,7 @@ Edit the JSON directly or use the app's Edit button (it has a live preview). To 
   "question": "Why do list items need a stable `key`?",
   "answer": "**Short answer:** …Markdown…",
   "level": "basic",
+  "module": "Core Concepts",
   "tags": ["lists", "reconciliation"],
   "favorite": false
 }
@@ -125,6 +140,7 @@ Edit the JSON directly or use the app's Edit button (it has a live preview). To 
 | `question` | A real interview question, phrased as an interviewer would ask. End with `?`. Unique within the topic. Inline code in backticks is fine. |
 | `answer` | Markdown following [section 5](#5-anatomy-of-a-good-answer). |
 | `level` | `basic`, `intermediate`, `advanced` (definitions below). |
+| `module` | The theme inside the topic, so readers can browse by module (for example `Concurrency`, `Hooks`, `Networking`). 6–12 modules per topic, reused consistently, `Title Case`, no module with a single question. Questions without one appear under "Other". |
 | `tags` | 1–4 lowercase, hyphenated keywords (`event-loop`, `tech-lead`, `go-1.22`). Reuse existing tags before inventing new ones. |
 | `favorite` | `false` for new questions. Users toggle it. |
 
@@ -236,13 +252,13 @@ Target shape for a "complete" topic: **50–130 questions**, roughly 25% basic, 
 | Topic | File | Status |
 | --- | --- | --- |
 | Golang | `data/golang.json` | Complete (126) |
-| JavaScript | `data/javascript.json` | Core principles complete; extend with more output puzzles |
-| React | `data/react.json` | Core complete; extend with testing and forms |
-| Kubernetes | `data/kubernetes.json` | Core complete; extend with AKS and service mesh |
-| Microservices | `data/microservices.json` | Core complete; extend with system design cases |
+| JavaScript | `data/javascript.json` | Complete (66): core, Tech Lead, intermediate, advanced; extend with more output puzzles |
+| React | `data/react.json` | Complete (57); extend with forms and testing depth |
+| Kubernetes | `data/kubernetes.json` | Complete (57); extend with AKS and service mesh |
+| Microservices | `data/microservices.json` | Complete (55); extend with more system design cases |
 | Node.js | `data/nodejs.json` | Short answers only; needs the detailed format |
 | TypeScript, Azure, Docker, SQL/PostgreSQL, Python, .NET, system design, behavioural/leadership | not started | Planned |
-| Data structures and algorithms | not started | Planned later: structure by pattern (arrays, hashing, two pointers, trees, graphs, DP) with complexity tables and diagrams |
+| Problems (code library) | `problems/` | Started: see section 15 for the standard and the planned list |
 
 **Outline template for a new language/framework topic**
 
@@ -283,6 +299,187 @@ Target shape for a "complete" topic: **50–130 questions**, roughly 25% basic, 
 | `npm run dev` | UI hot-reload on :5173 (needs `npm start` running for the API) |
 | `npm run build` | Regenerate `questions/*.md` and the README topic table |
 | `npm run import -- file.md --topic "Name" [--replace]` | Import a Markdown batch into `data/` |
-| `npm run validate [-- topic…] [--strict] [--go]` | Quality checks |
+| `npm run validate [-- topic…] [problems] [--strict] [--go]` | Quality checks |
+| `npm run feedback [-- show <id> \| resolve <id> "note" \| --all \| --notes]` | Work through reader feedback |
+| `npm run problems:test [-- <problem>[/<approach>]] [--lang go,java]` | Run every solution and compare with `expected.txt` |
+| `npm run tts:setup [-- <voice-id>]` | Optional: install Piper TTS (English only by default) |
 
 **About the person preparing:** Technical Lead at Thales (avionics in-flight entertainment, FlytEDGE). Stack: React/TypeScript, Go, Node.js/NestJS, Python, .NET, Kubernetes, Docker, Azure, GitLab CI/CD, Datadog, PostgreSQL/MS SQL. Where it feels natural, connect questions to microservices, cloud-native delivery, observability and leading a team. Do not copy personal details from their resume into the repo.
+
+
+## 14. Feedback loop: fix what the reader reported
+
+The study app has a **Notes** panel on every question. The reader can leave:
+
+- a **note**: private study note. **Never act on notes** (they are for the reader).
+- **feedback for the author**: a request to fix or improve, with a type (`more-detail`, `code-issue`, `incorrect`, `unclear`, `missing`, `other`). It can be about one question or about the **whole topic** (`question` is `null`).
+
+Entries are stored in `feedback/<topic>.json`. **Start every content session by reading them:**
+
+```sh
+npm run feedback                       # open feedback, grouped by topic
+npm run feedback -- --topic react      # one topic
+npm run feedback -- show <id>          # the entry plus the question's current answer
+```
+
+For each open item:
+
+1. Read it and the current answer (`show <id>`).
+2. Decide whether the reader is right. Check facts and run the code. If the report is wrong or unclear, do not change the answer; resolve it with a short explanation of why.
+3. Fix it. Edit the question with an import file whose question text matches (the importer updates in place) or edit the JSON. Keep ids and favorites.
+4. For **code issues** run the example. For Go: `npm run validate -- golang --go`. For problems: `npm run problems:test -- <problem>`.
+5. Resolve it with a one-line description of what changed:
+
+```sh
+npm run feedback -- resolve <id> "Added a handler-based example and fixed the loop variable"
+```
+
+For **topic-level** feedback (for example "too few questions on testing"), add the missing questions, then resolve it and say which questions you added.
+
+Resolved entries stay in the file as history. Commit `feedback/` together with the content you changed.
+
+## 15. Problems: code in many languages, with a guide
+
+Interview questions explain ideas. **Problems** are the hands-on side: a popular problem (sorting, binary search, two sum, LRU cache…) with a written guide *and* tested code in many languages. They live in `problems/`.
+
+### 15.1 What a reader needs from a problem
+
+A good problem entry serves four real situations:
+
+| Situation | What they need | Where it is |
+| --- | --- | --- |
+| "I'm asked this in an interview tomorrow." | The exact question, how to clarify it, a step-by-step script, the follow-ups | `overview.md`: *How interviewers ask it*, *How to answer*, *Follow-up questions* |
+| "I need working code in my language." | Correct, idiomatic, tested code in the language they use | the solution files, one per language |
+| "I don't understand why it works." | Intuition, a worked trace, complexity explained, a line-by-line code explanation | `notes.md` of each approach |
+| "Where would I use this at work?" | Real systems, built-ins, when to hand-write vs call the library, pitfalls | `overview.md`: *Real-life scenarios*, *Built-ins*, *Common mistakes* |
+
+### 15.2 Layout
+
+```
+problems/
+  languages.json                  language registry (file names, how to run, which are core)
+  sorting/                        one folder per problem (slug: lowercase, hyphens)
+    problem.json                  metadata
+    overview.md                   the guide to the problem as a whole
+    bubble-sort/                  one folder per approach, simple to optimal
+      variant.json                title, summary, complexity, stable, inPlace, order
+      notes.md                    explanation of this approach
+      expected.txt                the exact output every solution must print
+      solution.js  solution.ts  solution.py  solution.go  Main.java  Program.cs  solution.cpp   (+ optional extras)
+    quick-sort/ ...
+    README.md                     GENERATED (never edit): guide + all code, readable on GitHub
+README.md                         GENERATED index of problems
+```
+
+`npm run build` generates `problems/README.md` and each `problems/<slug>/README.md` (the guide plus every approach with all languages in collapsible sections), and the README table.
+
+### 15.3 problem.json
+
+```json
+{
+  "title": "Sorting",
+  "summary": "Put items in order: the building block behind search, ranking, deduplication and merging.",
+  "level": "basic",
+  "tags": ["sorting", "arrays", "complexity"],
+  "order": 1,
+  "related": ["golang-054", "javascript-012"]
+}
+```
+`related` lists ids of questions in the Q&A bank that go with this problem (they must exist). Use 3–8.
+
+### 15.4 variant.json
+
+```json
+{
+  "title": "Quick sort",
+  "summary": "Pick a pivot, partition around it, recurse on both sides.",
+  "order": 5,
+  "complexity": { "best": "O(n log n)", "average": "O(n log n)", "worst": "O(n²)", "space": "O(log n)" },
+  "stable": false,
+  "inPlace": true
+}
+```
+Order approaches from the simplest to the best, so the reader climbs the ladder the way an interview does (brute force first, then improvements).
+
+### 15.5 overview.md (the guide to the problem)
+
+Use `##` headings. Write these sections, in this order. Every section is **required** (validate warns when one is missing).
+
+1. **`## How interviewers ask it`** — the question in real wording (2–3 variations), what to clarify (input size, duplicates, negative numbers, memory limits, stability, "can I mutate the input?"), and what a good answer must cover.
+2. **`## Real-life scenarios`** — a table: *Scenario* | *What is actually used* | *Why*. Ground it in systems the reader knows (database `ORDER BY`, a paginated product list, leaderboards, merging log files, UI table sorting, top-K feeds, external sort for huge files). Name the production algorithm (for example Timsort in Python/Java objects, introsort in C++/.NET, pdqsort in Go 1.19+). Say the version if it matters.
+3. **`## Approaches compared`** — a table of all approaches: time (best/average/worst), space, stable, in place, and a "use when" column. Add a Mermaid diagram if the relationship between approaches is easier to see (for example divide and conquer).
+4. **`## How to choose`** — a short decision guide (a flowchart or a table: *data is small / nearly sorted / huge / needs stability / integers in a small range* → *use this*).
+5. **`## Built-ins and the standard library`** — a table per language: the call to use in production (`Array.prototype.sort`, `sorted()`, `sort.Slice`, `Arrays.sort`, `List.Sort`, `std::sort`), which algorithm it is, whether it is stable, and the **pitfall** (JavaScript's default sort compares strings; `sort.Slice` is not stable; comparing floats and NaN).
+6. **`## Common mistakes`** — bugs people actually write (off-by-one in loops, mutating while iterating, comparator that is not a strict weak ordering, integer overflow in midpoint, recursion depth).
+7. **`## How to answer in an interview`** — a numbered script: clarify, give examples and edge cases, state the simple approach and its cost, improve it, code it, test it aloud, state complexity, mention trade-offs. Include the *phrases* to say.
+8. **`## Follow-up questions`** — 5–8 questions the interviewer asks next, each with a 1–2 sentence answer (stability? sort 10 GB with 1 GB RAM? nearly sorted data? top-K? sort by two keys? parallelise it?).
+9. **`## Practice`** — 3–5 related problems to try next.
+
+### 15.6 notes.md (one approach)
+
+Use `##` headings, in this order. All sections are **required**.
+
+1. **`## Intuition`** — the idea in plain words with an everyday analogy (sorting playing cards). No jargon before it is explained.
+2. **`## Walkthrough`** — a worked example traced step by step on a small input (a table of the array after each pass, or a Mermaid diagram). The reader should be able to reproduce it on paper.
+3. **`## Complexity`** — *explain* each bound, do not just state it: why best case is that, what the worst-case input looks like, where the space goes. Add a table.
+4. **`## Code explanation`** — map the steps to the code. Number the key lines in the code comments (`// 1. pick pivot`) and explain each number here. Then a short table *Language differences* (for example slices vs arrays, in-place vs returning a new list, integer division, recursion limits, how each language swaps two values).
+5. **`## Edge cases and tests`** — the test inputs used by every solution (empty, one item, duplicates, already sorted, reverse sorted, negatives) and what each one checks.
+6. **`## When to use it (and when not)`** — honest trade-offs.
+7. **`## Interview notes`** — what to say out loud, the likely follow-up, the mistake to avoid.
+8. **`## Real-life usage`** — where this exact approach really appears (or why it never does, and what is used instead).
+
+Mermaid is encouraged in *Walkthrough*. Follow section 8 rules.
+
+### 15.7 The code files
+
+**Required languages** (`"core": true` in `languages.json`): **JavaScript, TypeScript, Python, Go, Java, C#, C++**. Optional extras exist (Swift, Ruby, PHP, Rust, Kotlin); add them when useful. A problem is not done until every required language is present and passing.
+
+**Contract** (so the same `expected.txt` works for every language):
+
+- Each file is a **complete, runnable program** with no dependencies beyond the standard library.
+- It defines the algorithm as a function with a clear name (`quickSort` / `quick_sort` / `QuickSort` following each language's convention) and a small `main` that runs the **same fixed test inputs** in the same order.
+- It prints **one line per test case**: the result's values separated by single spaces (booleans `true`/`false`, no brackets or commas). Nothing else is printed.
+- `expected.txt` holds exactly those lines. The runner compares output ignoring trailing whitespace.
+- Do not read input, use randomness or the clock, or print timing. Output must be deterministic.
+- Do **not** mutate shared test data between cases; copy the input when the approach is in place.
+
+**Quality rules** (this is the code readers will copy):
+
+- Idiomatic for the language (naming, error handling, types), not a transliteration of another language. Use the built-in swap/destructuring/tuple features where they are normal.
+- Comments explain **why**, and number the key steps to match the *Code explanation* section. Do not comment the obvious.
+- Correct on all edge cases listed in the notes: empty, single element, duplicates, negatives, already sorted, reverse sorted.
+- Beware per-language traps: integer overflow in `(lo + hi) / 2` (use `lo + (hi - lo) / 2`), recursion depth, mutating the caller's array, default sort comparators, unsigned types.
+- Keep each file under about 80 lines. Simple first; optimise only when it is the point of the approach.
+- Java: public class `Main` in `Main.java` (run with the source launcher). C#: top-level statements or a `Program` class in `Program.cs` (net8). TypeScript: runs with `node --experimental-strip-types`, so use only erasable type syntax (no enums, no parameter properties). C++: C++17, compiled with `clang++`.
+
+**Verify** every file by running it:
+
+```sh
+npm run problems:test -- sorting               # everything in the problem
+npm run problems:test -- sorting/quick-sort    # one approach
+npm run problems:test -- sorting --lang go,java
+```
+The runner skips languages whose toolchain is missing (it prints `SKIP`). Do not mark a problem finished while a required language only passes because it was skipped; say so in your report.
+
+### 15.8 Checklist before finishing a problem
+
+- [ ] `overview.md` has all nine sections, real-life scenarios are concrete, built-ins are accurate for current versions.
+- [ ] Every approach has `variant.json`, `notes.md` (eight sections), `expected.txt` and all required languages.
+- [ ] `npm run problems:test -- <problem>` passes for every installed toolchain.
+- [ ] `npm run validate -- problems` has no errors, and warnings are explained or fixed.
+- [ ] `related` points to real question ids.
+- [ ] `npm run build` regenerated `problems/README.md` and the README table; open the problem in the app and read it.
+- [ ] Explanations are in simple English and make sense when read aloud.
+
+### 15.9 Planned problems
+
+Add them one at a time, simplest ideas first. Each is a full problem as above.
+
+| Group | Problems |
+| --- | --- |
+| Foundations | Sorting (all common algorithms), binary search and variants, linear search, two sum and hashing, anagrams, palindromes, FizzBuzz-style warm-ups |
+| Techniques | Two pointers, sliding window, prefix sums, recursion and backtracking (permutations, subsets, N-Queens), divide and conquer |
+| Data structures | Linked list (reverse, cycle detection, merge), stack and queue (valid parentheses, min stack), hash map patterns, heap and top-K, trie, union-find |
+| Trees and graphs | Tree traversals, BST operations, BFS/DFS, shortest path (Dijkstra), topological sort |
+| Dynamic programming | Fibonacci to memoisation, knapsack, longest common subsequence, coin change, edit distance |
+| Design | LRU/LFU cache, rate limiter, parking lot / elevator (object design), pub/sub |

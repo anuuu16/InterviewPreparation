@@ -24,7 +24,7 @@ export interface Item {
   number: number;
 }
 
-export type View = { kind: 'topic'; slug: string } | { kind: 'favorites' } | { kind: 'all' };
+export type View = { kind: 'topic'; slug: string } | { kind: 'favorites' } | { kind: 'all' } | { kind: 'problems' };
 
 export type FeedbackType = 'more-detail' | 'code-issue' | 'incorrect' | 'unclear' | 'missing' | 'other';
 
@@ -40,4 +40,35 @@ export interface FeedbackEntry {
   createdAt: string;
   resolvedAt?: string;
   resolution?: string;
+}
+
+export interface CodeFile {
+  language: string; // id, e.g. "go"
+  name: string; // display name, e.g. "Go"
+  fence: string; // highlight.js language
+  file: string;
+  code: string;
+}
+
+export interface Variant {
+  slug: string;
+  title: string;
+  summary: string;
+  complexity?: { best?: string; average?: string; worst?: string; space?: string };
+  stable?: boolean;
+  inPlace?: boolean;
+  notes: string;
+  expected: string;
+  files: CodeFile[];
+}
+
+export interface Problem {
+  slug: string;
+  title: string;
+  summary: string;
+  level: Level;
+  tags: string[];
+  related?: string[]; // question ids
+  overview: string;
+  variants: Variant[];
 }

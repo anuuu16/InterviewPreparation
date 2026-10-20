@@ -17,49 +17,68 @@ Interview questions and answers, organised by language/topic. Read them right he
 [⭐ All favorites](questions/favorites.md)
 <!-- TOPICS:END -->
 
+## Problems
+
+Popular coding problems with a written guide and tested code in several languages (sorting first). Open a problem to see how interviewers ask it, real-life uses and every approach from simple to optimal.
+
+<!-- PROBLEMS:START -->
+_No problems yet._
+<!-- PROBLEMS:END -->
+
 ## Study app (read, listen, manage)
 
-A local web app for reading and listening. It is a React + TypeScript UI (light and dark theme) on top of a zero-dependency Node server.
+A local web app for reading and listening: React + TypeScript on top of a zero-dependency Node server, with light and dark themes.
 
 ```sh
 npm run setup    # once: installs and builds the UI (needs Node 18+)
 npm start        # http://localhost:3000   (PORT=4000 npm start to change the port)
 ```
 
-- **Read:** proper Markdown rendering: syntax-highlighted code with a copy button, tables, Mermaid diagrams, inline code. Search across everything, filter by level, browse by topic.
-- **Listen:** the player at the bottom reads questions and answers aloud with your browser's text-to-speech. Play, pause, previous/next, speed, voice, auto-continue, a pause between questions, and **quiz mode** (asks the question, gives you thinking time, then reads the answer). Code and diagrams are skipped, with a short mention.
-- **Reading styles:** *Explain* (default) narrates like a mentor: it turns labels like "Short answer:" into "In short,", drops bracketed asides, trims long lists and tables, points to code and diagrams on screen, varies the transitions and fixes pronunciation of terms like goroutine and kubectl. *Brief* reads only the short answer and the interview tip, for quick revision. *Full* reads everything as written. This is rule-based, not an AI model.
-- **Voice & language:** pick from every voice your browser offers, grouped by language, with a sample button on each; the choice is remembered. "Automatic" picks the best English voice, since the content is English.
-- **Start anywhere:** hover (or tap) any paragraph, list, table or code block in an answer and press ▶ to listen from exactly there; hover a question in the list to play from that question. The block being read is highlighted and scrolled into view.
-- **Manage:** star favorites, add/edit/delete questions (with a live Markdown preview) and create topics. Every change is saved to `data/*.json` and the Markdown on GitHub is regenerated automatically.
+The screen stays simple. Topics on the left, the question list in the middle, the answer on the right. Everything else appears only when you need it:
+
+- **Read:** rendered Markdown with syntax-highlighted code (copy button), tables, Mermaid diagrams and inline code. Search is always visible; the **Filters** button reveals *group by Level or Module*, a module filter and level chips.
+- **Listen:** press **Listen** (or hover a paragraph and press ▶ to start from exactly there). The player bar appears only while audio is playing and closes when you stop it. Pause, previous/next, speed, auto-continue, and **quiz mode** (asks, waits for you to think, then answers) live in *Audio settings* (the gear in the sidebar or the player).
+- **Reading styles:** *Explain* (default) narrates like a mentor: "In short, …", skips bracketed asides, trims long lists and tables, points to code on screen. *Brief* reads only the short answer and interview tip. *Full* reads everything. Rule-based, not an AI model.
+- **Voices:** pick any voice your browser offers (grouped by language, with samples), or install the optional local **Piper** voice (below). The app uses Piper when it is installed and falls back to the browser voice automatically.
+- **Notes and feedback:** the **Notes** button on a question saves a private note, or *feedback for the author* ("needs more detail", "code issue", "incorrect"…), about the question or the whole topic. Feedback is stored in `feedback/` and the next agent run fixes it (see [AGENTS.md](AGENTS.md), section 14).
+- **Code problems:** a separate section with popular problems (sorting, binary search, two sum…): a guide (how it is asked, real-life uses, how to choose), every approach from simple to optimal with an explanation, and tested code in many languages. Your language choice is remembered.
+- **Manage:** star favorites; add, edit, delete questions (live Markdown preview); create topics. Every change is written to `data/*.json` and the Markdown on GitHub is regenerated.
 - **Keys:** `Space` play/pause, `←` `→` previous/next, `F` favorite, `/` search.
 
-Developing the UI: run `npm start` in one terminal and `npm run dev` in another (hot reload on http://localhost:5173, API proxied to port 3000).
+### Optional: a better voice (Piper, English only)
+
+```sh
+npm run tts:setup        # installs Piper and ONE English voice (about 60 MB); needs Python 3
+```
+
+Restart `npm start`. Nothing else to configure; see [tools/piper/README.md](tools/piper/README.md) for other voices and proxy notes.
+
+### Developing the UI
+
+Run `npm start` in one terminal and `npm run dev` in another (hot reload on http://localhost:5173, API proxied to port 3000).
 
 ## Without the app
 
-The Markdown in `questions/` is **generated** — don't edit it by hand. The source of truth is `data/<topic>.json`. Edit it directly if you like, then:
+The Markdown in `questions/` and `problems/*/README.md` is **generated**: don't edit it by hand. The sources are `data/<topic>.json` and the folders in `problems/`. After editing them:
 
 ```sh
-npm run build    # regenerate Markdown from data/*.json
-```
-
-A question looks like:
-
-```json
-{ "id": "golang-001", "question": "…", "answer": "…(Markdown)", "level": "basic", "tags": ["x"], "favorite": false }
+npm run build        # regenerate the Markdown pages and the tables in this README
+npm run validate     # quality checks
 ```
 
 ## Layout
 
 ```
-README.md      entry point + generated topic index
-AGENTS.md      how to write/extend questions (style guide for humans and AI agents)
-questions/     generated Markdown, one file per topic (+ favorites.md)
-data/          JSON source of truth
-app/           build.js (JSON to Markdown), server.js (API), web/ (React + TypeScript UI)
+README.md       entry point + generated indexes
+AGENTS.md       the rulebook for adding questions and problems (humans and AI agents)
+questions/      generated Markdown, one page per topic (+ favorites.md)
+data/           question source of truth (JSON)
+problems/       code problems: guide + tested solutions per language
+feedback/       notes and feedback written in the app
+app/            build, import, validate, feedback, problems runner, API server, web/ (React UI)
+tools/piper/    optional local text-to-speech
 ```
 
-Each topic page has a numbered table of contents. Diagrams are Mermaid, which GitHub renders automatically. The app shows answers as raw Markdown, so read diagrams on GitHub or in a Mermaid-aware Markdown viewer.
+Each topic page has a numbered contents list and a "Browse by module" table. Diagrams are Mermaid, which GitHub renders automatically.
 
-Contributing questions (yourself or with an AI agent)? Read [AGENTS.md](AGENTS.md) first.
+Contributing questions or problems (yourself or with an AI agent)? Read [AGENTS.md](AGENTS.md) first.

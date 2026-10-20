@@ -1,4 +1,4 @@
-import type { FeedbackEntry, Question, Topic } from './types';
+import type { FeedbackEntry, Problem, Question, Topic } from './types';
 
 async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -22,3 +22,5 @@ export const getFeedback = () => call<FeedbackEntry[]>('/feedback');
 export const addFeedback = (e: Pick<FeedbackEntry, 'topic' | 'question' | 'kind' | 'text'> & { type?: string }) => call<FeedbackEntry>('/feedback', 'POST', e);
 export const updateFeedback = (id: string, patch: { text?: string; status?: 'open' | 'resolved' }) => call<FeedbackEntry>(`/feedback/${id}`, 'PUT', patch);
 export const deleteFeedback = (id: string) => call<{ ok: boolean }>(`/feedback/${id}`, 'DELETE');
+
+export const getProblems = () => call<Problem[]>('/problems');
