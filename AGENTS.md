@@ -8,7 +8,8 @@ This repo is an interview-preparation question bank. Humans read the generated M
 2. After any change run `npm run build` and commit the JSON **and** the regenerated Markdown together.
 3. Never remove or change `id` or `favorite` of existing questions (the user stars them in the app). Append new questions; fix wording in place.
 4. A topic is one file: `data/<slug>.json` with `{ "name": "...", "questions": [...] }`. Slug is lowercase, `a-z0-9-`.
-5. No new dependencies. Keep `app/` zero-dependency Node.
+5. `app/build.js` and `app/server.js` stay zero-dependency Node. UI dependencies live only in `app/web/package.json`.
+6. The UI tags each top-level Markdown block (paragraph, list, table, code block, diagram) so users can start audio from it. Keep answers as normal Markdown: no raw HTML, because it is skipped when read aloud.
 
 ## Question schema
 

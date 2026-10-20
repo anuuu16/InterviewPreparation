@@ -2,7 +2,9 @@
   "name": "interview-preparation",
   "private": true,
   "scripts": {
+    "setup": "npm --prefix app/web install && npm --prefix app/web run build",
     "start": "node app/server.js",
+    "dev": "npm --prefix app/web run dev",
     "build": "node app/build.js"
   }
 }

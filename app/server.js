@@ -7,6 +7,8 @@ const crypto = require('crypto');
 const { build, DATA_DIR, LEVELS } = require('./build');
 
 const PORT = process.env.PORT || 3000;
+const DIST = path.join(__dirname, 'web', 'dist');
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.png': 'image/png', '.woff2': 'font/woff2' };
 const SLUG = /^[a-z0-9-]+$/;
 const file = (slug) => path.join(DATA_DIR, `${slug}.json`);
 
@@ -35,6 +37,11 @@ route('GET', '/api/topics', () =>
     const slug = f.replace(/\.json$/, '');
     return { slug, name: read(slug).name };
   }));
+route('GET', '/api/all', () =>
+  fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json')).map((f) => {
+    const slug = f.replace(/\.json$/, '');
+    return { slug, ...read(slug) };
+  }).sort((a, b) => a.name.localeCompare(b.name)));
 route('POST', '/api/topics', ({ body }) => {
   const name = String(body.name || '').trim();
   const slug = slugify(name);
@@ -90,7 +97,14 @@ http.createServer(async (req, res) => {
       }
       return send(404, { error: 'Not found' });
     }
-    send(200, fs.readFileSync(path.join(__dirname, 'public', 'index.html')), 'text/html');
+    if (!fs.existsSync(DIST)) {
+      return send(503, 'UI not built yet. Run: npm run setup', 'text/plain');
+    }
+    // static files from the built UI; unknown paths fall back to index.html (single-page app)
+    const rel = path.normalize(decodeURIComponent(url)).replace(/^([/\\]|\.\.)+/, '');
+    let file = path.join(DIST, rel);
+    if (!file.startsWith(DIST) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(DIST, 'index.html');
+    send(200, fs.readFileSync(file), TYPES[path.extname(file)] || 'application/octet-stream');
   } catch (e) {
     if (e.status) return send(e.status, { error: e.message });
     if (e.code === 'ENOENT') return send(404, { error: 'Not found' });
