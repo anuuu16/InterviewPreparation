@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from './api';
+import AudioSettings from './AudioSettings';
 import Editor, { type EditorResult } from './Editor';
-import { CloseIcon, EditIcon, HeadphonesIcon, ListIcon, MenuIcon, MoonIcon, NextIcon, PlayIcon, PlusIcon, PrevIcon, SearchIcon, StarIcon, SunIcon, TrashIcon } from './Icons';
+import { CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, ListIcon, MenuIcon, MoonIcon, NextIcon, PlayIcon, PlusIcon, PrevIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon } from './Icons';
 import Inline from './Inline';
 import Markdown from './Markdown';
 import { warmMermaid } from './Mermaid';
@@ -39,6 +40,10 @@ export default function App() {
   const [loadError, setLoadError] = useState('');
   const [view, setView] = useLocal<View>('ip.view', { kind: 'all' });
   const [level, setLevel] = useState<Level | ''>('');
+  const [groupBy, setGroupBy] = useLocal<'level' | 'module'>('ip.group', 'level');
+  const [moduleFilter, setModuleFilter] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [audioOpen, setAudioOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useLocal<string>('ip.selected', '');
   const [themePref, setThemePref] = useLocal<ThemePref>('ip.theme', 'system');
@@ -65,10 +70,27 @@ export default function App() {
     const out = all.filter(({ q, topic }) =>
       (view.kind !== 'favorites' || q.favorite) &&
       (!level || q.level === level) &&
+      (!moduleFilter || (q.module ?? 'Other') === moduleFilter) &&
       (!needle || `${q.question} ${q.answer} ${q.tags.join(' ')} ${topic.name}`.toLowerCase().includes(needle)));
     // numbers match the Markdown pages inside a topic; elsewhere they are just list positions
-    return view.kind === 'topic' ? out : out.map((it, i) => ({ ...it, number: i + 1 }));
-  }, [topics, view, level, search]);
+    const numbered = view.kind === 'topic' ? out : out.map((it, i) => ({ ...it, number: i + 1 }));
+    if (groupBy !== 'module') return numbered;
+    // module view: modules in order of first appearance (so fundamentals come first), questions keep their level order inside
+    const order = [...new Set(numbered.map((it) => it.q.module ?? 'Other'))];
+    return order.flatMap((m) => numbered.filter((it) => (it.q.module ?? 'Other') === m));
+  }, [topics, view, level, search, groupBy, moduleFilter]);
+
+  // modules available in the current scope (ignoring the module filter itself) for the filter dropdown
+  const modules = useMemo(() => {
+    const scope = view.kind === 'topic' ? topics.filter((t) => t.slug === view.slug) : topics;
+    return [...new Set(scope.flatMap((t) => t.questions.map((q) => q.module ?? 'Other')))].sort();
+  }, [topics, view]);
+  const groupOf = (it: Item) => (groupBy === 'module' ? it.q.module ?? 'Other' : it.q.level);
+  const groupCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    items.forEach((it) => m.set(groupOf(it), (m.get(groupOf(it)) ?? 0) + 1));
+    return m;
+  }, [items, groupBy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selIndex = Math.max(0, items.findIndex((it) => it.q.id === selectedId));
   const selected: Item | undefined = items[selIndex];
@@ -172,9 +194,10 @@ export default function App() {
 
   // ---- render -----------------------------------------------------------------------------
   const title = view.kind === 'favorites' ? 'Favorites' : view.kind === 'all' ? 'All questions' : topics.find((t) => t.slug === view.slug)?.name ?? '';
-  const go = (v: View) => { setView(v); setDrawer(''); };
+  const go = (v: View) => { setView(v); setModuleFilter(''); setDrawer(''); };
   const isView = (v: View) => v.kind === view.kind && (v.kind !== 'topic' || (view.kind === 'topic' && v.slug === view.slug));
   const nextTheme = () => setThemePref(themePref === 'system' ? (dark ? 'light' : 'dark') : themePref === 'dark' ? 'light' : 'dark');
+  const activeFilters = (level ? 1 : 0) + (moduleFilter ? 1 : 0) + (groupBy === 'module' ? 1 : 0);
   const playingId = player.status === 'playing' ? items[player.index]?.q.id : undefined;
 
   return (
@@ -206,7 +229,10 @@ export default function App() {
           </div>
           <div className="sidebar-foot">
             <button className="btn" onClick={newTopic}><PlusIcon /> New topic</button>
-            <button className="icon-btn" onClick={nextTheme} aria-label="Toggle theme" title={`Theme: ${themePref}`}>{dark ? <SunIcon /> : <MoonIcon />}</button>
+            <span className="foot-icons">
+              <button className="icon-btn" onClick={() => setAudioOpen(true)} aria-label="Audio settings" title="Audio settings"><SettingsIcon /></button>
+              <button className="icon-btn" onClick={nextTheme} aria-label="Toggle theme" title={`Theme: ${themePref}`}>{dark ? <SunIcon /> : <MoonIcon />}</button>
+            </span>
           </div>
         </nav>
 
@@ -214,21 +240,49 @@ export default function App() {
           <div className="list-head">
             <div className="list-title">
               <h2>{title}</h2>
-              <button className="icon-btn mobile-only" onClick={() => setDrawer('')} aria-label="Close"><CloseIcon /></button>
+              <span>
+                <button className="icon-btn" onClick={() => setEditor({ topicSlug: view.kind === 'topic' ? view.slug : topics[0]?.slug ?? '' })} aria-label="Add question" title="Add question"><PlusIcon /></button>
+                <button className="icon-btn mobile-only" onClick={() => setDrawer('')} aria-label="Close"><CloseIcon /></button>
+              </span>
             </div>
-            <label className="search">
-              <SearchIcon />
-              <input ref={searchRef} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search questions, answers, tags  ( / )" />
-            </label>
+            <div className="search-row">
+              <label className="search">
+                <SearchIcon />
+                <input ref={searchRef} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search  ( / )" />
+              </label>
+              <button className={'icon-btn filter-btn' + (filtersOpen || activeFilters ? ' active' : '')} onClick={() => setFiltersOpen(!filtersOpen)} aria-expanded={filtersOpen} aria-label="Filters" title="Filters">
+                <FilterIcon />{activeFilters > 0 && <span className="filter-count">{activeFilters}</span>}
+              </button>
+            </div>
+            {filtersOpen && (<div className="filters">
+            <div className="group-row">
+              <div className="segmented" role="group" aria-label="Group by">
+                <span>Group by</span>
+                <button className={groupBy === 'level' ? 'active' : ''} onClick={() => setGroupBy('level')}>Level</button>
+                <button className={groupBy === 'module' ? 'active' : ''} onClick={() => setGroupBy('module')}>Module</button>
+              </div>
+              {modules.length > 1 && (
+                <select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)} aria-label="Filter by module">
+                  <option value="">All modules</option>
+                  {modules.map((m) => <option key={m}>{m}</option>)}
+                </select>
+              )}
+            </div>
             <div className="chips" role="group" aria-label="Level">
               {(['', ...LEVELS] as const).map((l) => (
                 <button key={l || 'all'} className={'chip' + (level === l ? ' active' : '')} onClick={() => setLevel(l)}>{l || 'All'}</button>
               ))}
             </div>
+            {activeFilters > 0 && <button className="link-btn" onClick={() => { setLevel(''); setModuleFilter(''); setGroupBy('level'); }}>Clear filters</button>}
+            </div>)}
           </div>
           <ol className="qlist">
             {items.map((it, i) => (
-              <li key={it.q.id} className="qrow">
+              <Fragment key={it.q.id}>
+              {(i === 0 || groupOf(items[i - 1]) !== groupOf(it)) && (
+                <li className="qgroup" aria-hidden="true">{groupOf(it)}<span>{groupCounts.get(groupOf(it))}</span></li>
+              )}
+              <li className="qrow">
                 <button className={'qitem' + (it.q.id === selected?.q.id ? ' active' : '')} onClick={() => select(i)}>
                   <span className="qnum">{it.q.id === playingId ? <span className="eq" aria-label="Playing"><i /><i /><i /></span> : it.number}</span>
                   <span className="qtext">
@@ -242,6 +296,7 @@ export default function App() {
                 </button>
                 <button className="qplay" onClick={() => { player.play(i); setDrawer(''); }} aria-label={`Play question ${it.number}`} title="Play from this question"><PlayIcon /></button>
               </li>
+              </Fragment>
             ))}
             {!items.length && <li className="empty">{loadError || (topics.length ? 'No questions match.' : 'Loading…')}</li>}
           </ol>
@@ -252,17 +307,17 @@ export default function App() {
             <article key={selected.q.id}>
               <div className="crumbs">
                 <span>{selected.topic.name}</span>
+                {selected.q.module && <button className="crumb-module" onClick={() => { setGroupBy('module'); setModuleFilter(selected.q.module ?? ''); }} title="Show only this module">{selected.q.module}</button>}
                 <span className={'badge ' + selected.q.level}>{selected.q.level}</span>
                 <span className="muted">#{selected.number}</span>
               </div>
               <h1><Inline text={selected.q.question} /></h1>
               <div className="actions">
-                <button className="btn primary" onClick={() => player.play(selIndex)}><PlayIcon /> Listen from here</button>
-                <button className={'btn' + (selected.q.favorite ? ' fav' : '')} onClick={() => toggleFav(selected)}>
-                  <StarIcon filled={selected.q.favorite} /> {selected.q.favorite ? 'Favorited' : 'Favorite'}
+                <button className="btn primary" onClick={() => player.play(selIndex)}><PlayIcon /> Listen</button>
+                <button className={'btn' + (selected.q.favorite ? ' fav' : '')} onClick={() => toggleFav(selected)} aria-pressed={selected.q.favorite}>
+                  <StarIcon filled={selected.q.favorite} /> {selected.q.favorite ? 'Favorite' : 'Favorite'}
                 </button>
                 <button className="btn" onClick={() => setEditor({ topicSlug: selected.topic.slug, question: selected.q })}><EditIcon /> Edit</button>
-                <button className="btn danger" onClick={() => remove(selected)} aria-label="Delete"><TrashIcon /></button>
               </div>
               <Markdown
                 source={selected.q.answer}
@@ -285,28 +340,32 @@ export default function App() {
               <p>{loadError || 'Pick a topic or clear the filters.'}</p>
             </div>
           )}
-          <button className="fab" onClick={() => setEditor({ topicSlug: view.kind === 'topic' ? view.slug : topics[0]?.slug ?? '' })} aria-label="Add question" title="Add question"><PlusIcon /></button>
         </main>
       </div>
 
-      <PlayerBar
-        status={player.status}
-        position={items.length ? (player.status === 'idle' ? selIndex : player.index) + 1 : 0}
-        total={items.length}
-        now={player.now}
-        countdown={player.countdown}
-        settings={settings}
-        piper={piper}
-        engine={speakOptions().engine}
-        onSettings={setSettings}
-        onPlay={() => player.play(player.status === 'paused' ? undefined : selIndex)}
-        onPause={player.pause}
-        onStop={player.stop}
-        onPrev={() => step(-1)}
-        onNext={() => step(1)}
-      />
+      {player.status !== 'idle' && (
+        <PlayerBar
+          status={player.status}
+          position={player.index + 1}
+          total={items.length}
+          now={player.now}
+          countdown={player.countdown}
+          rate={settings.rate}
+          onRate={(rate) => setSettings({ ...settings, rate })}
+          onPlay={() => player.play()}
+          onPause={player.pause}
+          onStop={player.stop}
+          onPrev={() => step(-1)}
+          onNext={() => step(1)}
+          onSettings={() => setAudioOpen(true)}
+        />
+      )}
 
-      {editor && <Editor topics={topics} topicSlug={editor.topicSlug} question={editor.question} dark={dark} onSave={save} onClose={() => setEditor(null)} />}
+      {audioOpen && (
+        <AudioSettings settings={settings} piper={piper} engine={speakOptions().engine} onSettings={setSettings} onBeforeSample={player.pause} onClose={() => setAudioOpen(false)} />
+      )}
+
+      {editor && <Editor topics={topics} topicSlug={editor.topicSlug} question={editor.question} dark={dark} onSave={save} onDelete={editor.question ? () => { const it = items.find((x) => x.q.id === editor.question?.id); setEditor(null); if (it) void remove(it); } : undefined} onClose={() => setEditor(null)} />}
     </div>
   );
 }

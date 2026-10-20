@@ -112,9 +112,16 @@ for (const f of files) {
     if (!LEVELS.includes(q.level)) err(where, `level must be one of ${LEVELS.join(', ')}`);
     if (typeof q.answer !== 'string' || !q.answer.trim()) err(where, 'empty answer');
     if (!Array.isArray(q.tags)) err(where, 'tags must be an array');
+    if (q.module !== undefined && (typeof q.module !== 'string' || !q.module.trim())) err(where, 'module must be a non-empty string when present');
+    else if (q.module === undefined) warn(where, 'no module (group, e.g. "Concurrency"); see AGENTS.md');
     if (typeof q.favorite !== 'boolean') err(where, 'favorite must be true/false');
     if (typeof q.answer === 'string' && Array.isArray(q.tags) && typeof q.question === 'string') checkAnswer(where, q);
   });
+  const modules = new Map();
+  topic.questions.forEach((q) => q.module && modules.set(q.module, (modules.get(q.module) || 0) + 1));
+  if (modules.size > 14) warn(slug, `${modules.size} modules is a lot; aim for 5-12 per topic`);
+  const single = [...modules].filter(([, n]) => n === 1).map(([m]) => m);
+  if (single.length > 2) warn(slug, `modules with a single question: ${single.join(', ')}`);
   const counts = LEVELS.map((l) => `${topic.questions.filter((q) => q.level === l).length} ${l}`).join(', ');
   console.log(`${topic.name}: ${topic.questions.length} questions (${counts})`);
   if (checkGo && slug === 'golang') goCheck(topic);

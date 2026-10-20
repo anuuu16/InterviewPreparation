@@ -2,137 +2,726 @@
   "name": "Kubernetes",
   "questions": [
     {
-      "id": "kubernetes-1",
-      "question": "Explain the main components of a Kubernetes cluster.",
-      "answer": "**Control plane:** `kube-apiserver` (front door), `etcd` (state store), `kube-scheduler` (places pods), `kube-controller-manager` (reconciliation loops), `cloud-controller-manager`. **Nodes:** `kubelet` (runs pods), `kube-proxy` (service networking), container runtime (containerd). Everything is declarative: you declare desired state; controllers continuously reconcile actual to desired.",
+      "id": "kubernetes-014",
+      "question": "What is Kubernetes and what problems does it solve?",
+      "answer": "**Short answer:** Kubernetes is an open-source system that runs and manages containers across a group of machines. You tell it what you want running, and it keeps that true: it places containers, restarts them when they fail, scales them, and rolls out new versions without downtime.\n\nThink of it as an operations team that never sleeps. Running one container on one server is easy. Running hundreds of containers for dozens of services on many servers is not. Kubernetes handles the hard parts:\n\n- **Scheduling:** it picks which machine (node) has room for each container.\n- **Self-healing:** if a container crashes or a node dies, it starts a replacement.\n- **Scaling:** it adds or removes copies based on load.\n- **Service discovery and load balancing:** services get a stable name and address, even when pods come and go.\n- **Rolling updates and rollbacks:** new versions replace old ones step by step.\n- **Configuration and secrets:** settings are kept outside the image.\n- **Storage:** volumes can follow a workload.\n\nIt is not a build tool, a CI system, or a place where your code is compiled. It also does not fix a badly designed application. It gives you a common API (YAML objects) that works the same on Azure AKS, AWS EKS, Google GKE or your own servers.\n\n```yaml\n# Smallest useful example: ask for 3 copies of an API and let Kubernetes keep them alive\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: orders-api\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: orders-api\n  template:\n    metadata:\n      labels:\n        app: orders-api\n    spec:\n      containers:\n        - name: orders-api\n          image: myregistry.azurecr.io/orders-api:1.4.2\n```\n\n**When not to use it:** a single small app, a team with no one to own the platform, or a workload a managed service already runs well (Azure Container Apps, App Service). Kubernetes has a real learning and operations cost.\n\n**Interview tip:** Do not just list features. Say the core idea: you declare the desired state and controllers keep reconciling reality to match it. Then give one example from your own services, such as a pod being replaced after a node failure.",
       "level": "basic",
       "tags": [
-        "architecture"
+        "fundamentals",
+        "orchestration"
       ],
-      "favorite": false
+      "favorite": false,
+      "module": "Core Concepts"
     },
     {
-      "id": "kubernetes-2",
-      "question": "Pod vs Deployment vs ReplicaSet vs StatefulSet vs DaemonSet vs Job?",
-      "answer": "- **Pod:** smallest unit, one or more containers sharing network/volumes.\n- **ReplicaSet:** keeps N identical pods running.\n- **Deployment:** manages ReplicaSets; rolling updates and rollbacks (for stateless apps).\n- **StatefulSet:** stable identity/hostnames and per-pod persistent volumes, ordered rollout (databases).\n- **DaemonSet:** one pod per node (log/monitoring agents).\n- **Job/CronJob:** run-to-completion/scheduled work.",
+      "id": "kubernetes-015",
+      "question": "What is the architecture of a Kubernetes cluster?",
+      "answer": "**Short answer:** A cluster has a **control plane** that makes decisions and **worker nodes** that run your pods. The control plane holds the API server, etcd, the scheduler and controllers. Each node runs the kubelet, a container runtime and kube-proxy.\n\n**Control plane**\n- **kube-apiserver:** the front door. Every tool and component talks to it over REST.\n- **etcd:** a consistent key-value store that holds all cluster state.\n- **kube-scheduler:** chooses a node for each new pod.\n- **kube-controller-manager:** runs the control loops (Deployment, Node, Job controllers and more).\n- **cloud-controller-manager:** talks to the cloud for load balancers, disks and nodes.\n\n**On every node**\n- **kubelet:** the agent that makes sure the pods assigned to its node are running and healthy.\n- **Container runtime:** containerd or CRI-O, which really starts the containers.\n- **kube-proxy:** programs network rules so Service addresses reach pods.\n\n```mermaid\nflowchart TD\n    U[\"kubectl / CI\"] --> API[\"kube-apiserver\"]\n    subgraph CP[\"Control plane\"]\n        API --> ETCD[(\"etcd\")]\n        SCH[\"Scheduler\"] --> API\n        CM[\"Controller manager\"] --> API\n    end\n    subgraph N1[\"Worker node\"]\n        K[\"kubelet\"] --> API\n        KP[\"kube-proxy\"]\n        RT[\"containerd\"]\n        P[\"Pods\"]\n        K --> RT --> P\n    end\n```\n\nRead it like this: only the API server touches etcd, and every other component, including the kubelet, talks to the API server.\n\nOn managed services such as AKS, Azure runs and patches the control plane for you. You manage the node pools and the workloads.\n\n**Gotcha:** the scheduler does not start pods. It only writes \"this pod goes to node X\". The kubelet on that node sees the assignment and does the work.\n\n**Interview tip:** Be ready to trace one request: `kubectl apply` goes to the API server, is stored in etcd, a controller creates pods, the scheduler assigns them, and the kubelet starts them.",
       "level": "basic",
       "tags": [
+        "architecture",
+        "control-plane"
+      ],
+      "favorite": false,
+      "module": "Core Concepts"
+    },
+    {
+      "id": "kubernetes-016",
+      "question": "What is the declarative model and the reconciliation loop?",
+      "answer": "**Short answer:** In Kubernetes you describe the **desired state** (for example \"3 replicas of this image\") and store it in the API. Controllers run a loop that compares desired state with actual state and acts to close the gap. This loop is called **reconciliation**.\n\nAn everyday analogy is a thermostat. You set 21 degrees. The thermostat does not follow a script. It keeps measuring and switches heating on or off until the room matches.\n\nImperative commands say how: \"start a container, then another\". Declarative objects say what: \"I want three\". The second is safer, because running it twice gives the same result, and the file can live in Git.\n\n```mermaid\nflowchart LR\n    D[\"Desired state<br/>spec in API\"] --> C[\"Controller\"]\n    A[\"Actual state<br/>nodes and pods\"] --> C\n    C -- \"create or delete pods\" --> A\n```\n\nThe controller keeps observing, comparing and acting. It is level-based, not event-based: even if it missed an event, the next loop sees the difference and fixes it.\n\n```bash\n# Declarative: same file, run any number of times\nkubectl apply -f orders-api.yaml\n\n# Imperative: fine for quick tests, hard to repeat and review\nkubectl create deployment orders-api --image=myregistry.azurecr.io/orders-api:1.4.2\nkubectl scale deployment orders-api --replicas=5\n```\n\nEvery object has a **spec** (what you want) and a **status** (what Kubernetes sees). You write the spec. Controllers write the status.\n\n**Gotcha:** if you manually delete a pod that belongs to a Deployment, a new one appears. If you manually edit a live object that Argo CD or Flux owns, it will be changed back. The source of truth is the declared state, not the live cluster.\n\n**Interview tip:** Say \"level-triggered, self-healing\" and mention that this is why GitOps works so well: Git holds the desired state and a controller reconciles the cluster to it.",
+      "level": "basic",
+      "tags": [
+        "declarative",
+        "controllers"
+      ],
+      "favorite": false,
+      "module": "Core Concepts"
+    },
+    {
+      "id": "kubernetes-017",
+      "question": "What is a Pod and why is it the smallest unit?",
+      "answer": "**Short answer:** A Pod is the smallest thing Kubernetes schedules. It wraps one or more containers that share the same network address, ports and volumes, and always run together on the same node.\n\nMost pods have one container. A second container makes sense when it is tightly coupled, such as a log shipper or a proxy next to the main app. Containers in a pod talk to each other on `localhost` and can share files through a volume.\n\n```yaml\napiVersion: v1\nkind: Pod\nmetadata:\n  name: orders-api\n  labels:\n    app: orders-api\nspec:\n  containers:\n    - name: api\n      image: myregistry.azurecr.io/orders-api:1.4.2\n      ports:\n        - containerPort: 8080\n      resources:\n        requests:\n          cpu: 100m\n          memory: 128Mi\n```\n\nKey facts:\n- A pod gets **one IP address**. All its containers share it.\n- Pods are **ephemeral**. When one dies it is not repaired; a new pod with a new name and IP replaces it.\n- A pod is never moved between nodes. It is deleted and recreated elsewhere.\n- Pods have a lifecycle: Pending, Running, Succeeded, Failed.\n\n```bash\nkubectl get pods -o wide             # shows node and pod IP\nkubectl describe pod orders-api      # events and container state\nkubectl logs orders-api -c api       # logs of one container\n```\n\n**Common mistake:** creating bare pods in production. A bare pod is not recreated if its node fails. Use a Deployment, StatefulSet, DaemonSet or Job, which own pods and replace them.\n\n**Interview tip:** Explain why \"one process per container, related containers per pod\" is the usual rule, and mention that scaling happens at the pod level, so containers that must scale independently should be in separate pods.",
+      "level": "basic",
+      "tags": [
+        "pods",
         "workloads"
       ],
-      "favorite": false
+      "favorite": false,
+      "module": "Workloads"
     },
     {
-      "id": "kubernetes-3",
-      "question": "What are Service types and how does Ingress differ?",
-      "answer": "A Service gives pods a stable virtual IP/DNS name and load-balances.\n- **ClusterIP:** internal only (default).\n- **NodePort:** exposes on each node's port.\n- **LoadBalancer:** provisions a cloud LB.\n- **ExternalName:** DNS alias.\n\n**Ingress** is an L7 (HTTP/S) routing layer (host/path rules, TLS) implemented by an Ingress controller (NGINX, etc.); one LB can front many services. Gateway API is the successor.",
+      "id": "kubernetes-018",
+      "question": "What is the difference between a Deployment and a ReplicaSet?",
+      "answer": "**Short answer:** A ReplicaSet keeps a fixed number of identical pods running. A Deployment manages ReplicaSets and adds rolling updates, rollbacks and revision history. You almost always create Deployments and let them create ReplicaSets for you.\n\nThe chain is: Deployment owns ReplicaSets, and ReplicaSets own Pods. When you change the pod template (for example a new image), the Deployment creates a **new** ReplicaSet and slowly scales it up while scaling the old one down. The old ReplicaSet stays with zero replicas so you can roll back.\n\n```mermaid\nflowchart LR\n    D[\"Deployment orders-api\"] --> R1[\"ReplicaSet v1<br/>0 pods\"]\n    D --> R2[\"ReplicaSet v2<br/>3 pods\"]\n    R2 --> P1[\"Pod\"]\n    R2 --> P2[\"Pod\"]\n    R2 --> P3[\"Pod\"]\n```\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: orders-api\nspec:\n  replicas: 3\n  revisionHistoryLimit: 5      # how many old ReplicaSets to keep for rollback\n  selector:\n    matchLabels:\n      app: orders-api\n  template:\n    metadata:\n      labels:\n        app: orders-api\n    spec:\n      containers:\n        - name: api\n          image: myregistry.azurecr.io/orders-api:1.4.3\n```\n\n```bash\nkubectl rollout status deployment/orders-api\nkubectl rollout history deployment/orders-api\nkubectl rollout undo deployment/orders-api\n```\n\n| Object | Use it for |\n| --- | --- |\n| Deployment | Stateless apps with updates (APIs, web, workers) |\n| ReplicaSet | Rarely directly; it is the engine under a Deployment |\n| StatefulSet | Pods that need stable identity and storage |\n\n**Gotcha:** only a change in `spec.template` creates a new rollout. Changing `replicas` does not. The `selector` is immutable after creation, so choose labels carefully.\n\n**Interview tip:** If asked \"what happens when you update the image\", walk through the new ReplicaSet being scaled up while the old one scales down, controlled by `maxSurge` and `maxUnavailable`.",
       "level": "basic",
       "tags": [
+        "deployments",
+        "replicasets"
+      ],
+      "favorite": false,
+      "module": "Workloads"
+    },
+    {
+      "id": "kubernetes-019",
+      "question": "What are Kubernetes Services and what are ClusterIP, NodePort and LoadBalancer?",
+      "answer": "**Short answer:** A Service gives a group of pods one stable virtual IP and DNS name, and load balances traffic across the healthy ones. The type decides who can reach it: ClusterIP inside the cluster, NodePort on every node's port, LoadBalancer through a cloud load balancer.\n\nPod IPs change all the time, so clients should never use them. A Service selects pods by **labels** and tracks only the ready ones.\n\n| Type | Reachable from | Typical use |\n| --- | --- | --- |\n| `ClusterIP` (default) | Inside the cluster only | Service to service calls |\n| `NodePort` | Node IP plus a port from 30000 to 32767 | Quick tests, or behind your own load balancer |\n| `LoadBalancer` | A cloud public or internal IP | Exposing a service outside the cluster |\n| `ExternalName` | Maps to a DNS name | Pointing to an external database |\n| Headless (`clusterIP: None`) | DNS returns pod IPs directly | StatefulSets, client-side balancing |\n\n```yaml\napiVersion: v1\nkind: Service\nmetadata:\n  name: orders-api\nspec:\n  type: ClusterIP\n  selector:\n    app: orders-api        # matches pod labels\n  ports:\n    - name: http\n      port: 80             # port of the Service\n      targetPort: 8080     # port in the container\n```\n\nOther pods can now call `http://orders-api` in the same namespace, or `http://orders-api.shop.svc.cluster.local` from anywhere.\n\n```bash\nkubectl get endpointslices -l kubernetes.io/service-name=orders-api\n```\n\nOn AKS a `LoadBalancer` Service creates an Azure Load Balancer. Add the annotation `service.beta.kubernetes.io/azure-load-balancer-internal: \"true\"` to get a private IP instead of a public one.\n\n**Gotcha:** if a Service has no endpoints, the selector does not match any ready pod. Check labels first, then readiness.\n\n**Interview tip:** Say that for HTTP you normally use one LoadBalancer in front of an Ingress or Gateway, not one LoadBalancer per service, because each one costs money and a public IP.",
+      "level": "basic",
+      "tags": [
+        "services",
         "networking"
+      ],
+      "favorite": false,
+      "module": "Networking"
+    },
+    {
+      "id": "kubernetes-020",
+      "question": "What are Namespaces and when should you use them?",
+      "answer": "**Short answer:** A Namespace is a named scope inside a cluster. It groups resources so names do not clash, and it is the unit where you apply quotas, RBAC rules and network policies. It is a logical boundary, not a security wall.\n\nNames only need to be unique within a namespace, so `orders-api` can exist in both `dev` and `prod` namespaces. Some objects are cluster scoped and have no namespace: Nodes, PersistentVolumes, StorageClasses, Namespaces and ClusterRoles.\n\nDefault namespaces: `default`, `kube-system` (cluster components), `kube-public`, `kube-node-lease`.\n\n```yaml\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: shop-prod\n  labels:\n    team: shop\n    env: prod\n```\n\n```bash\nkubectl get pods -n shop-prod\nkubectl config set-context --current --namespace=shop-prod   # change default\nkubectl api-resources --namespaced=false                     # cluster-scoped kinds\n```\n\nWhat you can attach to a namespace:\n- ResourceQuota and LimitRange (limit usage).\n- RBAC Roles and RoleBindings (who can do what).\n- NetworkPolicies (who can talk to whom).\n- Pod Security Standards labels.\n\n**Gotcha:** namespaces do **not** isolate the network by default. A pod in `dev` can call a pod in `prod` unless a NetworkPolicy blocks it. Also, deleting a namespace deletes everything inside it.\n\n**Common uses:** one namespace per team, per environment, or per application. Use separate clusters when you need strong isolation, such as different compliance zones or prod versus non-prod.\n\n**Interview tip:** Mention that cross-namespace calls use the full DNS name `service.namespace`, and that namespaces are a soft boundary that you harden with RBAC, quotas and NetworkPolicy.",
+      "level": "basic",
+      "tags": [
+        "namespaces",
+        "isolation"
+      ],
+      "favorite": false,
+      "module": "Core Concepts"
+    },
+    {
+      "id": "kubernetes-021",
+      "question": "How do labels, selectors and annotations work?",
+      "answer": "**Short answer:** Labels are key-value tags on objects. Selectors pick objects by those labels. This loose coupling is how Services find pods, how Deployments own ReplicaSets, and how you filter with `kubectl`. Annotations are also key-value metadata, but they are not used for selection.\n\n```yaml\nmetadata:\n  name: orders-api\n  labels:\n    app.kubernetes.io/name: orders-api\n    app.kubernetes.io/part-of: shop\n    env: prod\n    version: \"1.4.2\"\n  annotations:\n    team-contact: \"shop-team@example.com\"\n    prometheus.io/scrape: \"true\"\n```\n\nSelector types:\n- **Equality based:** `app=orders-api`, `env!=dev`.\n- **Set based:** `env in (prod, staging)`, `tier notin (cache)`, or just `partition` (exists).\n\n```bash\nkubectl get pods -l app=orders-api,env=prod\nkubectl get pods -l 'env in (prod,staging)'\nkubectl label pod orders-api-abc canary=true\nkubectl get pods --show-labels\n```\n\n| | Labels | Annotations |\n| --- | --- | --- |\n| Used for selecting | Yes | No |\n| Size | Short values (63 characters) | Can be large |\n| Typical content | app, env, tier, version | Build info, tool config, links |\n\nReal uses of annotations: ingress controller settings, Datadog autodiscovery, Prometheus scrape hints, change ticket numbers.\n\n**Gotcha:** if you change a pod's labels so they stop matching a ReplicaSet selector, the ReplicaSet stops managing it and creates a new pod. This is a handy trick to take a pod out of service for debugging. Also, a typo in a Service selector gives a Service with no endpoints.\n\n**Interview tip:** Mention the recommended `app.kubernetes.io/*` labels and that you enforce a standard label set (team, env, service) so cost reports and Datadog tags work.",
+      "level": "basic",
+      "tags": [
+        "labels",
+        "selectors",
+        "metadata"
+      ],
+      "favorite": false,
+      "module": "Core Concepts"
+    },
+    {
+      "id": "kubernetes-022",
+      "question": "What is the difference between a ConfigMap and a Secret?",
+      "answer": "**Short answer:** Both inject configuration into pods without rebuilding the image. A ConfigMap holds non-sensitive settings. A Secret holds sensitive values such as passwords and tokens. Secrets are only base64 encoded by default, not encrypted, so they need extra protection.\n\nYou can use either as environment variables or as files mounted into the container.\n\n```yaml\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: orders-config\ndata:\n  LOG_LEVEL: info\n  FEATURE_X: \"true\"\n---\napiVersion: v1\nkind: Secret\nmetadata:\n  name: orders-db\ntype: Opaque\nstringData:                 # plain text here, stored base64 by the API\n  DB_PASSWORD: change-me-example\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: orders-api\nspec:\n  containers:\n    - name: api\n      image: myregistry.azurecr.io/orders-api:1.4.2\n      envFrom:\n        - configMapRef:\n            name: orders-config\n      env:\n        - name: DB_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: orders-db\n              key: DB_PASSWORD\n```\n\nImportant behaviours:\n- A mounted file updates after some time when the ConfigMap changes. Environment variables do **not** change until the pod restarts.\n- Objects are limited to 1 MiB.\n- `immutable: true` stops edits and makes the API server cheaper to run at scale.\n\n**Protecting secrets**\n- Turn on **encryption at rest** for etcd (AKS can use a KMS key).\n- Limit access with RBAC. Anyone who can read Secrets in a namespace can read the values.\n- Do not commit Secret YAML to Git. Use an external store such as Azure Key Vault with the CSI driver or External Secrets, or Sealed Secrets.\n\n**Gotcha:** a config change does not roll your Deployment. Put a hash of the config in a pod annotation (Helm does this easily) or run `kubectl rollout restart`.\n\n**Interview tip:** Say \"base64 is encoding, not encryption\" and then describe your secret management approach.",
+      "level": "basic",
+      "tags": [
+        "configuration",
+        "secrets"
+      ],
+      "favorite": false,
+      "module": "Storage & Config"
+    },
+    {
+      "id": "kubernetes-023",
+      "question": "What are Volumes, PersistentVolumes, PersistentVolumeClaims and StorageClasses?",
+      "answer": "**Short answer:** A volume gives a pod storage that outlives a container restart. For data that must outlive the pod, you use a PersistentVolumeClaim (PVC), which is a request for storage. A PersistentVolume (PV) is the actual disk. A StorageClass describes how to create disks on demand.\n\nThink of renting a flat. The PVC is your rental request (\"10 GB, fast disk\"). The PV is the actual flat. The StorageClass is the agency that finds or builds one for you.\n\n| Object | Meaning | Who creates it |\n| --- | --- | --- |\n| Volume | Storage attached to a pod (emptyDir, configMap, PVC and so on) | Developer in the pod spec |\n| PersistentVolume | A real piece of storage in the cluster | Admin, or automatically |\n| PersistentVolumeClaim | A request for storage by a workload | Developer |\n| StorageClass | Template: provisioner, disk type, reclaim policy | Platform team |\n\n```yaml\napiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: reports-data\nspec:\n  accessModes: [\"ReadWriteOnce\"]\n  storageClassName: managed-csi       # an AKS built-in class (Azure Disk)\n  resources:\n    requests:\n      storage: 10Gi\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: report-worker\nspec:\n  containers:\n    - name: worker\n      image: myregistry.azurecr.io/report-worker:2.0.0\n      volumeMounts:\n        - name: data\n          mountPath: /var/data\n  volumes:\n    - name: data\n      persistentVolumeClaim:\n        claimName: reports-data\n```\n\nCommon volume kinds: `emptyDir` (scratch space that dies with the pod), `configMap` and `secret` (files), `persistentVolumeClaim` (durable data).\n\n**Gotcha:** the reclaim policy decides what happens when the claim is deleted. `Delete` removes the disk and its data. `Retain` keeps it. Check it before deleting a PVC in production.\n\n**Interview tip:** Stateless services should not need PVCs at all. Keep data in managed databases and use volumes only when a workload really needs local durable files.",
+      "level": "basic",
+      "tags": [
+        "storage",
+        "volumes"
+      ],
+      "favorite": false,
+      "module": "Storage & Config"
+    },
+    {
+      "id": "kubernetes-024",
+      "question": "What is the anatomy of a Kubernetes manifest, and which kubectl commands should you know?",
+      "answer": "**Short answer:** Every manifest has four top-level fields: `apiVersion`, `kind`, `metadata` and `spec` (plus `status` which the system fills in). `kubectl` is the command line client that sends these objects to the API server and reads them back.\n\n```yaml\napiVersion: apps/v1          # API group and version for this kind\nkind: Deployment             # the type of object\nmetadata:                    # identity: name, namespace, labels, annotations\n  name: orders-api\n  namespace: shop\nspec:                        # the desired state, shape depends on the kind\n  replicas: 2\n  selector:\n    matchLabels:\n      app: orders-api\n  template:\n    metadata:\n      labels:\n        app: orders-api\n    spec:\n      containers:\n        - name: api\n          image: myregistry.azurecr.io/orders-api:1.4.2\n```\n\n**Commands used every day**\n\n```bash\nkubectl get pods -n shop -o wide          # list, with node and IP\nkubectl describe pod orders-api-xyz       # details and recent events\nkubectl logs orders-api-xyz -f --previous # follow logs; previous = crashed container\nkubectl exec -it orders-api-xyz -- sh     # shell inside the container\nkubectl apply -f deploy.yaml              # create or update declaratively\nkubectl diff -f deploy.yaml               # preview changes\nkubectl rollout undo deploy/orders-api    # roll back\nkubectl port-forward svc/orders-api 8080:80\nkubectl top pods                          # CPU and memory (needs metrics-server)\nkubectl get events --sort-by=.lastTimestamp\nkubectl explain deployment.spec.strategy  # built-in docs for any field\nkubectl auth can-i create pods -n shop    # check permissions\n```\n\nTips for speed:\n- `kubectl get pod -o yaml` and `-o jsonpath='{.status.podIP}'` for scripting.\n- `kubectl apply --dry-run=client -o yaml` to render without sending.\n- `kubectl explain` is the fastest way to remember a field name.\n\n**Gotcha:** forgetting `-n` sends the command to your current namespace, often `default`. Many outages start with a command run in the wrong context, so check `kubectl config current-context` before anything destructive.\n\n**Interview tip:** Mention `kubectl diff`, `--dry-run=server` and `explain`. They show you work safely and do not guess field names.",
+      "level": "basic",
+      "tags": [
+        "kubectl",
+        "yaml"
+      ],
+      "favorite": false,
+      "module": "Core Concepts"
+    },
+    {
+      "id": "kubernetes-025",
+      "question": "What are liveness, readiness and startup probes?",
+      "answer": "**Short answer:** Probes let the kubelet check your container. **Readiness** decides if the pod receives traffic. **Liveness** decides if the container must be restarted. **Startup** gives slow-starting apps extra time before the other two begin.\n\n| Probe | Question it answers | On failure |\n| --- | --- | --- |\n| `startupProbe` | Has the app finished starting? | Container is restarted if it never succeeds |\n| `readinessProbe` | Can it serve requests now? | Pod is removed from Service endpoints, not restarted |\n| `livenessProbe` | Is it stuck for good? | Container is restarted |\n\nCheck types: `httpGet`, `tcpSocket`, `exec`, and `grpc` (stable since Kubernetes 1.27).\n\n```yaml\ncontainers:\n  - name: api\n    image: myregistry.azurecr.io/orders-api:1.4.2\n    ports:\n      - containerPort: 8080\n    startupProbe:\n      httpGet: { path: /healthz, port: 8080 }\n      periodSeconds: 5\n      failureThreshold: 30        # up to 150 seconds to start\n    readinessProbe:\n      httpGet: { path: /ready, port: 8080 }\n      periodSeconds: 5\n      failureThreshold: 3\n    livenessProbe:\n      httpGet: { path: /healthz, port: 8080 }\n      periodSeconds: 10\n      failureThreshold: 3\n      timeoutSeconds: 2\n```\n\nDesign rules:\n- **Liveness must be cheap and must not check dependencies.** If it calls the database and the database is down, every pod restarts and makes things worse.\n- **Readiness may check dependencies** the pod truly needs, but be careful: if all pods go unready together, the Service has no endpoints.\n- Use a startup probe instead of a long `initialDelaySeconds`.\n\n**Gotcha:** a liveness probe with a short timeout on a busy pod can kill healthy pods during a traffic spike, causing a restart storm.\n\n**Interview tip:** Give the example of a Go service where `/healthz` returns 200 if the process is alive, while `/ready` returns 200 only after the cache is warm and the DB pool is open.",
+      "level": "basic",
+      "tags": [
+        "probes",
+        "health"
+      ],
+      "favorite": false,
+      "module": "Workloads"
+    },
+    {
+      "id": "kubernetes-026",
+      "question": "What are resource requests and limits?",
+      "answer": "**Short answer:** A **request** is the amount of CPU and memory the scheduler reserves for a container. A **limit** is the maximum it may use. Requests drive placement. Limits are enforced at runtime: going over the memory limit kills the container, and going over the CPU limit slows it down.\n\nCPU is measured in cores (`500m` is half a core). Memory is in bytes (`256Mi`).\n\n```yaml\ncontainers:\n  - name: api\n    image: myregistry.azurecr.io/orders-api:1.4.2\n    resources:\n      requests:\n        cpu: 250m          # scheduler reserves this\n        memory: 256Mi\n      limits:\n        memory: 512Mi      # hard ceiling: OOMKilled above this\n        # cpu limit omitted on purpose, see the CPU throttling question\n```\n\nHow they behave:\n- **Scheduler:** places a pod only on a node with enough unreserved requests.\n- **CPU limit:** the container is throttled, not killed.\n- **Memory limit:** memory cannot be taken back, so the kernel's OOM killer ends the container, and you see `OOMKilled` with exit code 137.\n- **No requests:** the pod can be packed anywhere and is first to be evicted when the node is short on memory.\n\n| Setting | Effect |\n| --- | --- |\n| Request too low | Node overcommitted, noisy neighbours, evictions |\n| Request too high | Wasted money, pods stay Pending |\n| Memory limit too low | OOMKilled restarts |\n| CPU limit too low | Latency from throttling |\n\nA sensible starting rule: set memory request equal to memory limit, set a CPU request based on measured usage, and be careful with CPU limits.\n\n```bash\nkubectl top pod -n shop\nkubectl describe node aks-nodepool1-123 | grep -A8 \"Allocated resources\"\n```\n\n**Interview tip:** Link requests to the HPA (utilisation is a percentage of the request) and to QoS classes. That shows you understand the whole picture.",
+      "level": "basic",
+      "tags": [
+        "resources",
+        "scheduling"
+      ],
+      "favorite": false,
+      "module": "Scheduling & Scaling"
+    },
+    {
+      "id": "kubernetes-027",
+      "question": "What is an Ingress and how does it differ from a Service?",
+      "answer": "**Short answer:** An Ingress is a set of HTTP and HTTPS routing rules (host and path to Service). It needs an **Ingress controller** such as NGINX, which runs in the cluster and does the actual routing. It lets many services share one public IP and one TLS setup.\n\nA `LoadBalancer` Service works at layer 4: it forwards TCP or UDP to a service. An Ingress works at layer 7: it reads the host name and URL path, so `shop.example.com/orders` can go to one service and `/users` to another.\n\n```yaml\napiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: shop\n  namespace: shop\nspec:\n  ingressClassName: nginx\n  tls:\n    - hosts: [\"shop.example.com\"]\n      secretName: shop-tls            # TLS cert stored as a Secret\n  rules:\n    - host: shop.example.com\n      http:\n        paths:\n          - path: /orders\n            pathType: Prefix\n            backend:\n              service:\n                name: orders-api\n                port:\n                  number: 80\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: web\n                port:\n                  number: 80\n```\n\n```mermaid\nflowchart LR\n    C[\"Client\"] --> LB[\"Cloud load balancer\"]\n    LB --> IC[\"Ingress controller pods\"]\n    IC -- \"/orders\" --> S1[\"orders-api Service\"]\n    IC -- \"/\" --> S2[\"web Service\"]\n```\n\nRead it from left to right: one load balancer feeds the controller, and the controller routes by rule.\n\nExtras: TLS termination (often with cert-manager and Let's Encrypt), redirects, rate limits, and auth, usually through controller-specific annotations.\n\n**Gotcha:** an Ingress object does nothing without a controller. Also, annotations are not portable between controllers. The newer **Gateway API** is the modern, more expressive replacement.\n\n**Interview tip:** Mention that the Ingress controller is itself a Deployment behind a LoadBalancer Service, and name which one you use on AKS.",
+      "level": "basic",
+      "tags": [
+        "ingress",
+        "networking"
+      ],
+      "favorite": false,
+      "module": "Networking"
+    },
+    {
+      "id": "kubernetes-028",
+      "question": "How is Kubernetes different from Docker, and how do images and registries fit in?",
+      "answer": "**Short answer:** Docker builds and runs containers on one machine. Kubernetes orchestrates containers across many machines. Kubernetes does not build images. It pulls them from a registry and runs them through a container runtime such as containerd.\n\n| | Docker | Kubernetes |\n| --- | --- | --- |\n| Scope | One host | A cluster of nodes |\n| Job | Build and run containers | Schedule, scale, heal and network containers |\n| Config | Dockerfile, `docker run`, Compose | YAML objects |\n| Unit | Container | Pod |\n\n**Flow:** you build an image in CI, push it to a registry (Azure Container Registry, Docker Hub, GitLab Registry), and the manifest refers to it by name and tag. The kubelet on the node asks the runtime to pull and start it.\n\n```bash\ndocker build -t myregistry.azurecr.io/orders-api:1.4.2 .\ndocker push myregistry.azurecr.io/orders-api:1.4.2\nkubectl set image deployment/orders-api api=myregistry.azurecr.io/orders-api:1.4.2\n```\n\n```yaml\ncontainers:\n  - name: api\n    image: myregistry.azurecr.io/orders-api@sha256:3f1c...   # digest = immutable\n    imagePullPolicy: IfNotPresent\nimagePullSecrets:\n  - name: registry-credentials     # for private registries (AKS can use ACR attach instead)\n```\n\nGood habits:\n- **Never use `latest` in production.** You cannot tell what is running, and rollbacks become guesswork. Use a version or a Git commit tag, or better, the digest.\n- `imagePullPolicy` defaults to `Always` for `latest` and `IfNotPresent` otherwise.\n- Keep images small (distroless or alpine for Go), run as non-root, scan them.\n\n**Fact:** Kubernetes removed its built-in Docker integration (dockershim) in version 1.24. Images built with Docker still work, because they follow the OCI standard. Only the runtime on the node changed to containerd.\n\n**Interview tip:** If asked \"does Kubernetes still support Docker?\", answer: Docker-built images, yes. The Docker Engine as a node runtime, no.",
+      "level": "basic",
+      "tags": [
+        "docker",
+        "images",
+        "registry"
+      ],
+      "favorite": false,
+      "module": "Core Concepts"
+    },
+    {
+      "id": "kubernetes-029",
+      "question": "[Tech Lead] What is your troubleshooting runbook for Pending, CrashLoopBackOff, ImagePullBackOff, OOMKilled, Evicted pods and 5xx errors through a Service?",
+      "answer": "**Short answer:** Start from the pod status, then read `describe` events, then logs, then compare with what changed. Each status points to a different layer: Pending is scheduling, ImagePullBackOff is registry or credentials, CrashLoopBackOff is the app, OOMKilled is memory, Evicted is node pressure, and 5xx through a Service is usually readiness or endpoints.\n\n```mermaid\nflowchart TD\n    S[\"kubectl get pods\"] --> P{\"Status?\"}\n    P -- \"Pending\" --> P1[\"describe: events<br/>no resources, taints, PVC\"]\n    P -- \"ImagePullBackOff\" --> P2[\"Wrong tag, no pull secret,<br/>ACR not attached\"]\n    P -- \"CrashLoopBackOff\" --> P3[\"logs --previous<br/>exit code, config, probe\"]\n    P -- \"OOMKilled\" --> P4[\"Exit 137: raise memory<br/>or fix the leak\"]\n    P -- \"Evicted\" --> P5[\"Node pressure:<br/>disk or memory\"]\n    P -- \"Running but 5xx\" --> P6[\"Endpoints, readiness,<br/>app logs, ingress\"]\n```\n\nRead it from the top: the status picks the branch.\n\n**The first three commands, always**\n\n```bash\nkubectl get pods -n shop -o wide\nkubectl describe pod orders-api-7c9d -n shop       # read the Events at the bottom\nkubectl logs orders-api-7c9d -n shop --previous    # logs of the crashed container\n```\n\n**By symptom**\n\n| Symptom | Likely causes | Check |\n| --- | --- | --- |\n| Pending | Not enough CPU or memory, taints, node selector, unbound PVC, quota | Events: `FailedScheduling` message |\n| ImagePullBackOff | Typo in tag, missing credentials, ACR not linked, rate limit | Events: the exact pull error |\n| CrashLoopBackOff | App error at start, bad config or secret, failing liveness probe | `logs --previous`, exit code |\n| OOMKilled | Memory limit too low or a leak | `Last State: Terminated, Reason: OOMKilled` |\n| Evicted | Node out of memory or disk | `kubectl describe node`, conditions |\n| 5xx via Service | No ready endpoints, slow pods, wrong port | `get endpointslices`, probes, ingress logs |\n\n**For 5xx, walk the path:** ingress controller logs, then the Service endpoints, then pod readiness, then app logs and Datadog traces. A quick isolation test is `kubectl port-forward` straight to one pod. If the pod is fine but the Service is not, the problem is labels, ports or endpoints.\n\n```bash\nkubectl get endpointslices -n shop -l kubernetes.io/service-name=orders-api\nkubectl debug -it orders-api-7c9d -n shop --image=busybox:1.36 --target=api\n```\n\n**Lead habits:** ask \"what changed?\" first (deploy, config, node upgrade, traffic), mitigate before you root-cause (roll back, scale up), and write down what you saw.\n\n**Interview tip:** Keep the order of investigation consistent. Interviewers listen for a method: status, events, logs, recent changes, then deeper tools.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "troubleshooting",
+        "incident"
+      ],
+      "favorite": false,
+      "module": "Operations & Troubleshooting"
+    },
+    {
+      "id": "kubernetes-030",
+      "question": "[Tech Lead] How do you achieve zero-downtime deployments and graceful shutdown?",
+      "answer": "**Short answer:** Combine a rolling update that never removes capacity, a correct readiness probe, a preStop delay so load balancers stop sending traffic, graceful shutdown handling in the app, and a PodDisruptionBudget. Missing any one of these causes dropped requests during deploys.\n\n**Why requests get dropped:** when a pod is deleted, two things happen at the same time. The kubelet sends SIGTERM, and the endpoint is removed from Services and ingress. Removal spreads slowly, so for a few seconds traffic still arrives at a pod that is already shutting down.\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: orders-api\nspec:\n  replicas: 4\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 1\n      maxUnavailable: 0          # never drop below desired capacity\n  selector:\n    matchLabels:\n      app: orders-api\n  template:\n    metadata:\n      labels:\n        app: orders-api\n    spec:\n      terminationGracePeriodSeconds: 45\n      containers:\n        - name: api\n          image: myregistry.azurecr.io/orders-api:1.4.3\n          readinessProbe:\n            httpGet: { path: /ready, port: 8080 }\n            periodSeconds: 3\n          lifecycle:\n            preStop:\n              exec:\n                command: [\"sleep\", \"10\"]   # keep serving while endpoints update\n```\n\n**In the application (Go example idea):** on SIGTERM, stop accepting new connections, finish in-flight requests with a timeout shorter than the grace period, close database pools, then exit. In Node, call `server.close()` on SIGTERM. Make sure PID 1 receives the signal (use exec form in the Dockerfile, not a shell wrapper).\n\nTimeline: `preStop` sleep (10s) + app drain (up to about 30s) must fit inside `terminationGracePeriodSeconds` (45s).\n\n**Checklist**\n- Readiness probe that is truthful.\n- `maxUnavailable: 0` and enough replicas.\n- A PodDisruptionBudget for node drains and upgrades.\n- Spread replicas across nodes and zones.\n- Retries with backoff in clients, because some failures are unavoidable.\n- Backwards-compatible database changes (expand, then contract).\n\n**Verify it:** run a load test (k6, hey) during a deploy and watch for non-2xx responses.\n\n**Interview tip:** Name the race between SIGTERM and endpoint removal. It shows you have seen this in real life.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "deployments",
+        "reliability"
+      ],
+      "favorite": false,
+      "module": "Operations & Troubleshooting"
+    },
+    {
+      "id": "kubernetes-031",
+      "question": "[Tech Lead] What is your autoscaling strategy, and how do you plan capacity?",
+      "answer": "**Short answer:** Use three layers. The HPA adds pods when load rises, KEDA scales on events such as queue length, and the cluster autoscaler adds nodes when pods cannot be placed. VPA or good right-sizing fixes the size of each pod. Plan capacity from load tests and real traffic, with headroom for spikes and node failures.\n\n| Tool | Scales | Signal | Good for |\n| --- | --- | --- | --- |\n| HPA | Pod count | CPU, memory, custom metrics | Stateless APIs |\n| KEDA | Pod count (including to zero) | Queue depth, Kafka lag, cron, HTTP | Workers and event consumers |\n| VPA | Pod size | Observed usage | Recommendations, batch, single-replica apps |\n| Cluster autoscaler (or Karpenter on some clouds) | Node count | Pending pods | Making room for pods |\n\n```yaml\napiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: orders-api\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: orders-api\n  minReplicas: 3\n  maxReplicas: 20\n  metrics:\n    - type: Resource\n      resource:\n        name: cpu\n        target:\n          type: Utilization\n          averageUtilization: 65      # percent of the CPU request\n  behavior:\n    scaleDown:\n      stabilizationWindowSeconds: 300  # avoid flapping\n```\n\n**Capacity planning steps**\n1. Load test one pod to find its safe requests per second.\n2. Divide expected peak traffic by that number, then add 30 to 50 percent headroom.\n3. Make sure the cluster can survive losing a node or a zone (N+1).\n4. Set `maxReplicas` and node pool max sizes so a runaway scale-up cannot bankrupt you.\n5. Review monthly with Datadog data.\n\n**Gotchas:** HPA percentage is based on the **request**, so wrong requests give wrong scaling. Do not let HPA and VPA both act on CPU for the same workload. New nodes take minutes, so scale ahead of known events or keep a small buffer of spare capacity.\n\n**Interview tip:** Say that CPU is a weak signal for I/O-bound services. Scaling on requests per second or queue depth often reacts better.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "autoscaling",
+        "capacity"
+      ],
+      "favorite": false,
+      "module": "Scheduling & Scaling"
+    },
+    {
+      "id": "kubernetes-032",
+      "question": "[Tech Lead] How do CPU throttling and right-sizing affect performance?",
+      "answer": "**Short answer:** A CPU limit is enforced in short time slices. When a container uses its quota early in a slice, it is paused until the next one, even if the node is idle. This **throttling** adds latency that average CPU graphs do not show. Right-sizing means setting requests from measured usage, and being careful with CPU limits.\n\nHow it works: a limit of `500m` means 50 ms of CPU time per 100 ms period. A multi-threaded Go service can burn that in 10 ms across several cores, then wait 90 ms. The p99 latency goes up while average CPU looks low.\n\n**Signals to watch**\n- `container_cpu_cfs_throttled_periods_total` divided by total periods (Prometheus), or the Datadog metric for CPU throttling.\n- p99 latency rising with CPU usage near the limit.\n- Go: `GOMAXPROCS` defaults to the node's core count, not your limit. Older Go versions need the `automaxprocs` library. Go 1.25 made GOMAXPROCS aware of cgroup CPU limits.\n\n```yaml\nresources:\n  requests:\n    cpu: 500m          # based on observed p95 usage\n    memory: 512Mi\n  limits:\n    memory: 512Mi      # memory limit equal to request, avoids surprises\n    # no CPU limit: pod can burst when the node has spare CPU\n```\n\n**Right-sizing process**\n1. Run in production or staging for a week.\n2. Look at p95 and max of CPU and memory in Datadog or Prometheus.\n3. Set the CPU request near p95, memory request near the peak plus 20 percent.\n4. Use VPA in recommendation mode to cross-check.\n5. Revisit after big releases.\n\n| Choice | Pros | Cons |\n| --- | --- | --- |\n| CPU limit set | Predictable, protects neighbours | Throttling, latency |\n| No CPU limit | Bursting, no throttling | Needs correct requests, one pod can take a lot |\n\nTeams differ here. A common compromise: no CPU limits for latency-sensitive services with good requests, CPU limits for batch and untrusted workloads.\n\n**Interview tip:** State your position and the evidence you would use (throttling ratio and p99), not just an opinion.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "performance",
+        "resources"
+      ],
+      "favorite": false,
+      "module": "Scheduling & Scaling"
+    },
+    {
+      "id": "kubernetes-033",
+      "question": "[Tech Lead] How do you optimise the cost of a Kubernetes cluster?",
+      "answer": "**Short answer:** Most waste comes from over-requested resources, idle nodes and always-on non-production environments. Measure first, then right-size requests, scale to demand, use cheaper capacity such as spot nodes where safe, and schedule dev and test to sleep outside working hours.\n\n**Where the money goes:** nodes are paid for by size and time, not by what pods use. If pods request 4 CPUs and use 0.5, you pay for 4.\n\n**Actions in order of effort**\n1. **Visibility:** label every workload by team and service, and use cost tools (Azure Cost Management, OpenCost, Kubecost, Datadog Cloud Cost). You cannot cut what you cannot see.\n2. **Right-size requests** using real usage (see the throttling and right-sizing question). This usually gives the biggest saving.\n3. **Autoscale:** HPA, KEDA scale-to-zero for workers, cluster autoscaler with sensible minimums.\n4. **Pick the right nodes:** match VM size to the pod shape, avoid many tiny underused nodes, consider ARM-based VMs when your images support them.\n5. **Spot nodes** (Azure Spot node pools) for interruptible work such as batch jobs and CI runners. Use taints and PodDisruptionBudgets, never for the only replica of a critical service.\n6. **Reserved instances or savings plans** for the steady baseline.\n7. **Non-production sleep:** stop dev and test node pools at night and weekends, or scale deployments to zero.\n8. **Housekeeping:** delete unused PVCs, old load balancers, large log volumes, and unneeded Datadog metrics or logs.\n\n```bash\n# Quick check of requested versus used, per namespace\nkubectl top pods -A --sort-by=cpu | head\nkubectl get nodes -o custom-columns=NAME:.metadata.name,CPU:.status.allocatable.cpu,MEM:.status.allocatable.memory\n```\n\n**Trade-offs:** tighter packing saves money but reduces headroom. Spot saves up to a large percentage but pods can be evicted at short notice. Always tie savings to reliability targets.\n\n**Interview tip:** Quote a number if you have one, such as \"we cut node count by 30 percent after right-sizing\", and mention that cost review is a regular team habit, not a one-time project.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "cost",
+        "finops"
+      ],
+      "favorite": false,
+      "module": "Scheduling & Scaling"
+    },
+    {
+      "id": "kubernetes-034",
+      "question": "[Tech Lead] How do you harden a cluster for security?",
+      "answer": "**Short answer:** Work in layers: control who can do what (RBAC), restrict what pods may do (Pod Security Standards), restrict network paths (NetworkPolicy), trust only scanned and signed images, manage secrets outside Git, and audit everything. No single control is enough.\n\n| Layer | What to do |\n| --- | --- |\n| Identity and access | Least-privilege RBAC, no cluster-admin for people day to day, SSO with Microsoft Entra ID on AKS, short-lived access |\n| Pod security | Enforce the Pod Security Standards `restricted` profile where possible |\n| Network | Default-deny NetworkPolicy, then allow needed flows |\n| Images | Scan in CI and registry, use minimal base images, pin by digest, sign with Cosign or Notation |\n| Secrets | Key Vault with CSI driver or External Secrets, encryption at rest, rotate |\n| Runtime and audit | Audit logs, Defender for Containers or Falco, alerts on exec into pods |\n| Supply chain | Only allow images from your registry (admission policy) |\n| Platform | Private API server where possible, regular upgrades, patched nodes |\n\nExample: enforce the restricted Pod Security Standard on a namespace using labels, then write containers that comply.\n\n```yaml\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: shop-prod\n  labels:\n    pod-security.kubernetes.io/enforce: restricted\n    pod-security.kubernetes.io/enforce-version: latest\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: orders-api\n  namespace: shop-prod\nspec:\n  automountServiceAccountToken: false\n  securityContext:\n    runAsNonRoot: true\n    seccompProfile:\n      type: RuntimeDefault\n  containers:\n    - name: api\n      image: myregistry.azurecr.io/orders-api:1.4.2\n      securityContext:\n        allowPrivilegeEscalation: false\n        readOnlyRootFilesystem: true\n        capabilities:\n          drop: [\"ALL\"]\n```\n\n**Common mistakes:** running as root, mounting the Docker socket, wildcard RBAC rules, a default ServiceAccount with extra rights, secrets in environment variables printed in logs, no egress rules.\n\n**How a lead drives it:** make the secure way the easy way with a golden Helm chart, admission policies that block unsafe manifests, and a short checklist in code review.\n\n**Interview tip:** Mention the Pod Security Admission replaced PodSecurityPolicy, which was removed in Kubernetes 1.25.",
+      "level": "advanced",
+      "tags": [
+        "tech-lead",
+        "security",
+        "rbac"
+      ],
+      "favorite": false,
+      "module": "Security"
+    },
+    {
+      "id": "kubernetes-035",
+      "question": "[Tech Lead] How do you monitor Kubernetes with Datadog or Prometheus, and which alerts do you set?",
+      "answer": "**Short answer:** Collect metrics, logs and traces, watch both the platform (nodes, pods, control plane) and your services (the golden signals: latency, traffic, errors, saturation). Alert on symptoms users feel, and keep a small set of cause alerts for things that need action.\n\n**What to collect**\n- **Metrics:** the Datadog Agent as a DaemonSet with the Cluster Agent, or Prometheus with kube-state-metrics and node-exporter.\n- **Logs:** from container stdout, with service, env and version tags.\n- **Traces:** APM with unified service tagging (`env`, `service`, `version`) so deploys are visible.\n- **Events:** deploys, scaling, OOM kills.\n\n**Unified tagging in a Deployment (Datadog style)**\n\n```yaml\nmetadata:\n  labels:\n    tags.datadoghq.com/env: prod\n    tags.datadoghq.com/service: orders-api\n    tags.datadoghq.com/version: \"1.4.3\"\n```\n\n**Alerts worth having**\n\n| Alert | Why |\n| --- | --- |\n| Service error rate and p99 latency (SLO burn rate) | What users feel |\n| Pod restarts or CrashLoopBackOff rising | App or config failure |\n| OOMKilled count | Memory limits wrong |\n| Pending pods for more than 10 minutes | Capacity or scheduling |\n| Deployment with unavailable replicas | Bad rollout |\n| Node NotReady, memory or disk pressure | Infrastructure |\n| CPU throttling ratio high | Hidden latency |\n| PVC almost full | Data outage soon |\n| Certificate expiry within 14 days | Avoidable outage |\n| HPA at max replicas for a long time | Out of headroom |\n\n```promql\n# Prometheus example: restarts in the last 15 minutes\nincrease(kube_pod_container_status_restarts_total{namespace=\"shop\"}[15m]) > 3\n```\n\n**Good practice:** each alert has an owner, a runbook link, and a severity. Page only for urgent, actionable issues. Review noisy alerts every sprint.\n\n**Interview tip:** Contrast symptom alerts (users hurt) with cause alerts (CPU high). Cause alerts alone create noise.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "observability",
+        "datadog"
+      ],
+      "favorite": false,
+      "module": "Operations & Troubleshooting"
+    },
+    {
+      "id": "kubernetes-036",
+      "question": "[Tech Lead] How do GitOps and GitLab CI/CD deploy to Kubernetes, and how do you promote between environments?",
+      "answer": "**Short answer:** CI builds, tests and scans the image, then pushes it. CD is handled either by the pipeline running `helm upgrade` (push) or by a GitOps controller such as Argo CD or Flux that watches a Git repo and syncs the cluster (pull). Promotion means changing the image version in the next environment's folder through a reviewed merge request.\n\n| | Push (pipeline deploys) | Pull (GitOps) |\n| --- | --- | --- |\n| Credentials | Pipeline needs cluster access | Cluster pulls from Git, no inbound credentials |\n| Drift | Not corrected | Detected and corrected |\n| Audit | Pipeline logs | Git history |\n| Rollback | Re-run pipeline | `git revert` |\n\n```mermaid\nflowchart LR\n    D[\"Developer MR\"] --> CI[\"GitLab CI: test, build, scan\"]\n    CI --> R[\"Registry: image 1.4.3\"]\n    CI --> G[\"Config repo: bump tag in dev\"]\n    G --> A[\"Argo CD / Flux\"]\n    A --> K[\"Cluster\"]\n    G -. approved MR .-> P[\"staging then prod folders\"]\n```\n\nRead it: CI never touches the cluster. It updates Git, and the controller applies the change.\n\n**A typical repo layout**\n\n```text\nconfig-repo/\n  apps/orders-api/base/            deployment.yaml, service.yaml\n  apps/orders-api/overlays/dev/    kustomization.yaml (image tag)\n  apps/orders-api/overlays/staging/\n  apps/orders-api/overlays/prod/\n```\n\n**GitLab CI fragment that bumps the dev tag**\n\n```yaml\ndeploy-dev:\n  stage: deploy\n  image: registry.example.com/tools/kustomize:5\n  script:\n    - git clone \"https://ci-bot:${CONFIG_REPO_TOKEN}@gitlab.example.com/platform/config-repo.git\"\n    - cd config-repo/apps/orders-api/overlays/dev\n    - kustomize edit set image orders-api=myregistry.azurecr.io/orders-api:${CI_COMMIT_SHORT_SHA}\n    - git commit -am \"orders-api ${CI_COMMIT_SHORT_SHA} to dev\" && git push\n  rules:\n    - if: $CI_COMMIT_BRANCH == \"main\"\n```\n\n**Promotion rules:** same image through every environment (build once, never rebuild), config differences only in overlays, automatic for dev, approval for prod, and smoke tests plus metrics checks as gates. Progressive delivery tools (Argo Rollouts, Flagger) can add canary with automatic rollback.\n\n**Interview tip:** Stress \"build once, promote the same digest\". It removes a whole class of \"it worked in staging\" problems.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "gitops",
+        "cicd"
+      ],
+      "favorite": false,
+      "module": "Delivery & GitOps"
+    },
+    {
+      "id": "kubernetes-037",
+      "question": "[Tech Lead] How do you lay out multiple environments and multi-tenant workloads: namespaces or separate clusters?",
+      "answer": "**Short answer:** Use separate clusters when you need hard isolation (production versus non-production, compliance zones, very different upgrade schedules). Use namespaces inside a cluster to separate teams and services that trust each other reasonably. Most organisations end up with a few clusters and many namespaces.\n\n| Option | Strengths | Weaknesses |\n| --- | --- | --- |\n| Namespace per team or app | Cheap, simple, shared tooling | Shared control plane and kernel, noisy neighbours, blast radius |\n| Cluster per environment | Strong prod isolation, safe upgrade testing | More clusters to operate and pay for |\n| Cluster per team | Maximum isolation | High cost and overhead, hard to govern |\n\n**A common layout:** one non-production cluster (dev and staging as namespaces, or separate node pools) and one production cluster per region. Platform components (ingress, monitoring, policy) are installed the same way everywhere through GitOps.\n\n**Making namespaces safe (soft multi-tenancy)**\n- RBAC per team, scoped to their namespaces.\n- ResourceQuota and LimitRange to stop one team using everything.\n- Default-deny NetworkPolicy.\n- Pod Security Standards labels.\n- Dedicated node pools with taints for sensitive or heavy workloads.\n- Per-namespace identities and secrets.\n\n```yaml\napiVersion: v1\nkind: ResourceQuota\nmetadata:\n  name: team-quota\n  namespace: shop-prod\nspec:\n  hard:\n    requests.cpu: \"20\"\n    requests.memory: 40Gi\n    pods: \"100\"\n```\n\n**Decision questions:** Do tenants trust each other? Are there compliance rules? How often must clusters be upgraded independently? What is the cost of a cluster (control plane, system nodes, monitoring)? Who operates it?\n\n**Gotcha:** namespaces share the kernel. Untrusted code needs stronger isolation (separate clusters, sandboxed runtimes, or separate node pools).\n\n**Interview tip:** Answer with a decision, for example \"prod and non-prod separate, teams as namespaces with quotas\", and explain what would make you change it.",
+      "level": "advanced",
+      "tags": [
+        "tech-lead",
+        "multi-tenancy",
+        "architecture"
+      ],
+      "favorite": false,
+      "module": "Operations & Troubleshooting"
+    },
+    {
+      "id": "kubernetes-038",
+      "question": "[Tech Lead] How do you back up Kubernetes and plan disaster recovery?",
+      "answer": "**Short answer:** Separate three things: cluster configuration (rebuilt from Git), persistent data (backed up by the database or volume snapshots), and cluster state (etcd, mostly handled by the provider on AKS). Decide your RTO and RPO first, then test restores, because an untested backup is only a hope.\n\n**What to protect**\n- **Manifests and config:** if you use GitOps, Git is your backup. Rebuilding a cluster means pointing Argo CD or Flux at the repo.\n- **Persistent volumes:** use CSI volume snapshots, or Velero with snapshot support, for stateful workloads.\n- **Databases:** prefer managed databases (Azure Database for PostgreSQL) with point-in-time restore and geo-replication.\n- **Secrets:** the source of truth is Key Vault, not the cluster.\n- **etcd:** on self-managed clusters, take regular `etcdctl snapshot save` backups. On AKS, Azure manages the control plane.\n\n```bash\n# Velero: daily backup of one namespace, kept 30 days\nvelero schedule create shop-daily \\\n  --schedule=\"0 2 * * *\" \\\n  --include-namespaces shop-prod \\\n  --ttl 720h\n\nvelero restore create --from-backup shop-daily-20260101020000\n```\n\n**Region failure plan**\n1. Keep a second cluster in a paired region, created from the same Git repo.\n2. Replicate data (database geo-replication, geo-redundant storage, ACR geo-replication).\n3. Use Azure Front Door or Traffic Manager to switch traffic.\n4. Decide active-active versus active-passive based on cost and RTO.\n\n| Strategy | RTO | Cost |\n| --- | --- | --- |\n| Backup and restore | Hours | Lowest |\n| Warm standby cluster | Minutes to an hour | Medium |\n| Active-active | Near zero | Highest |\n\n**Practice:** run a game day each quarter. Restore into an empty cluster and time it. Document the steps.\n\n**Gotcha:** Velero restores objects but app-consistent database backups need their own tool. Also, restoring into a cluster with a different Kubernetes version or storage class may need mapping.\n\n**Interview tip:** Start with RTO and RPO from the business, then choose the cheapest design that meets them.",
+      "level": "advanced",
+      "tags": [
+        "tech-lead",
+        "backup",
+        "disaster-recovery"
+      ],
+      "favorite": false,
+      "module": "Operations & Troubleshooting"
+    },
+    {
+      "id": "kubernetes-039",
+      "question": "[Tech Lead] How do you plan Kubernetes cluster upgrades and handle API deprecations?",
+      "answer": "**Short answer:** Kubernetes ships a minor version about three times a year and supports only the latest few. Upgrade one minor version at a time, on a regular schedule, test in non-production first, scan for removed APIs before you start, and use PodDisruptionBudgets so node rollouts do not cause downtime.\n\n**Plan**\n1. **Read the release notes** and the deprecation list for the target version.\n2. **Find removed APIs** in your manifests and Helm charts. Tools such as `pluto` or `kubent` scan for them; the API server metric `apiserver_requested_deprecated_apis` shows what is still called.\n3. **Check add-ons** (ingress controller, CSI drivers, Datadog agent, service mesh) for compatibility.\n4. **Upgrade a non-prod cluster** first and run smoke and load tests.\n5. **Upgrade the control plane**, then node pools.\n6. **Watch** error rates and rollout progress. Keep a rollback plan: control plane upgrades usually cannot be reverted, so the safe fallback is a blue-green cluster.\n\nExamples of past removals: `extensions/v1beta1` Ingress and PodSecurityPolicy (removed in 1.25), the in-tree cloud provider code over several versions, and the dockershim in 1.24.\n\n```bash\naz aks get-upgrades --resource-group rg-shop --name aks-shop-prod -o table\naz aks upgrade --resource-group rg-shop --name aks-shop-prod --kubernetes-version 1.33.0 --control-plane-only\naz aks nodepool upgrade --resource-group rg-shop --cluster-name aks-shop-prod --name apps --max-surge 33%\n```\n\n(Use a version that your region lists as available.)\n\n**Node upgrades:** the surge setting adds extra nodes first, then cordons, drains and replaces old ones. Drains respect PodDisruptionBudgets and `terminationGracePeriodSeconds`.\n\n**Team practice:** upgrade every quarter, never stay more than one or two versions behind the support window, and treat upgrades as normal work, not a yearly project.\n\n**Interview tip:** Say \"pre-flight scan, non-prod first, control plane, then nodes with surge\". It is a short, complete plan.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "upgrades",
+        "maintenance"
+      ],
+      "favorite": false,
+      "module": "Operations & Troubleshooting"
+    },
+    {
+      "id": "kubernetes-040",
+      "question": "[Tech Lead] Helm or Kustomize: which do you use in practice and why?",
+      "answer": "**Short answer:** Helm is a package manager with templates, versions and releases. Kustomize patches plain YAML with overlays and has no templating language. Use Helm to install third-party software and to package apps with many options. Use Kustomize, or a small Helm chart, for your own services with simple per-environment differences. Many teams combine them.\n\n| | Helm | Kustomize |\n| --- | --- | --- |\n| Model | Templates plus values | Base plus overlays (patches) |\n| Release tracking | Yes (history, rollback) | No, the cluster just gets YAML |\n| Learning curve | Higher (Go templates) | Lower |\n| Third-party apps | Standard (charts) | Possible, less convenient |\n| Readability | Templates can get messy | Plain YAML stays readable |\n| Built into kubectl | No | Yes, `kubectl apply -k` |\n\n```yaml\n# Kustomize overlay: overlays/prod/kustomization.yaml\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n  - ../../base\nimages:\n  - name: orders-api\n    newName: myregistry.azurecr.io/orders-api\n    newTag: 1.4.3\npatches:\n  - target:\n      kind: Deployment\n      name: orders-api\n    patch: |-\n      - op: replace\n        path: /spec/replicas\n        value: 6\n```\n\n```bash\nhelm upgrade --install orders-api ./chart -n shop -f values-prod.yaml --atomic --timeout 5m\nkubectl kustomize overlays/prod | kubectl diff -f -\n```\n\n**What works in practice**\n- A shared **internal Helm chart** for all Go and Node services gives one place for probes, security context and labels. Teams only provide values.\n- Kustomize or Argo CD values files for environment differences.\n- Pin chart versions. Review rendered output (`helm template`) in merge requests.\n- Keep logic out of templates. If a chart needs many `if` blocks, split it.\n\n**Gotchas:** Helm hooks and `--atomic` can hide partial failures. Large values files become a second programming language. Kustomize patches break when the base changes shape.\n\n**Interview tip:** Pick one default and explain it. \"Helm for platform add-ons and our common service chart, Kustomize overlays per environment\" is a clear answer.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "helm",
+        "kustomize"
+      ],
+      "favorite": false,
+      "module": "Delivery & GitOps"
+    },
+    {
+      "id": "kubernetes-041",
+      "question": "[Tech Lead] What should you know about running on Azure AKS?",
+      "answer": "**Short answer:** AKS runs and patches the control plane for you. You manage node pools, networking choice, identity, ingress, and upgrades. The important Azure-specific pieces are system and user node pools, workload identity instead of stored credentials, ACR integration, Key Vault secrets through the CSI driver, and your choice of ingress.\n\n**Node pools:** a **system pool** runs core components. **User pools** run your apps. Use separate pools for different VM sizes, spot workloads, or GPU. Use availability zones for resilience.\n\n**Networking:** Azure CNI gives pods VNet addresses, and Azure CNI Overlay saves addresses on large clusters. kubenet is the older, simpler option. Plan address space early because it is hard to change.\n\n**Identity**\n- **Microsoft Entra ID** for user login and Azure RBAC.\n- **Workload identity** (current approach, replacing the older pod identity): a pod's Kubernetes ServiceAccount is federated with an Azure managed identity, so the pod gets tokens without any secret.\n\n```yaml\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: orders-api\n  namespace: shop\n  annotations:\n    azure.workload.identity/client-id: 00000000-0000-0000-0000-000000000000  # placeholder\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: orders-api\n  namespace: shop\n  labels:\n    azure.workload.identity/use: \"true\"\nspec:\n  serviceAccountName: orders-api\n  containers:\n    - name: api\n      image: myregistry.azurecr.io/orders-api:1.4.3\n```\n\n**Registry:** attach ACR to the cluster so the kubelet pulls with its managed identity: `az aks update -n aks-shop-prod -g rg-shop --attach-acr myregistry`.\n\n**Secrets:** the **Azure Key Vault provider for the Secrets Store CSI driver** mounts secrets as files or syncs them to Kubernetes Secrets.\n\n**Ingress options**\n\n| Option | Notes |\n| --- | --- |\n| Application Routing add-on (managed NGINX) | Simple, Microsoft supported |\n| Application Gateway for Containers | Azure native layer 7, Gateway API support |\n| Self-managed NGINX or Traefik | Full control, you maintain it |\n| Istio-based service mesh add-on | If you need a mesh |\n\n**Other useful features:** cluster autoscaler, auto-upgrade channels, Azure Policy add-on, Defender for Containers, managed Prometheus and Grafana.\n\n**Interview tip:** The strongest point is \"no secrets in the cluster\": workload identity plus Key Vault plus ACR pull through managed identity.",
+      "level": "advanced",
+      "tags": [
+        "tech-lead",
+        "aks",
+        "azure"
+      ],
+      "favorite": false,
+      "module": "Cloud & AKS"
+    },
+    {
+      "id": "kubernetes-042",
+      "question": "[Tech Lead] How do you handle a Kubernetes production incident and run a postmortem?",
+      "answer": "**Short answer:** In an incident, stabilise first and investigate second: declare the incident, assign roles, check what changed, mitigate (roll back, scale, fail over), communicate on a schedule, and only then dig into the root cause. Afterwards, write a blameless postmortem with a timeline, causes and tracked action items.\n\n**During the incident**\n1. **Declare and assign roles:** incident commander, an operator who runs commands, and a communicator who updates stakeholders.\n2. **Scope the impact:** which services, which users, since when. Use the Datadog dashboards and SLO view.\n3. **Check what changed:** recent deploys, config or secret changes, node upgrades, cert expiry, traffic spikes.\n4. **Mitigate quickly:** `kubectl rollout undo`, scale replicas, cordon a bad node, fail traffic to another region, disable a feature flag.\n5. **Communicate every 15 to 30 minutes**, even if the update is \"no change\".\n\n```bash\nkubectl rollout undo deployment/orders-api -n shop\nkubectl cordon aks-apps-12345678-vmss000003\nkubectl get events -A --sort-by=.lastTimestamp | tail -30\n```\n\n**Typical Kubernetes outage causes**\n- A bad deploy with weak probes.\n- Expired certificates.\n- A node pool out of capacity, or quota exhausted.\n- DNS (CoreDNS overload).\n- An admission webhook that is down and blocks all pod creation.\n- A full disk on a node, or etcd under pressure.\n- Everything restarting at once, such as a liveness check on a shared dependency.\n\n**Blameless postmortem outline**\n- Summary and impact (duration, users, errors).\n- Timeline with timestamps.\n- Root cause and contributing factors (ask why five times).\n- What went well and what went badly.\n- Action items with an owner and a date, split into prevent, detect and mitigate.\n\n**Culture points:** focus on systems not people, share the report widely, and follow up the actions, because a postmortem without finished actions repeats the incident.\n\n**Interview tip:** Tell one real story in this shape: symptom, mitigation, root cause, the fix that prevents a repeat, and what you changed in alerts or process.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "incident",
+        "postmortem"
+      ],
+      "favorite": false,
+      "module": "Operations & Troubleshooting"
+    },
+    {
+      "id": "kubernetes-043",
+      "question": "What is a StatefulSet and when do you use it instead of a Deployment?",
+      "answer": "**Short answer:** A StatefulSet runs pods that need a stable name, a stable network identity and their own persistent disk. Pods are created in order (`db-0`, `db-1`, `db-2`) and keep their identity and volume when rescheduled. Use it for databases, brokers and clustered systems, not for ordinary stateless APIs.\n\nA Deployment treats pods as interchangeable. A StatefulSet does not: `db-0` is always `db-0`, and it always gets back its own PVC.\n\n```yaml\napiVersion: v1\nkind: Service\nmetadata:\n  name: pg\nspec:\n  clusterIP: None            # headless: gives each pod its own DNS name\n  selector:\n    app: pg\n  ports:\n    - port: 5432\n---\napiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: pg\nspec:\n  serviceName: pg\n  replicas: 3\n  selector:\n    matchLabels:\n      app: pg\n  template:\n    metadata:\n      labels:\n        app: pg\n    spec:\n      containers:\n        - name: postgres\n          image: postgres:16\n          env:\n            - name: POSTGRES_PASSWORD\n              valueFrom:\n                secretKeyRef: { name: pg-secret, key: password }\n          volumeMounts:\n            - name: data\n              mountPath: /var/lib/postgresql/data\n  volumeClaimTemplates:\n    - metadata:\n        name: data\n      spec:\n        accessModes: [\"ReadWriteOnce\"]\n        resources:\n          requests:\n            storage: 20Gi\n```\n\nWhat you get:\n- DNS names like `pg-0.pg.shop.svc.cluster.local`, one per pod.\n- Ordered start and stop by default (`podManagementPolicy: OrderedReady`; use `Parallel` to skip ordering).\n- One PVC per pod from `volumeClaimTemplates`.\n- Updates go from the highest ordinal down.\n\n**Gotchas:** PVCs are **not** deleted when you delete the StatefulSet (safety by design). A StatefulSet gives identity and storage only. It does not give replication, backup or failover. For that you need the database's own clustering or an operator.\n\n**Interview tip:** A good answer ends with \"for production databases I would prefer a managed service or a proven operator over a hand-written StatefulSet.\"",
+      "level": "intermediate",
+      "module": "Workloads",
+      "tags": [
+        "statefulset",
+        "storage"
       ],
       "favorite": false
     },
     {
-      "id": "kubernetes-4",
-      "question": "ConfigMap vs Secret, and how do you manage secrets safely?",
-      "answer": "Both inject config as env vars or mounted files. Secrets are only base64-encoded by default, **not encrypted**. Improve with etcd encryption at rest, RBAC limits, and external managers (Azure Key Vault + CSI driver, External Secrets, Sealed Secrets). Never commit them to git.",
-      "level": "basic",
+      "id": "kubernetes-044",
+      "question": "What is a DaemonSet and what is it used for?",
+      "answer": "**Short answer:** A DaemonSet makes sure one copy of a pod runs on every node, or on a chosen group of nodes. New nodes automatically get the pod, and removed nodes lose it. It is used for node-level agents.\n\nTypical uses: log collectors (Fluent Bit), the Datadog Agent, node monitoring (node-exporter), CNI and CSI node plugins, and kube-proxy itself.\n\n```yaml\napiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: log-agent\n  namespace: monitoring\nspec:\n  selector:\n    matchLabels:\n      app: log-agent\n  updateStrategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 1\n  template:\n    metadata:\n      labels:\n        app: log-agent\n    spec:\n      tolerations:\n        - operator: Exists          # also run on tainted nodes\n      containers:\n        - name: agent\n          image: fluent/fluent-bit:3.0\n          resources:\n            requests:\n              cpu: 50m\n              memory: 64Mi\n          volumeMounts:\n            - name: varlog\n              mountPath: /var/log\n              readOnly: true\n      volumes:\n        - name: varlog\n          hostPath:\n            path: /var/log\n```\n\nPoints to remember:\n- Use `nodeSelector` or affinity to limit it to some nodes (for example GPU nodes only).\n- Add tolerations if the agent must run on tainted nodes, or it will be missing there.\n- Always set resource requests. Every node pays the cost, so a heavy agent multiplies across the cluster.\n- `hostPath` and privileged access are powerful. Give DaemonSets only what they need.\n\n**Gotcha:** DaemonSet pods on a big cluster can use a lot of resources and API server calls. Review them when you see node memory pressure.\n\n**Interview tip:** Mention that the Datadog Agent runs as a DaemonSet, and the Cluster Agent as a normal Deployment, so you understand the difference between per-node and per-cluster work.",
+      "level": "intermediate",
+      "module": "Workloads",
       "tags": [
-        "config",
+        "daemonset",
+        "nodes"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-045",
+      "question": "How do Jobs and CronJobs work?",
+      "answer": "**Short answer:** A Job runs pods until a set number of them finish successfully, retrying on failure. A CronJob creates Jobs on a schedule. Use them for batch work, migrations and reports that must end, as opposed to Deployments that run forever.\n\n```yaml\napiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: nightly-report\n  namespace: shop\nspec:\n  schedule: \"0 2 * * *\"            # every day at 02:00\n  timeZone: \"Europe/Paris\"         # field is stable since Kubernetes 1.27\n  concurrencyPolicy: Forbid        # skip a run if the last one is still going\n  startingDeadlineSeconds: 600\n  successfulJobsHistoryLimit: 3\n  failedJobsHistoryLimit: 3\n  jobTemplate:\n    spec:\n      backoffLimit: 3              # retries before the Job is marked Failed\n      activeDeadlineSeconds: 1800  # kill if it runs longer than 30 min\n      ttlSecondsAfterFinished: 86400\n      template:\n        spec:\n          restartPolicy: OnFailure # Jobs must use OnFailure or Never\n          containers:\n            - name: report\n              image: myregistry.azurecr.io/report-job:2.0.0\n```\n\nUseful Job fields:\n- `completions` and `parallelism` for fan-out work.\n- `completionMode: Indexed` gives each pod an index, handy for sharding.\n- `ttlSecondsAfterFinished` cleans up finished pods so they do not pile up.\n\n```bash\nkubectl create job manual-run --from=cronjob/nightly-report -n shop\nkubectl get jobs -n shop\n```\n\n**Gotchas**\n- Jobs run **at least once**, so the work must be idempotent.\n- With `concurrencyPolicy: Allow` (the default) slow runs can overlap.\n- If the controller misses too many schedules, it stops creating Jobs. Set `startingDeadlineSeconds`.\n- A pod with a sidecar proxy may never finish unless the sidecar exits. Native sidecars solve this.\n\n**Interview tip:** Say \"idempotent, deadline, TTL cleanup, no overlap\". Those four settings are what make a CronJob safe.",
+      "level": "intermediate",
+      "module": "Workloads",
+      "tags": [
+        "jobs",
+        "cronjob"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-046",
+      "question": "What are init containers and sidecars, and what are native sidecar containers?",
+      "answer": "**Short answer:** Init containers run one after another to completion before the main containers start. They prepare things. Sidecars run next to the main container for the whole pod life and add a function such as proxying or log shipping. Native sidecars (beta and on by default from Kubernetes 1.29, stable in 1.33) are init containers with `restartPolicy: Always`, which gives sidecars proper start and stop order.\n\n**Init container uses:** wait for a dependency, run a database migration, fetch config, set file permissions.\n\n**The old sidecar problem:** sidecars were plain containers, so there was no start order (the app could start before the proxy was ready), and Jobs never finished because the sidecar kept running.\n\n```yaml\napiVersion: v1\nkind: Pod\nmetadata:\n  name: orders-api\nspec:\n  initContainers:\n    - name: migrate                      # classic init: runs and exits\n      image: myregistry.azurecr.io/orders-migrate:1.4.3\n    - name: log-shipper                  # native sidecar\n      image: fluent/fluent-bit:3.0\n      restartPolicy: Always              # this makes it a sidecar\n      volumeMounts:\n        - name: logs\n          mountPath: /var/log/app\n  containers:\n    - name: api\n      image: myregistry.azurecr.io/orders-api:1.4.3\n      volumeMounts:\n        - name: logs\n          mountPath: /var/log/app\n  volumes:\n    - name: logs\n      emptyDir: {}\n```\n\n| Kind | Starts | Ends | Restarted |\n| --- | --- | --- | --- |\n| Init container | Before app, in order | Must exit successfully | On failure, retried |\n| Native sidecar | Before app, in order | After app, in reverse | Yes, always |\n| Regular sidecar container | Same time as the app | With the pod | Per pod policy |\n\n**Benefits of native sidecars:** the sidecar is ready before the app starts, it keeps running while init containers after it run, it shuts down after the main container, and a Job can finish.\n\n**Gotcha:** if your cluster is older than 1.29, the `SidecarContainers` feature gate may be off. Check the version before relying on it.\n\n**Interview tip:** Mention service mesh proxies (Istio, Linkerd) and log agents as the real-world cases that motivated this feature.",
+      "level": "intermediate",
+      "module": "Workloads",
+      "tags": [
+        "init-containers",
+        "sidecar",
+        "k8s-1.29"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-047",
+      "question": "How do rolling updates, rollbacks, canary and blue-green releases work?",
+      "answer": "**Short answer:** A rolling update replaces pods gradually, controlled by `maxSurge` (extra pods allowed) and `maxUnavailable` (pods allowed to be missing). Rollback goes back to the previous ReplicaSet. Canary and blue-green are release strategies built on top, using extra Deployments, traffic splitting or tools like Argo Rollouts.\n\n```yaml\nstrategy:\n  type: RollingUpdate\n  rollingUpdate:\n    maxSurge: 25%          # up to 25% extra pods during the update\n    maxUnavailable: 0      # keep full capacity\n```\n\nWith 4 replicas and `maxSurge: 25%`, Kubernetes starts one new pod, waits until it is ready, then stops one old pod, and repeats.\n\n```bash\nkubectl set image deploy/orders-api api=myregistry.azurecr.io/orders-api:1.4.4\nkubectl rollout status deploy/orders-api --timeout=120s\nkubectl rollout pause deploy/orders-api      # hold the rollout half-way\nkubectl rollout undo deploy/orders-api --to-revision=3\n```\n\nA rollout that cannot finish (new pods never become ready) stops by itself and old pods keep serving. `progressDeadlineSeconds` (default 600) marks it as failed.\n\n| Strategy | How | Pros | Cons |\n| --- | --- | --- | --- |\n| Rolling | Gradual replace | Simple, built in | Old and new versions run together |\n| Recreate | Stop all, then start | No version mixing | Downtime |\n| Blue-green | Two full environments, switch the Service selector or route | Instant switch and rollback | Double capacity |\n| Canary | Send a small percent to the new version, then grow | Real traffic testing, limited blast radius | Needs traffic splitting and metrics |\n\n**Canary options:** two Deployments behind one Service (rough, split by replica count), Ingress or Gateway API weights, a service mesh, or Argo Rollouts and Flagger which also analyse metrics and roll back automatically.\n\n**Gotchas:** old and new versions run at the same time, so APIs and database schemas must be backward compatible. `kubectl rollout undo` does not revert database changes.\n\n**Interview tip:** Tie it to risk. Say which strategy you choose for a low-risk UI change versus a payment service change, and what metric promotes or aborts a canary.",
+      "level": "intermediate",
+      "module": "Workloads",
+      "tags": [
+        "deployments",
+        "rollout",
+        "release"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-048",
+      "question": "How does Kubernetes scheduling work: nodeSelector, affinity, taints, tolerations and topology spread?",
+      "answer": "**Short answer:** The scheduler places each pod on a node that fits. You steer it with `nodeSelector` and node affinity (pods choose nodes), pod affinity and anti-affinity (pods choose other pods), taints and tolerations (nodes repel pods unless tolerated), and topology spread constraints (spread across zones or nodes).\n\n| Tool | Direction | Use it for |\n| --- | --- | --- |\n| `nodeSelector` | Pod picks nodes by label | Simple \"run on the ssd pool\" |\n| Node affinity | Pod picks nodes, with soft or hard rules | Richer rules, preferences |\n| Pod anti-affinity | Pod avoids other pods | Keep replicas apart |\n| Taint (on node) and toleration (on pod) | Node repels | Dedicated or special nodes (GPU, spot) |\n| Topology spread | Even spread by zone or node | High availability |\n\n```yaml\nspec:\n  nodeSelector:\n    agentpool: apps\n  tolerations:\n    - key: kubernetes.azure.com/scalesetpriority\n      operator: Equal\n      value: spot\n      effect: NoSchedule\n  affinity:\n    nodeAffinity:\n      requiredDuringSchedulingIgnoredDuringExecution:\n        nodeSelectorTerms:\n          - matchExpressions:\n              - key: kubernetes.io/arch\n                operator: In\n                values: [\"amd64\"]\n  topologySpreadConstraints:\n    - maxSkew: 1\n      topologyKey: topology.kubernetes.io/zone\n      whenUnsatisfiable: ScheduleAnyway\n      labelSelector:\n        matchLabels:\n          app: orders-api\n```\n\nMeaning of the long names: `required...` is a hard rule, `preferred...` is a soft hint, and `IgnoredDuringExecution` means running pods are not moved when labels change later.\n\nTaint effects: `NoSchedule` (do not place new pods), `PreferNoSchedule` (try to avoid), `NoExecute` (also evict running pods).\n\n```bash\nkubectl taint nodes aks-gpu-123 sku=gpu:NoSchedule\nkubectl cordon aks-apps-456       # no new pods\nkubectl drain aks-apps-456 --ignore-daemonsets --delete-emptydir-data\n```\n\n**Gotchas:** a taint does not attract pods. It only repels, so pair it with a nodeSelector or affinity to make a pod go there. Hard anti-affinity on a big Deployment can leave pods Pending. Topology spread is usually the better tool.\n\n**Interview tip:** Say that for HA you spread replicas across zones with topology spread, and for special hardware you taint the pool and add toleration plus node affinity.",
+      "level": "intermediate",
+      "module": "Scheduling & Scaling",
+      "tags": [
+        "scheduling",
+        "affinity",
+        "taints"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-049",
+      "question": "What is a PodDisruptionBudget and why do you need one?",
+      "answer": "**Short answer:** A PodDisruptionBudget (PDB) limits how many pods of an app can be down at the same time during voluntary disruptions such as node drains and cluster upgrades. It protects availability while the platform moves pods around.\n\nVoluntary disruptions are things you or the platform do on purpose: node upgrades, scale-down by the autoscaler, `kubectl drain`. A PDB does not protect against crashes or node failure, which are involuntary.\n\n```yaml\napiVersion: policy/v1\nkind: PodDisruptionBudget\nmetadata:\n  name: orders-api\n  namespace: shop\nspec:\n  minAvailable: 2           # or use maxUnavailable: 1\n  selector:\n    matchLabels:\n      app: orders-api\n```\n\nWhen a drain tries to evict a pod through the Eviction API, the API server checks the PDB. If the eviction would break the budget, it is refused and the drain waits and retries.\n\n```bash\nkubectl get pdb -n shop\n# NAME         MIN AVAILABLE   ALLOWED DISRUPTIONS\n# orders-api   2               1\n```\n\n**Choosing values**\n- Use `maxUnavailable: 1` for large Deployments, because it scales with replicas.\n- Percentages work too (`maxUnavailable: 25%`).\n- Never set `minAvailable` equal to the replica count: the budget then allows zero disruptions and **blocks every node upgrade**.\n- A single-replica app with `minAvailable: 1` also blocks drains. Run at least two replicas.\n\n**Gotcha:** an AKS upgrade can get stuck on a PDB that allows no disruptions. The fix is to scale up the app or relax the PDB, not to force delete pods.\n\n**Interview tip:** Pair it with the upgrade question: \"node surge plus PDB plus readiness probes is what makes upgrades safe.\"",
+      "level": "intermediate",
+      "module": "Scheduling & Scaling",
+      "tags": [
+        "pdb",
+        "availability",
+        "upgrades"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-050",
+      "question": "What are Ingress controllers and the Gateway API?",
+      "answer": "**Short answer:** An Ingress controller is the component that implements Ingress rules (NGINX, Traefik, HAProxy, cloud gateways). The Gateway API is the newer, more expressive successor to Ingress. It reached general availability (v1.0) in October 2023, and it separates roles: the platform team owns the Gateway, app teams own the routes.\n\n**Why a successor?** Ingress is small, so every controller invented its own annotations for things like header matching, retries and traffic splitting. Gateway API makes those features part of the standard.\n\n| Resource | Owner | Purpose |\n| --- | --- | --- |\n| `GatewayClass` | Infrastructure provider | Which controller implementation |\n| `Gateway` | Platform team | Listeners: ports, protocols, TLS |\n| `HTTPRoute` (also GRPCRoute, TLSRoute) | App team | Host, path, header rules and backends |\n\n```yaml\napiVersion: gateway.networking.k8s.io/v1\nkind: Gateway\nmetadata:\n  name: shared-gw\n  namespace: infra\nspec:\n  gatewayClassName: example-class\n  listeners:\n    - name: https\n      protocol: HTTPS\n      port: 443\n      tls:\n        mode: Terminate\n        certificateRefs:\n          - name: shop-tls\n      allowedRoutes:\n        namespaces:\n          from: All\n---\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: orders\n  namespace: shop\nspec:\n  parentRefs:\n    - name: shared-gw\n      namespace: infra\n  hostnames: [\"shop.example.com\"]\n  rules:\n    - matches:\n        - path: { type: PathPrefix, value: /orders }\n      backendRefs:\n        - name: orders-api\n          port: 80\n          weight: 90\n        - name: orders-api-canary\n          port: 80\n          weight: 10\n```\n\nThe weights show built-in canary splitting without annotations.\n\n**Practical advice:** Ingress still works and is fine for simple HTTP. For new platforms, check that your controller supports Gateway API (Application Gateway for Containers, Envoy Gateway, Istio, NGINX Gateway Fabric and others do). The Ingress-NGINX project was announced for retirement in March 2026, so plan for a migration; verify the current status before you decide.\n\n**Interview tip:** Highlight the role split and the portable features. It shows you think about team boundaries, not just YAML.",
+      "level": "intermediate",
+      "module": "Networking",
+      "tags": [
+        "ingress",
+        "gateway-api",
+        "k8s-1.28"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-051",
+      "question": "How do NetworkPolicies work?",
+      "answer": "**Short answer:** A NetworkPolicy is a firewall rule for pods, based on labels. By default all pods can talk to all pods. Once a policy selects a pod, only the traffic the policies allow reaches it. The CNI plugin must support NetworkPolicy, or the objects do nothing.\n\nRules are **additive allow lists**: there are no deny rules. A pod with no policy is open. A pod selected by any policy for a direction (ingress or egress) is closed for that direction except what is allowed.\n\n**Pattern 1: default deny for a namespace**\n\n```yaml\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: default-deny-all\n  namespace: shop\nspec:\n  podSelector: {}          # all pods in the namespace\n  policyTypes: [\"Ingress\", \"Egress\"]\n```\n\n**Pattern 2: allow only what is needed**\n\n```yaml\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: orders-api-allow\n  namespace: shop\nspec:\n  podSelector:\n    matchLabels:\n      app: orders-api\n  policyTypes: [\"Ingress\", \"Egress\"]\n  ingress:\n    - from:\n        - podSelector:\n            matchLabels:\n              app: web\n      ports:\n        - port: 8080\n  egress:\n    - to:\n        - podSelector:\n            matchLabels:\n              app: postgres\n      ports:\n        - port: 5432\n    - to:                       # allow DNS\n        - namespaceSelector:\n            matchLabels:\n              kubernetes.io/metadata.name: kube-system\n      ports:\n        - port: 53\n          protocol: UDP\n        - port: 53\n          protocol: TCP\n```\n\n**Gotchas**\n- Forgetting DNS in egress rules breaks name resolution. This is the most common mistake.\n- `from` with `namespaceSelector` and `podSelector` as **separate list items** means OR. In **one item** it means AND.\n- On AKS, you pick a policy engine (Azure Network Policy Manager, Calico or Cilium) when you create the cluster.\n- Plain NetworkPolicy works at layer 3 and 4. It cannot filter by HTTP path or by DNS name. Cilium and service meshes add that.\n\n**Interview tip:** Say \"default deny, then allow\", and mention testing with a debug pod and `curl` after you apply the policy.",
+      "level": "intermediate",
+      "module": "Networking",
+      "tags": [
+        "networkpolicy",
         "security"
       ],
       "favorite": false
     },
     {
-      "id": "kubernetes-5",
-      "question": "Liveness vs readiness vs startup probes?",
-      "answer": "- **Readiness:** is the pod ready for traffic? Failure removes it from Service endpoints (no restart).\n- **Liveness:** is it stuck? Failure makes kubelet restart the container.\n- **Startup:** delays the other probes for slow-starting apps.\n\nDon't make liveness depend on downstream services, or an outage restarts everything.",
+      "id": "kubernetes-052",
+      "question": "How does RBAC work in detail?",
+      "answer": "**Short answer:** RBAC controls who can do which actions on which resources. A Role lists permissions (verbs on resources) inside a namespace, and a ClusterRole does the same cluster-wide. A RoleBinding or ClusterRoleBinding attaches the role to a user, group or ServiceAccount.\n\n| Object | Scope | Meaning |\n| --- | --- | --- |\n| Role | Namespace | Permissions in one namespace |\n| ClusterRole | Cluster | Cluster-wide, or reusable across namespaces, or for non-namespaced resources |\n| RoleBinding | Namespace | Grants a Role or ClusterRole within that namespace |\n| ClusterRoleBinding | Cluster | Grants a ClusterRole across all namespaces |\n\n```yaml\napiVersion: rbac.authorization.k8s.io/v1\nkind: Role\nmetadata:\n  name: pod-reader\n  namespace: shop\nrules:\n  - apiGroups: [\"\"]               # \"\" is the core API group\n    resources: [\"pods\", \"pods/log\"]\n    verbs: [\"get\", \"list\", \"watch\"]\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata:\n  name: dev-team-pod-reader\n  namespace: shop\nsubjects:\n  - kind: Group\n    name: shop-developers          # group from Entra ID\n    apiGroup: rbac.authorization.k8s.io\nroleRef:\n  kind: Role\n  name: pod-reader\n  apiGroup: rbac.authorization.k8s.io\n```\n\n**ServiceAccounts** are identities for pods. Every pod runs as one (the namespace `default` one unless set). Create one per app, give it only needed rights, and disable token mounting if the app does not call the API (`automountServiceAccountToken: false`).\n\n```bash\nkubectl auth can-i delete pods -n shop --as=jane@example.com\nkubectl auth can-i --list -n shop --as=system:serviceaccount:shop:orders-api\n```\n\n**Good practice**\n- Least privilege. Avoid `*` for verbs or resources.\n- Bind to groups, not single users.\n- Be careful with `secrets` read access, `pods/exec`, `escalate`, `bind` and `impersonate`, which can lead to privilege escalation.\n- Review bindings regularly (`kubectl get clusterrolebindings -o wide`).\n\n**Gotcha:** RBAC only has allow rules, and a permission granted anywhere adds up. A Role in namespace A does not give access to B.\n\n**Interview tip:** Walk through a concrete setup: developers get read access in prod and edit in dev, the CI service account can deploy to one namespace only.",
       "level": "intermediate",
+      "module": "Security",
       "tags": [
-        "probes",
-        "reliability"
+        "rbac",
+        "serviceaccount",
+        "security"
       ],
       "favorite": false
     },
     {
-      "id": "kubernetes-6",
-      "question": "Requests vs limits, QoS classes, and what happens on OOM or CPU throttling?",
-      "answer": "**Requests** are used for scheduling (guaranteed minimum); **limits** are the cap. Exceeding the memory limit gets the container **OOMKilled**; exceeding the CPU limit gets it **throttled**. QoS: *Guaranteed* (requests = limits), *Burstable*, *BestEffort* (evicted first). Set sensible requests and be careful with CPU limits (they can cause latency). Use `LimitRange` and `ResourceQuota` per namespace.",
+      "id": "kubernetes-053",
+      "question": "How do Helm charts work: values, templates and hooks?",
+      "answer": "**Short answer:** A Helm chart is a folder of Go templates plus default values. Helm renders the templates with your values into plain manifests, applies them as a **release**, and records each version so you can upgrade and roll back.\n\n```text\norders-api/\n  Chart.yaml          name, version, appVersion\n  values.yaml         defaults\n  templates/\n    deployment.yaml\n    service.yaml\n    _helpers.tpl      reusable template snippets\n```\n\n```yaml\n# values.yaml\nreplicaCount: 3\nimage:\n  repository: myregistry.azurecr.io/orders-api\n  tag: 1.4.3\nresources:\n  requests:\n    cpu: 250m\n    memory: 256Mi\n```\n\n```text\n# templates/deployment.yaml (a Go template, not plain YAML)\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: {{ .Release.Name }}\nspec:\n  replicas: {{ .Values.replicaCount }}\n  selector:\n    matchLabels:\n      app: {{ .Release.Name }}\n  template:\n    metadata:\n      labels:\n        app: {{ .Release.Name }}\n      annotations:\n        checksum/config: {{ include (print $.Template.BasePath \"/configmap.yaml\") . | sha256sum }}\n    spec:\n      containers:\n        - name: api\n          image: \"{{ .Values.image.repository }}:{{ .Values.image.tag }}\"\n          resources:\n            {{- toYaml .Values.resources | nindent 12 }}\n```\n\nThe `checksum/config` annotation changes when the ConfigMap changes, so pods restart on config updates.\n\n```bash\nhelm template orders ./orders-api -f values-prod.yaml     # render only\nhelm lint ./orders-api\nhelm upgrade --install orders ./orders-api -n shop -f values-prod.yaml --atomic\nhelm history orders -n shop\nhelm rollback orders 2 -n shop\n```\n\n**Hooks** are templates with an annotation such as `\"helm.sh/hook\": pre-upgrade`. Use them for database migrations or tests. Hooks are Jobs that Helm runs at a lifecycle point (pre-install, post-install, pre-upgrade, and so on).\n\n**Gotchas:** hooks are not tracked as part of the release, so failed hooks can leave leftovers. Avoid deep template logic. CRDs in the `crds/` folder are installed but never upgraded by Helm.\n\n**Interview tip:** Mention `helm template` and `--atomic` in your CI flow, and that chart versions are pinned.",
       "level": "intermediate",
+      "module": "Delivery & GitOps",
       "tags": [
+        "helm",
+        "templates"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-054",
+      "question": "How does dynamic storage provisioning work, and what are access modes?",
+      "answer": "**Short answer:** With dynamic provisioning, a PVC that names a StorageClass makes the CSI driver create the disk automatically and a PV for it. You never create PVs by hand. Access modes say how many nodes may use the volume at once.\n\n```mermaid\nsequenceDiagram\n    participant D as Developer\n    participant API as API server\n    participant P as CSI provisioner\n    participant C as Cloud\n    D->>API: create PVC with storageClassName\n    API->>P: new PVC needs a volume\n    P->>C: create disk\n    C-->>P: disk id\n    P->>API: create PV and bind to PVC\n    D->>API: create Pod using the PVC\n```\n\nRead it top to bottom: the PVC triggers the disk, then the pod mounts it.\n\n```yaml\napiVersion: storage.k8s.io/v1\nkind: StorageClass\nmetadata:\n  name: premium-retain\nprovisioner: disk.csi.azure.com\nparameters:\n  skuName: Premium_LRS\nreclaimPolicy: Retain\nallowVolumeExpansion: true\nvolumeBindingMode: WaitForFirstConsumer   # create the disk in the zone where the pod lands\n```\n\n**Access modes**\n\n| Mode | Meaning | Typical backend |\n| --- | --- | --- |\n| ReadWriteOnce (RWO) | One node reads and writes | Azure Disk |\n| ReadOnlyMany (ROX) | Many nodes read | Azure Files, NFS |\n| ReadWriteMany (RWX) | Many nodes read and write | Azure Files, NFS |\n| ReadWriteOncePod (RWOP) | One single pod only (stable since 1.29) | CSI disks |\n\n**Important points**\n- `WaitForFirstConsumer` avoids a disk created in zone 1 while the pod is scheduled in zone 2. Zone-bound disks cannot move across zones.\n- `allowVolumeExpansion: true` lets you grow a PVC by editing its size. You cannot shrink.\n- Snapshots use `VolumeSnapshot` objects with a CSI driver that supports them.\n- Reclaim policy: `Delete` removes data with the claim, `Retain` keeps it.\n\n**Gotcha:** an RWO disk can only attach to one node, so a Deployment with several replicas on different nodes sharing one RWO PVC will fail. Use a StatefulSet with per-pod claims, or RWX storage.\n\n**Interview tip:** Mention latency and cost differences between Azure Disk and Azure Files, and that databases belong on block storage.",
+      "level": "intermediate",
+      "module": "Storage & Config",
+      "tags": [
+        "storage",
+        "csi",
+        "pvc"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-055",
+      "question": "How do DNS and service discovery work in Kubernetes?",
+      "answer": "**Short answer:** Every Service gets a DNS name served by CoreDNS inside the cluster. Pods find each other by name, such as `orders-api.shop.svc.cluster.local`, instead of by IP. The kubelet writes the DNS server and search domains into each pod's `/etc/resolv.conf`.\n\nName forms for a Service `orders-api` in namespace `shop`:\n- `orders-api` works from the same namespace.\n- `orders-api.shop` works from any namespace.\n- `orders-api.shop.svc.cluster.local` is the full name.\n\nHeadless Services (`clusterIP: None`) return the pod IPs directly. StatefulSet pods also get names like `pg-0.pg.shop.svc.cluster.local`.\n\n```bash\nkubectl run -it --rm dns-test --image=busybox:1.36 --restart=Never -- nslookup orders-api.shop\nkubectl exec orders-api-xyz -- cat /etc/resolv.conf\n# search shop.svc.cluster.local svc.cluster.local cluster.local\n# nameserver 10.0.0.10\n# options ndots:5\n```\n\n**The `ndots:5` effect:** if a name has fewer than five dots, the resolver first tries it with each search suffix. A lookup for `api.example.com` (two dots) causes several failed queries before the real one. This increases DNS load and latency.\n\nWays to reduce it:\n- Use a fully qualified name with a trailing dot (`api.example.com.`).\n- Lower `ndots` in the pod's `dnsConfig`.\n- Run NodeLocal DNSCache on busy clusters.\n\n```yaml\nspec:\n  dnsConfig:\n    options:\n      - name: ndots\n        value: \"2\"\n```\n\n**Troubleshooting**: check CoreDNS pods in `kube-system`, their logs, and CPU. Test from a pod, not from your laptop. A common failure is a NetworkPolicy blocking port 53.\n\n**Gotcha:** clients that cache DNS forever (some JVM and Node setups) keep using old IPs. For Services this is fine because the ClusterIP is stable, but for headless names it matters.\n\n**Interview tip:** The `ndots` explanation is a favourite senior question. It shows you know why a \"slow DNS\" problem appears in busy clusters.",
+      "level": "intermediate",
+      "module": "Networking",
+      "tags": [
+        "dns",
+        "coredns",
+        "services"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-056",
+      "question": "What are QoS classes, and how does eviction work?",
+      "answer": "**Short answer:** Kubernetes labels every pod as Guaranteed, Burstable or BestEffort, based on its requests and limits. When a node runs short of memory or disk, the kubelet evicts pods to protect the node, starting with the lowest class and those exceeding their requests the most.\n\n| QoS class | Rule | Eviction order |\n| --- | --- | --- |\n| Guaranteed | Every container has CPU and memory requests equal to limits | Last |\n| Burstable | At least one request or limit set, but not Guaranteed | Middle |\n| BestEffort | No requests or limits at all | First |\n\n```yaml\n# Guaranteed: requests equal limits for both CPU and memory\nresources:\n  requests: { cpu: 500m, memory: 512Mi }\n  limits:   { cpu: 500m, memory: 512Mi }\n```\n\n```bash\nkubectl get pod orders-api-xyz -o jsonpath='{.status.qosClass}'\n```\n\n**Two different things:**\n- **Kubelet eviction** (node pressure): the kubelet watches memory, disk and PID pressure. When a threshold is crossed (for example free memory under 100Mi), it kills pods. Evicted pods show `Evicted` and the node has a `MemoryPressure` condition. Within a class, pods using the most above their request go first, then lower priority.\n- **Kernel OOM kill:** if a container goes above its own memory limit, or the node really runs out of memory, the Linux kernel kills a process. The container shows `OOMKilled`. QoS also sets the OOM score, so BestEffort dies first.\n\n**Priority:** `PriorityClass` lets important pods preempt less important ones during scheduling, and affects eviction order.\n\n**Gotchas:** setting a CPU limit equal to the request just to get Guaranteed can cause throttling. For critical services, Guaranteed memory plus a sensible CPU request is often enough. Also, `emptyDir` and logs count towards ephemeral storage, which can cause disk-pressure evictions.\n\n**Interview tip:** Explain that evicted pods are not restarted on the same node. The controller creates new ones that the scheduler places elsewhere.",
+      "level": "intermediate",
+      "module": "Scheduling & Scaling",
+      "tags": [
+        "qos",
+        "eviction",
         "resources"
       ],
       "favorite": false
     },
     {
-      "id": "kubernetes-7",
-      "question": "How do rolling updates work, and how do you roll back or do canary/blue-green?",
-      "answer": "A Deployment replaces pods gradually, governed by `maxSurge` and `maxUnavailable`, and waits for readiness. `kubectl rollout status|history|undo` handles rollback. **Blue-green:** two environments, switch the Service/Ingress selector. **Canary:** route a small traffic % to the new version (Argo Rollouts, Flagger, ingress weights, mesh). Combine with PodDisruptionBudgets and good readiness probes.",
+      "id": "kubernetes-057",
+      "question": "What is the Pod lifecycle and what happens when a Pod is terminated?",
+      "answer": "**Short answer:** A pod moves from Pending to Running, then to Succeeded or Failed. On deletion the pod is marked Terminating, removed from Service endpoints, runs the preStop hook, gets SIGTERM, and if it does not exit within the grace period (default 30 seconds) gets SIGKILL.\n\n```mermaid\nstateDiagram-v2\n    [*] --> Pending\n    Pending --> Running: containers started\n    Running --> Succeeded: all exit 0\n    Running --> Failed: a container fails\n    Running --> Terminating: delete requested\n    Terminating --> [*]: SIGTERM then SIGKILL\n    Succeeded --> [*]\n    Failed --> [*]\n```\n\n**Phases:** Pending (accepted, waiting for scheduling or image pull), Running, Succeeded, Failed, Unknown. Container states are Waiting (with a reason such as `ImagePullBackOff`), Running and Terminated.\n\n**Termination sequence**\n1. A delete request sets `deletionTimestamp`. The pod shows Terminating.\n2. In parallel, the endpoint is removed from Services and the kubelet starts shutdown.\n3. The `preStop` hook runs, if defined.\n4. Containers receive **SIGTERM**.\n5. After `terminationGracePeriodSeconds`, anything left gets **SIGKILL**.\n6. The pod object is deleted.\n\n```yaml\nspec:\n  terminationGracePeriodSeconds: 40\n  containers:\n    - name: api\n      image: myregistry.azurecr.io/orders-api:1.4.3\n      lifecycle:\n        postStart:\n          exec:\n            command: [\"sh\", \"-c\", \"echo started > /tmp/started\"]\n        preStop:\n          exec:\n            command: [\"sleep\", \"5\"]\n```\n\n`restartPolicy` (Always, OnFailure, Never) controls restarts within the pod. Restarts use a backoff of 10s, 20s, 40s up to 5 minutes, which is why you see `CrashLoopBackOff`.\n\n**Gotchas:** the preStop time counts inside the grace period, not extra. A pod stuck in Terminating is often a finalizer or a node that went away. Apps that ignore SIGTERM always take the full 30 seconds to die.\n\n**Interview tip:** Connect this to zero-downtime deploys: the race between SIGTERM and endpoint removal is the reason for preStop sleeps.",
       "level": "intermediate",
+      "module": "Workloads",
       "tags": [
-        "deployments"
+        "lifecycle",
+        "termination",
+        "pods"
       ],
       "favorite": false
     },
     {
-      "id": "kubernetes-8",
-      "question": "How does autoscaling work (HPA, VPA, Cluster Autoscaler)?",
-      "answer": "- **HPA:** scales pod replicas on CPU/memory/custom metrics (needs resource requests set).\n- **VPA:** adjusts pod requests/limits.\n- **Cluster Autoscaler (or Karpenter):** adds/removes nodes when pods are unschedulable or nodes idle.\n- **KEDA:** event-driven scaling (queue length) including scale-to-zero.",
+      "id": "kubernetes-058",
+      "question": "What are ResourceQuota and LimitRange?",
+      "answer": "**Short answer:** ResourceQuota caps the total resources a namespace may use. LimitRange sets default and maximum sizes for each pod or container in a namespace. Together they stop one team from consuming the whole cluster and make sure every pod has requests.\n\n```yaml\napiVersion: v1\nkind: ResourceQuota\nmetadata:\n  name: shop-quota\n  namespace: shop-dev\nspec:\n  hard:\n    requests.cpu: \"10\"\n    requests.memory: 20Gi\n    limits.memory: 40Gi\n    pods: \"50\"\n    persistentvolumeclaims: \"10\"\n    services.loadbalancers: \"1\"\n---\napiVersion: v1\nkind: LimitRange\nmetadata:\n  name: shop-defaults\n  namespace: shop-dev\nspec:\n  limits:\n    - type: Container\n      defaultRequest:        # used when the pod sets no request\n        cpu: 100m\n        memory: 128Mi\n      default:               # used when the pod sets no limit\n        memory: 256Mi\n      max:\n        cpu: \"2\"\n        memory: 2Gi\n```\n\n| | ResourceQuota | LimitRange |\n| --- | --- | --- |\n| Scope | Whole namespace total | Each container, pod or PVC |\n| Controls | Sum of requests, limits, object counts | Defaults, minimum, maximum |\n| Effect | Rejects new objects when exceeded | Injects defaults, rejects out-of-range |\n\nBehaviour to know:\n- If a quota covers CPU or memory, every new pod must set those values, otherwise it is rejected. A LimitRange with defaults solves this.\n- Quota is checked when the object is created. Existing pods are not killed.\n- You can also limit object counts (pods, services, secrets) and use `scopes` and `PriorityClass` quota.\n\n```bash\nkubectl describe quota -n shop-dev\n# shows Used and Hard side by side\n```\n\n**Gotcha:** a namespace at its quota gives a Deployment that silently fails to create pods. The error is in the ReplicaSet events (`exceeded quota`), not in the pod list.\n\n**Interview tip:** Use them for multi-tenant clusters and for non-production cost control.",
       "level": "intermediate",
+      "module": "Scheduling & Scaling",
       "tags": [
-        "scaling"
+        "quota",
+        "limitrange",
+        "multi-tenancy"
       ],
       "favorite": false
     },
     {
-      "id": "kubernetes-9",
-      "question": "A pod is in `CrashLoopBackOff` / `Pending` / `ImagePullBackOff`. How do you debug?",
-      "answer": "1. `kubectl get pod -o wide`, then `kubectl describe pod` (events are key).\n2. `kubectl logs <pod> [--previous]`, and `kubectl exec`/`kubectl debug` for a shell.\n\n- **CrashLoopBackOff:** app crash/bad config/failing probe/OOMKilled: check previous logs and exit code.\n- **Pending:** insufficient resources, taints/affinity mismatch, unbound PVC.\n- **ImagePullBackOff:** wrong image/tag, missing imagePullSecret, registry auth.\nAlso check Datadog dashboards and node conditions.",
+      "id": "kubernetes-059",
+      "question": "What are admission controllers, and how do OPA Gatekeeper and Kyverno enforce policy?",
+      "answer": "**Short answer:** Admission controllers are steps in the API server that can change (mutating) or reject (validating) a request after authentication and before it is saved. Policy engines such as Kyverno and OPA Gatekeeper use them to enforce rules like \"no latest tag\", \"must have resource limits\" or \"only our registry\".\n\nRequest path: authentication, authorization (RBAC), mutating admission, schema validation, validating admission, then save to etcd.\n\nBuilt-in admission plugins handle many things, for example `LimitRanger`, `ResourceQuota`, and `PodSecurity`. You can add your own through webhooks, or since Kubernetes 1.30 (stable) with `ValidatingAdmissionPolicy`, which uses CEL expressions with no extra server.\n\n**Kyverno** policies are Kubernetes YAML:\n\n```yaml\napiVersion: kyverno.io/v1\nkind: ClusterPolicy\nmetadata:\n  name: require-resource-requests\nspec:\n  validationFailureAction: Enforce\n  background: true\n  rules:\n    - name: check-requests\n      match:\n        any:\n          - resources:\n              kinds: [\"Pod\"]\n      validate:\n        message: \"CPU and memory requests are required.\"\n        pattern:\n          spec:\n            containers:\n              - resources:\n                  requests:\n                    cpu: \"?*\"\n                    memory: \"?*\"\n```\n\n| Engine | Policy language | Notes |\n| --- | --- | --- |\n| Kyverno | YAML | Easy to learn, can also mutate and generate |\n| OPA Gatekeeper | Rego | Powerful and general, steeper learning curve |\n| ValidatingAdmissionPolicy | CEL | Built in, no webhook to run |\n\n**Rollout advice:** start in audit or warn mode, review violations, then switch to enforce. Exclude `kube-system`.\n\n**Gotcha:** a webhook that is down can block all creates in the cluster if its `failurePolicy` is `Fail`. Run policy engines with several replicas and exclude their own namespace.\n\n**Interview tip:** Give examples of policies you would enforce: approved registries, no privileged pods, required labels, requests and limits.",
       "level": "intermediate",
+      "module": "Security",
       "tags": [
-        "troubleshooting"
+        "admission",
+        "policy",
+        "kyverno"
       ],
       "favorite": false
     },
     {
-      "id": "kubernetes-10",
-      "question": "What are Helm and Kustomize, and how do you handle CI/CD to Kubernetes?",
-      "answer": "**Helm:** package manager with templated charts and values, releases and rollbacks. **Kustomize:** template-free overlays/patches on plain YAML. Pipeline (GitLab CI): build + test, build image, scan, push to registry, then deploy either by `helm upgrade --install` or **GitOps** (Argo CD/Flux watching a config repo). Promote the same immutable image tag across dev/stage/prod with per-env values.",
+      "id": "kubernetes-060",
+      "question": "What is a service mesh and when do you need one?",
+      "answer": "**Short answer:** A service mesh adds a networking layer between your services that handles mutual TLS, retries, timeouts, traffic splitting and metrics, without changing application code. A proxy runs next to each pod (sidecar) or on each node (ambient mode). Use one only if you really need those features.\n\n```mermaid\nflowchart LR\n    subgraph PA[\"Pod A\"]\n        A[\"orders app\"] --> PX1[\"proxy\"]\n    end\n    subgraph PB[\"Pod B\"]\n        PX2[\"proxy\"] --> B[\"payments app\"]\n    end\n    PX1 -- \"mTLS\" --> PX2\n    CP[\"Control plane\"] -. config .-> PX1\n    CP -. config .-> PX2\n```\n\nThe control plane pushes policy to the proxies. All service traffic flows proxy to proxy.\n\n**What it gives you**\n- **Security:** automatic mTLS and identity between services, authorisation rules.\n- **Reliability:** retries, timeouts, circuit breaking, outlier detection.\n- **Traffic control:** canary splits, mirroring, fault injection.\n- **Observability:** uniform request metrics, traces and a service graph.\n\n**What it costs:** extra CPU and memory per pod, added latency (small), a new component to upgrade and debug, and complexity in failures (\"is it the app or the proxy?\").\n\n| Option | Notes |\n| --- | --- |\n| Istio | Most features, large. Has a sidecar mode and ambient mode without sidecars |\n| Linkerd | Lightweight and simple, focused on mTLS and metrics |\n| Cilium service mesh | eBPF based, fewer proxies |\n| AKS Istio add-on | Managed Istio control plane on AKS |\n\n**When you do not need one:** a handful of services, where Kubernetes Services, NetworkPolicy, and retries in your client library are enough.\n\n**Decision rule:** adopt a mesh if you must have mTLS everywhere for compliance, or need fine traffic shaping across many teams. Otherwise start without it.\n\n**Interview tip:** Show balance. A strong answer says \"useful, but I would first ask which problem it solves and whether a library or the ingress already does it.\"",
       "level": "intermediate",
+      "module": "Networking",
       "tags": [
-        "helm",
-        "cicd"
+        "service-mesh",
+        "istio",
+        "mtls"
       ],
       "favorite": false
     },
     {
-      "id": "kubernetes-11",
-      "question": "Explain Kubernetes networking: pod-to-pod, CNI, DNS, and NetworkPolicy.",
-      "answer": "Every pod gets its own IP and can reach any other pod without NAT (flat network), implemented by a **CNI** plugin (Calico, Cilium, Azure CNI). CoreDNS resolves `svc.namespace.svc.cluster.local`. kube-proxy (iptables/IPVS) or eBPF implements Service load-balancing. By default all traffic is allowed; **NetworkPolicy** restricts it (needs a CNI that enforces it): start with default-deny then allow explicitly.",
+      "id": "kubernetes-061",
+      "question": "How does etcd work, and how do you back it up and tune it?",
+      "answer": "**Short answer:** etcd is a distributed key-value store that holds all Kubernetes state. It uses the Raft consensus algorithm: one leader accepts writes, replicates them to followers, and commits a write once a majority (quorum) has stored it. It is sensitive to disk speed and network latency.\n\n**Consensus in plain words:** with 3 members, a write needs 2 acknowledgements. With 5 members, it needs 3. So 3 members tolerate 1 failure and 5 members tolerate 2. Even numbers add no safety (4 members still tolerate only 1). If quorum is lost, the cluster becomes read-only or unavailable, and Kubernetes stops accepting changes, though running pods keep running.\n\nKubernetes stores objects under keys such as `/registry/pods/shop/orders-api-abc`. Only the API server talks to etcd. Each change creates a new **revision**, and watches are built on revisions. Old revisions must be compacted, and the database defragmented, or it grows until it hits its size quota (2 GB by default, with an alarm that makes it read-only).\n\n**Backup and restore (self-managed clusters)**\n\n```bash\nETCDCTL_API=3 etcdctl snapshot save /backup/etcd-$(date +%F).db \\\n  --endpoints=https://127.0.0.1:2379 \\\n  --cacert=/etc/kubernetes/pki/etcd/ca.crt \\\n  --cert=/etc/kubernetes/pki/etcd/server.crt \\\n  --key=/etc/kubernetes/pki/etcd/server.key\n\netcdutl snapshot status /backup/etcd-2026-01-01.db\netcdutl snapshot restore /backup/etcd-2026-01-01.db --data-dir /var/lib/etcd-restore\n```\n\n**Tuning and health**\n- Use fast SSD or NVMe disks. Slow `fsync` is the most common cause of leader changes and API slowness.\n- Keep etcd on dedicated disks, close in network terms, in odd numbers of members across zones.\n- Watch `etcd_disk_wal_fsync_duration_seconds`, `etcd_server_leader_changes_seen_total`, and database size.\n- Enable auto compaction and run defrag during quiet hours.\n- Many large objects (huge ConfigMaps, thousands of Events) and heavy controllers can overload it.\n\n**On AKS** the control plane and etcd are managed by Azure, so you do not back up etcd yourself. You back up your manifests and data (see the backup question).\n\n**Gotcha:** an etcd snapshot restores the whole cluster state to a point in time, including objects that were deleted since. Coordinate it carefully, and restore all control plane members from the same snapshot.\n\n**Interview tip:** Explain quorum with numbers and say why you run 3 or 5, never 2 or 4.",
       "level": "advanced",
+      "module": "Internals",
+      "tags": [
+        "etcd",
+        "raft",
+        "internals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-062",
+      "question": "How is the Kubernetes control plane made highly available?",
+      "answer": "**Short answer:** Run several replicas of the API server behind a load balancer, three or five etcd members, and several scheduler and controller-manager instances where only one is active at a time through leader election. Spread them across failure zones.\n\n| Component | How it is made HA |\n| --- | --- |\n| kube-apiserver | Stateless, run many copies behind a load balancer, all active |\n| etcd | 3 or 5 members with quorum, spread across zones |\n| kube-scheduler | Several copies, **one leader** active |\n| kube-controller-manager | Several copies, **one leader** active |\n| cloud-controller-manager | Same leader election pattern |\n\n**Leader election** uses a `Lease` object in the `kube-system` namespace. The active instance renews the lease every few seconds. If it stops, another instance takes over.\n\n```bash\nkubectl get lease -n kube-system\nkubectl get lease kube-scheduler -n kube-system -o jsonpath='{.spec.holderIdentity}'\n```\n\n**Two topologies for self-managed clusters**\n- **Stacked:** etcd runs on the same machines as the control plane. Fewer machines, but losing a node loses both an API server and an etcd member.\n- **External etcd:** etcd runs on its own nodes. More machines, better isolation and tuning.\n\n```mermaid\nflowchart TD\n    LB[\"Load balancer\"] --> A1[\"API server 1\"]\n    LB --> A2[\"API server 2\"]\n    LB --> A3[\"API server 3\"]\n    A1 --> E[\"etcd cluster<br/>3 members\"]\n    A2 --> E\n    A3 --> E\n```\n\nAll API servers read and write the same etcd cluster. Clients only know the load balancer address.\n\n**What an outage looks like:** if the whole control plane is down, existing pods continue to run and Services still route, but you cannot deploy, scale, or replace failed pods. That is why control plane health matters most during changes.\n\n**Managed services:** AKS has a free tier with a managed control plane, and a Standard tier with a financially backed uptime SLA (higher with availability zones). Pick the tier by your reliability needs.\n\n**Gotcha:** workloads can also depend on the control plane in surprising ways: operators, admission webhooks and autoscalers all call the API server continually.\n\n**Interview tip:** Say \"workloads survive a control plane outage, but self-healing and changes do not\", and explain leader election.",
+      "level": "advanced",
+      "module": "Internals",
+      "tags": [
+        "control-plane",
+        "ha",
+        "architecture"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-063",
+      "question": "How does the Kubernetes scheduler pick a node?",
+      "answer": "**Short answer:** The scheduler watches for pods with no node, then runs two phases for each: **filtering** removes nodes that cannot run the pod, and **scoring** ranks the remaining nodes. The highest score wins, and the scheduler writes a binding that assigns the pod to that node.\n\n```mermaid\nflowchart LR\n    Q[\"Pending pod in queue\"] --> F[\"Filter: nodes that fit\"]\n    F --> S[\"Score: rank the nodes\"]\n    S --> B[\"Bind pod to best node\"]\n    F -- \"no node fits\" --> U[\"Unschedulable: preemption or wait\"]\n```\n\nRead it left to right. If filtering leaves no node, the pod stays Pending and the scheduler may try preemption.\n\n**Filter checks (examples):** enough unreserved CPU and memory (requests), node selector and affinity match, taints are tolerated, volume zone fits, ports are free, and topology spread constraints hold.\n\n**Score checks (examples):** spread pods evenly, prefer nodes that already have the image, balance resource use, honour preferred affinity, prefer less loaded nodes. Each plugin gives a score and weights are added.\n\n**Preemption:** if a high-priority pod cannot fit, the scheduler can evict lower-priority pods to make room.\n\n**Other facts**\n- The scheduler uses only **requests**, never actual usage. A node can be 90 percent full by requests and 10 percent busy by real use.\n- It decides at scheduling time only. It never moves running pods. The **descheduler** project can rebalance.\n- It is built from plugins in a scheduling framework (queue sort, filter, score, bind). You can run additional schedulers and select one with `schedulerName`.\n- For large clusters it checks only a percentage of nodes (`percentageOfNodesToScore`) to stay fast.\n\n```bash\nkubectl describe pod orders-api-xyz | grep -A5 Events\n# 0/6 nodes are available: 2 Insufficient cpu, 3 node(s) had untolerated taint, 1 node(s) didn't match pod anti-affinity rules.\n```\n\nThat event message is the filter result, and it is the best debugging tool for Pending pods.\n\n**Gotcha:** requests that are too high leave nodes \"full\" on paper. Requests that are too low pack too many pods together.\n\n**Interview tip:** Say \"filter then score, based on requests, at creation time only.\"",
+      "level": "advanced",
+      "module": "Internals",
+      "tags": [
+        "scheduler",
+        "filtering",
+        "scoring"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-064",
+      "question": "What are CRI, CNI and CSI, and how does the kubelet use them?",
+      "answer": "**Short answer:** Kubernetes does not run containers, set up networks, or manage disks itself. It defines three plugin interfaces: CRI for container runtimes, CNI for pod networking, and CSI for storage. The kubelet calls them to do the real work, so each part can be replaced.\n\n| Interface | Meaning | Examples | Who calls it |\n| --- | --- | --- | --- |\n| CRI (Container Runtime Interface) | Create and manage pods and containers, pull images | containerd, CRI-O | kubelet, over gRPC |\n| CNI (Container Network Interface) | Give a pod an IP and connect it to the network | Azure CNI, Calico, Cilium, Flannel | the runtime, when it creates the pod sandbox |\n| CSI (Container Storage Interface) | Provision, attach and mount volumes | Azure Disk and Azure Files drivers | kubelet and controller sidecars |\n\n**What the kubelet does:** it watches the API server for pods assigned to its node, then makes the node match. It pulls images, starts containers through CRI, runs probes, mounts volumes, reports pod and node status, and enforces restarts and evictions.\n\n**Pod start in order**\n1. The kubelet asks the runtime to create a **pod sandbox** (the shared network namespace, kept alive by a small \"pause\" container).\n2. The runtime calls the **CNI** plugin to give the sandbox an IP and routes.\n3. The kubelet and the **CSI** node plugin mount the volumes.\n4. The kubelet pulls images and starts init containers, then app containers.\n5. Probes start and the pod is reported Ready.\n\n```bash\n# On a node (for example via kubectl debug node/...)\ncrictl ps                       # containers seen by the CRI\ncrictl pods\nls /etc/cni/net.d/              # CNI configuration\nkubectl get csidrivers\nkubectl get nodes -o wide       # shows the container runtime and version\n```\n\n**Why it matters:** CNI choice decides pod IP space, policy features and performance. CSI drivers decide which disks, snapshots and resize features you get. A broken CNI shows up as pods stuck in `ContainerCreating` with a network plugin error.\n\n**Gotcha:** the kubelet and runtime must use the same cgroup driver (systemd is the usual choice), or pods fail to start.\n\n**Interview tip:** State the principle, \"Kubernetes defines the interface, vendors implement it\", and give one example of each.",
+      "level": "advanced",
+      "module": "Internals",
+      "tags": [
+        "kubelet",
+        "cri",
+        "cni",
+        "csi"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-065",
+      "question": "How does Kubernetes networking work in depth: kube-proxy, iptables, IPVS and eBPF?",
+      "answer": "**Short answer:** Kubernetes requires that every pod can reach every other pod by IP without NAT. The CNI plugin provides that. A Service IP is virtual: kube-proxy (or an eBPF replacement) programs the node so packets sent to a Service IP get rewritten to the IP of one healthy pod.\n\n**The rules of the model**\n- Every pod gets its own IP.\n- Pods can talk to all other pods without NAT.\n- Nodes can talk to all pods.\n- Services give a stable virtual IP over a changing set of pods.\n\n**How a Service works:** kube-proxy on each node watches Services and EndpointSlices and writes rules. When a pod calls `10.0.12.5:80` (the ClusterIP), the kernel rewrites the destination (DNAT) to a pod IP such as `10.244.2.17:8080`. There is no process listening on the ClusterIP, it only exists in rules.\n\n| Mode | How | Characteristics |\n| --- | --- | --- |\n| iptables (default) | Chains of rules, random pick by probability | Simple, rule lookup is linear, slow to update at tens of thousands of Services |\n| IPVS | Kernel load balancer with hash tables | Scales better, more algorithms (round robin, least connections) |\n| nftables (beta in 1.31, GA in 1.33) | Newer netfilter framework | Faster rule updates than iptables |\n| eBPF (Cilium) | Programs in the kernel, can replace kube-proxy | Fast, no long rule chains, richer policy and visibility |\n\n```mermaid\nsequenceDiagram\n    participant A as Pod A\n    participant N as Node kernel rules\n    participant B as Pod B on another node\n    A->>N: connect to Service IP 10.0.12.5:80\n    N->>N: DNAT to pod IP 10.244.2.17:8080\n    N->>B: forward over CNI network\n    B-->>A: reply, source rewritten back\n```\n\nRead it top to bottom: the client sees only the Service IP. The rewrite is done by the kernel, and replies are un-rewritten via connection tracking (conntrack).\n\n**Cross-node pod traffic:** the CNI uses either an overlay (VXLAN or IP-in-IP encapsulation) or direct routing and cloud-native networking (Azure CNI gives pods real VNet IPs).\n\n**External traffic:** `NodePort` and `LoadBalancer` Services use the same DNAT rules. `externalTrafficPolicy: Local` keeps the client IP and avoids an extra hop, but only sends to pods on that node.\n\n**Gotchas:** conntrack table exhaustion causes random dropped connections under load. Long-lived connections (gRPC, HTTP/2) stick to one pod because balancing happens per connection, so use client-side or L7 balancing.\n\n**Interview tip:** Draw the path: client, Service IP, DNAT, pod. Then say where eBPF changes it.",
+      "level": "advanced",
+      "module": "Networking",
       "tags": [
         "networking",
-        "security"
+        "kube-proxy",
+        "ebpf"
       ],
       "favorite": false
     },
     {
-      "id": "kubernetes-12",
-      "question": "How does RBAC work, and how do you harden a cluster?",
-      "answer": "RBAC: `Role`/`ClusterRole` (verbs on resources) bound to subjects via `RoleBinding`/`ClusterRoleBinding`; use least privilege and per-workload ServiceAccounts. Hardening: Pod Security Standards (non-root, read-only rootfs, drop capabilities), NetworkPolicies, image scanning/signing, private registry, secrets encryption, admission control (OPA Gatekeeper/Kyverno), keep nodes/cluster patched, and audit logs.",
+      "id": "kubernetes-066",
+      "question": "What is the API server request flow, and how do watches work?",
+      "answer": "**Short answer:** Every request to the API server passes authentication, authorization, mutating admission, validation, validating admission, and is then stored in etcd. Components do not poll. They open a **watch**, a long-lived stream from the API server that sends events when objects change.\n\n```mermaid\nflowchart LR\n    R[\"Request\"] --> AN[\"Authentication\"]\n    AN --> AZ[\"Authorization: RBAC\"]\n    AZ --> MA[\"Mutating admission\"]\n    MA --> V[\"Schema validation\"]\n    V --> VA[\"Validating admission\"]\n    VA --> E[(\"etcd\")]\n```\n\nRead it left to right: a failure in any stage rejects the request.\n\n**Stages explained**\n1. **Authentication:** who are you? Client certificate, bearer token, OIDC (Entra ID).\n2. **Authorization:** may you do this? Usually RBAC.\n3. **Mutating admission:** webhooks and plugins that change the object (inject sidecar, add defaults).\n4. **Validation:** the object matches the schema.\n5. **Validating admission:** policies that approve or reject.\n6. **Persist:** written to etcd with a new `resourceVersion`.\n\n**Optimistic concurrency:** every object has a `resourceVersion`. If two clients update the same object, the second gets a `409 Conflict` and must read again and retry. This avoids locks.\n\n**Watches**\n\n```bash\n# Raw API: stream events for pods in the shop namespace\nkubectl get --raw \"/api/v1/namespaces/shop/pods?watch=true&allowWatchBookmarks=true\" | head -c 600\n\n# Same idea at the CLI level\nkubectl get pods -n shop --watch\n```\n\nA client lists the objects once (getting a `resourceVersion`), then watches from that version and receives `ADDED`, `MODIFIED` and `DELETED` events. The API server keeps a **watch cache** in memory, so most reads and watches never touch etcd. If a client falls too far behind, it gets a \"resource version too old\" error and must list again.\n\n**Other useful features**\n- **Server-side apply** tracks which field manager owns each field, so tools do not overwrite each other.\n- **API Priority and Fairness** protects the server from one noisy client.\n- **Finalizers** stop deletion until a cleanup finishes.\n\n**Gotcha:** a controller or operator that lists everything in a loop, or a large number of watchers, can overload the API server. Use informers with caching and label selectors.\n\n**Interview tip:** Mention the 409 conflict and the watch cache, because they show you know why Kubernetes scales as it does.",
       "level": "advanced",
+      "module": "Internals",
       "tags": [
-        "security",
-        "rbac"
-      ],
-      "favorite": false
-    },
-    {
-      "id": "kubernetes-13",
-      "question": "What happens when you run `kubectl apply -f deployment.yaml`?",
-      "answer": "kubectl sends the object to the **API server** (authN, authZ, admission controllers, validation) which persists it in **etcd**. The Deployment controller creates a ReplicaSet; the ReplicaSet controller creates Pods. The **scheduler** binds each unscheduled pod to a node (filtering + scoring). The node's **kubelet** sees the assignment, asks the runtime to pull images and start containers, sets up networking via CNI, and reports status back. Endpoints controllers add ready pods to Services.",
-      "level": "advanced",
-      "tags": [
+        "api-server",
+        "watch",
         "internals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-067",
+      "question": "How do controllers, informers and work queues work?",
+      "answer": "**Short answer:** A controller keeps a local cache of objects, updated by watch events through an **informer**. Events do not hold data to act on. They only put the object's key into a **work queue**. Workers take keys from the queue and run the **reconcile** function, which compares desired and actual state and fixes the difference.\n\n```mermaid\nflowchart LR\n    API[\"API server\"] -- \"list and watch\" --> INF[\"Informer\"]\n    INF --> CACHE[\"Local cache\"]\n    INF -- \"event: add key\" --> Q[\"Work queue\"]\n    Q --> W[\"Worker: reconcile\"]\n    W -- \"read\" --> CACHE\n    W -- \"create or update objects\" --> API\n```\n\nRead it from the left: the informer fills the cache and the queue. Workers read the cache and write changes to the API server.\n\n**Why this design**\n- **Informer and cache:** one watch per type serves all reads, so the controller does not hit the API server for every check.\n- **Work queue:** it removes duplicates (ten changes to one object become one pending key), supports retries with exponential backoff, and rate limits work.\n- **Level based:** reconcile gets only the object name. It looks at the current state and does whatever is needed, so a lost event does not matter. A periodic resync also re-queues everything.\n\nA Deployment controller in plain words: it sees a Deployment key, reads the Deployment and its ReplicaSets from the cache, decides the right ReplicaSet counts, and creates or updates ReplicaSets.\n\n**A reconcile loop in Go shape (controller-runtime style)**\n\n```go\nfunc (r *OrderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {\n\tvar order shopv1.Order\n\tif err := r.Get(ctx, req.NamespacedName, &order); err != nil {\n\t\treturn ctrl.Result{}, client.IgnoreNotFound(err) // deleted: nothing to do\n\t}\n\t// 1. look at the actual state\n\t// 2. compare with order.Spec\n\t// 3. create, update or delete child objects to match\n\treturn ctrl.Result{RequeueAfter: time.Minute}, nil\n}\n```\n\n**Rules for good controllers:** reconcile must be idempotent, never assume you saw every event, set owner references so children are garbage collected, use finalizers for external cleanup, and report progress in `status` conditions.\n\n**Interview tip:** The key phrase is \"level-triggered, not edge-triggered\". It explains how the system recovers from missed events and restarts.",
+      "level": "advanced",
+      "module": "Internals",
+      "tags": [
+        "controllers",
+        "informers",
+        "client-go"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-068",
+      "question": "How do cgroups enforce requests and limits in the Linux kernel?",
+      "answer": "**Short answer:** The kubelet and container runtime translate requests and limits into Linux **cgroup** settings. Cgroups group processes and let the kernel control and measure their CPU, memory and other resources. Namespaces give isolation (what a container can see), and cgroups give limits (what it can use).\n\n**CPU**\n- **Request** becomes CPU **shares** (cgroup v1) or **weight** (cgroup v2). It only matters when CPUs are busy: it sets each container's fair portion. An idle CPU can still be used by anyone.\n- **Limit** becomes a **CFS quota**: for example `cpu.max = 50000 100000` means 50 ms of CPU time per 100 ms period. Exceed it and the container is throttled until the next period.\n\n**Memory**\n- **Request** is used by the scheduler and for eviction ordering. It is not a hard kernel reservation.\n- **Limit** becomes `memory.max`. If the container cannot free memory when it hits the limit, the kernel's OOM killer ends a process in that cgroup. The container exits with code 137 and reason `OOMKilled`.\n- Page cache counts towards the limit, but the kernel reclaims it first, so high \"usage\" numbers are not always a problem. Watch the working set instead.\n\n```bash\n# Inside a container on a cgroup v2 node\ncat /sys/fs/cgroup/cpu.max        # prints: 50000 100000\ncat /sys/fs/cgroup/memory.max     # prints: 536870912\ncat /sys/fs/cgroup/cpu.stat       # nr_throttled and throttled_usec\n```\n\n```yaml\nresources:\n  requests: { cpu: 250m, memory: 256Mi }\n  limits:   { cpu: 500m, memory: 512Mi }\n```\n\nThe values above produce about `cpu.max 50000 100000` and `memory.max 536870912`. In cgroup v2, memory has more detail (`memory.high`, `memory.min`) which newer Kubernetes versions use for memory QoS (still alpha).\n\n**Cgroup v2:** the default on modern distributions and on current AKS node images, with better accounting and the base for newer features. Kubernetes supports it since 1.25 (stable).\n\n**Related feature:** in-place pod resize lets you change a running container's requests and limits without restarting it. It was alpha in 1.27, beta and on by default in 1.33, with a `resize` subresource, so check your version.\n\n**Gotchas:** a runtime that ignores the container limit (for example JVM or Go heap sizing) can cause OOM kills. Set `GOMEMLIMIT` for Go to slightly below the memory limit, and the Node heap size (`--max-old-space-size`) below the limit.\n\n**Interview tip:** Explain throttling (CFS quota) versus OOM kill (memory.max) and why memory cannot be throttled.",
+      "level": "advanced",
+      "module": "Internals",
+      "tags": [
+        "cgroups",
+        "kernel",
+        "resources"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-069",
+      "question": "What happens end to end when you run `kubectl apply -f deployment.yaml`?",
+      "answer": "**Short answer:** kubectl sends the object to the API server, which authenticates, authorizes, admits and stores it in etcd. The Deployment controller creates a ReplicaSet, which creates pods. The scheduler assigns each pod to a node. The kubelet on that node starts the containers through the runtime, CNI and CSI. Probes then mark the pod Ready and the endpoint controller adds it to the Service.\n\n```mermaid\nsequenceDiagram\n    participant K as kubectl\n    participant A as API server\n    participant E as etcd\n    participant C as Controllers\n    participant S as Scheduler\n    participant L as Kubelet\n    K->>A: PATCH/POST Deployment (server-side apply)\n    A->>E: store (after auth and admission)\n    C->>A: watch sees Deployment, create ReplicaSet\n    C->>A: ReplicaSet controller creates Pods\n    S->>A: watch sees unscheduled Pods, bind to node\n    L->>A: watch sees Pod for my node\n    L->>L: CRI starts containers, CNI IP, CSI volumes\n    L->>A: update Pod status Ready\n```\n\nRead it top to bottom. Every arrow to the API server is a read, watch or write. Components never talk to each other directly.\n\n**Step by step**\n1. **kubectl** reads your kubeconfig, finds the cluster and credentials, validates the YAML and sends an HTTPS request (create, or a patch with `apply`).\n2. **API server:** authentication, RBAC, mutating admission (for example defaults or sidecar injection), schema validation, validating admission (policies). The object is saved in **etcd**.\n3. **Deployment controller** (in controller-manager) sees the new Deployment via its watch and creates a **ReplicaSet**.\n4. **ReplicaSet controller** creates the requested number of **Pods** with no node.\n5. **Scheduler** filters and scores nodes and writes the node name on each pod (a binding).\n6. **Kubelet** on the chosen node sees the pod, asks the **runtime** to create the sandbox and pull images, **CNI** assigns an IP, **CSI** mounts volumes, containers start.\n7. **Probes** pass, the pod becomes Ready. The **EndpointSlice controller** adds its IP to the Service, and **kube-proxy** or the CNI updates routing rules.\n8. The Deployment controller updates `status` (available replicas), and `kubectl rollout status` reports success.\n\n```bash\nkubectl apply -f deployment.yaml -v=6        # shows the API calls\nkubectl get events --sort-by=.lastTimestamp  # Scheduled, Pulling, Pulled, Created, Started\n```\n\n**Interview tip:** This is the most common \"tie it all together\" question. Practise saying it in under two minutes, naming each component once, and note that all communication goes through the API server.",
+      "level": "advanced",
+      "module": "Internals",
+      "tags": [
+        "end-to-end",
+        "apply",
+        "flow"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "kubernetes-070",
+      "question": "What are CRDs and operators, and when should you build one?",
+      "answer": "**Short answer:** A CustomResourceDefinition (CRD) adds a new object type to the Kubernetes API, such as `Postgres` or `Certificate`. An operator is a controller that watches those custom objects and manages real resources to match them, encoding the knowledge of a human operator (install, upgrade, backup, failover).\n\n```yaml\napiVersion: apiextensions.k8s.io/v1\nkind: CustomResourceDefinition\nmetadata:\n  name: orderreports.shop.example.com\nspec:\n  group: shop.example.com\n  scope: Namespaced\n  names:\n    plural: orderreports\n    singular: orderreport\n    kind: OrderReport\n  versions:\n    - name: v1\n      served: true\n      storage: true\n      schema:\n        openAPIV3Schema:\n          type: object\n          properties:\n            spec:\n              type: object\n              required: [\"schedule\"]\n              properties:\n                schedule:\n                  type: string\n                retentionDays:\n                  type: integer\n                  minimum: 1\n---\napiVersion: shop.example.com/v1\nkind: OrderReport\nmetadata:\n  name: daily\n  namespace: shop\nspec:\n  schedule: \"0 2 * * *\"\n  retentionDays: 30\n```\n\nAfter the CRD is applied, `kubectl get orderreports` works like any built-in type, with RBAC, watches and validation. The CRD itself does nothing until a controller acts on the objects.\n\n**Operator pattern:** custom resource (desired state) plus controller (reconcile loop). Familiar operators: cert-manager (Certificate), Prometheus Operator, Argo CD (Application), CloudNativePG and other database operators, Strimzi for Kafka.\n\n**Building one:** use Kubebuilder or Operator SDK (Go, based on controller-runtime). Define the API types, write the reconcile function, set owner references, add status conditions, and test with envtest.\n\n| Choose | When |\n| --- | --- |\n| Use an existing operator | Almost always, for databases, certificates, monitoring |\n| Write your own | A repeated platform task with real state and lifecycle, such as provisioning a tenant |\n| Helm or CronJob instead | Simple install or periodic work with no ongoing reconciliation |\n\n**Gotchas:** you now own the code, its upgrades and its failure modes. A buggy operator can delete real data. Version your CRDs carefully (conversion webhooks for breaking changes), and use finalizers for cleanup of external resources.\n\n**Interview tip:** Say \"the CRD is the data, the operator is the behaviour\", and mention you would use an existing operator before writing one.",
+      "level": "advanced",
+      "module": "Internals",
+      "tags": [
+        "crd",
+        "operators",
+        "extensibility"
       ],
       "favorite": false
     }

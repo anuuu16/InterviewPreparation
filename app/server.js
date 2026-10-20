@@ -25,6 +25,7 @@ function clean(body, base = {}) {
   if (typeof body.question === 'string') q.question = body.question.trim();
   if (typeof body.answer === 'string') q.answer = body.answer.trim();
   if (LEVELS.includes(body.level)) q.level = body.level;
+  if (typeof body.module === 'string') { const m = body.module.trim(); if (m) q.module = m; else delete q.module; }
   if (Array.isArray(body.tags)) q.tags = body.tags.map((t) => String(t).trim()).filter(Boolean);
   if (typeof body.favorite === 'boolean') q.favorite = body.favorite;
   return q;

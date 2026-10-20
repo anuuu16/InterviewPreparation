@@ -8,11 +8,11 @@ Interview questions and answers, organised by language/topic. Read them right he
 | Topic | Total | Basic | Intermediate | Advanced | ⭐ |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | [Golang](questions/golang.md) | 126 | 28 | 78 | 20 | 0 |
-| [JavaScript](questions/javascript.md) | 4 | 2 | 1 | 1 | 0 |
-| [Kubernetes](questions/kubernetes.md) | 13 | 4 | 6 | 3 | 0 |
-| [Microservices](questions/microservices.md) | 12 | 3 | 6 | 3 | 0 |
+| [JavaScript](questions/javascript.md) | 66 | 20 | 34 | 12 | 1 |
+| [Kubernetes](questions/kubernetes.md) | 57 | 15 | 28 | 14 | 0 |
+| [Microservices](questions/microservices.md) | 55 | 13 | 29 | 13 | 0 |
 | [Node.js](questions/nodejs.md) | 10 | 3 | 5 | 2 | 0 |
-| [React](questions/react.md) | 12 | 4 | 5 | 3 | 0 |
+| [React](questions/react.md) | 57 | 15 | 28 | 14 | 0 |
 
 [⭐ All favorites](questions/favorites.md)
 <!-- TOPICS:END -->

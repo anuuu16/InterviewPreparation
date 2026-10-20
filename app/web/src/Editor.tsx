@@ -5,7 +5,7 @@ import { CloseIcon } from './Icons';
 
 export interface EditorResult {
   topicSlug: string;
-  data: Pick<Question, 'question' | 'answer' | 'level' | 'tags'>;
+  data: Pick<Question, 'question' | 'answer' | 'level' | 'tags'> & { module: string };
 }
 
 interface Props {
@@ -14,14 +14,16 @@ interface Props {
   question?: Question;
   dark: boolean;
   onSave: (r: EditorResult) => Promise<void>;
+  onDelete?: () => void; // only when editing an existing question
   onClose: () => void;
 }
 
-export default function Editor({ topics, topicSlug, question, dark, onSave, onClose }: Props) {
+export default function Editor({ topics, topicSlug, question, dark, onSave, onDelete, onClose }: Props) {
   const [slug, setSlug] = useState(topicSlug);
   const [title, setTitle] = useState(question?.question ?? '');
   const [answer, setAnswer] = useState(question?.answer ?? '');
   const [level, setLevel] = useState<Level>(question?.level ?? 'basic');
+  const [moduleName, setModuleName] = useState(question?.module ?? '');
   const [tags, setTags] = useState((question?.tags ?? []).join(', '));
   const [tab, setTab] = useState<'write' | 'preview'>('write');
   const [error, setError] = useState('');
@@ -33,7 +35,7 @@ export default function Editor({ topics, topicSlug, question, dark, onSave, onCl
     try {
       await onSave({
         topicSlug: slug,
-        data: { question: title, answer, level, tags: tags.split(',').map((t) => t.trim()).filter(Boolean) },
+        data: { question: title, answer, level, module: moduleName, tags: tags.split(',').map((t) => t.trim()).filter(Boolean) },
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save');
@@ -68,6 +70,13 @@ export default function Editor({ topics, topicSlug, question, dark, onSave, onCl
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What is …?" autoFocus />
           </label>
           <label>
+            Module (group within the topic)
+            <input value={moduleName} onChange={(e) => setModuleName(e.target.value)} list="module-options" placeholder="Concurrency" />
+            <datalist id="module-options">
+              {[...new Set((topics.find((t) => t.slug === slug)?.questions ?? []).map((q) => q.module).filter(Boolean))].map((m) => <option key={m} value={m} />)}
+            </datalist>
+          </label>
+          <label>
             Tags (comma separated)
             <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="concurrency, channels" />
           </label>
@@ -83,6 +92,7 @@ export default function Editor({ topics, topicSlug, question, dark, onSave, onCl
           {error && <p className="error">{error}</p>}
         </div>
         <footer>
+          {onDelete && <button className="btn danger" onClick={onDelete} style={{ marginRight: 'auto' }}>Delete question</button>}
           <button className="btn" onClick={onClose}>Cancel</button>
           <button className="btn primary" onClick={submit} disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
         </footer>

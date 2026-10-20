@@ -7,6 +7,7 @@
 //
 //   ## What is X?
 //   level: basic
+//   module: Hooks
 //   tags: hooks, state
 //
 //   **Short answer:** …Markdown answer…
@@ -32,7 +33,7 @@ function parse(text) {
     }
     if (!cur) continue;
     if (cur.inMeta) {
-      const m = line.match(/^(level|tags):\s*(.*)$/);
+      const m = line.match(/^(level|tags|module):\s*(.*)$/);
       if (m) { cur.meta[m[1]] = m[2].trim(); continue; }
       if (!line.trim()) continue;
       cur.inMeta = false;
@@ -43,6 +44,7 @@ function parse(text) {
     question: q.question,
     answer: q.lines.join('\n').trim(),
     level: q.meta.level,
+    module: (q.meta.module || '').trim(),
     tags: (q.meta.tags || '').split(',').map((t) => t.trim()).filter(Boolean),
   }));
 }
@@ -79,11 +81,11 @@ function main() {
     const old = byText.get(q.question);
     if (old) {
       updated += 1;
-      return { ...old, answer: q.answer, level: q.level, tags: q.tags };
+      return { ...old, answer: q.answer, level: q.level, tags: q.tags, ...(q.module ? { module: q.module } : {}) };
     }
     added += 1;
     next += 1;
-    return { id: `${slug}-${String(next).padStart(3, '0')}`, question: q.question, answer: q.answer, level: q.level, tags: q.tags, favorite: false };
+    return { id: `${slug}-${String(next).padStart(3, '0')}`, question: q.question, answer: q.answer, level: q.level, ...(q.module ? { module: q.module } : {}), tags: q.tags, favorite: false };
   });
 
   const seen = new Set(merged.map((q) => q.question));

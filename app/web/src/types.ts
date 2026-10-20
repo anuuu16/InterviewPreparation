@@ -6,6 +6,7 @@ export interface Question {
   question: string;
   answer: string;
   level: Level;
+  module?: string;
   tags: string[];
   favorite: boolean;
 }

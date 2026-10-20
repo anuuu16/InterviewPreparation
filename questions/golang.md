@@ -141,6 +141,25 @@
 - [125. How do you do zero-downtime deployments and safe database migrations for a Go service?](#125-how-do-you-do-zero-downtime-deployments-and-safe-database-migrations-for-a-go-service)
 - [126. How would you build a Kubernetes controller or operator in Go?](#126-how-would-you-build-a-kubernetes-controller-or-operator-in-go)
 
+## Browse by module
+
+| Module | Questions |
+| --- | --- |
+| Concurrency (26) | [25](#25-what-is-a-goroutine-and-how-do-you-start-one) · [26](#26-how-do-channels-work-explain-buffered-vs-unbuffered) · [27](#27-how-does-select-work-with-channels) · [28](#28-what-is-syncwaitgroup-and-how-do-you-use-it-correctly) · [44](#44-tech-lead-how-do-you-design-a-go-service-for-high-concurrency-bounded-concurrency-queues-and-backpressure) · [58](#58-what-is-contextcontext-and-how-do-you-use-it-for-cancellation-and-timeouts) · [59](#59-when-do-you-use-syncmutex-and-syncrwmutex-show-a-safe-cache) · [60](#60-what-is-the-syncatomic-package-and-when-is-it-better-than-a-mutex) · [61](#61-what-are-synconce-and-synconcevalue-used-for) · [62](#62-what-is-syncpool-and-when-should-you-use-it) · [63](#63-how-does-errgroup-help-run-goroutines-that-can-fail) · [64](#64-show-a-worker-pool-pattern-in-go-and-explain-how-it-works) · [65](#65-explain-fan-out-and-fan-in-with-an-example) · [66](#66-what-is-a-pipeline-in-go-and-how-do-you-stop-it-early-without-leaking-goroutines) · [67](#67-how-do-you-limit-concurrency-semaphore-pattern-in-go) · [68](#68-how-do-you-rate-limit-in-go-ticker-xtimerate) · [69](#69-what-is-a-goroutine-leak-how-do-you-detect-and-prevent-it) · [70](#70-what-is-a-data-race-how-does-the-race-detector-help) · [71](#71-what-causes-a-deadlock-in-go-and-how-do-you-debug-one) · [72](#72-who-should-close-a-channel-and-how-do-you-shut-down-goroutines-cleanly) · [74](#74-what-changed-with-loop-variables-in-go-122-and-why-does-it-matter) · [113](#113-what-does-the-go-memory-model-guarantee-explain-happens-before) · [114](#114-when-should-you-use-syncmap-and-what-are-better-alternatives-for-concurrent-maps) · [117](#117-what-are-the-common-context-pitfalls-and-anti-patterns) · [123](#123-spot-the-concurrency-bugs-what-is-wrong-with-these-snippets) · [124](#124-classic-concurrency-exercise-print-odd-and-even-numbers-alternately-with-two-goroutines) |
+| Debugging & Reliability (10) | [37](#37-tech-lead-the-app-crashed-in-production-how-do-you-find-out-which-module-or-line-broke-it) · [38](#38-tech-lead-how-do-you-read-a-go-panic-stack-trace) · [39](#39-tech-lead-which-go-errors-can-not-be-recovered-with-recover) · [40](#40-tech-lead-how-do-you-make-sure-a-panic-in-a-goroutine-does-not-take-down-the-whole-service) · [43](#43-tech-lead-walk-me-through-your-incident-process-for-a-production-crash-detect-mitigate-fix-learn) · [45](#45-tech-lead-what-is-load-shedding-and-how-do-you-protect-a-service-from-overload) · [46](#46-tech-lead-how-do-you-propagate-timeouts-and-deadlines-across-services-timeout-budgets) · [50](#50-tech-lead-how-do-you-debug-a-go-service-in-production-without-restarting-it) · [100](#100-how-do-you-implement-retries-with-exponential-backoff-and-jitter-in-go) · [101](#101-how-does-a-circuit-breaker-work-and-how-do-you-add-one-in-go) |
+| Design & Patterns (7) | [75](#75-what-is-the-functional-options-pattern-and-why-is-it-popular) · [92](#92-how-do-you-structure-a-go-project-cmd-internal-pkg-and-layered-design) · [93](#93-how-do-you-do-dependency-injection-in-go-without-a-framework) · [120](#120-design-a-thread-safe-lru-cache-with-ttl-in-go) · [121](#121-design-a-rate-limiter-for-an-api-with-many-pods-distributed-rate-limiting) · [122](#122-design-a-job-scheduler-or-worker-system-in-go-that-runs-on-several-kubernetes-pods-without-duplicate-work) · [126](#126-how-would-you-build-a-kubernetes-controller-or-operator-in-go) |
+| Errors & Panics (5) | [15](#15-how-does-error-handling-work-in-go-why-no-exceptions) · [16](#16-what-does-defer-do-explain-order-and-argument-evaluation) · [17](#17-what-are-panic-and-recover-when-is-it-ok-to-use-them) · [41](#41-tech-lead-how-do-you-design-error-handling-across-a-whole-codebase-so-errors-tell-you-which-module-failed) · [57](#57-how-do-you-wrap-compare-and-inspect-errors-w-errorsis-errorsas-errorsjoin) |
+| HTTP & Microservices (7) | [85](#85-how-do-you-build-an-http-server-with-only-the-standard-library-go-122-routing) · [86](#86-what-is-middleware-in-go-http-and-how-do-you-write-it) · [87](#87-how-should-you-configure-the-go-http-client-timeouts-reuse-closing-bodies) · [88](#88-how-do-you-implement-graceful-shutdown-of-a-go-service) · [99](#99-how-do-you-build-a-grpc-service-in-go-and-when-do-you-choose-grpc-over-rest) · [103](#103-how-do-you-build-a-reliable-message-consumer-kafkarabbitmq-in-go) · [104](#104-how-do-you-validate-input-and-map-errors-to-http-responses-in-a-clean-way) |
+| Interfaces & Generics (10) | [14](#14-what-are-interfaces-in-go-and-how-are-they-implemented) · [24](#24-what-are-generics-in-go-and-when-should-you-use-them-go-118) · [55](#55-why-is-an-interface-holding-a-nil-pointer-not-equal-to-nil) · [56](#56-how-do-type-assertions-and-type-switches-work) · [73](#73-how-do-generic-constraints-work-and-what-do-slices-and-maps-packages-offer-go-121) · [76](#76-explain-ioreader-and-iowriter-why-are-they-so-important) · [106](#106-what-is-reflection-in-go-and-when-should-you-avoid-it) · [112](#112-how-are-interfaces-represented-in-memory-and-what-does-dynamic-dispatch-cost) · [118](#118-how-do-go-generics-work-under-the-hood-and-what-are-their-performance-trade-offs) · [119](#119-what-are-iterators-iterseq-range-over-func-added-in-go-123) |
+| Language Fundamentals (9) | [1](#1-what-is-go-and-why-do-companies-choose-it-for-backend-services) · [3](#3-what-are-zero-values-in-go-and-why-do-they-matter) · [4](#4-what-is-the-difference-between-var--and-const) · [5](#5-how-do-const-and-iota-work-give-a-typical-use) · [6](#6-explain-gos-basic-types-and-how-type-conversion-works) · [18](#18-explain-for-range-and-switch-in-go-what-is-different-from-other-languages) · [19](#19-how-do-functions-work-in-go-multiple-returns-variadic-named-returns-closures) · [20](#20-how-does-init-work-and-what-is-the-package-initialisation-order) · [21](#21-how-does-go-decide-what-is-public-or-private) |
+| Observability & Operations (4) | [42](#42-tech-lead-what-logs-metrics-and-alerts-do-you-set-up-so-you-find-the-broken-module-fast) · [51](#51-tech-lead-how-do-you-capacity-plan-and-scale-a-go-service-on-kubernetes) · [95](#95-how-does-structured-logging-with-logslog-go-121-work) · [105](#105-how-do-you-add-tracing-and-metrics-to-a-go-service-opentelemetry-datadog) |
+| Performance & Load (10) | [29](#29-tech-lead-a-go-service-has-become-slow-in-production-how-do-you-approach-it) · [30](#30-tech-lead-how-do-you-use-pprof-to-find-cpu-hot-spots-and-memory-problems) · [31](#31-tech-lead-when-do-you-use-the-go-execution-tracer-go-tool-trace-instead-of-pprof) · [34](#34-tech-lead-how-do-you-load-test-a-go-service-and-read-the-results-correctly) · [35](#35-tech-lead-under-high-load-the-service-gets-slow-but-cpu-is-low-what-could-be-wrong) · [47](#47-tech-lead-why-is-p99-latency-high-in-a-go-service-and-what-is-tail-latency) · [48](#48-tech-lead-you-must-optimise-a-slow-endpoint-end-to-end-what-is-your-checklist) · [49](#49-tech-lead-how-do-you-find-and-fix-n1-queries-and-other-database-performance-issues-in-a-go-service) · [53](#53-tech-lead-how-do-you-prevent-performance-regressions-from-reaching-production) · [102](#102-how-do-you-avoid-duplicate-work-with-singleflight-and-add-caching) |
+| Runtime & Memory (10) | [32](#32-tech-lead-how-do-you-reduce-memory-allocations-and-gc-pressure-in-go) · [33](#33-tech-lead-how-do-you-find-and-fix-a-memory-leak-in-a-running-go-service) · [36](#36-tech-lead-how-do-you-tune-the-go-runtime-inside-containers-gomaxprocs-gomemlimit-gogc-cpu-limits) · [107](#107-explain-the-go-scheduler-g-m-p-model-in-detail) · [108](#108-how-does-gos-garbage-collector-work-and-how-does-it-keep-pauses-short) · [109](#109-what-is-escape-analysis-how-does-go-decide-between-stack-and-heap) · [110](#110-how-are-slices-maps-and-strings-implemented-internally) · [111](#111-how-are-channels-implemented-and-what-happens-inside-a-send-or-receive) · [115](#115-what-is-false-sharing-and-how-does-struct-layout-affect-performance) · [116](#116-what-are-the-costs-and-risks-of-unsafe-and-cgo) |
+| Standard Library & Data (5) | [77](#77-how-do-you-work-with-time-in-go-timeduration-formatting-time-zones-timers) · [78](#78-how-does-json-encoding-and-decoding-work-encodingjson-struct-tags) · [89](#89-how-does-databasesql-work-and-how-do-you-tune-the-connection-pool) · [90](#90-how-do-you-use-transactions-correctly-in-go) · [91](#91-databasesql-vs-pgx-vs-sqlx-vs-sqlc-vs-gorm-how-do-you-choose) |
+| Testing (5) | [80](#80-how-do-you-write-table-driven-tests-in-go) · [81](#81-how-do-subtests-tparallel-thelper-tcleanup-and-testmain-work) · [82](#82-how-do-you-mock-dependencies-and-test-http-handlers-in-go) · [83](#83-how-do-you-write-benchmarks-and-read-the-results) · [84](#84-what-is-fuzz-testing-in-go-118-and-when-is-it-useful) |
+| Tooling & Delivery (8) | [2](#2-what-is-a-go-package-a-module-and-what-does-gomod-do) · [23](#23-what-go-tools-should-every-developer-know-go-fmt-vet-test-build-run) · [52](#52-tech-lead-what-do-you-enforce-in-code-reviews-and-ci-for-a-go-team) · [94](#94-how-do-you-handle-configuration-and-secrets-in-a-go-service) · [96](#96-how-do-go-modules-handle-versions-replace-vendor-workspaces-and-major-versions) · [97](#97-how-do-you-cross-compile-go-and-use-build-tags-and--ldflags) · [98](#98-how-do-you-build-a-small-secure-docker-image-for-a-go-service) · [125](#125-how-do-you-do-zero-downtime-deployments-and-safe-database-migrations-for-a-go-service) |
+| Types & Data Structures (10) | [7](#7-what-are-arrays-and-slices-why-are-slices-used-almost-everywhere) · [8](#8-what-do-len-cap-and-slicing-sab-mean-how-does-a-slice-look-inside) · [9](#9-how-do-maps-work-in-go-and-what-are-the-common-mistakes) · [10](#10-how-are-strings-bytes-and-runes-related-in-go) · [11](#11-how-do-structs-and-methods-work-in-go-no-classes) · [12](#12-what-are-pointers-in-go-and-when-should-you-use-them) · [13](#13-value-receiver-vs-pointer-receiver-how-do-you-choose) · [22](#22-how-do-embedding-and-composition-replace-inheritance-in-go) · [54](#54-how-does-append-grow-a-slice-and-what-are-the-aliasing-gotchas) · [79](#79-why-cant-you-assign-to-a-struct-field-inside-a-map-and-what-are-the-copy-semantics-of-structs-slices-and-maps) |
+
 ## Basic
 
 ### 1. What is Go, and why do companies choose it for backend services?
@@ -174,7 +193,7 @@ func main() {
 
 **Interview tip:** Mention one real reason from your own work, for example "our services on Kubernetes were Go because the binaries are small and start fast".
 
-_Tags: intro, basics_
+_Module: Language Fundamentals · Tags: intro, basics_
 
 ### 2. What is a Go package, a module, and what does `go.mod` do?
 
@@ -214,7 +233,7 @@ go mod tidy                                   # remove unused, add missing
 - Packages in a folder named `internal/` can only be imported by code inside the parent module. Great for hiding implementation details.
 - The executable entry point is always `package main` with `func main()`.
 
-_Tags: modules, basics_
+_Module: Tooling & Delivery · Tags: modules, basics_
 
 ### 3. What are zero values in Go, and why do they matter?
 
@@ -260,7 +279,7 @@ mu.Lock()
 
 **Gotcha:** a `nil` slice is fine to read and `append` to. A `nil` map is fine to read, but **writing to it panics** (see the maps question).
 
-_Tags: basics, types_
+_Module: Language Fundamentals · Tags: basics, types_
 
 ### 4. What is the difference between `var`, `:=` and `const`?
 
@@ -305,7 +324,7 @@ if true {
 
 Use `go vet -vettool=shadow` or your linter (`govet` with shadow enabled) to catch it.
 
-_Tags: basics, variables_
+_Module: Language Fundamentals · Tags: basics, variables_
 
 ### 5. How do `const` and `iota` work? Give a typical use.
 
@@ -352,7 +371,7 @@ const (
 - Go has no `enum` keyword. A named type + constants + a `String()` method is the idiom.
 - Start real enums at 1 (or add an explicit `Unknown`) if the zero value should mean "not set". Otherwise a forgotten field silently becomes the first value.
 
-_Tags: basics, enum_
+_Module: Language Fundamentals · Tags: basics, enum_
 
 ### 6. Explain Go's basic types and how type conversion works.
 
@@ -387,7 +406,7 @@ func main() {
 - For money use integers in the smallest unit (paise/cents) or a decimal library, never `float64`.
 - Converting a number to `string` with `string(65)` gives `"A"`, not `"65"`. `go vet` warns about it.
 
-_Tags: basics, types_
+_Module: Language Fundamentals · Tags: basics, types_
 
 ### 7. What are arrays and slices? Why are slices used almost everywhere?
 
@@ -427,7 +446,7 @@ c := a[1:3]                    // sub-slice: shares memory with a
 
 **Tip:** if you know the size in advance, `make([]T, 0, n)` avoids repeated reallocation.
 
-_Tags: basics, slices_
+_Module: Types & Data Structures · Tags: basics, slices_
 
 ### 8. What do `len`, `cap` and slicing (`s[a:b]`) mean? How does a slice look inside?
 
@@ -472,7 +491,7 @@ func main() {
 - Sub-slices **share** the same memory. Changing one can change the other.
 - To get an independent copy: `c := append([]int(nil), s...)` or `copy`.
 
-_Tags: slices, internals_
+_Module: Types & Data Structures · Tags: slices, internals_
 
 ### 9. How do maps work in Go, and what are the common mistakes?
 
@@ -512,7 +531,7 @@ func main() {
 
 **Set trick:** `map[string]struct{}` uses zero memory for values.
 
-_Tags: maps, basics_
+_Module: Types & Data Structures · Tags: maps, basics_
 
 ### 10. How are strings, bytes and runes related in Go?
 
@@ -554,7 +573,7 @@ for i := 0; i < 3; i++ {
 fmt.Println(b.String()) // prints: item-0 item-1 item-2
 ```
 
-_Tags: strings, unicode_
+_Module: Types & Data Structures · Tags: strings, unicode_
 
 ### 11. How do structs and methods work in Go (no classes)?
 
@@ -594,7 +613,7 @@ func main() {
 - Structs are comparable with `==` if all their fields are.
 - Struct tags (`` `json:"owner"` ``) add metadata for encoders.
 
-_Tags: structs, methods_
+_Module: Types & Data Structures · Tags: structs, methods_
 
 ### 12. What are pointers in Go, and when should you use them?
 
@@ -637,7 +656,7 @@ func newCounter() *int {
 }
 ```
 
-_Tags: pointers, basics_
+_Module: Types & Data Structures · Tags: pointers, basics_
 
 ### 13. Value receiver vs pointer receiver: how do you choose?
 
@@ -680,7 +699,7 @@ var _ Incrementer = &Counter{} // ✅
 4. Otherwise small value type (like `time.Time`)? Value.
 5. If one method needs a pointer, make **all** methods pointer receivers for consistency.
 
-_Tags: methods, pointers, interfaces_
+_Module: Types & Data Structures · Tags: methods, pointers, interfaces_
 
 ### 14. What are interfaces in Go and how are they implemented?
 
@@ -733,7 +752,7 @@ flowchart LR
 
 The empty interface `interface{}` (alias `any`) can hold anything. Use it rarely, because you lose type safety.
 
-_Tags: interfaces, basics_
+_Module: Interfaces & Generics · Tags: interfaces, basics_
 
 ### 15. How does error handling work in Go? Why no exceptions?
 
@@ -781,7 +800,7 @@ if err != nil {
 
 **Interview tip:** If asked "isn't `if err != nil` repetitive?", answer that it is explicit, makes every failure point visible in code review, and costs nothing at runtime.
 
-_Tags: errors, basics_
+_Module: Errors & Panics · Tags: errors, basics_
 
 ### 16. What does `defer` do? Explain order and argument evaluation.
 
@@ -840,7 +859,7 @@ func safeDiv(a, b int) (res int, err error) {
 ```
 - `defer mu.Unlock()` right after `mu.Lock()` is the standard pattern.
 
-_Tags: defer, basics_
+_Module: Errors & Panics · Tags: defer, basics_
 
 ### 17. What are `panic` and `recover`? When is it OK to use them?
 
@@ -890,7 +909,7 @@ flowchart TD
 - A panic in one goroutine cannot be recovered by another goroutine. It kills the whole process.
 - Never use panic as control flow for expected cases such as "user not found".
 
-_Tags: panic, errors_
+_Module: Errors & Panics · Tags: panic, errors_
 
 ### 18. Explain `for`, `range` and `switch` in Go. What is different from other languages?
 
@@ -949,7 +968,7 @@ default:
 - `break`/`continue` accept labels to leave outer loops: `outer: for ... { break outer }`.
 - `range` over a map gives random order; over a channel it reads until the channel closes.
 
-_Tags: control-flow, basics_
+_Module: Language Fundamentals · Tags: control-flow, basics_
 
 ### 19. How do functions work in Go: multiple returns, variadic, named returns, closures?
 
@@ -1008,7 +1027,7 @@ func parse(s string) (n int, err error) {
 
 **Tip:** Functions can be stored in variables, passed as arguments, and used as `map` values. This is how the *functional options* and middleware patterns are built.
 
-_Tags: functions, closures_
+_Module: Language Fundamentals · Tags: functions, closures_
 
 ### 20. How does `init()` work and what is the package initialisation order?
 
@@ -1049,7 +1068,7 @@ func main() { fmt.Println("main") }   // runs last
 
 **Fine uses:** registering drivers or codecs (`import _ "github.com/lib/pq"`), setting up constant tables. Prefer explicit `NewX()` constructors for real setup.
 
-_Tags: init, packages_
+_Module: Language Fundamentals · Tags: init, packages_
 
 ### 21. How does Go decide what is public or private?
 
@@ -1079,7 +1098,7 @@ func validate(i *Invoice) bool { return i.amount > 0 } // private helper
 
 **Gotcha:** JSON and other encoders (using reflection) can only see **exported** fields. An unexported field is silently skipped when encoding.
 
-_Tags: packages, visibility_
+_Module: Language Fundamentals · Tags: packages, visibility_
 
 ### 22. How do embedding and composition replace inheritance in Go?
 
@@ -1120,7 +1139,7 @@ func (f fakeStore) Get(id string) string { return "stub" }
 
 **Interview tip:** Say "favour composition over inheritance", and show you know that promoted methods are only syntax sugar for calling `s.Logger.Log`.
 
-_Tags: embedding, composition_
+_Module: Types & Data Structures · Tags: embedding, composition_
 
 ### 23. What Go tools should every developer know (`go fmt`, `vet`, `test`, `build`, `run`)?
 
@@ -1146,7 +1165,7 @@ _Tags: embedding, composition_
 
 **Why interviewers ask:** they want to see that you run `-race` and `vet` in CI, and that code style is never debated because `gofmt` decides.
 
-_Tags: tooling, basics_
+_Module: Tooling & Delivery · Tags: tooling, basics_
 
 ### 24. What are generics in Go and when should you use them? (Go 1.18+)
 
@@ -1201,7 +1220,7 @@ func main() {
 
 **Do not use them** when a normal interface does the job, or just to avoid writing two lines of code. Prefer simple and readable.
 
-_Tags: generics_
+_Module: Interfaces & Generics · Tags: generics_
 
 ### 25. What is a goroutine and how do you start one?
 
@@ -1237,7 +1256,7 @@ func main() {
 
 **Concurrency vs parallelism:** concurrency is *structuring* a program as independent tasks. Parallelism is *running* them at the same moment on several CPU cores. Go gives you concurrency; the runtime gives parallelism if cores are available.
 
-_Tags: goroutines, concurrency_
+_Module: Concurrency · Tags: goroutines, concurrency_
 
 ### 26. How do channels work? Explain buffered vs unbuffered.
 
@@ -1286,7 +1305,7 @@ sequenceDiagram
 
 **When to use buffered:** to absorb short bursts or limit concurrency (semaphore). Not to "fix" a deadlock.
 
-_Tags: channels, concurrency_
+_Module: Concurrency · Tags: channels, concurrency_
 
 ### 27. How does `select` work with channels?
 
@@ -1342,7 +1361,7 @@ for {
 - A `select {}` with no cases blocks forever.
 - Setting a channel variable to `nil` disables that case, handy after a channel closes.
 
-_Tags: select, concurrency_
+_Module: Concurrency · Tags: select, concurrency_
 
 ### 28. What is `sync.WaitGroup` and how do you use it correctly?
 
@@ -1383,7 +1402,7 @@ func main() {
 
 If workers can fail, use `errgroup` (see the concurrency section) instead of a bare WaitGroup.
 
-_Tags: sync, concurrency_
+_Module: Concurrency · Tags: sync, concurrency_
 
 ## Intermediate
 
@@ -1424,7 +1443,7 @@ flowchart TD
 
 **Interview tip:** say the sentence "measure, hypothesise, change one thing, re-measure". Then walk through a real case. Interviewers want a method and evidence, not a list of tricks.
 
-_Tags: performance, tech-lead, methodology_
+_Module: Performance & Load · Tags: performance, tech-lead, methodology_
 
 ### 30. [Tech Lead] How do you use `pprof` to find CPU hot spots and memory problems?
 
@@ -1490,7 +1509,7 @@ On Kubernetes: `kubectl port-forward pod/orders-abc 6060:6060`, then run the sam
 
 **Better still:** *continuous profiling* (Datadog Profiler, Pyroscope, Grafana) records profiles all the time so you can compare "before and after the deploy".
 
-_Tags: pprof, performance, tech-lead_
+_Module: Performance & Load · Tags: pprof, performance, tech-lead_
 
 ### 31. [Tech Lead] When do you use the Go execution tracer (`go tool trace`) instead of pprof?
 
@@ -1528,7 +1547,7 @@ go tool trace trace.out    # opens a browser UI
 
 **Tip:** keep traces short (a few seconds). They are large and heavy to load.
 
-_Tags: trace, performance, tech-lead_
+_Module: Performance & Load · Tags: trace, performance, tech-lead_
 
 ### 32. [Tech Lead] How do you reduce memory allocations and GC pressure in Go?
 
@@ -1583,7 +1602,7 @@ func idsFast(users []User) []string {
 
 **Warning:** do not make code ugly for a 2% gain. Optimise only what the profile shows is hot, and keep a benchmark as proof.
 
-_Tags: performance, gc, memory, tech-lead_
+_Module: Runtime & Memory · Tags: performance, gc, memory, tech-lead_
 
 ### 33. [Tech Lead] How do you find and fix a memory leak in a running Go service?
 
@@ -1626,7 +1645,7 @@ go tool pprof -http=:8081 -base heap1.pb.gz heap2.pb.gz
 
 **Prevent:** memory dashboards with alerts, load tests that run for hours (soak tests), `goleak` in unit tests, and a heap profile in your incident runbook.
 
-_Tags: memory, debugging, tech-lead_
+_Module: Runtime & Memory · Tags: memory, debugging, tech-lead_
 
 ### 34. [Tech Lead] How do you load test a Go service and read the results correctly?
 
@@ -1671,7 +1690,7 @@ flowchart LR
 
 **Never** load test production dependencies you do not own (third-party APIs) without permission. Mock them.
 
-_Tags: load-testing, performance, tech-lead_
+_Module: Performance & Load · Tags: load-testing, performance, tech-lead_
 
 ### 35. [Tech Lead] Under high load the service gets slow but CPU is low. What could be wrong?
 
@@ -1704,7 +1723,7 @@ log.Printf("open=%d inUse=%d idle=%d waitCount=%d waitTime=%s",
 
 **Interview tip:** answer with a *process*: check saturation signals, then traces, then block/mutex profiles, and name the top three suspects (DB pool, downstream, locks).
 
-_Tags: performance, load, tech-lead, debugging_
+_Module: Performance & Load · Tags: performance, load, tech-lead, debugging_
 
 ### 36. [Tech Lead] How do you tune the Go runtime inside containers (`GOMAXPROCS`, `GOMEMLIMIT`, `GOGC`, CPU limits)?
 
@@ -1751,7 +1770,7 @@ flowchart LR
 
 **Monitor:** `container_cpu_cfs_throttled_seconds_total`, heap in use vs limit, GC pause time, and restarts with reason `OOMKilled`.
 
-_Tags: kubernetes, performance, runtime, tech-lead_
+_Module: Runtime & Memory · Tags: kubernetes, performance, runtime, tech-lead_
 
 ### 37. [Tech Lead] The app crashed in production. How do you find out which module or line broke it?
 
@@ -1798,7 +1817,7 @@ flowchart TD
 - Use `slog` with `AddSource: true` so every log line includes file and line.
 - Set `GOTRACEBACK=all` (or `crash`) to see all goroutines in a fatal error.
 
-_Tags: crash, debugging, tech-lead, observability_
+_Module: Debugging & Reliability · Tags: crash, debugging, tech-lead, observability_
 
 ### 38. [Tech Lead] How do you read a Go panic stack trace?
 
@@ -1849,7 +1868,7 @@ So: the `order` module called `billing.Charge` on a nil `*billing.Service`, usua
 - Stack traces can be huge with many goroutines. Search for `[running]` and for the goroutine marked `panic`.
 - If the trace is only in a log aggregator, make sure multi-line logs are not split into separate entries (log as one JSON field).
 
-_Tags: crash, debugging, tech-lead_
+_Module: Debugging & Reliability · Tags: crash, debugging, tech-lead_
 
 ### 39. [Tech Lead] Which Go errors can NOT be recovered with `recover()`?
 
@@ -1891,7 +1910,7 @@ func main() {
 
 **Interview tip:** explain that `recover` is a safety net for *bugs in request handling*, not a substitute for correct concurrency.
 
-_Tags: panic, crash, runtime, tech-lead_
+_Module: Debugging & Reliability · Tags: panic, crash, runtime, tech-lead_
 
 ### 40. [Tech Lead] How do you make sure a panic in a goroutine does not take down the whole service?
 
@@ -1945,7 +1964,7 @@ safe.Go("send-welcome-email", func() { sendEmail(user) })
 - Alert on the panic counter. A recovered panic is still a bug.
 - Use `errgroup` for goroutine groups; it does not recover panics for you, so wrap the function you pass to it.
 
-_Tags: panic, goroutines, resilience, tech-lead_
+_Module: Debugging & Reliability · Tags: panic, goroutines, resilience, tech-lead_
 
 ### 41. [Tech Lead] How do you design error handling across a whole codebase so errors tell you which module failed?
 
@@ -2019,7 +2038,7 @@ flowchart LR
 
 **Stack traces?** Go errors do not carry stack traces by default. Wrapping with operation names is usually enough and cheaper. If you want traces for unexpected errors, capture `debug.Stack()` at the boundary or use an error-tracking SDK.
 
-_Tags: errors, design, tech-lead, observability_
+_Module: Errors & Panics · Tags: errors, design, tech-lead, observability_
 
 ### 42. [Tech Lead] What logs, metrics and alerts do you set up so you find the broken module fast?
 
@@ -2060,7 +2079,7 @@ flowchart LR
 
 **Careful with:** high-cardinality labels (user id, request id as a metric label) because they explode metric storage. Put them in logs/traces instead.
 
-_Tags: observability, datadog, tech-lead_
+_Module: Observability & Operations · Tags: observability, datadog, tech-lead_
 
 ### 43. [Tech Lead] Walk me through your incident process for a production crash (detect, mitigate, fix, learn).
 
@@ -2103,7 +2122,7 @@ flowchart LR
 
 **As a Technical Lead:** you stay calm, keep communication clear (status updates every 15-30 min to stakeholders), protect the engineers who are debugging from interruptions, and make sure the follow-up work actually gets scheduled.
 
-_Tags: incident, leadership, tech-lead_
+_Module: Debugging & Reliability · Tags: incident, leadership, tech-lead_
 
 ### 44. [Tech Lead] How do you design a Go service for high concurrency: bounded concurrency, queues and backpressure?
 
@@ -2151,7 +2170,7 @@ func LimitInFlight(max int, next http.Handler) http.Handler {
 
 **Scale out vs up:** stateless Go pods scale horizontally with an HPA on CPU or custom metrics (queue depth, in-flight). Keep an eye on shared limits such as total DB connections.
 
-_Tags: concurrency, scalability, tech-lead_
+_Module: Concurrency · Tags: concurrency, scalability, tech-lead_
 
 ### 45. [Tech Lead] What is load shedding and how do you protect a service from overload?
 
@@ -2194,7 +2213,7 @@ if dl, ok := r.Context().Deadline(); ok && time.Until(dl) < 50*time.Millisecond 
 
 **Interview tip:** mention that you test overload behaviour with a stress/spike test and verify that the service degrades gracefully and **recovers** after the spike.
 
-_Tags: resilience, scalability, tech-lead_
+_Module: Debugging & Reliability · Tags: resilience, scalability, tech-lead_
 
 ### 46. [Tech Lead] How do you propagate timeouts and deadlines across services (timeout budgets)?
 
@@ -2242,7 +2261,7 @@ func (s *Service) Place(ctx context.Context, o Order) error {
 
 **Common bug:** creating `context.Background()` deep in the code (dropping the caller's context), so cancellations and deadlines stop propagating. Pass `ctx` as the first parameter everywhere.
 
-_Tags: timeouts, context, microservices, tech-lead_
+_Module: Debugging & Reliability · Tags: timeouts, context, microservices, tech-lead_
 
 ### 47. [Tech Lead] Why is p99 latency high in a Go service, and what is tail latency?
 
@@ -2277,7 +2296,7 @@ _Tags: timeouts, context, microservices, tech-lead_
 
 **Interview tip:** say "I look at percentiles, not averages, and I find whether the tail is caused by *waiting* (pool, locks, throttling) or *work* (CPU, GC)".
 
-_Tags: performance, latency, tech-lead_
+_Module: Performance & Load · Tags: performance, latency, tech-lead_
 
 ### 48. [Tech Lead] You must optimise a slow endpoint end to end. What is your checklist?
 
@@ -2331,7 +2350,7 @@ if err := g.Wait(); err != nil {
 
 **Always:** write down the *before* numbers, change one thing at a time, and keep a benchmark or load test to prove the *after*. Premature optimisation of the wrong layer wastes time.
 
-_Tags: performance, optimization, tech-lead_
+_Module: Performance & Load · Tags: performance, optimization, tech-lead_
 
 ### 49. [Tech Lead] How do you find and fix N+1 queries and other database performance issues in a Go service?
 
@@ -2380,7 +2399,7 @@ rows, _ = db.QueryContext(ctx, `SELECT id, name FROM customers WHERE id = ANY($1
 
 **Interview tip:** describe a time you found one via traces and how the fix reduced latency or database load, with numbers.
 
-_Tags: database, performance, tech-lead_
+_Module: Performance & Load · Tags: database, performance, tech-lead_
 
 ### 50. [Tech Lead] How do you debug a Go service in production without restarting it?
 
@@ -2414,7 +2433,7 @@ _Tags: database, performance, tech-lead_
 
 **Safety rules:** do not put sensitive data in logs while debugging; limit how long debug mode is on; take the pod out of the load balancer before any invasive tool; record what you did in the incident timeline.
 
-_Tags: debugging, production, tech-lead_
+_Module: Debugging & Reliability · Tags: debugging, production, tech-lead_
 
 ### 51. [Tech Lead] How do you capacity-plan and scale a Go service on Kubernetes?
 
@@ -2455,7 +2474,7 @@ flowchart LR
 
 **Cost and review:** track cost per request, review capacity each quarter or before big launches (for example, airline fleet roll-out), and run a game day to verify failover.
 
-_Tags: scalability, kubernetes, capacity, tech-lead_
+_Module: Observability & Operations · Tags: scalability, kubernetes, capacity, tech-lead_
 
 ### 52. [Tech Lead] What do you enforce in code reviews and CI for a Go team?
 
@@ -2511,7 +2530,7 @@ vuln:
 - Be kind and specific in review comments; separate "must fix" from "suggestion".
 - Mentor: pair on tricky concurrency code and explain *why*, not only *what*.
 
-_Tags: leadership, code-review, ci, tech-lead_
+_Module: Tooling & Delivery · Tags: leadership, code-review, ci, tech-lead_
 
 ### 53. [Tech Lead] How do you prevent performance regressions from reaching production?
 
@@ -2558,7 +2577,7 @@ Fail the CI job if a critical benchmark gets more than, say, 10% slower (be care
 
 **Interview tip:** explain that you cannot rely on reviewers to spot a slow change by eye; you need automated evidence at three stages: pre-merge, pre-release, and in production.
 
-_Tags: performance, ci, tech-lead_
+_Module: Performance & Load · Tags: performance, ci, tech-lead_
 
 ### 54. How does `append` grow a slice, and what are the aliasing gotchas?
 
@@ -2599,7 +2618,7 @@ flowchart LR
 4. Pre-size with `make([]T, 0, n)` when you know `n`.
 5. A sub-slice keeps the **whole** big array alive in memory. If you keep a tiny piece of a huge slice, copy it out.
 
-_Tags: slices, gotchas_
+_Module: Types & Data Structures · Tags: slices, gotchas_
 
 ### 55. Why is an interface holding a nil pointer not equal to nil?
 
@@ -2655,7 +2674,7 @@ func mayFail(fail bool) error {
 
 **Interview tip:** this is a favourite trick question. Draw the two-box (type, value) picture.
 
-_Tags: interfaces, gotchas_
+_Module: Interfaces & Generics · Tags: interfaces, gotchas_
 
 ### 56. How do type assertions and type switches work?
 
@@ -2707,7 +2726,7 @@ func main() {
   ```
 - Too many type switches often means the interface is missing a method. Prefer adding the method.
 
-_Tags: interfaces, types_
+_Module: Interfaces & Generics · Tags: interfaces, types_
 
 ### 57. How do you wrap, compare and inspect errors (`%w`, `errors.Is`, `errors.As`, `errors.Join`)?
 
@@ -2765,7 +2784,7 @@ flowchart LR
 - Do not compare errors with `==` or by string. `Is` and `As` survive wrapping.
 - Do **not** wrap with `%w` if you do not want callers to depend on the inner error. Use `%v` to hide it.
 
-_Tags: errors_
+_Module: Errors & Panics · Tags: errors_
 
 ### 58. What is `context.Context` and how do you use it for cancellation and timeouts?
 
@@ -2823,7 +2842,7 @@ type ctxKey string
 ctx = context.WithValue(ctx, ctxKey("traceID"), "abc-123")
 ```
 
-_Tags: context, concurrency_
+_Module: Concurrency · Tags: context, concurrency_
 
 ### 59. When do you use `sync.Mutex` and `sync.RWMutex`? Show a safe cache.
 
@@ -2875,7 +2894,7 @@ func main() {
 
 **Mutex vs channel:** use a mutex to protect state; use channels to pass ownership or coordinate. Both are valid, pick the simpler one.
 
-_Tags: sync, mutex_
+_Module: Concurrency · Tags: sync, mutex_
 
 ### 60. What is the `sync/atomic` package and when is it better than a mutex?
 
@@ -2914,7 +2933,7 @@ func main() {
 
 **Gotcha:** plain `counter++` from many goroutines is a data race even though it looks tiny (read, add, write are 3 steps).
 
-_Tags: sync, atomic_
+_Module: Concurrency · Tags: sync, atomic_
 
 ### 61. What are `sync.Once` and `sync.OnceValue` used for?
 
@@ -2967,7 +2986,7 @@ c := getCfg() // computed once, cached
 - Do not use double-checked locking by hand. It is easy to get wrong. Use `Once`.
 - Other uses: close a channel safely only once (`once.Do(func(){ close(done) })`).
 
-_Tags: sync, patterns_
+_Module: Concurrency · Tags: sync, patterns_
 
 ### 62. What is `sync.Pool` and when should you use it?
 
@@ -3008,7 +3027,7 @@ func main() { fmt.Println(render("Anu")) } // Hello, Anu
 - Without measuring. Check `go test -bench -benchmem` first. Pools add complexity.
 - With objects that keep references to big data. Reset them before `Put`, or they hold memory and leak data between requests.
 
-_Tags: sync, performance_
+_Module: Concurrency · Tags: sync, performance_
 
 ### 63. How does `errgroup` help run goroutines that can fail?
 
@@ -3058,7 +3077,7 @@ func main() {
 
 **Remember:** goroutines must *watch the ctx* to actually stop. `errgroup` only cancels the context; it cannot kill a goroutine.
 
-_Tags: errgroup, concurrency_
+_Module: Concurrency · Tags: errgroup, concurrency_
 
 ### 64. Show a worker pool pattern in Go and explain how it works.
 
@@ -3124,7 +3143,7 @@ func main() {
 
 **Production additions:** `context` for cancellation, error collection (`errgroup`), retries, metrics for queue length, and a bounded `jobs` buffer for backpressure.
 
-_Tags: patterns, concurrency_
+_Module: Concurrency · Tags: patterns, concurrency_
 
 ### 65. Explain fan-out and fan-in with an example.
 
@@ -3203,7 +3222,7 @@ func main() {
 
 **Note:** the order of results is not preserved. If order matters, attach an index to each job and sort at the end.
 
-_Tags: patterns, concurrency_
+_Module: Concurrency · Tags: patterns, concurrency_
 
 ### 66. What is a pipeline in Go and how do you stop it early without leaking goroutines?
 
@@ -3271,7 +3290,7 @@ func main() {
 
 **Rule:** every goroutine you start needs a clear way to finish.
 
-_Tags: patterns, concurrency, leaks_
+_Module: Concurrency · Tags: patterns, concurrency, leaks_
 
 ### 67. How do you limit concurrency (semaphore pattern) in Go?
 
@@ -3314,7 +3333,7 @@ func main() {
 
 **Tip:** acquire the semaphore *before* `go`, so you do not create millions of goroutines that just wait.
 
-_Tags: concurrency, patterns_
+_Module: Concurrency · Tags: concurrency, patterns_
 
 ### 68. How do you rate limit in Go (ticker, `x/time/rate`)?
 
@@ -3361,7 +3380,7 @@ flowchart LR
 
 **Per-user limits:** keep a `map[userID]*rate.Limiter` guarded by a mutex, and clean up old entries. In a multi-pod deployment, in-memory limiters are per pod. Use Redis or an API gateway for a global limit.
 
-_Tags: rate-limit, concurrency_
+_Module: Concurrency · Tags: rate-limit, concurrency_
 
 ### 69. What is a goroutine leak? How do you detect and prevent it?
 
@@ -3401,7 +3420,7 @@ ch := make(chan string, len(urls))
 
 **Prevent:** give every goroutine an owner and an exit condition (context, close, or done channel).
 
-_Tags: leaks, concurrency, debugging_
+_Module: Concurrency · Tags: leaks, concurrency, debugging_
 
 ### 70. What is a data race? How does the race detector help?
 
@@ -3447,7 +3466,7 @@ It prints both conflicting accesses with stack traces. **It only reports races t
 - Races can corrupt interface values and slices (multi-word values), not just counters.
 - "It works on my machine" is a classic sign of a race.
 
-_Tags: race, concurrency, testing_
+_Module: Concurrency · Tags: race, concurrency, testing_
 
 ### 71. What causes a deadlock in Go and how do you debug one?
 
@@ -3488,7 +3507,7 @@ flowchart LR
 2. Look for many goroutines stuck in `chan send`, `chan receive`, `sync.Mutex.Lock`, `semacquire`.
 3. Reproduce with `-race` and add timeouts to tests (`go test -timeout 30s`).
 
-_Tags: deadlock, concurrency, debugging_
+_Module: Concurrency · Tags: deadlock, concurrency, debugging_
 
 ### 72. Who should close a channel, and how do you shut down goroutines cleanly?
 
@@ -3542,7 +3561,7 @@ func main() {
 
 **Graceful shutdown order:** stop accepting new work, cancel the context, wait (`wg.Wait`) with a deadline, then exit.
 
-_Tags: channels, shutdown, concurrency_
+_Module: Concurrency · Tags: channels, shutdown, concurrency_
 
 ### 73. How do generic constraints work, and what do `slices` and `maps` packages offer (Go 1.21+)?
 
@@ -3609,7 +3628,7 @@ func Map[T, U any](in []T, f func(T) U) []U {
 
 **Limits to know:** methods cannot have their own type parameters (only the type can). Keep generic code simple.
 
-_Tags: generics, stdlib_
+_Module: Interfaces & Generics · Tags: generics, stdlib_
 
 ### 74. What changed with loop variables in Go 1.22 and why does it matter?
 
@@ -3653,7 +3672,7 @@ go func(n int) { fmt.Println(n) }(i)
 
 **Interview tip:** this was a famous source of bugs. Mentioning that it was changed in 1.22 and that the version in `go.mod` controls it shows you keep up with the language.
 
-_Tags: go-1.22, gotchas, concurrency_
+_Module: Concurrency · Tags: go-1.22, gotchas, concurrency_
 
 ### 75. What is the functional options pattern and why is it popular?
 
@@ -3708,7 +3727,7 @@ func main() {
 
 **When not to use:** a small struct with 2-3 required fields is fine with a plain config struct. Do not over-engineer.
 
-_Tags: patterns, design_
+_Module: Design & Patterns · Tags: patterns, design_
 
 ### 76. Explain `io.Reader` and `io.Writer`. Why are they so important?
 
@@ -3754,7 +3773,7 @@ flowchart LR
 
 **Gotcha:** `Read` may return `n > 0` **and** `io.EOF` together. Process the bytes first, then check the error. Always `Close` response bodies.
 
-_Tags: io, interfaces_
+_Module: Interfaces & Generics · Tags: io, interfaces_
 
 ### 77. How do you work with time in Go (`time.Duration`, formatting, time zones, timers)?
 
@@ -3793,7 +3812,7 @@ func main() {
 - Use `time.NewTimer`/`NewTicker` and always `Stop()` them. Prefer them over `time.After` inside loops.
 - In tests, inject a clock (`func() time.Time`) so you can control time.
 
-_Tags: time, stdlib_
+_Module: Standard Library & Data · Tags: time, stdlib_
 
 ### 78. How does JSON encoding and decoding work (`encoding/json`, struct tags)?
 
@@ -3837,7 +3856,7 @@ func main() {
 - Implement `MarshalJSON`/`UnmarshalJSON` for custom formats (for example enums as strings).
 - `encoding/json` uses reflection and is slowish. For hot paths consider generated encoders, but measure first.
 
-_Tags: json, stdlib_
+_Module: Standard Library & Data · Tags: json, stdlib_
 
 ### 79. Why can't you assign to a struct field inside a map, and what are the copy semantics of structs, slices and maps?
 
@@ -3884,7 +3903,7 @@ func setKey(m map[string]int) { m["a"] = 1 }      // caller sees this
 
 **Gotcha:** "shallow copy": copying a struct that holds a slice copies only the slice header. Both structs then see the same elements.
 
-_Tags: maps, structs, gotchas_
+_Module: Types & Data Structures · Tags: maps, structs, gotchas_
 
 ### 80. How do you write table-driven tests in Go?
 
@@ -3949,7 +3968,7 @@ go test -v -cover -race ./...
 - Print got **and** want in the message.
 - Compare complex values with `reflect.DeepEqual` or `github.com/google/go-cmp/cmp` (shows a readable diff).
 
-_Tags: testing_
+_Module: Testing · Tags: testing_
 
 ### 81. How do subtests, `t.Parallel`, `t.Helper`, `t.Cleanup` and `TestMain` work?
 
@@ -4005,7 +4024,7 @@ func TestMain(m *testing.M) {
 - Parallel tests must not share mutable state without locks. Use `-race`.
 - Keep unit tests fast and independent. Put slow integration tests behind a build tag or `testing.Short()`.
 
-_Tags: testing_
+_Module: Testing · Tags: testing_
 
 ### 82. How do you mock dependencies and test HTTP handlers in Go?
 
@@ -4070,7 +4089,7 @@ func TestHandler(t *testing.T) {
 
 **Design hint:** if mocking is painful, the code probably has too many dependencies or too-large interfaces.
 
-_Tags: testing, mocking, http_
+_Module: Testing · Tags: testing, mocking, http_
 
 ### 83. How do you write benchmarks and read the results?
 
@@ -4130,7 +4149,7 @@ go test -bench=. -benchmem
 - Benchmark on a quiet machine. Close other apps.
 - **Measure before optimising.** Use `pprof` to find the real hot spots.
 
-_Tags: testing, performance, benchmark_
+_Module: Testing · Tags: testing, performance, benchmark_
 
 ### 84. What is fuzz testing in Go (1.18+) and when is it useful?
 
@@ -4173,7 +4192,7 @@ When it finds a failure, it saves the input to `testdata/fuzz/FuzzRoundTrip/...`
 
 **Not good for:** code with heavy I/O or slow runtime. Keep each fuzz run fast and deterministic.
 
-_Tags: testing, fuzzing_
+_Module: Testing · Tags: testing, fuzzing_
 
 ### 85. How do you build an HTTP server with only the standard library (Go 1.22 routing)?
 
@@ -4240,7 +4259,7 @@ func main() {
 
 **When to add a router:** chi or gin if you want route groups, middleware stacks, or a bigger ecosystem. For simple services, std lib is enough.
 
-_Tags: http, net/http_
+_Module: HTTP & Microservices · Tags: http, net/http_
 
 ### 86. What is middleware in Go HTTP and how do you write it?
 
@@ -4313,7 +4332,7 @@ func main() {
 - To record the status code in logging, wrap `http.ResponseWriter` in your own struct.
 - Order matters: put `Recover` near the outside so it catches panics from everything inside.
 
-_Tags: http, middleware, patterns_
+_Module: HTTP & Microservices · Tags: http, middleware, patterns_
 
 ### 87. How should you configure the Go HTTP client (timeouts, reuse, closing bodies)?
 
@@ -4373,7 +4392,7 @@ func main() {
 
 **Production add-ons:** retries with backoff for idempotent calls, a circuit breaker, tracing headers, and a context deadline from the incoming request.
 
-_Tags: http, client, production_
+_Module: HTTP & Microservices · Tags: http, client, production_
 
 ### 88. How do you implement graceful shutdown of a Go service?
 
@@ -4436,7 +4455,7 @@ func main() {
 - Make background workers watch the same context so they stop too.
 - `ErrServerClosed` is the *normal* result of `Shutdown`, not a failure.
 
-_Tags: shutdown, kubernetes, production_
+_Module: HTTP & Microservices · Tags: shutdown, kubernetes, production_
 
 ### 89. How does `database/sql` work, and how do you tune the connection pool?
 
@@ -4493,7 +4512,7 @@ func main() {
 - Handle `NULL` with `sql.NullString` or pointers.
 - Total connections across all pods must stay below the database limit. 20 pods x 20 conns = 400 connections to PostgreSQL. Use PgBouncer or lower the numbers.
 
-_Tags: database, sql, production_
+_Module: Standard Library & Data · Tags: database, sql, production_
 
 ### 90. How do you use transactions correctly in Go?
 
@@ -4554,7 +4573,7 @@ func withTx(ctx context.Context, db *sql.DB, fn func(*sql.Tx) error) error {
 }
 ```
 
-_Tags: database, transactions_
+_Module: Standard Library & Data · Tags: database, transactions_
 
 ### 91. `database/sql` vs pgx vs sqlx vs sqlc vs GORM: how do you choose?
 
@@ -4587,7 +4606,7 @@ user, err := queries.GetUser(ctx, 42)
 
 **Interview tip:** explain a real trade-off, for example "an ORM hid an N+1 query that we found in Datadog traces, so for hot paths we use explicit SQL".
 
-_Tags: database, orm, design_
+_Module: Standard Library & Data · Tags: database, orm, design_
 
 ### 92. How do you structure a Go project? (`cmd`, `internal`, `pkg` and layered design)
 
@@ -4628,7 +4647,7 @@ Dependencies point **inward**: handlers depend on the service; the service depen
 - `pkg/` is optional and debated. Use it only if you really want to expose a library to other modules.
 - Do not create 20 folders on day one. Split when a package grows or has a clear boundary.
 
-_Tags: design, project-layout_
+_Module: Design & Patterns · Tags: design, project-layout_
 
 ### 93. How do you do dependency injection in Go without a framework?
 
@@ -4686,7 +4705,7 @@ func main() {
 - Passing a giant "App" struct that contains everything everywhere (a service locator).
 - Interfaces with 15 methods. Keep them small and local.
 
-_Tags: design, di_
+_Module: Design & Patterns · Tags: design, di_
 
 ### 94. How do you handle configuration and secrets in a Go service?
 
@@ -4747,7 +4766,7 @@ func main() {
 
 **Rules:** validate (ports, URLs, durations) in one place; never log secrets; keep a single `Config` struct passed explicitly rather than reading env vars all over the code.
 
-_Tags: config, production_
+_Module: Tooling & Delivery · Tags: config, production_
 
 ### 95. How does structured logging with `log/slog` (Go 1.21+) work?
 
@@ -4792,7 +4811,7 @@ func main() {
 - Logs go to **stdout** in containers; the platform collects them.
 - Before 1.21 teams used `zap` or `zerolog`. They are still faster in extreme cases, but `slog` is enough for most.
 
-_Tags: logging, observability, go-1.21_
+_Module: Observability & Operations · Tags: logging, observability, go-1.21_
 
 ### 96. How do Go modules handle versions, `replace`, `vendor`, workspaces and major versions?
 
@@ -4828,7 +4847,7 @@ replace github.com/acme/shared => ../shared
 - Run `govulncheck ./...` in CI to find known vulnerable dependencies.
 - Releasing a breaking change means a new major version path (`/v2`).
 
-_Tags: modules, tooling_
+_Module: Tooling & Delivery · Tags: modules, tooling_
 
 ### 97. How do you cross-compile Go and use build tags and `-ldflags`?
 
@@ -4877,7 +4896,7 @@ package store_test // only compiled with: go test -tags=integration ./...
 
 **Use cases:** one CI job builds for many platforms; separate slow integration tests from unit tests; show `--version` in the CLI and in logs for easy debugging.
 
-_Tags: build, tooling_
+_Module: Tooling & Delivery · Tags: build, tooling_
 
 ### 98. How do you build a small, secure Docker image for a Go service?
 
@@ -4918,7 +4937,7 @@ flowchart LR
 
 **Kubernetes tip:** read-only root filesystem, drop all capabilities, set CPU/memory requests, and rely on the logs going to stdout.
 
-_Tags: docker, deployment, kubernetes_
+_Module: Tooling & Delivery · Tags: docker, deployment, kubernetes_
 
 ### 99. How do you build a gRPC service in Go, and when do you choose gRPC over REST?
 
@@ -4975,7 +4994,7 @@ func main() {
 
 **Production features:** deadlines on every call (`context`), interceptors (middleware) for auth/logging/tracing, `status` codes instead of HTTP codes, load balancing (client-side or through a mesh), and **backward-compatible schema changes** (never reuse field numbers).
 
-_Tags: grpc, microservices_
+_Module: HTTP & Microservices · Tags: grpc, microservices_
 
 ### 100. How do you implement retries with exponential backoff and jitter in Go?
 
@@ -5041,7 +5060,7 @@ flowchart LR
 - Make writes idempotent (idempotency key) before you retry them.
 - Retries multiply load. Combine them with a circuit breaker and a retry budget so you do not hammer a failing service.
 
-_Tags: resilience, patterns_
+_Module: Debugging & Reliability · Tags: resilience, patterns_
 
 ### 101. How does a circuit breaker work, and how do you add one in Go?
 
@@ -5095,7 +5114,7 @@ func main() {
 
 **Tuning:** thresholds based on error *rate* over a window are better than a raw count for high traffic. Alert when a breaker opens.
 
-_Tags: resilience, patterns_
+_Module: Debugging & Reliability · Tags: resilience, patterns_
 
 ### 102. How do you avoid duplicate work with `singleflight` and add caching?
 
@@ -5154,7 +5173,7 @@ flowchart LR
 
 **Remember:** if the first call fails or is cancelled, everyone sharing it gets the same error. Be careful with per-request contexts inside a shared call.
 
-_Tags: caching, concurrency, performance_
+_Module: Performance & Load · Tags: caching, concurrency, performance_
 
 ### 103. How do you build a reliable message consumer (Kafka/RabbitMQ) in Go?
 
@@ -5210,7 +5229,7 @@ func (c *Consumer) handle(ctx context.Context, msg kafka.Message) error {
 - **Outbox pattern** on the producer side so DB write and event publish are consistent.
 - Monitor **consumer lag** (Datadog / Prometheus) and alert when it grows.
 
-_Tags: messaging, kafka, microservices_
+_Module: HTTP & Microservices · Tags: messaging, kafka, microservices_
 
 ### 104. How do you validate input and map errors to HTTP responses in a clean way?
 
@@ -5282,7 +5301,7 @@ func main() {}
 
 **Log the real error** (with trace id) but return only a safe message to the client.
 
-_Tags: http, errors, api_
+_Module: HTTP & Microservices · Tags: http, errors, api_
 
 ### 105. How do you add tracing and metrics to a Go service (OpenTelemetry, Datadog)?
 
@@ -5344,7 +5363,7 @@ For resources use **USE**: utilisation, saturation, errors.
 
 **Practical:** sample traces in production (for example 5-10%), tag spans with low-cardinality attributes, and never put secrets or personal data in span attributes.
 
-_Tags: observability, opentelemetry, datadog_
+_Module: Observability & Operations · Tags: observability, opentelemetry, datadog_
 
 ### 106. What is reflection in Go and when should you avoid it?
 
@@ -5395,7 +5414,7 @@ func main() {
 
 **Use it when:** you are writing a framework or library that must handle unknown types (serialisers, dependency injection, test helpers like `reflect.DeepEqual`). In application code, it is usually a smell.
 
-_Tags: reflection, advanced-topics_
+_Module: Interfaces & Generics · Tags: reflection, advanced-topics_
 
 ## Advanced
 
@@ -5445,7 +5464,7 @@ flowchart TD
 - Many blocking cgo calls or syscalls create many threads.
 - `runtime.Gosched()` yields voluntarily; `runtime.LockOSThread()` pins a goroutine to a thread (needed for some C libraries/GUI).
 
-_Tags: runtime, scheduler, internals_
+_Module: Runtime & Memory · Tags: runtime, scheduler, internals_
 
 ### 108. How does Go's garbage collector work, and how does it keep pauses short?
 
@@ -5499,7 +5518,7 @@ sequenceDiagram
 
 **Interview tip:** emphasise "latency-oriented, concurrent, no compaction, no generations" and that pause times do not grow with heap size much, but CPU cost does.
 
-_Tags: gc, runtime, internals_
+_Module: Runtime & Memory · Tags: gc, runtime, internals_
 
 ### 109. What is escape analysis? How does Go decide between stack and heap?
 
@@ -5550,7 +5569,7 @@ go build -gcflags="-m" .
 - Goroutine stacks start small (2 KB) and **grow** by copying, so deep recursion works but costs.
 - "Pointers are faster" is a myth for small data. A pointer often *forces* a heap allocation.
 
-_Tags: memory, performance, internals_
+_Module: Runtime & Memory · Tags: memory, performance, internals_
 
 ### 110. How are slices, maps and strings implemented internally?
 
@@ -5599,7 +5618,7 @@ flowchart LR
 
 **Tip:** `make(map[K]V, n)` pre-sizes the table and avoids growth work when you know `n`.
 
-_Tags: internals, slices, maps_
+_Module: Runtime & Memory · Tags: internals, slices, maps_
 
 ### 111. How are channels implemented, and what happens inside a send or receive?
 
@@ -5643,7 +5662,7 @@ flowchart TD
 
 **Rule:** channels are for *communication and ownership transfer*; mutexes for *protecting shared state*.
 
-_Tags: channels, runtime, internals_
+_Module: Runtime & Memory · Tags: channels, runtime, internals_
 
 ### 112. How are interfaces represented in memory, and what does dynamic dispatch cost?
 
@@ -5681,7 +5700,7 @@ var b any = []int{1}
 - The compiler can sometimes *devirtualize* a call when it can prove the concrete type (especially with profile-guided optimisation, PGO).
 - Generics avoid boxing in many cases, but the implementation (see the generics question) still has some dictionary-based indirection.
 
-_Tags: interfaces, internals, performance_
+_Module: Interfaces & Generics · Tags: interfaces, internals, performance_
 
 ### 113. What does the Go memory model guarantee? Explain happens-before.
 
@@ -5738,7 +5757,7 @@ fmt.Println(data)       // may print 0
 
 **Mental model:** if two goroutines touch the same data, there must be a channel operation, a lock, an atomic, a `WaitGroup`, or a `Once` that orders them.
 
-_Tags: memory-model, concurrency, internals_
+_Module: Concurrency · Tags: memory-model, concurrency, internals_
 
 ### 114. When should you use `sync.Map`, and what are better alternatives for concurrent maps?
 
@@ -5801,7 +5820,7 @@ func (s *Sharded[V]) shard(key string) int {
 
 **Interview tip:** benchmark! Say "I'd start with RWMutex, measure with `-race` and a benchmark under real contention, and move to sharding or `sync.Map` only if the profile shows lock contention".
 
-_Tags: sync, maps, performance_
+_Module: Concurrency · Tags: sync, maps, performance_
 
 ### 115. What is false sharing and how does struct layout affect performance?
 
@@ -5870,7 +5889,7 @@ flowchart LR
 - Use `golang.org/x/sys/cpu.CacheLinePad` for portable padding.
 - Verify with a benchmark; do not pad blindly.
 
-_Tags: performance, memory, internals_
+_Module: Runtime & Memory · Tags: performance, memory, internals_
 
 ### 116. What are the costs and risks of `unsafe` and cgo?
 
@@ -5918,7 +5937,7 @@ func main() { println(C.add(1, 2)) }
 
 **Setting for static builds:** `CGO_ENABLED=0` forces pure Go and is the default choice for containers.
 
-_Tags: unsafe, cgo, internals_
+_Module: Runtime & Memory · Tags: unsafe, cgo, internals_
 
 ### 117. What are the common `context` pitfalls and anti-patterns?
 
@@ -5980,7 +5999,7 @@ for _, item := range items {
 
 **Useful newer helpers:** `context.WithCancelCause`, `context.Cause(ctx)` (why was it cancelled), `context.AfterFunc` (Go 1.21+).
 
-_Tags: context, gotchas, concurrency_
+_Module: Concurrency · Tags: context, gotchas, concurrency_
 
 ### 118. How do Go generics work under the hood, and what are their performance trade-offs?
 
@@ -6023,7 +6042,7 @@ func Sum[T ~int | ~float64](xs []T) T {
 3. Do not use generics just to avoid copy-pasting two lines.
 4. Benchmark hot paths.
 
-_Tags: generics, internals, performance_
+_Module: Interfaces & Generics · Tags: generics, internals, performance_
 
 ### 119. What are iterators (`iter.Seq`, range-over-func) added in Go 1.23?
 
@@ -6081,7 +6100,7 @@ func main() {
 
 **Caveats:** if `yield` returns false you must stop and return (ignoring it can panic). Debugging and stack traces through iterators are slightly more complex. Concurrency is up to you; the iterator runs in the caller's goroutine.
 
-_Tags: go-1.23, iterators, generics_
+_Module: Interfaces & Generics · Tags: go-1.23, iterators, generics_
 
 ### 120. Design a thread-safe LRU cache with TTL in Go.
 
@@ -6175,7 +6194,7 @@ func (c *LRU[K, V]) remove(el *list.Element) {
 - Production libraries: `hashicorp/golang-lru`, `ristretto` (TinyLFU, high concurrency), `bigcache` (avoids GC scanning with a huge byte slab).
 - Distributed: Redis; local cache in front for hot keys, with short TTLs for consistency.
 
-_Tags: design, cache, data-structures_
+_Module: Design & Patterns · Tags: design, cache, data-structures_
 
 ### 121. Design a rate limiter for an API with many pods (distributed rate limiting).
 
@@ -6240,7 +6259,7 @@ if err != nil {
 - **Response:** `429` with `Retry-After` and `X-RateLimit-*` headers. Log/metric rejected counts per key.
 - **Scale:** Redis Cluster shards by key; hot keys can still be a bottleneck.
 
-_Tags: design, rate-limit, distributed-systems_
+_Module: Design & Patterns · Tags: design, rate-limit, distributed-systems_
 
 ### 122. Design a job scheduler or worker system in Go that runs on several Kubernetes pods without duplicate work.
 
@@ -6315,7 +6334,7 @@ for {
 }
 ```
 
-_Tags: design, distributed-systems, kubernetes_
+_Module: Design & Patterns · Tags: design, distributed-systems, kubernetes_
 
 ### 123. Spot the concurrency bugs: what is wrong with these snippets?
 
@@ -6425,7 +6444,7 @@ mu.Unlock()
 
 **How to present your answer:** name the bug class, explain the failure scenario in one sentence, show the fix, and mention the tool that finds it (`go vet`, `-race`, `goleak`).
 
-_Tags: concurrency, interview, gotchas_
+_Module: Concurrency · Tags: concurrency, interview, gotchas_
 
 ### 124. Classic concurrency exercise: print odd and even numbers alternately with two goroutines.
 
@@ -6509,7 +6528,7 @@ for _, c := range res {
 
 **Interview tip:** talk through ownership (who closes, who waits) and what happens at the end. A solution that prints correctly but deadlocks at exit is a failed answer.
 
-_Tags: concurrency, interview, puzzle_
+_Module: Concurrency · Tags: concurrency, interview, puzzle_
 
 ### 125. How do you do zero-downtime deployments and safe database migrations for a Go service?
 
@@ -6549,7 +6568,7 @@ flowchart LR
 
 **API compatibility** matters too: tolerate unknown fields, add fields instead of changing them, version breaking changes, and keep consumers (mobile apps, other services) working during the rollout.
 
-_Tags: deployment, database, kubernetes, tech-lead_
+_Module: Tooling & Delivery · Tags: deployment, database, kubernetes, tech-lead_
 
 ### 126. How would you build a Kubernetes controller or operator in Go?
 
@@ -6604,4 +6623,4 @@ func (r *MyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 **When to write an operator:** you manage stateful or complex software (databases, message brokers, fleet configuration) and want automation like upgrades, backups, scaling encoded in code. Do not write one if a Helm chart or a simple Deployment is enough.
 
-_Tags: kubernetes, operators, client-go_
+_Module: Design & Patterns · Tags: kubernetes, operators, client-go_

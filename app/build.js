@@ -31,7 +31,8 @@ function anchorFor(heading, seen) {
 
 function renderQuestion(q, number) {
   const star = q.favorite ? '⭐ ' : '';
-  const tags = q.tags && q.tags.length ? `\n\n_Tags: ${q.tags.join(', ')}_` : '';
+  const parts = [q.module && `Module: ${q.module}`, q.tags && q.tags.length && `Tags: ${q.tags.join(', ')}`].filter(Boolean);
+  const tags = parts.length ? `\n\n_${parts.join(' · ')}_` : '';
   const num = number ? `${number}. ` : '';
   return `### ${num}${star}${q.question}\n\n${q.answer || '_No answer yet._'}${tags}\n`;
 }
@@ -45,18 +46,25 @@ function renderTopic(topic) {
   const seen = new Map(LEVELS.map((l) => [cap(l).toLowerCase(), 0]));
   const toc = ['## Contents', ''];
   const body = [];
+  const byModule = new Map(); // module -> [{ n, anchor }]
   for (const g of groups) {
     toc.push(`**${cap(g.level)}**`, '');
     body.push(`## ${cap(g.level)}`, '');
     for (const q of g.items) {
       n += 1;
       const heading = `${n}. ${q.favorite ? '⭐ ' : ''}${q.question}`;
-      toc.push(`- [${n}. ${q.question.replace(/([[\]])/g, '\\$1')}](#${anchorFor(heading, seen)})`);
+      const anchor = anchorFor(heading, seen);
+      toc.push(`- [${n}. ${q.question.replace(/([[\]])/g, '\\$1')}](#${anchor})`);
+      if (q.module) byModule.set(q.module, [...(byModule.get(q.module) || []), { n, anchor }]);
       body.push(renderQuestion(q, n));
     }
     toc.push('');
   }
-  return [...out, ...toc, ...body].join('\n');
+  const modules = byModule.size
+    ? ['## Browse by module', '', '| Module | Questions |', '| --- | --- |',
+        ...[...byModule].sort((a, b) => a[0].localeCompare(b[0])).map(([m, list]) => `| ${m} (${list.length}) | ${list.map((x) => `[${x.n}](#${x.anchor})`).join(' · ')} |`), '']
+    : [];
+  return [...out, ...toc, ...modules, ...body].join('\n');
 }
 
 function renderFavorites(topics) {

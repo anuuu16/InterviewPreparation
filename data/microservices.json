@@ -2,129 +2,741 @@
   "name": "Microservices",
   "questions": [
     {
-      "id": "microservices-1",
-      "question": "Monolith vs microservices: when would you NOT choose microservices?",
-      "answer": "Microservices buy independent deployment/scaling and team autonomy at the price of distributed-systems complexity (network failures, data consistency, observability, deployment tooling). Prefer a (modular) monolith when the team is small, the domain is unclear, or you lack CI/CD and monitoring maturity. Split along business boundaries (bounded contexts) when team/scale pain actually appears.",
+      "id": "microservices-013",
+      "question": "What are microservices, and what problem do they solve?",
+      "answer": "**Short answer:** Microservices are a way to build one application as many small services. Each service owns one business capability, runs in its own process, has its own data, and can be deployed on its own. They solve the problem of many teams blocking each other in one large codebase.\n\nThink of a shopping mall instead of one giant shop. Each shop (orders, payments, catalog) is run by its own team, opens and closes on its own, and talks to the others through agreed doors.\n\n```mermaid\nflowchart LR\n    C[\"Client\"] --> G[\"API gateway\"]\n    G --> O[\"Orders\"]\n    G --> P[\"Payments\"]\n    G --> K[\"Catalog\"]\n    O --> OD[(\"Orders DB\")]\n    P --> PD[(\"Payments DB\")]\n    K --> KD[(\"Catalog DB\")]\n```\n\nRead it left to right: one entry point, three services, and each service has its own database.\n\n**What you get**\n- Independent deployment: the payments team ships without waiting for the catalog team.\n- Independent scaling: scale only the busy service.\n- Fault isolation: a bug in one service need not take down everything.\n- Technology freedom: Go for one service, Python for another.\n\n**What you pay**\n- Network calls can fail or be slow.\n- Data is spread over many databases, so transactions are harder.\n- You need strong CI/CD, monitoring and tracing.\n- Testing and debugging span several services.\n\n**Remember:** microservices are an organisation tool as much as a technical one. They pay off when team size and release speed are the real pain, not when the codebase is just \"big\".\n\n**Interview tip:** Always state the cost along with the benefit. A strong answer says \"I would start with the problem (team coordination, scaling) and only then pick microservices\".",
       "level": "basic",
       "tags": [
-        "architecture"
+        "architecture",
+        "fundamentals"
       ],
-      "favorite": false
+      "favorite": false,
+      "module": "Fundamentals"
     },
     {
-      "id": "microservices-2",
-      "question": "Sync (REST/gRPC) vs async (message broker) communication: trade-offs?",
-      "answer": "- **Sync:** simple request/response and immediate result, but creates temporal coupling and cascading failures; needs timeouts, retries, circuit breakers.\n- **Async (Kafka/RabbitMQ/Service Bus):** decoupled, buffers load spikes, enables event-driven flows; but eventual consistency, harder debugging, need idempotency and ordering strategy.\n\ngRPC: binary, typed contracts (protobuf), streaming, good for internal service-to-service calls.",
+      "id": "microservices-014",
+      "question": "Monolith vs modular monolith vs microservices: when would you NOT choose microservices?",
+      "answer": "**Short answer:** A monolith deploys as one unit. A modular monolith is still one deployable, but with strict internal module boundaries. Microservices split into separately deployed services. Do not choose microservices when the team is small, the domain is unclear, or you lack CI/CD and monitoring maturity.\n\n| Style | Deploy unit | Strength | Weakness | Good fit |\n| --- | --- | --- | --- | --- |\n| Monolith | one | simple, fast to build, easy debugging | grows tangled, one big release | small team, new product |\n| Modular monolith | one | clear modules, simple operations | needs discipline to keep boundaries | medium team, evolving domain |\n| Microservices | many | independent deploy and scale | distributed complexity | many teams, clear domains |\n\n**When NOT to use microservices**\n- You have fewer than about 10 to 15 engineers. One team can handle one deployable.\n- The domain is new and boundaries keep moving. Wrong service boundaries are expensive to fix, because they become network APIs and separate databases.\n- You have no automated pipeline, no central logging and no tracing.\n- The real problem is messy code. Splitting messy code into services gives you messy services with network calls.\n\nA modular monolith is often the best first step. You get clean modules (for example `orders`, `billing`, `catalog`) that only talk through public interfaces. If one module later needs its own scaling or team, you can lift it out.\n\n```text\n/app\n  /orders      public API: orders.Service\n  /billing     public API: billing.Service\n  /catalog\n```\n\n**Gotcha:** the \"distributed monolith\" is the worst of both. Services are deployed separately but must be released together. See the coupling question.\n\n**Interview tip:** Say that many successful teams start with a modular monolith and extract services later with evidence. This shows judgement, not fashion.",
       "level": "basic",
       "tags": [
+        "architecture",
+        "monolith",
+        "trade-offs"
+      ],
+      "favorite": false,
+      "module": "Architecture & Design"
+    },
+    {
+      "id": "microservices-015",
+      "question": "What is a service boundary, and how do bounded contexts from DDD help you find it?",
+      "answer": "**Short answer:** A service boundary decides what one service owns and what it leaves to others. A bounded context, from Domain-Driven Design (DDD), is an area of the business where words have one clear meaning. Good service boundaries usually follow bounded contexts.\n\nThe word \"customer\" means different things in different places. For Sales it is a lead with a budget. For Billing it is a payer with a tax id. For Support it is a person with open tickets. Forcing one shared `Customer` model on all of them creates conflict. Each context keeps its own model.\n\n```mermaid\nflowchart LR\n    subgraph Sales[\"Sales context\"]\n        S1[\"Customer: name, budget\"]\n    end\n    subgraph Billing[\"Billing context\"]\n        B1[\"Customer: tax id, payment method\"]\n    end\n    subgraph Support[\"Support context\"]\n        U1[\"Customer: tickets, plan\"]\n    end\n    Sales -- \"customerId only\" --> Billing\n    Billing -- \"customerId only\" --> Support\n```\n\nThe contexts share only an id. Each keeps its own details.\n\n**How to find boundaries**\n1. Talk to domain experts and listen for where the same word changes meaning.\n2. Map business capabilities (order, pay, ship, notify).\n3. Look for data that changes together. Things that change together should live together.\n4. Run an Event Storming workshop: list domain events on sticky notes and group them.\n\n**Signs of a bad boundary**\n- Two services must change together for most features.\n- A service needs data from five others to answer one request.\n- Two services share one database table.\n\n**Remember:** a service is a unit of ownership, not a unit of code size. Aim for high cohesion inside and loose coupling between.\n\n**Interview tip:** Give an example from your own work, such as separating \"playlist\" from \"content licensing\" in an entertainment system, and explain which words meant different things.",
+      "level": "basic",
+      "tags": [
+        "ddd",
+        "boundaries",
+        "design"
+      ],
+      "favorite": false,
+      "module": "Architecture & Design"
+    },
+    {
+      "id": "microservices-016",
+      "question": "Synchronous vs asynchronous communication between services: how do you choose?",
+      "answer": "**Short answer:** In synchronous communication the caller sends a request and waits for the answer (HTTP, gRPC). In asynchronous communication the caller sends a message or event and moves on (a queue or topic). Use sync when you need an answer now. Use async when the work can happen later or you want services decoupled.\n\n```mermaid\nsequenceDiagram\n    participant A as Orders\n    participant B as Inventory\n    participant Q as Message broker\n    participant N as Notifications\n    A->>B: Reserve stock (wait)\n    B-->>A: OK\n    A->>Q: Publish OrderPlaced\n    Q-->>N: Deliver OrderPlaced\n    Note over A,N: Orders does not wait for Notifications\n```\n\nThe first call is synchronous. The publish is asynchronous.\n\n| | Synchronous | Asynchronous |\n| --- | --- | --- |\n| Coupling | caller needs callee up now | caller only needs the broker |\n| Latency | adds up along the chain | caller returns quickly |\n| Failure | errors propagate at once | messages wait and retry |\n| Simplicity | easy to reason about | needs idempotency, ordering care |\n| Good for | reads, validation, user-facing queries | side effects, notifications, long jobs |\n\n**Rules of thumb**\n- A user is waiting for the answer: sync.\n- Another service needs to react to a fact that happened: async event.\n- A long task (video encoding, report): async with a status endpoint.\n- Avoid long sync chains. If A calls B calls C calls D, availability is the product of all four.\n\nFor example, if each service is 99.9% available, four in a chain give about 99.6%.\n\n**Gotcha:** async is not free. You must handle duplicates, delays and out-of-order messages.\n\n**Interview tip:** Mention that you often use both: sync for the request path, async for follow-up work.",
+      "level": "basic",
+      "tags": [
+        "communication",
+        "messaging",
+        "trade-offs"
+      ],
+      "favorite": false,
+      "module": "Communication"
+    },
+    {
+      "id": "microservices-017",
+      "question": "REST vs gRPC vs messaging: which one would you use between services?",
+      "answer": "**Short answer:** REST over HTTP and JSON is simple, human readable and good for public APIs. gRPC uses HTTP/2 and Protocol Buffers; it is fast, typed and good for internal service calls. Messaging (Kafka, RabbitMQ, Service Bus) is for async events and work queues.\n\n| Option | Format | Strength | Weakness | Typical use |\n| --- | --- | --- | --- | --- |\n| REST | JSON over HTTP/1.1 or 2 | easy tools, easy debugging, caches well | larger payloads, no strict contract unless OpenAPI | public and browser-facing APIs |\n| gRPC | Protobuf over HTTP/2 | small, fast, generated clients, streaming | hard to call from a browser directly, harder to debug by eye | internal service to service |\n| Messaging | any, usually JSON or Avro | decoupled, buffered, retry | eventual consistency, more moving parts | events, background work |\n\nA gRPC contract is a `.proto` file. Both sides generate code from it:\n\n```proto\nsyntax = \"proto3\";\n\nservice OrderService {\n  rpc GetOrder (GetOrderRequest) returns (Order);\n}\n\nmessage GetOrderRequest { string order_id = 1; }\nmessage Order {\n  string order_id = 1;\n  string status   = 2;\n  int64  total_cents = 3;\n}\n```\n\n**How to choose**\n- Browser or third-party clients: REST (or GraphQL at a gateway).\n- High-volume internal calls, streaming, strong typing across languages: gRPC.\n- You do not need an immediate reply, or many consumers care: messaging.\n\n**Gotchas**\n- gRPC needs HTTP/2 support in your load balancer and ingress. Plain L4 balancing can pin all calls from one client to one pod, because the connection is long-lived.\n- Never use field numbers in protobuf twice, and never reuse deleted ones.\n\n**Interview tip:** The mature answer is \"REST at the edge, gRPC or events inside, chosen per interaction\", not one protocol for everything.",
+      "level": "basic",
+      "tags": [
+        "rest",
+        "grpc",
+        "messaging",
         "communication"
       ],
-      "favorite": false
+      "favorite": false,
+      "module": "Communication"
     },
     {
-      "id": "microservices-3",
-      "question": "What is an API Gateway and what does it do?",
-      "answer": "A single entry point in front of services: routing, authentication, rate limiting, TLS termination, request aggregation, caching, and protocol translation. Related: **BFF** (Backend-for-Frontend), a gateway tailored per client type (web, mobile, seat-back screen). Risk: becoming a bottleneck or a new monolith; keep business logic out of it.",
+      "id": "microservices-018",
+      "question": "What does an API gateway do, and what is a Backend for Frontend (BFF)?",
+      "answer": "**Short answer:** An API gateway is the single entry point for clients. It routes requests to services and handles shared edge concerns such as authentication, rate limiting and TLS. A BFF is a gateway made for one kind of client (web, mobile, seat-back screen) that shapes data for that client.\n\n```mermaid\nflowchart LR\n    W[\"Web app\"] --> BW[\"Web BFF\"]\n    M[\"Mobile app\"] --> BM[\"Mobile BFF\"]\n    BW --> S1[\"Orders\"]\n    BW --> S2[\"Catalog\"]\n    BM --> S1\n    BM --> S2\n```\n\nEach client gets its own BFF. Each BFF calls the same services but returns exactly the data its client needs.\n\n**Gateway jobs**\n- Routing and path rewriting.\n- Authentication and token checks.\n- Rate limiting and quotas.\n- TLS termination, request logging, correlation id creation.\n- Optional response caching and simple aggregation.\n\n**BFF jobs**\n- Combine several service calls into one response.\n- Trim fields (a mobile screen needs less than a web page).\n- Adapt formats and hide internal changes from the UI.\n\n**Gotchas**\n- Do not put business rules in the gateway. It becomes a new monolith and a bottleneck owned by nobody.\n- A gateway is a single point of failure, so run several replicas and keep it stateless.\n- A BFF should be owned by the same team as its front end, so UI changes do not wait on another team.\n\n**Remember:** keep the gateway thin. Cross-cutting concerns yes, domain logic no.\n\n**Interview tip:** If asked \"gateway or BFF?\", say one gateway for common concerns, plus a BFF per client type only when clients need clearly different shapes of data.",
       "level": "basic",
       "tags": [
-        "gateway"
+        "api-gateway",
+        "bff",
+        "edge"
       ],
-      "favorite": false
+      "favorite": false,
+      "module": "Communication"
     },
     {
-      "id": "microservices-4",
-      "question": "How do you handle distributed transactions? Explain the Saga pattern.",
-      "answer": "Avoid 2PC across services. A **saga** is a sequence of local transactions, each publishing an event/command to trigger the next; on failure, run **compensating actions** to undo earlier steps.\n- **Choreography:** services react to events (simple, but flow is hard to see).\n- **Orchestration:** a coordinator drives steps (clear flow, central point to maintain).\n\nNeeds idempotent steps and persistent saga state.",
-      "level": "intermediate",
+      "id": "microservices-019",
+      "question": "How do service discovery and load balancing work?",
+      "answer": "**Short answer:** Service discovery lets a service find the current address of another service, because instances start, stop and move all the time. Load balancing spreads requests across the healthy instances. In Kubernetes both are built in through Services and DNS.\n\nThere are two styles.\n\n| Style | Who picks the instance | Example |\n| --- | --- | --- |\n| Client-side | the caller asks a registry and chooses an instance | Consul or Eureka with a client library, gRPC client balancing |\n| Server-side | a proxy or load balancer picks | Kubernetes Service, cloud load balancer, Envoy |\n\nIn Kubernetes, a Service gives a stable name and virtual IP. Pods come and go behind it, and only ready pods receive traffic.\n\n```yaml\napiVersion: v1\nkind: Service\nmetadata:\n  name: orders\nspec:\n  selector:\n    app: orders\n  ports:\n    - port: 80\n      targetPort: 8080\n```\n\nAny pod in the same namespace can now call `http://orders`. Across namespaces use `orders.shop.svc.cluster.local`.\n\n**Common balancing methods**\n- Round robin: take turns.\n- Least connections: send to the least busy.\n- Consistent hashing: same key goes to the same instance (useful for caches).\n\n**Gotchas**\n- A normal Kubernetes Service balances per connection. A long-lived gRPC connection stays on one pod. Use a headless Service with client balancing, or a mesh or proxy that balances per request.\n- DNS caching can send traffic to dead addresses. Respect TTLs and use health checks.\n- Without readiness checks, balancers send traffic to pods that are not ready.\n\n**Interview tip:** Say that on Kubernetes you rarely run your own registry. Mention the gRPC balancing gotcha to show real experience.",
+      "level": "basic",
+      "tags": [
+        "service-discovery",
+        "load-balancing",
+        "kubernetes"
+      ],
+      "favorite": false,
+      "module": "Communication"
+    },
+    {
+      "id": "microservices-020",
+      "question": "Why does each microservice own its database, and what does that cost you?",
+      "answer": "**Short answer:** Each service owns its data and no other service reads or writes its tables directly. Others must use its API or its events. This keeps services independent, because you can change the schema or even the database type without breaking anyone.\n\nIf two services share one database, the schema becomes a hidden API. A column rename in one service breaks another at runtime, and you can no longer deploy them independently. That is the \"shared database\" anti-pattern.\n\n```mermaid\nflowchart LR\n    subgraph Bad[\"Shared database\"]\n        A1[\"Orders\"] --> DB1[(\"One DB\")]\n        B1[\"Billing\"] --> DB1\n    end\n    subgraph Good[\"Database per service\"]\n        A2[\"Orders\"] --> D2[(\"Orders DB\")]\n        B2[\"Billing\"] --> D3[(\"Billing DB\")]\n        A2 -- \"API or events\" --> B2\n    end\n```\n\nOn the left both services touch the same tables. On the right each has its own and they talk through an API or events.\n\n**Benefits**\n- Free schema changes inside the service.\n- Right database for each job (PostgreSQL for orders, Redis for cache, search index for catalog).\n- Clear ownership and failure isolation.\n\n**Costs**\n- No cross-service joins. You call APIs, or keep a local copy of data you need, built from events.\n- No single ACID transaction across services. You need sagas and eventual consistency.\n- Reporting is harder. Often you copy data into a warehouse.\n\n\"Own\" does not mean a separate server. Separate schemas or logical databases on one server work at first, if access rules are enforced.\n\n**Gotcha:** copying data (for example the customer name into orders) is fine. The copy is a read model. The owner stays the single source of truth.\n\n**Interview tip:** Mention that you started with separate schemas and strict credentials per service, which gave most of the benefit at low cost.",
+      "level": "basic",
       "tags": [
         "data",
-        "saga"
+        "database-per-service",
+        "ownership"
       ],
-      "favorite": false
+      "favorite": false,
+      "module": "Data & Consistency"
     },
     {
-      "id": "microservices-5",
-      "question": "What are the Outbox pattern and idempotency, and why do they matter?",
-      "answer": "Problem: updating the DB **and** publishing an event isn't atomic. **Outbox:** write the event to an `outbox` table in the same DB transaction; a relay (poller/CDC like Debezium) publishes it reliably. Delivery is at-least-once, so consumers must be **idempotent**: dedupe by message id / idempotency key, or make operations naturally repeatable (upserts).",
-      "level": "intermediate",
+      "id": "microservices-021",
+      "question": "What are the twelve-factor principles, and why must services be stateless?",
+      "answer": "**Short answer:** The twelve-factor app is a set of rules for building cloud-ready services. The most important for microservices: keep configuration in the environment, treat backing services as attachable resources, send logs to stdout, and keep processes stateless so any instance can be replaced or scaled at any time.\n\n**The ones you use every day**\n- Config in environment variables, not in code or in the image.\n- One codebase per service, many deploys (dev, staging, prod).\n- Dependencies declared explicitly (go.mod, package.json).\n- Backing services (database, queue) are attached by URL and can be swapped.\n- Build, release and run are separate stages.\n- Processes are stateless and share nothing.\n- Logs are an event stream written to stdout.\n- Fast startup and graceful shutdown (disposability).\n- Dev and prod stay as similar as possible.\n\n**Why stateless**\nIf a request needs data from memory of a specific instance, the load balancer must always send the user to that instance (sticky sessions). If that pod dies, the data is gone. Scaling and rolling updates become risky.\n\n```go\n// ❌ bad: state in memory, lost on restart, different on every pod\nvar sessions = map[string]Session{}\n\n// ✅ good: state in an external store, any pod can serve any request\nfunc (s *Server) loadSession(ctx context.Context, id string) (Session, error) {\n\treturn s.redis.GetSession(ctx, id)\n}\n```\n\nState is not banned. It just lives in databases, caches and queues, not in the process. Kubernetes pods are disposable: they can be killed at any time, so a service must shut down cleanly on SIGTERM and finish in-flight requests.\n\n**Gotcha:** local disk is also state. Write uploads to object storage, not to the pod.\n\n**Interview tip:** Link statelessness to horizontal scaling, rolling deploys and autoscaling. It shows you know why the rule exists.",
+      "level": "basic",
       "tags": [
-        "messaging",
+        "twelve-factor",
+        "configuration",
+        "stateless"
+      ],
+      "favorite": false,
+      "module": "Fundamentals"
+    },
+    {
+      "id": "microservices-022",
+      "question": "What is the CAP theorem, and what does eventual consistency mean in plain words?",
+      "answer": "**Short answer:** When a network partition happens (some nodes cannot talk to each other), a distributed system must choose between consistency (everyone sees the same latest data) and availability (every request gets an answer). Eventual consistency means copies may differ for a short time, but they converge if no new writes arrive.\n\nCAP names three properties: Consistency, Availability, Partition tolerance. Partitions are a fact of networks, so you cannot give up P. The real choice only appears during a partition.\n\n```mermaid\nflowchart TD\n    P[\"Network partition happens\"] --> Q{\"Choose\"}\n    Q -- \"CP\" --> C[\"Refuse or wait: data stays correct, some requests fail\"]\n    Q -- \"AP\" --> A[\"Answer with local data: always responds, may be stale\"]\n```\n\nRead it top to bottom: the partition forces a choice between correct-but-sometimes-unavailable and available-but-maybe-stale.\n\n**Examples**\n- A bank balance used for a transfer: choose consistency. Better to fail than to overspend.\n- A product page view count or a \"likes\" number: choose availability. A slightly old number is fine.\n- A seat map on an aircraft screen that works offline: availability. It syncs when the link returns.\n\n**Eventual consistency in practice**\nYou place an order. The order service saves it, publishes `OrderPlaced`, and the email service sends mail a moment later. For a short time the order exists but no email was sent. Eventually both agree.\n\n**Gotchas**\n- CAP is often misused. It does not say a system is \"CP\" or \"AP\" all the time. Many systems let you tune per operation.\n- Even without a partition there is a latency versus consistency trade-off (the PACELC idea).\n- Eventual consistency needs UI care: show \"processing\", do not pretend it is done.\n\n**Interview tip:** Use a business example and say which parts of the system need strong consistency and which can be eventual. That is the senior answer.",
+      "level": "basic",
+      "tags": [
+        "cap",
+        "consistency",
+        "distributed-systems"
+      ],
+      "favorite": false,
+      "module": "Data & Consistency"
+    },
+    {
+      "id": "microservices-023",
+      "question": "What role do containers and an orchestrator like Kubernetes play in microservices?",
+      "answer": "**Short answer:** A container packages a service with its dependencies so it runs the same everywhere. An orchestrator such as Kubernetes runs many containers for you: it schedules them on machines, restarts failed ones, scales them, rolls out updates and connects them with networking.\n\nMicroservices create many small deployables. Doing that by hand with virtual machines is slow and error prone. Containers are small and start in seconds. Kubernetes adds the control layer.\n\n```mermaid\nflowchart LR\n    I[\"Container image\"] --> K[\"Kubernetes\"]\n    K --> N1[\"Node 1: pod A, pod B\"]\n    K --> N2[\"Node 2: pod A, pod C\"]\n    K -. \"restarts, scales, rolls out\" .-> N1\n```\n\nYou declare what you want (three copies of orders). Kubernetes makes it true and keeps it true.\n\n**What Kubernetes gives you**\n- Self-healing: crashed pods are restarted, dead nodes are replaced.\n- Horizontal scaling by rules (HPA).\n- Rolling updates and rollbacks.\n- Service discovery and load balancing.\n- Config and secrets injection.\n- Resource limits so one service cannot eat the whole node.\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: orders\nspec:\n  replicas: 3\n  selector:\n    matchLabels: { app: orders }\n  template:\n    metadata:\n      labels: { app: orders }\n    spec:\n      containers:\n        - name: orders\n          image: registry.example.com/orders:1.4.2\n          resources:\n            requests: { cpu: 100m, memory: 128Mi }\n            limits: { memory: 256Mi }\n```\n\n**Gotcha:** Kubernetes does not make a design good. It runs your services; it does not fix poor boundaries or missing timeouts. Also it adds its own learning curve and cost.\n\n**Interview tip:** Mention that you can run microservices without Kubernetes (for example on a managed container service), and that Kubernetes pays off when you have many services and need standard operations.",
+      "level": "basic",
+      "tags": [
+        "containers",
+        "kubernetes",
+        "docker"
+      ],
+      "favorite": false,
+      "module": "Fundamentals"
+    },
+    {
+      "id": "microservices-024",
+      "question": "What are coupling and cohesion, and how do you avoid a distributed monolith?",
+      "answer": "**Short answer:** Cohesion means things inside one service belong together. Coupling means how much one service depends on another. Good services have high cohesion and low coupling. A distributed monolith is a system split into services that are still so tightly coupled that they must be changed and deployed together.\n\n**Signs of a distributed monolith**\n- One feature needs changes in four services and a coordinated release.\n- Services share a database or a shared model library that changes often.\n- Long chains of synchronous calls: A calls B calls C.\n- Services cannot start or be tested without the others.\n- Releases are done \"in the right order\" from a checklist.\n\n**Types of coupling**\n\n| Coupling | Example | Fix |\n| --- | --- | --- |\n| Data | shared tables | database per service |\n| Temporal | caller needs callee up right now | async events, timeouts, fallbacks |\n| Deployment | must release together | backward compatible APIs |\n| Domain | one concept split over many services | merge, or redraw boundary |\n| Library | shared domain DTO package | share contracts (schemas) not logic |\n\n```mermaid\nflowchart LR\n    A[\"Orders\"] --> B[\"Pricing\"] --> C[\"Tax\"] --> D[\"Currency\"]\n    A -. \"tight: needs all 3 alive\" .-> D\n```\n\nIf every request walks this chain, the system is only as strong as its weakest link and all four change together.\n\n**How to avoid it**\n1. Draw boundaries around business capabilities.\n2. Prefer events for \"something happened\" and keep local copies of data you need.\n3. Make API changes backward compatible, so each side deploys alone.\n4. Ask: \"Can this team deploy on a Tuesday without telling anyone?\" If not, there is hidden coupling.\n\n**Gotcha:** if two services always change together, they may really be one service. Merging is a valid fix.\n\n**Interview tip:** Use the Tuesday test. It is memorable and practical.",
+      "level": "basic",
+      "tags": [
+        "coupling",
+        "cohesion",
+        "anti-patterns"
+      ],
+      "favorite": false,
+      "module": "Architecture & Design"
+    },
+    {
+      "id": "microservices-025",
+      "question": "What are liveness, readiness and startup health checks, and why do they matter?",
+      "answer": "**Short answer:** A liveness check says \"is this process stuck and should it be restarted?\". A readiness check says \"can this instance take traffic right now?\". A startup check gives slow-starting apps time before the other two begin. Together they let the platform heal and route traffic safely.\n\n| Probe | Question | On failure |\n| --- | --- | --- |\n| Liveness | Is the process alive and not deadlocked? | container is restarted |\n| Readiness | Can it serve requests now? | removed from load balancing, not restarted |\n| Startup | Has it finished starting? | other probes wait; restart if it never succeeds |\n\n```yaml\ncontainers:\n  - name: orders\n    image: registry.example.com/orders:1.4.2\n    startupProbe:\n      httpGet: { path: /healthz, port: 8080 }\n      failureThreshold: 30\n      periodSeconds: 2\n    livenessProbe:\n      httpGet: { path: /healthz, port: 8080 }\n      periodSeconds: 10\n    readinessProbe:\n      httpGet: { path: /readyz, port: 8080 }\n      periodSeconds: 5\n```\n\n**Design rules**\n- Liveness should check only the process itself. Keep it cheap.\n- Readiness may check the things you need to serve: cache warmed, database connection available, migrations done.\n- Return 503 from readiness while shutting down, so traffic drains first.\n\n**Gotcha: do not put downstream dependencies in the liveness check.** If the database is down and liveness fails, Kubernetes restarts every pod at once, which makes the outage worse. A failing dependency should make readiness fail (or better, the service should degrade), never liveness.\n\n**Gotcha:** a readiness check that calls a shared dependency can make all pods unready together, and the service has zero capacity. Think about what \"unready\" does to the whole fleet.\n\n**Interview tip:** The liveness versus readiness mistake is a classic outage cause. Telling that story shows production experience.",
+      "level": "basic",
+      "tags": [
+        "health-checks",
+        "kubernetes",
         "reliability"
       ],
-      "favorite": false
+      "favorite": false,
+      "module": "Resilience"
     },
     {
-      "id": "microservices-6",
-      "question": "Explain the Circuit Breaker, retry with backoff, timeout and bulkhead patterns.",
-      "answer": "- **Timeout:** never wait forever; set per-call deadlines.\n- **Retry with exponential backoff + jitter:** only for idempotent/transient failures; cap attempts to avoid retry storms.\n- **Circuit breaker:** after N failures, \"open\" and fail fast; probe via half-open to recover.\n- **Bulkhead:** isolate resources (pools) per dependency so one slow service can't exhaust all threads.\n\nTypically provided by a library (Polly, resilience4j, Go libs) or a service mesh.",
+      "id": "microservices-026",
+      "question": "[Tech Lead] How do you decompose a monolith safely using the strangler fig pattern?",
+      "answer": "**Short answer:** With the strangler fig pattern you put a routing layer in front of the monolith and move one capability at a time into a new service. Traffic is switched slice by slice. The old code shrinks until it can be removed. You never do a big-bang rewrite.\n\n```mermaid\nflowchart LR\n    C[\"Clients\"] --> R[\"Routing layer or gateway\"]\n    R -- \"/orders\" --> N[\"New orders service\"]\n    R -- \"everything else\" --> M[\"Monolith\"]\n    N --> ND[(\"Orders DB\")]\n    M --> MD[(\"Legacy DB\")]\n```\n\nThe gateway decides per route where a request goes. Moving a route is a config change that can be undone.\n\n**How I would run it**\n1. **Pick the first slice carefully.** Choose something valuable but low risk: clear boundary, few database joins, painful to change today. Not the core payment path on day one.\n2. **Find the seams.** Look at call graphs, tables touched and change history. Draw the bounded contexts first.\n3. **Put the facade in place.** A gateway or reverse proxy that still sends everything to the monolith. Prove it changes nothing.\n4. **Build the new service behind it.** Keep the monolith version alive.\n5. **Shadow and compare.** Send a copy of real traffic to the new service, compare the answers, do not return them.\n6. **Canary the switch.** 1%, 10%, 50%, 100%, watching error rate and latency. Roll back by flipping the route.\n7. **Move the data.** Often the hardest step: see the data migration question. Start by letting the new service read through the monolith API, then copy and cut over.\n8. **Delete the old code.** If you never delete, you have two systems.\n\n**Gotchas**\n- An anti-corruption layer is useful: it translates the old model into the new one so legacy concepts do not leak into the new service.\n- Keep the monolith shipping features during the migration, or the business will lose patience.\n- Measure progress: percent of traffic moved, lines of code deleted.\n\n**Interview tip:** Say \"reversible steps, measured at each step\". Also mention the decision to stop: if the modular monolith is good enough, you may not need to extract everything.",
       "level": "intermediate",
       "tags": [
-        "resilience"
+        "tech-lead",
+        "migration",
+        "strangler-fig"
       ],
-      "favorite": false
+      "favorite": false,
+      "module": "Architecture & Design"
     },
     {
-      "id": "microservices-7",
-      "question": "How do you manage data across microservices? (database per service, CQRS, event sourcing)",
-      "answer": "Each service owns its data; others access it via API/events, never the shared DB. Cross-service reads: API composition or **CQRS** read models fed by events. **Event sourcing** stores state as an append-only event log (great audit/replay, but complex). Accept **eventual consistency** and design the UX and invariants for it.",
+      "id": "microservices-027",
+      "question": "[Tech Lead] How do Conway's law and team design affect service ownership and on-call?",
+      "answer": "**Short answer:** Conway's law says a system's design copies the communication structure of the organisation that builds it. So you should design teams and services together. Each service needs one clear owning team that builds it, runs it and carries the pager for it.\n\nIf you have a front-end team, a back-end team and a database team, you will get a three-layer system where every feature needs three teams. If you have a team per business capability, you get services that match those capabilities. The \"inverse Conway manoeuvre\" means you shape the teams first to get the architecture you want.\n\n**Team Topologies in short**\n- **Stream-aligned team:** owns a slice of the business end to end (for example \"playlists and content discovery\").\n- **Platform team:** offers paved roads (CI templates, Kubernetes, observability) as an internal product.\n- **Enabling team:** coaches others for a time (security, testing).\n- **Complicated-subsystem team:** owns deep specialist work (for example a recommendation engine).\n\n**Ownership rules I would set**\n1. Every service has exactly one owning team, listed in a catalog (name, repo, runbook, Slack channel, on-call rota).\n2. You build it, you run it. Owners see their own incidents, so quality improves.\n3. A team should own a manageable number of services. A rough guide: if a team cannot hold the whole system in its head, it owns too much.\n4. Shared libraries and shared services need a named owner too, or nobody maintains them.\n\n**On-call**\n- Rotation of at least 5 to 6 people to keep it humane.\n- Alerts must be actionable and tied to user impact (SLOs), not CPU noise.\n- Every alert links to a runbook. After each incident, hold a blameless review.\n- Pay or compensate on-call time fairly.\n\n**Gotcha:** if two teams must agree on every change, the boundary is wrong. Fix the boundary or the team shape.\n\n**Interview tip:** Tell how you matched your team's responsibilities to service boundaries, and how you handled a service that nobody wanted to own.",
       "level": "intermediate",
       "tags": [
-        "data",
-        "cqrs"
+        "tech-lead",
+        "conways-law",
+        "teams",
+        "ownership"
       ],
-      "favorite": false
+      "favorite": false,
+      "module": "Architecture & Design"
     },
     {
-      "id": "microservices-8",
-      "question": "How do you do observability in a microservice system?",
-      "answer": "The three pillars plus correlation:\n- **Logs:** structured (JSON) with a **correlation/trace id** propagated through headers.\n- **Metrics:** RED (rate, errors, duration) per service, USE for resources, SLIs/SLOs and alerting.\n- **Distributed tracing:** OpenTelemetry to follow a request across services.\n\nTools: Datadog APM/dashboards/monitors. Add health endpoints (liveness/readiness) and synthetic checks.",
+      "id": "microservices-028",
+      "question": "[Tech Lead] How do you make a microservice system observable: logs, metrics, traces, correlation ids and SLOs?",
+      "answer": "**Short answer:** Observability means you can understand what the system is doing from the outside. You need three signals: logs (what happened), metrics (how much and how often), and traces (the path of one request across services). Tie them together with a correlation id and judge health with SLOs.\n\n| Signal | Question it answers | Example |\n| --- | --- | --- |\n| Logs | What exactly happened here? | `payment declined, reason=insufficient_funds` |\n| Metrics | Is it healthy, is it getting worse? | error rate, p99 latency, queue depth |\n| Traces | Where did this request spend time? | gateway, orders, payments, 480 ms in payments |\n\n**Correlation id.** Create an id at the edge (or accept the incoming one), pass it in a header on every call and message, and put it in every log line. Then one search shows the whole story. With OpenTelemetry the trace id plays this role.\n\n```go\n// middleware: reuse or create the id, pass it on, log with it\nfunc CorrelationID(next http.Handler) http.Handler {\n\treturn http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tid := r.Header.Get(\"X-Correlation-ID\")\n\t\tif id == \"\" {\n\t\t\tid = uuid.NewString()\n\t\t}\n\t\tw.Header().Set(\"X-Correlation-ID\", id)\n\t\tctx := context.WithValue(r.Context(), ctxKey{}, id)\n\t\tnext.ServeHTTP(w, r.WithContext(ctx))\n\t})\n}\n```\n\n**What to measure.** Start with the RED method for services (Rate, Errors, Duration) and the USE method for resources (Utilisation, Saturation, Errors). Use structured JSON logs and avoid high-cardinality metric labels such as user ids.\n\n**SLOs.** An SLI is a measurement (for example the share of requests under 300 ms). An SLO is the target (99.5% over 30 days). The gap is the error budget. If the budget is spent, slow down feature work and fix reliability. Alert on budget burn rate, not on every blip.\n\n**Gotcha:** logging everything is costly and noisy. Sample traces, keep log levels sensible, set retention by value.\n\n**Interview tip:** Mention a real tool setup, for example Datadog APM with unified service tags, and a time when a trace found a slow downstream call within minutes.",
       "level": "intermediate",
       "tags": [
+        "tech-lead",
         "observability",
+        "slo",
         "datadog"
       ],
-      "favorite": false
+      "favorite": false,
+      "module": "Observability"
     },
     {
-      "id": "microservices-9",
-      "question": "API versioning and contract evolution without breaking consumers?",
-      "answer": "Prefer **backward-compatible** changes: add optional fields, don't remove/rename. Version via URL/header when breaking changes are unavoidable and run versions side by side with deprecation windows. Use consumer-driven **contract tests** (Pact) and schema registries (protobuf/Avro compatibility rules) in CI.",
+      "id": "microservices-029",
+      "question": "[Tech Lead] What testing strategy works for microservices: test pyramid, contract tests and testing in production?",
+      "answer": "**Short answer:** Keep many fast unit tests, a smaller number of integration tests per service, and consumer-driven contract tests between services. Use very few full end-to-end tests. Add careful testing in production (canaries, feature flags, synthetic checks) because no test environment matches production.\n\n```mermaid\nflowchart TD\n    E[\"Few end-to-end tests\"] --> C[\"Contract tests between services\"]\n    C --> I[\"Integration tests per service\"]\n    I --> U[\"Many unit tests\"]\n```\n\nHigher layers are slower, flakier and fewer.\n\n**Why not many end-to-end tests?** They need every service up, they are slow, flaky, and a failure does not say who broke it. A shared test environment becomes a bottleneck.\n\n**Contract tests (for example Pact).** The consumer writes down what it expects from the provider: request shape and response shape. This becomes a contract file. The provider's pipeline replays that contract against the real provider code. If the provider changes something a consumer relies on, the provider build fails before release.\n\n```text\nConsumer CI:  runs tests against a mock, publishes pact to a broker\nProvider CI:  fetches pacts, verifies them against the real service\nDeploy gate:  \"can-i-deploy\" asks the broker if versions are compatible\n```\n\n**Other layers**\n- Component tests: one service with fake dependencies (or containers via Testcontainers for its own database).\n- Test the failure paths: timeouts, retries, duplicate messages.\n- Load tests for critical paths, run regularly.\n\n**Testing in production, carefully**\n- Canary releases and gradual rollout with automatic rollback.\n- Feature flags to expose features to staff first.\n- Synthetic transactions that run every minute.\n- Shadow traffic. Never use it for requests that cause side effects like payments.\n\n**Gotcha:** contract tests check shape, not business correctness. Keep a small set of end-to-end journeys for the money paths.\n\n**Interview tip:** Say you aim for confidence per service from the pipeline alone, with contracts replacing most cross-team environments.",
       "level": "intermediate",
       "tags": [
-        "api",
-        "contracts"
+        "tech-lead",
+        "testing",
+        "contract-testing",
+        "pact"
+      ],
+      "favorite": false,
+      "module": "Delivery & Testing"
+    },
+    {
+      "id": "microservices-030",
+      "question": "[Tech Lead] How would you set up CI/CD per service, and when do you pick monorepo vs polyrepo?",
+      "answer": "**Short answer:** Each service gets its own pipeline that builds, tests, scans and deploys it independently. A monorepo keeps all services in one repository, which makes shared changes easy. A polyrepo gives one repo per service, which gives clear ownership. Choose by how much code is shared and how much tooling you can invest in.\n\n**A good per-service pipeline**\n1. Lint and unit tests.\n2. Build one immutable container image, tagged with the commit hash.\n3. Security scan (dependencies, image, secrets).\n4. Contract and integration tests.\n5. Deploy to a test environment automatically.\n6. Promote the same image to staging and production. Never rebuild for prod.\n7. Progressive rollout with health checks and automatic rollback.\n\n```yaml\n# .gitlab-ci.yml (fragment): run only when this service changes\norders-test:\n  stage: test\n  rules:\n    - changes:\n        - services/orders/**/*\n        - libs/common/**/*\n  script:\n    - cd services/orders && go test ./...\n```\n\n| | Monorepo | Polyrepo |\n| --- | --- | --- |\n| Shared code change | one atomic commit | many repos, versioned releases |\n| Ownership | needs CODEOWNERS | natural |\n| CI | needs path filters and caching | simple per repo |\n| Tooling | needs investment (Bazel, Nx, path rules) | little |\n| Risk | accidental coupling, slow CI | version drift of shared libraries |\n| Visibility | easy to search everything | harder |\n\n**My rule:** a polyrepo is simplest when services are truly independent. A monorepo helps when teams share many contracts and want atomic refactors, provided you have path-based pipelines and CODEOWNERS. A monorepo does not mean a monolith: services still deploy separately.\n\n**Gotchas**\n- Do not let a shared library become a deployment coupling. Version it and keep it small.\n- Pipeline templates (GitLab `include`) keep many services consistent without copy-paste.\n\n**Interview tip:** Mention deployment frequency and lead time as the measures that show whether the pipeline design works.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "ci-cd",
+        "monorepo",
+        "gitlab"
+      ],
+      "favorite": false,
+      "module": "Delivery & Testing"
+    },
+    {
+      "id": "microservices-031",
+      "question": "[Tech Lead] How do you handle API versioning, backward compatibility and deprecation across teams?",
+      "answer": "**Short answer:** Make changes backward compatible by default so consumers do not have to move in lock step. Only introduce a new version for real breaking changes, run old and new side by side, and retire the old one with a published deprecation plan and usage data.\n\n**Safe changes (backward compatible)**\n- Add a new optional field or endpoint.\n- Add a new enum value, if clients are told to tolerate unknown values.\n- Loosen validation.\n\n**Breaking changes**\n- Remove or rename a field.\n- Change a type or meaning.\n- Make an optional field required.\n- Change error codes or behaviour clients rely on.\n\n**Be liberal in what you accept.** Clients should ignore unknown fields (the tolerant reader). Servers should not break because a client sent less.\n\n**Expand and contract** is the safe way to change something:\n1. Expand: add the new field and keep the old one. Write both.\n2. Migrate consumers (track who calls the old one).\n3. Contract: remove the old field when usage is zero.\n\n**Deprecation process**\n- Announce with a date. Add `Deprecation` and `Sunset` response headers.\n- Log which clients still use the old version and contact them directly.\n- Provide a migration guide.\n- Contract tests show which consumers would break.\n- Keep a support policy, for example the last two versions for 6 months.\n\n```http\nHTTP/1.1 200 OK\nDeprecation: true\nSunset: Wed, 30 Jun 2027 00:00:00 GMT\nLink: </v2/orders>; rel=\"successor-version\"\n```\n\n**Gotcha:** every live version is a cost. Too many versions means you maintain many systems. Prefer evolving one version.\n\n**Interview tip:** Say the real metric is \"how many consumers still use v1\". Without that number you cannot retire anything.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "versioning",
+        "compatibility",
+        "deprecation"
+      ],
+      "favorite": false,
+      "module": "Delivery & Testing"
+    },
+    {
+      "id": "microservices-032",
+      "question": "[Tech Lead] A slow dependency causes a cascading failure in production. How do you handle the incident?",
+      "answer": "**Short answer:** First stop the bleeding: shed load, disable the failing dependency path or roll back the last change, then restore service. Investigate the root cause after users are safe. Afterwards run a blameless review and add the missing protections such as timeouts, circuit breakers and bulkheads.\n\n**How a cascade happens.** Service C becomes slow. B waits on C and its threads or connections fill up. B becomes slow. A waits on B and fills up too. Retries multiply the load. Soon everything is down even though only C had a problem.\n\n```mermaid\nsequenceDiagram\n    participant U as Users\n    participant A as Service A\n    participant B as Service B\n    participant C as Service C (slow)\n    U->>A: request\n    A->>B: call\n    B->>C: call\n    Note over C: slow, 30 s\n    C-->>B: late\n    Note over B: all threads busy\n    Note over A: all threads busy too\n    U-->>A: errors everywhere\n```\n\n**During the incident**\n1. Declare the incident, name an incident commander, open one channel. Communicate status on a schedule.\n2. Check the dashboards: what changed (deploy, traffic, config)? Roll back if a deploy lines up.\n3. Reduce load: rate limit, turn off non-essential features with flags, serve cached data.\n4. Open the circuit manually or scale up the healthy path if that helps. Do not blindly restart everything: a cold start under load can make it worse.\n5. Confirm recovery with metrics, not feelings.\n\n**Prevention (what the review should add)**\n- Timeouts on every outgoing call, shorter than the caller's own timeout.\n- Retries with backoff, jitter and a retry budget.\n- Circuit breakers and bulkheads to isolate pools.\n- Load shedding and graceful degradation.\n- Alerts on saturation, not only errors.\n- Game days and chaos experiments to test it.\n\n**Gotcha:** blaming a person ends learning. Ask what made the mistake easy to make.\n\n**Interview tip:** Tell a real timeline: detection time, mitigation time and the one change that would have prevented it.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "incident-response",
+        "resilience",
+        "cascading-failure"
+      ],
+      "favorite": false,
+      "module": "Resilience"
+    },
+    {
+      "id": "microservices-033",
+      "question": "[Tech Lead] How do you manage latency budgets and performance across a chain of service calls?",
+      "answer": "**Short answer:** Start from the user's target, for example 300 ms at p95, and split it into a budget per hop. Measure with distributed tracing, cut the number of sequential calls, run calls in parallel, cache, and pass a deadline downstream so work is dropped when it is too late.\n\nLatency adds up along a chain and tail latency gets worse with fan-out. If a page calls 10 services in parallel and each is slow 1% of the time, then about 10% of pages hit a slow one.\n\n**Method**\n1. Define the SLO per user journey (p50, p95, p99).\n2. Trace real requests. Find the critical path: the longest chain that decides total time.\n3. Give each hop a budget, for example gateway 20 ms, orders 80 ms, catalog 100 ms.\n4. Attack the largest slice first: avoid N+1 calls, add an index, cache.\n5. Re-run the load test and keep a performance check in CI for key paths.\n\n**Techniques**\n- Parallelise independent calls.\n- Batch requests instead of one call per item.\n- Cache close to the caller (see the caching question).\n- Move non-urgent work to async.\n- Use gRPC or compact payloads for chatty internal traffic.\n- Co-locate chatty services in the same zone.\n\n**Deadline propagation** means the remaining time travels with the request, so a service does not start expensive work when the caller will already have given up.\n\n```go\n// the context carries the deadline across calls\nctx, cancel := context.WithTimeout(r.Context(), 250*time.Millisecond)\ndefer cancel()\nresp, err := catalogClient.GetItem(ctx, req) // gRPC passes the deadline on\n```\n\n**Gotcha:** averages hide pain. Always look at percentiles, and measure from the client side too.\n\n**Interview tip:** Mention that you reduced calls on a hot path (for example by combining two service calls through a read model) rather than only tuning code.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "latency",
+        "performance",
+        "tracing"
+      ],
+      "favorite": false,
+      "module": "Observability"
+    },
+    {
+      "id": "microservices-034",
+      "question": "[Tech Lead] How do you secure communication and access between microservices?",
+      "answer": "**Short answer:** Assume the internal network is not safe (zero trust). Authenticate every caller, encrypt traffic with mutual TLS, authorise every request by identity and permission, and pass the end user's identity safely with signed tokens. Keep secrets out of code.\n\n**Layers**\n\n| Layer | What it answers | Typical tool |\n| --- | --- | --- |\n| Edge authentication | Who is the user? | OAuth2 / OpenID Connect at the gateway, JWT |\n| Service identity | Which service is calling? | mTLS certificates, workload identity |\n| Authorisation | Is this caller allowed to do this? | scopes, roles, policy engine, ownership checks |\n| Transport | Is traffic private and not altered? | TLS, mTLS via a mesh |\n| Secrets | Where are keys kept? | Key Vault, Vault, Kubernetes secrets with encryption |\n\n**JWT flow.** The user logs in with an identity provider and gets a signed access token. The gateway checks the signature, expiry, issuer and audience. It forwards the token (or a smaller internal token). Each service validates it again and checks permissions. Do not trust a header just because it came from inside the cluster.\n\n```mermaid\nsequenceDiagram\n    participant U as User\n    participant G as Gateway\n    participant I as Identity provider\n    participant O as Orders\n    U->>I: login\n    I-->>U: access token\n    U->>G: request with token\n    G->>G: verify signature, expiry, audience\n    G->>O: request + token (over mTLS)\n    O->>O: check scope and ownership\n    O-->>G: response\n```\n\n**Rules**\n- Use short-lived tokens. Use the client credentials flow for service to service calls with no user.\n- Least privilege: each service gets only the access it needs. Use Kubernetes NetworkPolicies to limit who can talk to whom.\n- Check object ownership, not only the role (a user may read only their own orders).\n- Scan images and dependencies; rotate secrets.\n\n**Gotcha:** a gateway-only check leaves every service open to anyone who reaches the cluster network.\n\n**Interview tip:** Mention a mesh (for example mTLS via a sidecar or ambient mode) as a way to get encryption and identity without app code, while authorisation stays in the service.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "security",
+        "mtls",
+        "oauth2",
+        "zero-trust"
+      ],
+      "favorite": false,
+      "module": "Security"
+    },
+    {
+      "id": "microservices-035",
+      "question": "[Tech Lead] What are the cost and complexity trade-offs of microservices, and how do you decide build vs buy?",
+      "answer": "**Short answer:** Microservices add real costs: infrastructure, tooling, on-call and the mental load of a distributed system. Accept that cost only where it buys something concrete. Build what is your competitive advantage and buy or use managed services for everything else.\n\n**Cost sources**\n- Infrastructure: more pods, more databases, more network traffic, idle capacity per service.\n- Platform: CI/CD, observability, service discovery, secret handling.\n- People: on-call rotas, onboarding time, more cross-team coordination.\n- Observability bill: logs and traces from many services get large quickly.\n- Cognitive load: nobody understands the whole system.\n\n**Questions I ask before adding a service**\n1. Does it need to scale or deploy independently from its neighbours?\n2. Is there a team ready to own it?\n3. What is its data, and who else needs it?\n4. What happens when it is down?\n5. Could a module in an existing service do the job?\n\n**Build vs buy**\n\n| Choose | When |\n| --- | --- |\n| Buy or managed | commodity: auth provider, message broker, database, email, search, metrics |\n| Build | core differentiator: your business rules, your user experience |\n| Open source self-hosted | you have the skills to run it, and licence or control matters |\n\nManaged services (for example Azure Service Bus, Azure Database for PostgreSQL) trade money for less operations. Self-hosting Kafka needs people who can run Kafka. Count the people cost, not only the licence cost.\n\nAlso consider lock-in. Standards (OpenTelemetry, OCI images, standard SQL) lower the exit cost. Estimate it, do not fear it blindly.\n\n**Gotcha:** a \"cheap\" tool that no one on the team can operate is expensive. Include the learning curve, support, exit plan.\n\n**Interview tip:** Give numbers when you can, such as the observability bill falling after sampling, or fewer pods after merging two chatty services.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "cost",
+        "build-vs-buy",
+        "trade-offs"
+      ],
+      "favorite": false,
+      "module": "Architecture & Design"
+    },
+    {
+      "id": "microservices-036",
+      "question": "[Tech Lead] How do you keep documentation, ADRs and API standards consistent across many teams?",
+      "answer": "**Short answer:** Treat documentation as part of the product, but keep it small and close to the code. Record important decisions as short Architecture Decision Records (ADRs), publish every API as a machine-readable contract, and set simple API standards with automatic checks so teams do not need to argue about style.\n\n**ADR: Architecture Decision Record.** A one-page file in the repo that says what was decided and why. It lets new people understand history, and stops the same debate returning every year.\n\n```text\n# ADR-014: Use Kafka for domain events\nStatus: Accepted (2026-03-02)\nContext: Three services need to react to order changes. Direct calls couple them.\nDecision: Publish domain events to Kafka. Use the outbox pattern.\nConsequences: + decoupled consumers, + replay.\n              - more operations work, - eventual consistency.\nAlternatives considered: RabbitMQ, direct HTTP calls.\n```\n\n**What to document**\n- Service catalog entry: owner, repo, runbook, SLOs, dependencies, on-call.\n- API contract: OpenAPI for REST, `.proto` for gRPC, AsyncAPI or schema registry for events.\n- A short README with how to run it locally.\n- Runbooks for the top alerts.\n- Architecture diagrams as code (Mermaid) next to the source.\n\n**API standards worth having**\n- Naming and URL style, error format (for example RFC 9457 problem details), pagination, idempotency headers, versioning rule, auth scheme.\n- Enforce with a linter in CI (such as Spectral for OpenAPI) and with contract tests.\n\n**Keeping it alive**\n- Docs live in the repo and change in the same pull request as the code.\n- A pull request template asks \"docs or ADR needed?\".\n- Review the catalog every quarter and remove dead entries.\n\n**Gotcha:** a big wiki that nobody updates is worse than none, because people trust wrong information.\n\n**Interview tip:** Say that you introduced ADRs with a light template and that they saved time in onboarding. Small and used beats complete and ignored.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "documentation",
+        "adr",
+        "api-standards"
+      ],
+      "favorite": false,
+      "module": "Architecture & Design"
+    },
+    {
+      "id": "microservices-037",
+      "question": "[Tech Lead] How do you decide the number and size of services?",
+      "answer": "**Short answer:** Do not size services by lines of code. Size them by what one team can own, what changes together, and what must scale or fail independently. Start with fewer, larger services (even modules) and split when you have evidence. Too many tiny services create a \"nanoservice\" mess.\n\n**Questions that guide the size**\n- **Team:** can one team (about 5 to 9 people) understand, own and run it?\n- **Change:** do changes to it usually stay inside it? If most features touch two services, merge them.\n- **Data:** is its data used mostly by itself? Does it have a clear single owner?\n- **Scale:** does it have very different load or hardware needs (GPU, large memory)?\n- **Failure:** must it stay up even when others fail, or can it be allowed to fail?\n- **Compliance or release rhythm:** payments with audit rules, or a fast-moving UI backend.\n\n**Smells**\n- Too big: several teams touch it, deploys are slow and scary, unrelated features are bundled.\n- Too small (nanoservices): a service per database table, services that cannot do anything alone, huge number of network calls for one request, more YAML than code.\n\n**A practical approach**\n1. Begin with a modular monolith or a few coarse services around bounded contexts.\n2. Add an internal module boundary and watch it for some months.\n3. Split only for a concrete reason: team contention, scaling, risk isolation.\n4. Review the count regularly. Merging is allowed.\n\n```text\nStart:   [Commerce] [Catalog] [Identity]\nLater:   [Orders] [Payments] [Catalog] [Identity] [Notifications]\n         (Payments split out: compliance + separate release cadence)\n```\n\n**Gotcha:** the number of services is not a score. Fewer well-owned services beat many orphaned ones.\n\n**Interview tip:** The phrase \"split when it hurts, and for a named reason\" is a strong, short answer.",
+      "level": "intermediate",
+      "tags": [
+        "tech-lead",
+        "boundaries",
+        "sizing",
+        "design"
+      ],
+      "favorite": false,
+      "module": "Architecture & Design"
+    },
+    {
+      "id": "microservices-038",
+      "question": "[Tech Lead] How do you migrate data from a monolith database to a new service's own database?",
+      "answer": "**Short answer:** Move in small reversible steps: copy the data, keep both stores in sync while you verify, switch reads, then switch writes, then retire the old tables. Never do one big cutover. Each step must be safe to roll back.\n\n```mermaid\nstateDiagram-v2\n    [*] --> Shared\n    Shared: Monolith owns data\n    Shared --> Copy: backfill and sync\n    Copy: New DB filled, old DB still the source\n    Copy --> ReadNew: verify, then read from new\n    ReadNew: Reads new, writes both\n    ReadNew --> WriteNew: switch writes\n    WriteNew: New DB is the source of truth\n    WriteNew --> [*]: drop old tables\n```\n\nRead it as a ladder. At every rung you can step back down.\n\n**Steps**\n1. **Create the new service and schema.** Design it for the new model, not a copy of the old tables.\n2. **Backfill.** Copy existing data in batches with a script or change data capture (CDC), for example from the transaction log.\n3. **Keep in sync.** Use CDC or dual writes. Dual writes can drift, so prefer CDC or an outbox in the monolith.\n4. **Verify.** Compare counts and checksums. Run a shadow read: read both, return the old, log differences.\n5. **Switch reads** to the new service behind a feature flag. Watch errors and latency.\n6. **Switch writes.** Now the new service is the source of truth. The monolith calls its API or listens to its events. Sync back if the old code still needs it.\n7. **Stop old writes, wait, archive and drop** the old tables only after a quiet period.\n\n**Hard parts**\n- Foreign keys across the boundary: replace with ids and events.\n- Joins in reports: use a read model or a warehouse.\n- Ids: keep the same ids so references stay valid.\n- Large tables: backfill throttled, off peak, resumable.\n- Transactions that touched both domains: become sagas.\n\n**Gotcha:** if the old code still writes the same table directly, you do not have ownership yet. Block direct access with database permissions.\n\n**Interview tip:** Say \"expand, migrate, contract\" and \"I can roll back at every step\". That is what interviewers want to hear.",
+      "level": "advanced",
+      "tags": [
+        "tech-lead",
+        "data-migration",
+        "zero-downtime"
+      ],
+      "favorite": false,
+      "module": "Data & Consistency"
+    },
+    {
+      "id": "microservices-039",
+      "question": "What is the saga pattern, and how do orchestration and choreography differ?",
+      "answer": "**Short answer:** A saga is a way to keep data consistent across several services without one big database transaction. It is a sequence of local transactions. If one step fails, the saga runs compensating actions that undo the earlier steps. It can be coordinated by a central orchestrator or by services reacting to each other's events (choreography).\n\nExample: placing an order needs Orders, Payments and Inventory. Each does its own local commit. If inventory fails after payment succeeded, the saga refunds the payment.\n\n```mermaid\nsequenceDiagram\n    participant S as Order saga\n    participant O as Orders\n    participant P as Payments\n    participant I as Inventory\n    S->>O: create order (pending)\n    O-->>S: ok\n    S->>P: charge card\n    P-->>S: ok\n    S->>I: reserve stock\n    I-->>S: out of stock\n    S->>P: refund (compensation)\n    S->>O: cancel order (compensation)\n```\n\nThe orchestrator calls each step in order. On failure it walks backwards with compensations.\n\n| | Orchestration | Choreography |\n| --- | --- | --- |\n| Control | one coordinator knows the flow | each service reacts to events |\n| Visibility | easy to see and debug the whole flow | flow is spread over many services |\n| Coupling | services know the orchestrator | services know the event names |\n| Risk | orchestrator can become a god service | hidden cycles, hard to follow |\n| Good for | longer flows, many steps | short flows, two or three services |\n\n**Rules for compensations**\n- A compensation is a business undo (refund, release stock), not a database rollback.\n- Make every step and compensation idempotent, because messages can repeat.\n- Some steps cannot be undone (an email was sent). Put those last or make them tolerant.\n- Save the saga state (for example `PENDING, PAID, FAILED`) so it survives a crash.\n\n**Gotcha:** sagas give no isolation. Other users can see the half-done state (a pending order). Design for it with states such as `PENDING`.\n\n**Interview tip:** Say you prefer orchestration once a flow has more than three steps, and that you model saga state as a state machine.",
+      "level": "intermediate",
+      "module": "Data & Consistency",
+      "tags": [
+        "saga",
+        "transactions",
+        "consistency"
       ],
       "favorite": false
     },
     {
-      "id": "microservices-10",
-      "question": "How do you design for high availability and handle a cascading failure?",
-      "answer": "Redundancy across zones, stateless services with autoscaling, health checks, graceful degradation (serve cached/partial data), load shedding, rate limits, timeouts + circuit breakers to contain failure, queue buffering, and capacity headroom. Test it: chaos experiments, load tests, game days. Post-incident: blameless review and action items.",
-      "level": "advanced",
+      "id": "microservices-040",
+      "question": "What is the transactional outbox pattern, and what problem does it solve?",
+      "answer": "**Short answer:** The outbox pattern makes \"save to the database\" and \"publish an event\" happen together reliably. You write the event into an outbox table in the same database transaction as your business change. A separate relay reads the outbox and publishes to the broker.\n\nThe problem is the dual write. If you commit to the database and then publish, a crash between the two loses the event. If you publish first and the commit fails, you sent an event for something that never happened. A database and a broker cannot share one transaction.\n\n```mermaid\nflowchart LR\n    S[\"Orders service\"] -- \"one transaction\" --> DB[(\"Orders table + outbox table\")]\n    R[\"Relay or CDC\"] -- \"reads new rows\" --> DB\n    R --> B[\"Message broker\"]\n    B --> C[\"Consumers\"]\n```\n\nThe business row and the event row are committed together. The relay publishes later, and retries until it works.\n\n```sql\nBEGIN;\nINSERT INTO orders (id, customer_id, status) VALUES ('o-42', 'c-7', 'PLACED');\nINSERT INTO outbox (id, aggregate_id, type, payload, created_at)\nVALUES (gen_random_uuid(), 'o-42', 'OrderPlaced',\n        '{\"orderId\":\"o-42\",\"customerId\":\"c-7\"}', now());\nCOMMIT;\n```\n\n**How the relay works**\n- Polling: a worker selects unsent rows, publishes, marks them sent. Use `FOR UPDATE SKIP LOCKED` to run several workers.\n- Change data capture (CDC), for example Debezium, tails the database log and publishes. Lower latency, more infrastructure.\n\n**Consequences**\n- Delivery is at least once. The relay may publish twice after a crash, so consumers must be idempotent.\n- Event order is kept per aggregate if you publish in insert order and use the aggregate id as the partition key.\n- Clean up old outbox rows.\n\n**Gotcha:** the outbox table is also a queue. Monitor its size and the age of the oldest unsent row.\n\n**Interview tip:** Name the dual-write problem first. Interviewers look for that phrase.",
+      "level": "intermediate",
+      "module": "Data & Consistency",
       "tags": [
+        "outbox",
+        "messaging",
+        "consistency"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-041",
+      "question": "What is idempotency, and how do idempotency keys make retries safe?",
+      "answer": "**Short answer:** An operation is idempotent if doing it many times has the same effect as doing it once. Because networks fail and clients retry, services must handle duplicates. An idempotency key is a unique id sent by the client so the server can recognise a repeat and return the first result instead of acting again.\n\nWithout it, a timeout on `POST /payments` makes the client retry, and the customer is charged twice. The client does not know whether the first request worked.\n\n**Naturally idempotent:** `PUT /users/7` with a full body, `DELETE /orders/42`, \"set status to SHIPPED\".\n**Not idempotent:** \"add 10 to balance\", `POST /payments`, \"send email\".\n\n**How to implement**\n1. The client generates a key (a UUID) per logical action and sends it in a header: `Idempotency-Key`.\n2. The server stores the key with the result in the same transaction as the work.\n3. On a repeat with the same key, it returns the stored result.\n4. If the same key arrives with a different body, reject it.\n5. Expire keys after a period (for example 24 hours).\n\n```sql\nCREATE TABLE idempotency_keys (\n  key        text PRIMARY KEY,\n  request_hash text NOT NULL,\n  response   jsonb,\n  created_at timestamptz NOT NULL DEFAULT now()\n);\n-- insert first; a unique violation means \"seen before\"\nINSERT INTO idempotency_keys (key, request_hash) VALUES ($1, $2)\nON CONFLICT (key) DO NOTHING;\n```\n\n```mermaid\nsequenceDiagram\n    participant C as Client\n    participant S as Payments\n    C->>S: POST /payments (key K)\n    S-->>C: timeout (response lost)\n    C->>S: POST /payments (key K) again\n    S-->>C: stored result, no second charge\n```\n\n**For message consumers:** keep a table of processed message ids, or make the update itself idempotent (`UPDATE ... WHERE version = ...`).\n\n**Gotcha:** the check and the work must be atomic. Checking a key and then charging in two steps can still double charge with two parallel requests.\n\n**Interview tip:** Mention that retries, outbox relays and brokers all produce duplicates, so every consumer needs this.",
+      "level": "intermediate",
+      "module": "Data & Consistency",
+      "tags": [
+        "idempotency",
+        "retries",
         "reliability"
       ],
       "favorite": false
     },
     {
-      "id": "microservices-11",
-      "question": "Service mesh (Istio/Linkerd): what problem does it solve and what does it cost?",
-      "answer": "Sidecar (or ambient) proxies handle mTLS, retries/timeouts, traffic shifting (canary), policy and telemetry uniformly, with no library per language. Costs: extra latency/resources, operational complexity, steep learning curve. Worth it with many services/polyglot stacks and strict security needs.",
-      "level": "advanced",
+      "id": "microservices-042",
+      "question": "What is CQRS, and when is it worth the extra complexity?",
+      "answer": "**Short answer:** CQRS (Command Query Responsibility Segregation) separates the model that changes data (commands) from the model that reads data (queries). The read side is shaped for fast, simple queries and is updated from the write side, usually through events. It is worth it when reads and writes have very different needs.\n\n```mermaid\nflowchart LR\n    U[\"Client\"] -- \"command: PlaceOrder\" --> W[\"Write model\"]\n    W --> WD[(\"Write DB\")]\n    W -- \"OrderPlaced event\" --> P[\"Projector\"]\n    P --> RD[(\"Read DB: denormalised\")]\n    U -- \"query: OrderSummary\" --> Q[\"Read model\"]\n    Q --> RD\n```\n\nCommands go one way and queries go another. A projector keeps the read database up to date.\n\n**Why use it**\n- A screen needs data from many tables. A read model holds exactly that shape, in one lookup.\n- Reads vastly outnumber writes, so you scale and tune the read side alone (for example a search index or cache).\n- Complex write rules stay clean, free from reporting needs.\n- It also solves \"queries across services\": one service builds a local read model from other services' events.\n\n**Costs**\n- Two models and a sync process.\n- Eventual consistency: after a command, the read side may be a few milliseconds or seconds behind. The user may not see their change at once.\n- More code, more moving parts to monitor.\n\n**Handling stale reads:** return the new state in the command response, show an optimistic UI update, or read from the write model for the user's own recent changes.\n\n```ts\n// projector: keep a read model in step with events\nasync function onOrderPlaced(e: OrderPlaced) {\n  await db.query(\n    `INSERT INTO order_summary (order_id, customer_name, total)\n     VALUES ($1, $2, $3) ON CONFLICT (order_id) DO NOTHING`,\n    [e.orderId, e.customerName, e.total]\n  );\n}\n```\n\n**Gotcha:** CQRS does not require event sourcing or two databases. A simple version uses the same database with a separate view.\n\n**Interview tip:** Say \"I only add CQRS where a read problem justifies it, not by default for every service\".",
+      "level": "intermediate",
+      "module": "Data & Consistency",
       "tags": [
-        "service-mesh",
+        "cqrs",
+        "read-model",
+        "patterns"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-043",
+      "question": "What is event sourcing, and what are its benefits and risks?",
+      "answer": "**Short answer:** In event sourcing you store the sequence of events that happened (for example `ItemAdded`, `ItemRemoved`) instead of only the current state. The current state is calculated by replaying events. You get a full history and the ability to rebuild state, at the cost of more complexity.\n\nA bank statement is a good picture. The balance is not stored as the truth; the list of deposits and withdrawals is. Add them up to get the balance.\n\n```ts\ntype Event =\n  | { type: \"Deposited\"; amount: number }\n  | { type: \"Withdrawn\"; amount: number };\n\n// state = fold over events\nconst balance = (events: Event[]) =>\n  events.reduce((sum, e) => (e.type === \"Deposited\" ? sum + e.amount : sum - e.amount), 0);\n\nconsole.log(balance([\n  { type: \"Deposited\", amount: 100 },\n  { type: \"Withdrawn\", amount: 30 },\n])); // prints: 70\n```\n\n**Benefits**\n- Complete audit trail by design.\n- Can answer \"what did the state look like last Tuesday?\".\n- New read models can be built later by replaying history.\n- Natural fit with events between services.\n\n**Risks and costs**\n- Event design is hard to change. Old events live forever, so you need versioning and upcasting (converting old events to the new shape).\n- Replaying long histories is slow. Use snapshots every N events.\n- Deleting personal data (privacy rules) conflicts with immutable events. Use encryption keys per person (crypto-shredding) or keep personal data outside events.\n- Queries need read models, so it nearly always comes with CQRS.\n- Eventual consistency everywhere, and a steep learning curve.\n\n**When to use:** audit-heavy domains (finance, bookings), complex state machines, strong need for history. **When not:** simple CRUD. It is overkill there.\n\n**Gotcha:** do not confuse event sourcing (events are the storage) with event-driven architecture (services send events to each other). You can have the second without the first.\n\n**Interview tip:** If asked, say you used events for integration between services, not as the storage model, and explain why.",
+      "level": "intermediate",
+      "module": "Data & Consistency",
+      "tags": [
+        "event-sourcing",
+        "events",
+        "patterns"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-044",
+      "question": "How do timeouts, retries with backoff and jitter, circuit breakers and bulkheads work together?",
+      "answer": "**Short answer:** These four patterns stop one failing service from taking down others. Timeouts stop waiting forever. Retries with backoff and jitter handle short glitches without causing a storm. A circuit breaker stops calling a service that is clearly failing. Bulkheads isolate resources so one bad dependency cannot use them all.\n\n**Timeout.** Every network call needs one. No timeout means threads and connections pile up. Set it from the latency budget and keep downstream timeouts shorter than upstream ones.\n\n**Retry with exponential backoff and jitter.** Wait longer after each failure (100 ms, 200 ms, 400 ms) and add random jitter so many clients do not retry at the same instant. Retry only safe or idempotent operations, and only on transient errors (timeouts, 503), never on 400 or 404. Set a retry budget so retries cannot multiply load.\n\n```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math/rand\"\n\t\"time\"\n)\n\n// full jitter: wait a random time between 0 and the exponential cap\nfunc backoff(attempt int, base, max time.Duration) time.Duration {\n\td := base << attempt\n\tif d > max || d <= 0 {\n\t\td = max\n\t}\n\treturn time.Duration(rand.Int63n(int64(d) + 1))\n}\n\nfunc main() {\n\tfor i := 0; i < 4; i++ {\n\t\tfmt.Println(\"attempt\", i, \"wait at most\", min(100*time.Millisecond<<i, 2*time.Second))\n\t\t_ = backoff(i, 100*time.Millisecond, 2*time.Second)\n\t}\n}\n```\n\n**Circuit breaker.** It watches failures and has three states.\n\n```mermaid\nstateDiagram-v2\n    [*] --> Closed\n    Closed --> Open: failures pass threshold\n    Open --> HalfOpen: after cool-down\n    HalfOpen --> Closed: probe succeeds\n    HalfOpen --> Open: probe fails\n```\n\nClosed means normal calls. Open means calls fail fast without touching the dependency. Half open lets a few probe calls through to test recovery.\n\n**Bulkhead.** Like the sealed compartments of a ship. Give each dependency its own limited pool of threads, connections or concurrency slots, so a slow payments provider cannot use all workers needed by the catalog.\n\n**Together:** timeout limits a single call, retry covers a blip, the breaker stops hopeless retries, the bulkhead limits the damage radius, and a fallback gives the user something useful.\n\n**Gotcha:** retries at every layer multiply. Three layers with three tries each make 27 calls to the bottom service. Retry at one layer only.\n\n**Interview tip:** Mention a library you used (Polly in .NET, resilience4j in Java, a Go library, or a mesh feature).",
+      "level": "intermediate",
+      "module": "Resilience",
+      "tags": [
+        "resilience",
+        "circuit-breaker",
+        "retries",
+        "timeouts"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-045",
+      "question": "What are the strategies for API versioning, and which would you choose?",
+      "answer": "**Short answer:** The common ways are a version in the URL path, in a header, or in a media type. Path versioning is the simplest and most visible, so it is a good default for public APIs. Whichever you pick, prefer backward compatible changes and avoid new versions when you can.\n\n| Strategy | Example | Pros | Cons |\n| --- | --- | --- | --- |\n| URL path | `/v2/orders/42` | obvious, easy to route and cache, easy to test in a browser | URL changes, version spreads into links |\n| Query parameter | `/orders/42?api-version=2` | simple, easy default | easy to forget, cache keys must include it |\n| Custom header | `X-Api-Version: 2` | clean URLs | hidden, harder to try by hand |\n| Media type | `Accept: application/vnd.shop.v2+json` | pure REST style | harder for clients and tooling |\n| No version, evolve | add optional fields only | least work for everyone | needs strict discipline |\n\n**How I choose**\n- Public or partner API with many unknown clients: URL path versions, long support windows.\n- Internal service to service: avoid versions; use expand and contract plus contract tests, and version only on a true break.\n- gRPC and events: follow protobuf or schema rules (add fields, never reuse numbers) and use a schema registry.\n\n**Routing example with a gateway**\n\n```yaml\n# gateway route fragment\nroutes:\n  - match: { prefix: \"/v1/orders\" }\n    route: { cluster: orders-v1 }\n  - match: { prefix: \"/v2/orders\" }\n    route: { cluster: orders-v2 }\n```\n\n**Running two versions.** Prefer one codebase that maps both versions to one internal model, rather than two forks. Keep v1 as a thin adapter over the new logic.\n\n**Gotchas**\n- Versioning the whole API for one changed endpoint forces everyone to move. Version per resource if you can.\n- Do not retire a version without usage numbers and a published date.\n\n**Interview tip:** \"Version the contract, not the code, and try to never need it\" is a good one-line summary.",
+      "level": "intermediate",
+      "module": "Communication",
+      "tags": [
+        "api",
+        "versioning",
+        "rest"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-046",
+      "question": "How do Kafka, RabbitMQ and Azure Service Bus differ, and what delivery guarantees do brokers give?",
+      "answer": "**Short answer:** Kafka is a distributed log for high-throughput event streams that consumers can replay. RabbitMQ is a classic broker with flexible routing for task queues. Azure Service Bus is a managed enterprise broker with queues, topics, sessions and dead lettering. Most brokers deliver at least once, so consumers must handle duplicates.\n\n| | Kafka | RabbitMQ | Azure Service Bus |\n| --- | --- | --- | --- |\n| Model | partitioned append-only log | exchanges and queues | queues and topics with subscriptions |\n| Message after read | stays until retention ends, replayable | removed after ack | removed after complete |\n| Ordering | per partition | per queue (with caveats) | per session |\n| Throughput | very high | high | moderate to high |\n| Strong points | streaming, replay, many consumers | routing patterns, low latency | managed, sessions, dead letter, scheduled messages |\n| Watch out | operations, partition design | scaling out, big backlogs | cost, vendor lock-in |\n\n**Delivery guarantees**\n- **At most once:** send and forget. Messages may be lost, never duplicated.\n- **At least once:** retry until acknowledged. Never lost, but may be duplicated. This is the usual choice.\n- **Exactly once:** very hard end to end. Kafka offers it inside Kafka (transactions), but side effects such as an email or a database write still need idempotency.\n\n**Consumer flow for at-least-once**\n\n```mermaid\nsequenceDiagram\n    participant B as Broker\n    participant C as Consumer\n    B->>C: deliver message\n    C->>C: process (idempotent)\n    C-->>B: ack\n    Note over B,C: if no ack, the broker redelivers\n```\n\nAlways process first, then acknowledge. A crash before the ack means redelivery.\n\n**Common features to use:** dead letter queues for poison messages, retry with delay, consumer groups for scaling, and monitoring consumer lag.\n\n**How I choose:** event streams and replay: Kafka. Simple task queues and routing: RabbitMQ. All-in on Azure and want less operations work: Service Bus.\n\n**Gotcha:** a poison message that always fails can block a queue. Move it to a dead letter queue after N attempts and alert.\n\n**Interview tip:** Say what you used, why, and how you watch consumer lag.",
+      "level": "intermediate",
+      "module": "Communication",
+      "tags": [
+        "messaging",
+        "kafka",
+        "rabbitmq",
+        "service-bus"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-047",
+      "question": "What are the main event-driven architecture patterns, and how do you design good event schemas?",
+      "answer": "**Short answer:** In event-driven architecture, services publish facts about things that happened, and other services react. The main styles are event notification (small event, consumers call back for details), event-carried state transfer (event contains the data) and event sourcing. Good events are named in the past tense, versioned, and carry a stable contract.\n\n| Style | Event contains | Pros | Cons |\n| --- | --- | --- | --- |\n| Notification | just ids | small, simple | consumers call back, coupling returns |\n| Event-carried state transfer | the changed data | consumers are autonomous, no callbacks | larger events, copies of data |\n| Domain events | business meaning (`OrderShipped`) | clear, stable | needs good naming |\n\n**Event versus command.** An event says something happened (`PaymentCaptured`), and the sender does not care who listens. A command asks someone to do something (`CapturePayment`) and has one target.\n\n**Envelope and payload example**\n\n```json\n{\n  \"id\": \"6f1c1d3e-9b0a-4a3e-8d54-2b0e1f9d7a10\",\n  \"type\": \"OrderPlaced\",\n  \"version\": 2,\n  \"occurredAt\": \"2026-10-21T09:15:30Z\",\n  \"correlationId\": \"c1f4...\",\n  \"data\": {\n    \"orderId\": \"o-42\",\n    \"customerId\": \"c-7\",\n    \"total\": { \"amount\": 4999, \"currency\": \"EUR\" }\n  }\n}\n```\n\n**Schema design rules**\n- Past tense names tied to the business (`OrderPlaced`, not `OrderTableUpdated`).\n- Include a unique id (for deduplication), a timestamp, a type, a version, a correlation id.\n- Add fields, never remove or reinterpret them. Consumers ignore unknown fields.\n- Use a schema registry (Avro, Protobuf, JSON Schema) with compatibility checks in CI.\n- Money as integer minor units plus currency, time as UTC ISO 8601.\n- Do not leak your internal database model.\n\n**Gotcha:** big hidden chains of events (A triggers B triggers C) are hard to debug. Keep a documented event catalogue and use tracing.\n\n**Interview tip:** Mention the trade-off between small notification events and rich state transfer events, and what you chose and why.",
+      "level": "intermediate",
+      "module": "Communication",
+      "tags": [
+        "events",
+        "event-driven",
+        "schema"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-048",
+      "question": "What caching strategies work across microservices, and what are the risks?",
+      "answer": "**Short answer:** Cache at several layers: browser or CDN, gateway, inside each service (in memory) and in a shared cache like Redis. Use cache-aside as the default, set a time to live (TTL), and decide how stale data is allowed to be. The hard part is invalidation.\n\n```mermaid\nflowchart LR\n    C[\"Client\"] --> CDN[\"CDN or browser cache\"]\n    CDN --> G[\"Gateway\"]\n    G --> S[\"Service\"]\n    S --> L[\"Local in-memory cache\"]\n    S --> R[(\"Redis\")]\n    S --> D[(\"Database\")]\n```\n\nEach layer closer to the user is faster but harder to invalidate.\n\n**Patterns**\n- **Cache-aside:** check the cache, on a miss load from the source and store it. Simple and common.\n- **Read-through / write-through:** the cache layer loads or writes for you.\n- **Write-behind:** write to cache, flush to the database later. Fast but risky.\n- **HTTP caching:** `Cache-Control`, `ETag`, `304 Not Modified` for read-heavy public data.\n\n```ts\nasync function getProduct(id: string) {\n  const key = `product:${id}`;\n  const hit = await redis.get(key);\n  if (hit) return JSON.parse(hit);\n  const product = await db.findProduct(id);      // cache miss\n  await redis.set(key, JSON.stringify(product), { EX: 300 }); // 5 minute TTL\n  return product;\n}\n```\n\n**Invalidation options:** short TTL (simple), event-based invalidation (the owner publishes `ProductChanged`, caches evict the key), versioned keys.\n\n**Risks**\n- **Stale data:** agree what is acceptable per data type.\n- **Cache stampede:** a popular key expires and many requests hit the database. Fix with request coalescing (single flight), jittered TTLs, or refresh ahead.\n- **Cache as a hard dependency:** if Redis is down, the service should degrade, not die.\n- **Caching someone else's data:** the owner service knows the rules. Prefer caching through events or HTTP cache headers.\n- **Never cache user-specific or secret data in shared caches** without the user in the key.\n\n**Interview tip:** Say you cache with a TTL plus event-based eviction, and that you measured the hit ratio before and after.",
+      "level": "intermediate",
+      "module": "Data & Consistency",
+      "tags": [
+        "caching",
+        "performance",
+        "redis"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-049",
+      "question": "How does distributed tracing with OpenTelemetry work?",
+      "answer": "**Short answer:** Distributed tracing follows one request across many services. Each unit of work is a span with a start time and duration. Spans share a trace id, and each span knows its parent. A context header carries the ids from service to service. OpenTelemetry (OTel) is the vendor-neutral standard for creating and exporting them.\n\n```mermaid\nsequenceDiagram\n    participant G as Gateway\n    participant O as Orders\n    participant P as Payments\n    G->>O: request, header traceparent\n    O->>P: call, same trace id, new span\n    P-->>O: response\n    O-->>G: response\n    Note over G,P: Backend joins all spans into one trace\n```\n\nThe trace id stays the same for the whole journey. Every hop adds a new span.\n\n**The W3C Trace Context header**\n\n```text\ntraceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\n             ver  trace id (32 hex)               parent span id   flags\n```\n\n**How to set it up**\n1. Add the OTel SDK to each service (or auto-instrumentation for HTTP, gRPC, database and queue clients).\n2. Make sure the context is propagated on outgoing calls and in message headers, so async flows stay connected.\n3. Export to a Collector, which forwards to a backend such as Datadog, Jaeger or Tempo.\n4. Add useful attributes: `order.id`, `customer.tier`. Avoid personal data.\n\n```go\nctx, span := tracer.Start(ctx, \"ChargeCard\")\ndefer span.End()\nspan.SetAttributes(attribute.String(\"order.id\", orderID))\n// pass ctx to every outgoing call so the trace continues\n```\n\n**Sampling.** Tracing every request is expensive. Use head sampling (decide at the start, for example 5%) or tail sampling in the Collector (keep all slow or failed traces).\n\n**Uses:** find the slow hop, see unexpected dependencies, link logs by trace id, and spot retry storms.\n\n**Gotchas:** one service that drops the header breaks the trace. Queues need the context copied into message headers. High-cardinality attributes raise cost.\n\n**Interview tip:** Mention that you put the trace id in logs so you can jump from a log line to a trace.",
+      "level": "intermediate",
+      "module": "Observability",
+      "tags": [
+        "tracing",
+        "opentelemetry",
+        "observability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-050",
+      "question": "How do rate limiting and throttling protect services?",
+      "answer": "**Short answer:** Rate limiting caps how many requests a client can make in a time window. It protects services from abuse, bugs and overload, and keeps usage fair. When a client goes over the limit you reject it quickly with HTTP 429 and tell it when to retry.\n\n**Common algorithms**\n\n| Algorithm | Idea | Behaviour |\n| --- | --- | --- |\n| Fixed window | N requests per minute, counter resets | simple, allows bursts at the window edge |\n| Sliding window | counts over the last N seconds | smoother, more memory |\n| Token bucket | tokens refill at a steady rate, a request takes one | allows short bursts, common default |\n| Leaky bucket | requests drain at a fixed rate | smooth output, queues bursts |\n| Concurrency limit | max in-flight requests | protects slow dependencies |\n\n```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"time\"\n)\n\n// minimal token bucket (not goroutine safe; add a mutex in real code)\ntype Bucket struct {\n\ttokens, capacity float64\n\tperSec           float64\n\tlast             time.Time\n}\n\nfunc (b *Bucket) Allow(now time.Time) bool {\n\tb.tokens += now.Sub(b.last).Seconds() * b.perSec\n\tif b.tokens > b.capacity {\n\t\tb.tokens = b.capacity\n\t}\n\tb.last = now\n\tif b.tokens < 1 {\n\t\treturn false\n\t}\n\tb.tokens--\n\treturn true\n}\n\nfunc main() {\n\tnow := time.Now()\n\tb := &Bucket{tokens: 2, capacity: 2, perSec: 1, last: now}\n\tfmt.Println(b.Allow(now), b.Allow(now), b.Allow(now)) // prints: true true false\n}\n```\n\n**Where to apply**\n- At the gateway: per API key, per user, per IP.\n- Per service: protect yourself from a noisy neighbour.\n- For many pods you need a shared counter (Redis) or accept a rough local limit per pod.\n\n**Good practice**\n- Return `429 Too Many Requests` with a `Retry-After` header.\n- Separate limits for cheap reads and expensive writes.\n- Clients should back off using that header.\n- Throttling (slowing down) is gentler than rejecting. Load shedding drops low-priority work first when overloaded.\n\n**Gotcha:** rate limits do not replace capacity planning. And a limit per IP can block many users behind one corporate network.\n\n**Interview tip:** Explain the difference between protecting yourself from clients (rate limit) and protecting a dependency from yourself (concurrency limit, circuit breaker).",
+      "level": "intermediate",
+      "module": "Resilience",
+      "tags": [
+        "rate-limiting",
+        "throttling",
+        "protection"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-051",
+      "question": "What is graceful degradation, and how do you design fallbacks?",
+      "answer": "**Short answer:** Graceful degradation means the system keeps giving useful, reduced service when a part fails, instead of failing completely. You decide in advance which features are essential and what each non-essential feature does when its dependency is down.\n\nExample: a movie page needs the movie info (essential), recommendations (nice to have) and \"continue watching\" (nice to have). If the recommendation service is down, show a generic popular list or hide the row. The page still loads.\n\n**Fallback options**\n\n| Fallback | Example |\n| --- | --- |\n| Cached data | show the last known recommendations |\n| Default value | show a generic popular list |\n| Skip the feature | hide the widget |\n| Queue for later | accept the order, send the email when the service returns |\n| Read-only mode | allow browsing, block purchases |\n| Fail fast with a clear message | \"Payments are unavailable, try again soon\" |\n\n```ts\nasync function loadHome(userId: string) {\n  const [movies, recs] = await Promise.allSettled([\n    catalog.getFeatured(),               // essential\n    withTimeout(recs.forUser(userId), 200), // optional, short timeout\n  ]);\n  if (movies.status === \"rejected\") throw movies.reason;   // cannot degrade\n  return {\n    movies: movies.value,\n    recommendations: recs.status === \"fulfilled\" ? recs.value : POPULAR_FALLBACK,\n  };\n}\n```\n\n**How to design it**\n1. Classify every call as critical or optional.\n2. Give optional calls short timeouts and a defined fallback.\n3. Combine with circuit breakers so you skip the call quickly when it is down.\n4. Use feature flags as a manual kill switch.\n5. Test it: switch a dependency off in a test environment or with chaos experiments.\n\n**Gotchas**\n- A fallback that has never been tested usually does not work. Run it regularly.\n- Do not hide failures. Count and alert on fallback use, or you will not notice the outage.\n- Never fall back silently for correctness-critical data such as prices or permissions.\n\n**Interview tip:** Link it to offline-first systems such as an aircraft screen that keeps working with cached content when the link to the ground is lost.",
+      "level": "intermediate",
+      "module": "Resilience",
+      "tags": [
+        "resilience",
+        "degradation",
+        "fallback"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-052",
+      "question": "How do feature flags and canary releases make deployments safer?",
+      "answer": "**Short answer:** Feature flags separate deploying code from releasing a feature: code ships turned off and is enabled later, for a few users first. A canary release sends a small share of traffic to the new version and watches metrics before rolling out further. Both let you reduce risk and undo quickly.\n\n```mermaid\nflowchart LR\n    U[\"Traffic\"] --> LB[\"Router\"]\n    LB -- \"95%\" --> V1[\"Version 1 (stable)\"]\n    LB -- \"5%\" --> V2[\"Version 2 (canary)\"]\n    V2 --> M[\"Compare error rate and latency\"]\n    M -- \"healthy\" --> P[\"Promote to 25%, 50%, 100%\"]\n    M -- \"worse\" --> R[\"Roll back to version 1\"]\n```\n\nThe canary gets a small share of real traffic. Automatic checks decide whether to promote or roll back.\n\n**Release strategies**\n\n| Strategy | What happens | Rollback |\n| --- | --- | --- |\n| Rolling | replace pods gradually | roll back the deployment |\n| Blue/green | two full environments, switch the router | switch back instantly |\n| Canary | small share first, then grow | route back to stable |\n| Feature flag | code is live, behaviour is off | flip the flag |\n\n**Feature flag types:** release flags (short life), experiment flags (A/B), ops flags (kill switches), permission flags (long life).\n\n```ts\nif (await flags.isEnabled(\"new-checkout\", { userId, region })) {\n  return newCheckout(cart);\n}\nreturn oldCheckout(cart); // keep until the flag is removed\n```\n\n**Good practice**\n- Define success metrics before the rollout (error rate, p95, business metric).\n- Automate promotion and rollback with a tool (Argo Rollouts, Flagger, or a pipeline).\n- Remove flags once done. Old flags are hidden complexity and test combinations.\n- Database changes must be backward compatible (expand and contract), so old and new versions can run together.\n- Default a flag to the safe value if the flag service is down.\n\n**Gotcha:** a canary with too little traffic gives no signal. Choose the percentage and duration based on request volume.\n\n**Interview tip:** Say a kill switch for risky features is part of your release checklist.",
+      "level": "intermediate",
+      "module": "Delivery & Testing",
+      "tags": [
+        "feature-flags",
+        "canary",
+        "release"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-053",
+      "question": "How do you manage secrets and configuration across microservices?",
+      "answer": "**Short answer:** Keep configuration outside the code and image, so one build runs in every environment. Store secrets in a dedicated secret manager, give each service only the secrets it needs, rotate them, and never log them or commit them to Git.\n\n**Configuration vs secrets**\n- Configuration: URLs, feature settings, timeouts. Not sensitive. Environment variables, ConfigMaps, config service.\n- Secrets: passwords, API keys, certificates, signing keys. Sensitive. Secret manager.\n\n**Options**\n\n| Option | Notes |\n| --- | --- |\n| Environment variables | simple, but visible in process dumps and often leaked in logs |\n| Kubernetes Secrets | base64 only, so enable encryption at rest and strict RBAC |\n| Azure Key Vault / HashiCorp Vault | central store, audit logs, rotation, access by identity |\n| CSI Secrets Store driver or External Secrets Operator | sync vault secrets into pods |\n| Workload identity (managed identity) | no stored password at all: the pod proves who it is |\n\n```yaml\n# pod reads a value from a Secret, not from the image\nenv:\n  - name: DB_PASSWORD\n    valueFrom:\n      secretKeyRef:\n        name: orders-db\n        key: password\n```\n\n**Best practice**\n1. Prefer identity-based access (managed identity) over passwords where possible.\n2. Least privilege: one identity per service, read access to its own secrets only.\n3. Rotate regularly and automatically. Make the app able to reload without a full restart if you can.\n4. Scan repositories and CI logs for leaked secrets. Use pre-commit hooks.\n5. Keep CI/CD secrets masked and scoped to protected branches.\n6. Audit who read what.\n\n**Config changes:** treat config like code. Keep it in Git (GitOps), review it, and roll it out with the same care.\n\n**Gotchas**\n- Secrets in container images or Git history stay there. If leaked, rotate, do not just delete.\n- A single shared secret across all services is a big blast radius.\n\n**Interview tip:** Mention a rotation drill: you know exactly how long it takes to replace a leaked database password.",
+      "level": "intermediate",
+      "module": "Security",
+      "tags": [
+        "secrets",
+        "configuration",
+        "security",
         "kubernetes"
       ],
       "favorite": false
     },
     {
-      "id": "microservices-12",
-      "question": "Walk me through how you would design a connected in-flight entertainment platform (FlytEDGE-style).",
-      "answer": "A good structure for a system-design answer:\n1. **Requirements:** content catalogue and streaming to seatbacks/devices, intermittent satellite connectivity, per-airline branding, analytics, thousands of aircraft.\n2. **Cloud <-> aircraft:** cloud publishes content/config; an onboard server syncs when connected, with delta sync and resumable transfers; offline-first behaviour onboard.\n3. **Services:** catalogue, personalisation, playback/entitlement, telemetry ingestion, config/feature flags; React front-ends on a shared Nx monorepo.\n4. **Data:** per-service stores, event stream for analytics, caches/CDN for media.\n5. **Ops:** Kubernetes on Azure, GitLab CI/CD, Datadog, staged rollouts/canaries, automated cross-browser testing.\n6. **Trade-offs:** consistency vs availability when offline, bandwidth costs, security of aircraft networks.\n\nAdapt this to what you really built and the numbers you can quote.",
+      "id": "microservices-054",
+      "question": "What problems does a service mesh solve, and what does it cost?",
+      "answer": "**Short answer:** A service mesh moves network concerns out of your code and into a layer of proxies. It gives you mTLS, retries, timeouts, traffic splitting and uniform metrics for all service to service calls, without changing each application. The cost is extra complexity, resources and latency.\n\n```mermaid\nflowchart LR\n    subgraph PA[\"Pod A\"]\n        A[\"Orders app\"] --> PX1[\"Sidecar proxy\"]\n    end\n    subgraph PB[\"Pod B\"]\n        PX2[\"Sidecar proxy\"] --> B[\"Payments app\"]\n    end\n    PX1 -- \"mTLS\" --> PX2\n    CP[\"Control plane\"] -. \"config and certificates\" .-> PX1\n    CP -. \"config and certificates\" .-> PX2\n```\n\nThe app talks to its local proxy. Proxies talk to each other with encryption. The control plane pushes rules to them.\n\n**What it solves**\n- Encryption and identity for every call (mTLS) with automatic certificate rotation.\n- Policy: which service may call which.\n- Retries, timeouts and circuit breaking in one place.\n- Traffic shifting for canaries (send 5% to v2).\n- Uniform metrics and traces for all calls, written in any language.\n- Per-request load balancing, which helps gRPC.\n\n```yaml\n# Istio: send 10% of traffic to v2\napiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: orders\nspec:\n  hosts: [orders]\n  http:\n    - route:\n        - destination: { host: orders, subset: v1 }\n          weight: 90\n        - destination: { host: orders, subset: v2 }\n          weight: 10\n```\n\n**Costs**\n- More components to learn, upgrade and debug. Misconfigurations cause hard-to-see outages.\n- Extra CPU and memory per pod for sidecars, and a little latency per hop. Sidecar-less modes (for example Istio ambient mode, Cilium) reduce this.\n- Teams may assume the mesh retries are enough and forget the application logic still needs idempotency and timeouts.\n\n**When to use it:** many services, a security need for mTLS everywhere, a polyglot stack, a platform team to run it. **When not:** a handful of services; a library or gateway is enough.\n\n**Interview tip:** Say you would introduce a mesh only when you can name the problem it solves for you, and you have someone who owns it.",
+      "level": "intermediate",
+      "module": "Communication",
+      "tags": [
+        "service-mesh",
+        "istio",
+        "networking"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-055",
+      "question": "What is the difference between an API gateway and a service mesh?",
+      "answer": "**Short answer:** An API gateway manages north-south traffic: requests that come from outside the system into it. A service mesh manages east-west traffic: calls between services inside it. They overlap in features but solve different problems, and many systems use both.\n\n```mermaid\nflowchart TD\n    C[\"External clients\"] -- \"north-south\" --> G[\"API gateway\"]\n    G --> A[\"Service A\"]\n    A -- \"east-west via mesh\" --> B[\"Service B\"]\n    B -- \"east-west via mesh\" --> D[\"Service C\"]\n```\n\nThe gateway guards the front door. The mesh handles the hallways between rooms.\n\n| | API gateway | Service mesh |\n| --- | --- | --- |\n| Traffic | client to system (north-south) | service to service (east-west) |\n| Audience | external clients, partners | your own services |\n| Typical features | authentication, API keys, rate limits per client, request transformation, caching, API products | mTLS, retries, timeouts, circuit breaking, traffic splitting, internal telemetry |\n| Deployment | a few central instances | proxy next to every service |\n| Owner | API or platform team | platform team |\n| Example tools | Kong, Azure API Management, NGINX, Envoy Gateway | Istio, Linkerd, Cilium |\n\n**Where they overlap:** routing, retries, TLS, observability. Ingress gateways of a mesh can even act as the API gateway. The Kubernetes Gateway API is a common way to configure both.\n\n**Decision guide**\n- You have external clients and need auth, quotas, developer portal: you need a gateway.\n- You need encrypted, authenticated internal calls and consistent resilience across many services: consider a mesh.\n- Small system: a gateway alone is often enough.\n\n**Gotchas**\n- Putting business logic in either one is a mistake.\n- Do not apply retries in the gateway, the mesh and the code at the same time.\n\n**Interview tip:** Use the \"front door versus hallways\" picture and the words north-south and east-west.",
+      "level": "intermediate",
+      "module": "Communication",
+      "tags": [
+        "api-gateway",
+        "service-mesh",
+        "networking"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-056",
+      "question": "What are distributed transactions and two-phase commit, and why do microservices use sagas instead?",
+      "answer": "**Short answer:** Two-phase commit (2PC) makes several databases commit or abort together using a coordinator. It gives strong atomicity but it blocks and couples services, so it scales and survives failures badly. Microservices usually prefer sagas: local transactions plus compensations, accepting eventual consistency.\n\n**How 2PC works**\n1. Prepare: the coordinator asks every participant \"can you commit?\". Each one locks its data, writes to its log and answers yes or no.\n2. Commit: if all said yes, the coordinator tells everyone to commit. If any said no, it tells everyone to abort.\n\n```mermaid\nsequenceDiagram\n    participant C as Coordinator\n    participant A as Orders DB\n    participant B as Payments DB\n    C->>A: prepare\n    C->>B: prepare\n    A-->>C: yes (locks held)\n    B-->>C: yes (locks held)\n    C->>A: commit\n    C->>B: commit\n```\n\nRead it as two rounds. Between the rounds every participant holds locks and waits.\n\n**Why it hurts in microservices**\n- **Blocking:** if the coordinator crashes after prepare, participants keep locks until it returns. Other requests wait.\n- **Availability:** all participants must be up at the same time. Availability multiplies down.\n- **Latency:** two network round trips plus disk syncs, with locks held throughout.\n- **Coupling:** every service and database must support the protocol (XA). Many brokers, REST APIs and NoSQL stores do not.\n- **Cross-company calls** cannot join your transaction at all, for example a payment provider.\n\n| | 2PC | Saga |\n| --- | --- | --- |\n| Consistency | strong, atomic | eventual |\n| Isolation | yes, via locks | no, states are visible |\n| Failure handling | abort everything | compensate steps |\n| Availability | low | high |\n| Complexity | in the infrastructure | in the application |\n\n**When 2PC is still fine:** inside one organisation and one database cluster or a few tightly managed databases, with low volume and a strict need for atomicity. Distributed SQL databases hide a form of it inside the engine.\n\n**Practical alternatives:** redesign so one service owns the whole business transaction, use the outbox plus idempotent consumers, or merge two services that are always updated together.\n\n**Gotcha:** compensation is not rollback. A refund is a new fact, and the customer may have seen the charge.\n\n**Interview tip:** Say \"I avoid distributed transactions by design: pick boundaries so most business invariants live inside one service\".",
       "level": "advanced",
+      "module": "Distributed Systems",
+      "tags": [
+        "two-phase-commit",
+        "transactions",
+        "saga"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-057",
+      "question": "How do consensus, leader election and Raft work in plain words, and why are distributed locks dangerous?",
+      "answer": "**Short answer:** Consensus lets several machines agree on one value or one order of operations, even when some fail. Raft is a popular algorithm for it: nodes elect a leader, the leader records changes in a log, and a change counts only when a majority has stored it. Distributed locks built on timeouts can break, so use fencing tokens.\n\n**Raft in short**\n- Nodes are followers, candidates or leaders.\n- Followers expect heartbeats from the leader. If none arrive for a random time, a follower becomes a candidate and asks for votes for a new term.\n- A candidate with votes from a majority becomes leader.\n- Clients send writes to the leader. It appends to its log, copies to followers, and commits when a majority has it.\n- Why a majority? Any two majorities share at least one node, so a new leader always knows the committed entries.\n\n```mermaid\nstateDiagram-v2\n    [*] --> Follower\n    Follower --> Candidate: no heartbeat, timeout\n    Candidate --> Leader: majority of votes\n    Candidate --> Follower: another leader wins\n    Leader --> Follower: sees a higher term\n```\n\nA cluster of 3 survives 1 failure, a cluster of 5 survives 2. This is why etcd, Consul and ZooKeeper-like systems use odd sizes.\n\n**Where you meet it:** etcd behind Kubernetes, Kafka's KRaft controller, Consul, database replication, and leader election for your own singleton jobs (Kubernetes Lease objects).\n\n**Distributed locks: the danger**\nA client takes a lock with a lease of 10 seconds, then pauses for 15 seconds (garbage collection or a slow network). The lock expires, another client takes it, and the first client wakes up thinking it still holds the lock. Both write.\n\n```text\nClient A: lock (token 33) ... long pause ... write with token 33\nClient B: lock (token 34) ... write with token 34\nStorage: remembers highest token seen (34), rejects token 33\n```\n\nA **fencing token** is a number that grows with each lock grant. The storage rejects any write with an older token.\n\n**Rules of thumb**\n- Prefer designs that need no lock: idempotent operations, partitioning by key so one worker owns each key, optimistic concurrency with a version column.\n- Use a lock only for efficiency, not for correctness, unless you add fencing.\n- Never build your own consensus. Use etcd, a database or a managed service.\n\n**Interview tip:** Mention leader election with a Kubernetes Lease for \"only one pod runs this cron-like job\".",
+      "level": "advanced",
+      "module": "Distributed Systems",
+      "tags": [
+        "consensus",
+        "raft",
+        "leader-election",
+        "locks"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-058",
+      "question": "Why is exactly-once delivery considered a myth, and what do you do instead?",
+      "answer": "**Short answer:** In a network, a sender cannot tell whether a message was lost or only the acknowledgement was lost. So it must either risk loss (at most once) or retry and risk duplicates (at least once). What you can build is exactly-once effect: at-least-once delivery plus idempotent processing.\n\nThe two generals problem shows the limit: no number of confirmations gives both sides certainty. A consumer may process a message, crash before the ack, and receive it again.\n\n```mermaid\nsequenceDiagram\n    participant B as Broker\n    participant C as Consumer\n    participant D as Database\n    B->>C: message 17\n    C->>D: apply change\n    Note over C: crash before ack\n    B->>C: message 17 again\n    C->>D: apply change (must be safe)\n```\n\nThe second delivery is not a bug. It is how the guarantee works, so processing has to be safe to repeat.\n\n**Techniques for exactly-once effect**\n1. **Deduplication table:** store processed message ids and the result in the same transaction as the business change.\n2. **Naturally idempotent writes:** \"set status to PAID\" instead of \"add one payment\".\n3. **Version checks:** `UPDATE ... WHERE version = 7`.\n4. **Idempotency keys** on outgoing calls to other systems.\n5. **Transactional processing:** read, process and write offsets in one transaction. Kafka transactions do this inside Kafka (read from topic, write to topic, commit offsets), which is why it is called exactly-once semantics. It does not cover an email sent or an external HTTP call.\n\n```sql\nBEGIN;\nINSERT INTO processed_messages (id) VALUES ('msg-17');   -- fails if seen before\nUPDATE accounts SET balance = balance + 50 WHERE id = 'a-1';\nCOMMIT;\n```\n\nIf the insert fails because the id exists, the transaction aborts and the duplicate is ignored.\n\n**Gotchas**\n- Dedup tables grow. Keep ids for longer than the maximum redelivery window and clean up.\n- Idempotency must cover side effects too (email, payment).\n- Producers can also duplicate. Use idempotent producers or the outbox with stable event ids.\n\n**Interview tip:** Say \"at-least-once plus idempotent consumers\" and add that vendor claims of exactly-once usually mean it inside their own system only.",
+      "level": "advanced",
+      "module": "Distributed Systems",
+      "tags": [
+        "exactly-once",
+        "idempotency",
+        "messaging"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-059",
+      "question": "How do ordering, partitions and keys work in a message system?",
+      "answer": "**Short answer:** To scale, a topic is split into partitions. Order is guaranteed only inside one partition, not across partitions. You choose a partition key (for example the order id) so all events of the same entity go to the same partition and stay in order. Parallelism is limited by the number of partitions.\n\n```mermaid\nflowchart LR\n    P[\"Producer\"] -- \"key = order 7\" --> T0[\"Partition 0\"]\n    P -- \"key = order 8\" --> T1[\"Partition 1\"]\n    P -- \"key = order 9\" --> T2[\"Partition 2\"]\n    T0 --> C1[\"Consumer 1\"]\n    T1 --> C2[\"Consumer 2\"]\n    T2 --> C3[\"Consumer 3\"]\n```\n\nThe key is hashed to choose a partition. Each partition is read by one consumer of a group at a time.\n\n**Rules**\n- Same key, same partition, same order. Choose the key to match the business need: the entity whose events must be ordered.\n- More partitions means more parallel consumers. Within a consumer group, one partition is read by at most one consumer.\n- Changing the number of partitions changes the key to partition mapping, which can break ordering for existing keys. Plan the count early.\n\n**Problems to know**\n- **Hot partition:** one key sends huge traffic (a famous customer). Consider a key with a suffix, or splitting the work.\n- **Rebalance:** when consumers join or leave, partitions move and processing pauses briefly.\n- **Retries break order:** if message 1 fails and goes to a retry queue while message 2 succeeds, order is lost. Either block the partition on failure or make handlers tolerate out-of-order events (use version numbers and ignore older ones).\n- **Parallel processing inside a consumer** also breaks order unless you process per key.\n\n```ts\n// ignore stale events using a version carried in the event\nasync function apply(e: { orderId: string; version: number; status: string }) {\n  await db.query(\n    `UPDATE orders SET status = $2, version = $3\n     WHERE id = $1 AND version < $3`,\n    [e.orderId, e.status, e.version]\n  );\n}\n```\n\n**Global order** across the whole topic requires one partition, which limits throughput. Ask whether you truly need it. Usually you need order per entity only.\n\n**Interview tip:** Say \"I choose the key from the invariant: what must be ordered?\" and mention version checks as a safety net.",
+      "level": "advanced",
+      "module": "Distributed Systems",
+      "tags": [
+        "ordering",
+        "partitions",
+        "kafka",
+        "scaling"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-060",
+      "question": "How do multi-region and active-active designs work, and what are the data replication trade-offs?",
+      "answer": "**Short answer:** Multi-region means running the system in more than one geographic region for lower latency and survival of a region outage. Active-passive keeps a standby region. Active-active serves traffic from all regions, which is better for users but needs a plan for conflicting writes. The hard part is always the data.\n\n| Design | How | Pros | Cons |\n| --- | --- | --- | --- |\n| Single region, multi-zone | spread across zones | simple, protects against a zone loss | region outage means downtime |\n| Active-passive | standby region, failover | simpler data, clear writer | failover time, standby cost, untested standby may fail |\n| Active-active, partitioned | each user or tenant has a home region | no conflicts, low latency | cross-region users, rebalancing |\n| Active-active, global | any region accepts any write | best availability | conflicts, complexity |\n\n**Replication**\n- **Synchronous:** a write is confirmed after other regions have it. No data loss, but each write pays the cross-region round trip (tens to hundreds of milliseconds).\n- **Asynchronous:** confirmed locally, copied later. Fast, but a failover can lose the last few writes (the RPO is above zero) and reads in other regions can be stale.\n\nTwo goals to define: **RTO** (how fast you must recover) and **RPO** (how much data loss is acceptable).\n\n**Handling conflicts in active-active**\n- Avoid them: route each entity to one home region.\n- Last writer wins with timestamps: simple, can silently lose a write.\n- CRDTs or merge rules: counters, sets and carts can merge safely.\n- Application level conflict handling, such as \"keep both and ask the user\".\n\n```mermaid\nflowchart LR\n    U1[\"Users EU\"] --> R1[\"Region EU\"]\n    U2[\"Users US\"] --> R2[\"Region US\"]\n    R1 <-- \"async replication\" --> R2\n    DNS[\"Global traffic manager\"] --> R1\n    DNS --> R2\n```\n\nA global traffic manager routes users to the nearest healthy region. Regions copy data to each other in the background.\n\n**Practical notes**\n- Test failover regularly with game days. A failover path that is never exercised does not work.\n- Keep stateless services in every region and replicate state through managed databases that support it.\n- Remember data residency laws that may restrict where data may live.\n- Cache and queue contents also need a plan.\n\n**Interview tip:** Start from the business RTO and RPO, then choose the cheapest design that meets them. Many systems need only active-passive.",
+      "level": "advanced",
+      "module": "Distributed Systems",
+      "tags": [
+        "multi-region",
+        "replication",
+        "availability",
+        "active-active"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-061",
+      "question": "What consistency models exist: strong, eventual, causal and read-your-writes?",
+      "answer": "**Short answer:** A consistency model is a promise about what a reader may see after a write. Strong (linearizable) consistency means everyone sees the latest write immediately. Eventual consistency means copies converge sometime later. Between them are useful middle guarantees, such as causal and read-your-writes consistency.\n\n| Model | Promise | Example behaviour |\n| --- | --- | --- |\n| Strong (linearizable) | reads see the latest committed write, as if one copy exists | bank balance, inventory last item |\n| Sequential | everyone sees operations in the same order | shared log |\n| Causal | if B was caused by A, everyone sees A before B | a reply is never shown before its question |\n| Read-your-writes | you always see your own writes | after editing your profile you see the edit |\n| Monotonic reads | you never go back in time between reads | no flicker between new and old values |\n| Eventual | copies agree if writes stop | like counts, search index, caches |\n\n**Why it matters in microservices.** Each service has its own database, and read models are updated by events. By default you have eventual consistency across services. A user who creates an order and then opens \"my orders\" may not see it, if the list comes from a read model that is still updating.\n\n```mermaid\nsequenceDiagram\n    participant U as User\n    participant W as Write service\n    participant R as Read model\n    U->>W: create order\n    W-->>U: ok, id 42\n    U->>R: list my orders\n    R-->>U: empty (not updated yet)\n    Note over R: event arrives a moment later\n```\n\n**Ways to give read-your-writes**\n- Return the created object in the command response and show it at once.\n- Send a version or position token to the read side: \"wait until you have processed at least event 981\".\n- Route the user's reads to the primary for a few seconds after a write (sticky reads).\n- Use optimistic UI updates in the front end.\n\n**Choosing a model.** Pay for strong consistency only where wrong answers cost money or trust (payments, stock, uniqueness checks, permissions). Use eventual elsewhere, and say so in the API documentation.\n\n**Gotcha:** \"eventual\" has no time bound. Measure the real replication lag and alert if it grows.\n\n**Interview tip:** Name the one place in your system that needs strong consistency, and explain how you kept the rest eventual.",
+      "level": "advanced",
+      "module": "Data & Consistency",
+      "tags": [
+        "consistency",
+        "replication",
+        "distributed-systems"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-062",
+      "question": "How do you evolve event and API schemas safely with Avro or Protobuf?",
+      "answer": "**Short answer:** Schemas change over time while old producers and consumers are still running. Use a binary format with schema rules (Protobuf or Avro) and a registry with automatic compatibility checks. The safe moves are to add optional fields with defaults, never reuse field numbers, and avoid renaming or changing types.\n\n**Compatibility types**\n\n| Type | Meaning | Deploy order that is safe |\n| --- | --- | --- |\n| Backward | new schema can read old data | upgrade consumers first |\n| Forward | old schema can read new data | upgrade producers first |\n| Full | both directions | any order |\n\nFor events stored in a log and replayed later, backward compatibility is essential. Full compatibility is the safest default.\n\n**Protobuf rules**\n- Field numbers identify fields on the wire, not names. Never change or reuse a number.\n- Add new fields with new numbers. Old readers ignore them.\n- When you remove a field, mark its number and name as reserved.\n- Do not change a field's type, except for compatible pairs.\n\n```proto\nmessage OrderPlaced {\n  string order_id = 1;\n  string customer_id = 2;\n  reserved 3;               // old \"coupon\" field, removed\n  reserved \"coupon\";\n  int64 total_cents = 4;\n  string currency = 5;      // added in v2, readers without it see \"\"\n}\n```\n\n**Avro rules:** new fields need a default value so old data can still be read. Removing a field is safe only if it had a default.\n\n**Breaking change recipe (expand and contract)**\n1. Add the new field and fill both old and new.\n2. Update all consumers.\n3. Stop writing the old field.\n4. Remove it later and reserve the number.\n\nIf you really must change meaning, publish a new event type (`OrderPlacedV2`) or a new topic and migrate.\n\n**Process**\n- Put schemas in a registry. A producer build fails if its schema is incompatible.\n- Keep a changelog and use contract tests for REST and gRPC.\n- Version events with a `version` field only as a hint. Compatibility rules are the real protection.\n\n**Gotcha:** the default value of \"missing\" is not always safe. A missing `currency` that defaults to empty string may be read as zero or free by a careless consumer.\n\n**Interview tip:** Say \"numbers never change, fields are only added, removed numbers are reserved, and the registry enforces it in CI\".",
+      "level": "advanced",
+      "module": "Data & Consistency",
+      "tags": [
+        "schema-evolution",
+        "protobuf",
+        "avro",
+        "compatibility"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-063",
+      "question": "How do backpressure and streaming protect a system under heavy load?",
+      "answer": "**Short answer:** Backpressure means a slow consumer signals the producer to slow down, instead of letting data pile up until memory runs out. Without it, queues grow without limit, latency explodes and the service crashes. You apply it with bounded buffers, request limits, pull-based consumption and load shedding.\n\nPicture a tap filling a bucket with a small hole. If the bucket has no edge, it overflows. Backpressure is a float valve that closes the tap as the bucket fills.\n\n```mermaid\nflowchart LR\n    P[\"Fast producer\"] --> B[\"Bounded buffer\"] --> C[\"Slow consumer\"]\n    C -. \"slow down signal\" .-> P\n    B -. \"full: block, drop or reject\" .-> P\n```\n\nThe buffer has a fixed size. When it is full, the producer must wait, be refused, or drop messages.\n\n**Techniques**\n- **Bounded queues:** always set a maximum length. An unbounded queue only hides the problem and moves it to memory.\n- **Pull instead of push:** consumers take messages when ready (Kafka polls, `prefetch` in RabbitMQ, credit-based flow in gRPC streaming and HTTP/2).\n- **Limit concurrency:** a worker pool of N, no more.\n- **Reject early:** return 429 or 503 quickly, so clients back off.\n- **Load shedding:** drop low-priority work first.\n- **Autoscale on lag or queue depth** (for example KEDA), but know it takes time.\n\n```go\n// Go: a bounded channel gives natural backpressure\njobs := make(chan Job, 100) // buffer of 100\n\nselect {\ncase jobs <- job: // accepted\ndefault:\n\t// full: reject now instead of piling up\n\thttp.Error(w, \"busy, retry later\", http.StatusServiceUnavailable)\n}\n```\n\n**Streaming.** For large or continuous data, stream in chunks (gRPC streams, server-sent events, Kafka) and process incrementally, so memory stays flat. Handle slow clients: a streaming server must not buffer forever for a client that reads slowly.\n\n**What to monitor:** queue depth, consumer lag, age of the oldest message, rejected requests, and saturation of worker pools.\n\n**Gotchas**\n- Retries from clients add load at the worst moment. Use backoff and jitter.\n- Backpressure that passes all the way to the user must be turned into a clear message, not a timeout.\n\n**Interview tip:** Mention an example, such as a data sync job that overloaded a downstream service until you added a bounded worker pool and a rate limit.",
+      "level": "advanced",
+      "module": "Distributed Systems",
+      "tags": [
+        "backpressure",
+        "streaming",
+        "load",
+        "queues"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-064",
+      "question": "System design: how would you design cloud to aircraft content sync with intermittent connectivity?",
+      "answer": "**Short answer:** Treat the aircraft as an edge site that must work fully offline. The cloud publishes versioned content manifests. The aircraft pulls them whenever a link exists (gate wifi, satellite), downloads only the differences in resumable chunks, verifies them, and switches to the new version atomically. Everything must be idempotent and restartable.\n\n**Requirements to clarify first:** how many aircraft, content size (video is large), allowed staleness (hours or days), link types and cost, security, and the rollback needs.\n\n```mermaid\nflowchart LR\n    subgraph Cloud[\"Cloud\"]\n        CMS[\"Content service\"] --> M[\"Versioned manifest and blobs\"]\n        M --> CDN[\"Object storage and CDN\"]\n    end\n    subgraph Aircraft[\"Aircraft edge server\"]\n        SY[\"Sync agent\"] --> ST[(\"Local store\")]\n        ST --> APP[\"Entertainment app\"]\n    end\n    SY -- \"poll manifest, fetch missing chunks\" --> CDN\n    SY -- \"report status and telemetry\" --> CMS\n```\n\nThe aircraft pulls. The cloud never needs to reach into the aircraft, which is behind firewalls and flaky links.\n\n**Design points**\n1. **Pull, not push.** The agent asks \"what is the latest manifest for my fleet and tail number?\". Aircraft behind restricted links can only call out.\n2. **Manifest with versions and hashes.** A list of items with id, version, size and checksum. The agent compares it with its local state and downloads only missing or changed files (delta sync).\n3. **Resumable, chunked downloads** with range requests and checksums per chunk. A dropped link resumes where it stopped.\n4. **Priorities and bandwidth limits.** Small metadata first, then popular titles. Do not saturate the link needed by operations.\n5. **Atomic switch.** Download into a staging area, verify everything, then flip a pointer to the new version. Keep the previous version for rollback.\n6. **Idempotent and restartable agent.** A crash at any step leaves a safe state.\n7. **Status reporting with a queue.** Events (download progress, version applied) are stored locally and uploaded when online. The cloud keeps a fleet dashboard of which aircraft have which version.\n8. **Security:** device identity with certificates, signed manifests so a tampered file is rejected, encrypted storage, and licensing and DRM rules.\n9. **Data coming back up:** usage and playback logs buffered on board, sent in batches with ids for deduplication.\n\n```mermaid\nstateDiagram-v2\n    [*] --> Idle\n    Idle --> Checking: link available\n    Checking --> Downloading: new manifest\n    Downloading --> Downloading: link lost, resume later\n    Downloading --> Verifying: all chunks present\n    Verifying --> Activating: hashes match\n    Activating --> Idle: switched, old version kept\n    Verifying --> Downloading: bad chunk, refetch\n```\n\n**Trade-offs:** the fleet is eventually consistent, so some aircraft run older content. Use per-content expiry (licence windows) enforced locally, and make the UI work without any cloud call.\n\n**Interview tip:** Stress offline-first, pull-based sync, hashes, atomic switch and rollback. These are the points that show you understand intermittent connectivity.",
+      "level": "advanced",
+      "module": "System Design Cases",
       "tags": [
         "system-design",
-        "project"
+        "offline-first",
+        "sync",
+        "in-flight"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-065",
+      "question": "System design: how would you design an e-commerce checkout across microservices?",
+      "answer": "**Short answer:** Make checkout a saga run by an orchestrator. It creates a pending order, reserves stock, takes payment, then confirms the order, with compensations if any step fails. Use idempotency keys at every step, the outbox for events, and show the user clear pending states.\n\n**Services:** Cart, Orders, Inventory, Payments (wrapping a provider), Notifications, Shipping.\n\n```mermaid\nsequenceDiagram\n    participant U as User\n    participant O as Order service (saga)\n    participant I as Inventory\n    participant P as Payments\n    participant N as Notifications\n    U->>O: checkout (idempotency key)\n    O->>O: create order PENDING\n    O->>I: reserve stock\n    I-->>O: reserved\n    O->>P: authorize payment\n    P-->>O: authorized\n    O->>O: order CONFIRMED\n    O-->>U: confirmed\n    O-)N: OrderConfirmed event\n    Note over O,P: if payment fails, release stock and cancel order\n```\n\nThe user-facing part is short. Notifications and shipping happen through events afterwards.\n\n**Key decisions**\n- **Idempotency:** the client sends one key per checkout attempt. A double click or a retry never creates two orders or two charges.\n- **Stock reservation:** reserve with an expiry (for example 15 minutes), then release automatically. Use a conditional update to avoid overselling: `UPDATE stock SET available = available - 1 WHERE sku = $1 AND available >= 1`.\n- **Payment:** authorise first, capture after shipping or on confirmation. Handle unknown results (timeout from the provider) by asking the provider for the status with the same key, never by charging again.\n- **Order state machine:** `PENDING`, `STOCK_RESERVED`, `PAID`, `CONFIRMED`, `CANCELLED`. Store it, so a crashed orchestrator resumes.\n- **Outbox** so events are never lost, and idempotent consumers.\n- **Price:** the price is taken from the server side at checkout, never trusted from the client.\n\n**Failure cases**\n- Payment declined: release stock, mark cancelled, tell the user.\n- Orchestrator crash: saga state in the database lets another instance continue.\n- Provider webhook arrives twice or out of order: verify the signature and use the state machine to ignore stale ones.\n\n**Observability:** a trace across all steps, metrics for conversion, saga failures and compensation counts, and an alert on orders stuck in `PENDING`.\n\n**Interview tip:** Draw the state machine and name the unknown outcome problem. They show you have thought about real failure.",
+      "level": "advanced",
+      "module": "System Design Cases",
+      "tags": [
+        "system-design",
+        "checkout",
+        "saga",
+        "payments"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-066",
+      "question": "System design: how would you design a notification service for email, SMS and push?",
+      "answer": "**Short answer:** Build it as an event-driven pipeline: producers publish notification requests, a service validates them, applies user preferences and templates, then puts messages on per-channel queues. Channel workers send through providers with retries, rate limits, deduplication and delivery tracking.\n\n```mermaid\nflowchart LR\n    S[\"Other services\"] -- \"events or API\" --> API[\"Notification API\"]\n    API --> PR[\"Preferences and templates\"]\n    PR --> Q1[\"Email queue\"]\n    PR --> Q2[\"SMS queue\"]\n    PR --> Q3[\"Push queue\"]\n    Q1 --> W1[\"Email worker\"] --> E[\"Email provider\"]\n    Q2 --> W2[\"SMS worker\"] --> SM[\"SMS provider\"]\n    Q3 --> W3[\"Push worker\"] --> PU[\"Push provider\"]\n    W1 --> ST[(\"Status store\")]\n```\n\nEach channel has its own queue and workers, so a slow SMS provider does not block email.\n\n**Requirements to ask:** volume, latency needs (a login code in seconds, a newsletter in hours), guarantees, languages, and legal rules such as consent and quiet hours.\n\n**Design points**\n- **Priority:** separate queues or priorities. Security codes must not wait behind a marketing campaign.\n- **Idempotency:** each request has a unique id. Deduplicate so a retry never sends two emails.\n- **Preferences:** check opt-in, opt-out, channel choice and time zone before sending.\n- **Templates:** keep content in a template service with localisation. Services send data, not HTML.\n- **Retries:** exponential backoff with jitter, then a dead letter queue. Respect provider limits and use several providers with failover.\n- **Rate limiting** per provider and per user to avoid spamming.\n- **Delivery tracking:** record sent, delivered, bounced or failed through provider webhooks. Update status idempotently.\n- **Scheduling:** a delayed queue or scheduler for later sends.\n- **Bulk sends:** fan out in batches from a job, with backpressure.\n\n```json\n{\n  \"requestId\": \"n-2026-10-21-8841\",\n  \"userId\": \"c-7\",\n  \"template\": \"order_shipped\",\n  \"channels\": [\"push\", \"email\"],\n  \"priority\": \"normal\",\n  \"data\": { \"orderId\": \"o-42\", \"eta\": \"2026-10-24\" }\n}\n```\n\n**Trade-offs:** at-least-once delivery plus dedup is the usual choice. Duplicate email is annoying, a lost security code is worse.\n\n**Metrics:** queue age, send latency, provider error rate, bounce rate and cost per channel.\n\n**Interview tip:** Highlight isolation (a queue per channel and priority), idempotency, and provider failure handling.",
+      "level": "advanced",
+      "module": "System Design Cases",
+      "tags": [
+        "system-design",
+        "notifications",
+        "queues",
+        "reliability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "microservices-067",
+      "question": "How do you migrate a live system without downtime?",
+      "answer": "**Short answer:** Break the migration into small steps where old and new run side by side, every step is backward compatible, and every step can be undone. Use expand and contract for data, feature flags or traffic routing for switching, and verification before the final cut.\n\n**Core ideas**\n- **Parallel run:** both versions live at once, so there is never a moment where nothing works.\n- **Backward compatible steps:** version N and version N+1 of your code must both work with the database during the rollout.\n- **Small and reversible:** each step has a tested way back.\n- **Measure before moving on:** error rate, latency, data differences.\n\n**Database change example (rename column `name` to `full_name`)**\n1. Expand: add `full_name`. Code still uses `name`.\n2. Deploy code that writes both columns and reads `name`.\n3. Backfill old rows in small batches.\n4. Deploy code that reads `full_name` (behind a flag).\n5. Stop writing `name`.\n6. Contract: drop `name` after a quiet period.\n\n```sql\n-- step 1: safe, no lock for long\nALTER TABLE customers ADD COLUMN full_name text;\n\n-- step 3: backfill in small batches, repeat until 0 rows\nUPDATE customers SET full_name = name\nWHERE id IN (SELECT id FROM customers WHERE full_name IS NULL LIMIT 1000);\n```\n\n**Traffic switching**\n- Blue/green: bring up a full copy, test it, flip the router, keep the old one ready.\n- Canary: move a few percent, then more.\n- Shadow traffic: copy real requests to the new system and compare answers without side effects.\n\n```mermaid\nstateDiagram-v2\n    [*] --> OldOnly\n    OldOnly --> Parallel: deploy new, sync data\n    Parallel --> Shadow: compare answers\n    Shadow --> Canary: 5 percent real traffic\n    Canary --> NewPrimary: 100 percent\n    NewPrimary --> Retired: remove old\n    Canary --> Parallel: problem found, roll back\n```\n\nEach arrow forward is gated by checks. Rolling back always leads to a state where the old system still works.\n\n**Dangers:** long running locks on big tables, incompatible message formats, caches holding old shapes, clients that keep old versions for months (mobile apps, aircraft), and a plan for in-flight work such as running sagas and queued messages.\n\n**Gotcha:** the last step, deleting the old system, is the one people skip. Put it on the plan with a date.\n\n**Interview tip:** Say \"expand, migrate, contract\" and \"I always have a rollback for each step\". Add one real example of a migration you ran.",
+      "level": "advanced",
+      "module": "Architecture & Design",
+      "tags": [
+        "migration",
+        "zero-downtime",
+        "deployment",
+        "blue-green"
       ],
       "favorite": false
     }
