@@ -294,15 +294,18 @@ export interface PlayerSettings {
   style: Style;
   engine: 'auto' | 'piper' | 'browser'; // auto = Piper when installed, else the browser
   piperVoice: string; // '' = first installed Piper voice
+  sleepMinutes: number; // stop playing after this many minutes; 0 = never
 }
 
 const QUESTION_INTROS = ['Question {n}.', 'Next up, question {n}.', 'Alright, question {n}.', "Let's look at question {n}."];
 const ANSWER_INTROS = ["Here's the answer.", 'Let me explain.', "Here's how I'd answer that.", 'So, here is the idea.'];
 
-export function buildSteps(number: number, question: string, answer: string, s: PlayerSettings): Step[] {
+export function buildSteps(number: number, question: string, answer: string, s: PlayerSettings, noun = 'question'): Step[] {
   const explain = s.style !== 'full';
   const title = cleanForSpeech(question.replace(/`/g, ''), s.style);
-  const intro = explain ? QUESTION_INTROS[number % QUESTION_INTROS.length].replace('{n}', String(number)) : `Question ${number}.`;
+  const intro = explain
+    ? QUESTION_INTROS[number % QUESTION_INTROS.length].replace('question {n}', `${noun} ${number}`).replace('Question {n}', `${noun[0].toUpperCase()}${noun.slice(1)} ${number}`)
+    : `${noun[0].toUpperCase()}${noun.slice(1)} ${number}.`;
   const steps: Step[] = [{ kind: 'speak', part: 'question', text: `${intro} ${title}` }];
 
   if (s.quiz && s.thinkSeconds > 0) steps.push({ kind: 'wait', text: 'Think about your answer', ms: s.thinkSeconds * 1000 });

@@ -1,7 +1,7 @@
 import { useEffect, type RefObject } from 'react';
 import Markdown from './Markdown';
 import Inline from './Inline';
-import { CheckIcon, CloseIcon } from './Icons';
+import { CheckIcon, CloseIcon, PlayIcon } from './Icons';
 import { ResourceList } from './Resources';
 import type { Problem, Question, Resource, Topic, Variant } from './types';
 
@@ -18,6 +18,9 @@ interface Props {
   tracking: boolean;
   isRead: (id: string) => boolean;
   onToggleRead: (id: string, read: boolean) => void;
+  onListen: () => void;
+  onPlayBlock: (block: number) => void;
+  activeBlock: number | null;
   onSelect: (slug: string, part: string) => void;
   onLanguage: (id: string) => void;
   onOpenQuestion: (id: string) => void;
@@ -39,7 +42,7 @@ function Complexity({ v }: { v: Variant }) {
 }
 
 /** The code library: a guide per problem, then each approach with code in the reader's language. */
-export default function Problems({ problems, resources, topics, slug, part, language, dark, drawer, readerRef: reader, tracking, isRead, onToggleRead, onSelect, onLanguage, onOpenQuestion, onCloseDrawer }: Props) {
+export default function Problems({ problems, resources, topics, slug, part, language, dark, drawer, readerRef: reader, tracking, isRead, onToggleRead, onListen, onPlayBlock, activeBlock, onSelect, onLanguage, onOpenQuestion, onCloseDrawer }: Props) {
   const problem = problems.find((p) => p.slug === slug) ?? problems[0];
   const variant = problem?.variants.find((v) => v.slug === part);
   useEffect(() => { reader.current?.scrollTo({ top: 0 }); }, [problem?.slug, part]);
@@ -94,7 +97,12 @@ export default function Problems({ problems, resources, topics, slug, part, lang
             {(() => {
               const id = variant ? `problem:${problem.slug}/${variant.slug}` : `problem:${problem.slug}`;
               const read = isRead(id);
-              return !tracking ? null : <div className="actions"><button className={'btn' + (read ? ' done' : '')} onClick={() => onToggleRead(id, !read)} aria-pressed={read}><CheckIcon /> {read ? 'Read' : 'Mark as read'}</button></div>;
+              return (
+                <div className="actions">
+                  <button className="btn primary" onClick={onListen}><PlayIcon /> Listen</button>
+                  {tracking && <button className={'btn' + (read ? ' done' : '')} onClick={() => onToggleRead(id, !read)} aria-pressed={read}><CheckIcon /> {read ? 'Read' : 'Mark as read'}</button>}
+                </div>
+              );
             })()}
 
             {!variant && (
@@ -107,7 +115,7 @@ export default function Problems({ problems, resources, topics, slug, part, lang
                     ))}
                   </div>
                 )}
-                <Markdown source={problem.overview} dark={dark} />
+                <Markdown source={problem.overview} dark={dark} onPlayBlock={onPlayBlock} activeBlock={activeBlock} follow />
                 <h2 className="approach-title">Approaches</h2>
                 <div className="approach-cards">
                   {problem.variants.map((v) => (
@@ -124,7 +132,7 @@ export default function Problems({ problems, resources, topics, slug, part, lang
             {variant && (
               <>
                 <Complexity v={variant} />
-                <Markdown source={variant.notes} dark={dark} />
+                <Markdown source={variant.notes} dark={dark} onPlayBlock={onPlayBlock} activeBlock={activeBlock} follow />
                 {variant.files.length > 0 && file && (
                   <section className="code-section" id="code">
                     <h2>Code</h2>

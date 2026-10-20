@@ -56,6 +56,13 @@ export default function AudioSettings({ settings, piper, engine, onSettings, onB
             Speed: {settings.rate}×
             <input type="range" min={0.75} max={2} step={0.05} value={settings.rate} onChange={(e) => set('rate', +e.target.value)} />
           </label>
+          <label>
+            Sleep timer
+            <select value={settings.sleepMinutes} onChange={(e) => set('sleepMinutes', +e.target.value)}>
+              <option value={0}>Off</option>
+              {[15, 30, 45, 60, 90].map((m) => <option key={m} value={m}>Stop after {m} minutes</option>)}
+            </select>
+          </label>
           <label className="check">
             <input type="checkbox" checked={settings.autoNext} onChange={(e) => set('autoNext', e.target.checked)} />
             Continue to the next question automatically

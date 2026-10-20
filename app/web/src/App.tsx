@@ -24,7 +24,7 @@ import { usePlayer } from './usePlayer';
 
 type ThemePref = 'system' | 'light' | 'dark';
 
-const DEFAULT_SETTINGS: PlayerSettings = { rate: 1, voice: '', quiz: false, thinkSeconds: 8, gapSeconds: 2, autoNext: true, announceCode: true, follow: true, style: 'explain', engine: 'auto', piperVoice: '' };
+const DEFAULT_SETTINGS: PlayerSettings = { rate: 1, voice: '', quiz: false, thinkSeconds: 8, gapSeconds: 2, autoNext: true, announceCode: true, follow: true, style: 'explain', engine: 'auto', piperVoice: '', sleepMinutes: 0 };
 
 function useDark(pref: ThemePref) {
   const [system, setSystem] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -156,6 +156,24 @@ export default function App() {
   const favCount = useMemo(() => topics.reduce((n, t) => n + t.questions.filter((q) => q.favorite).length, 0), [topics]);
 
   // ---- audio ------
+  // What the player reads: the visible questions, or in the Problems view every guide and approach.
+  const inProblems = view.kind === 'problems';
+  const problemParts = useMemo(
+    () => problems.flatMap((p) => [
+      { id: `problem:${p.slug}`, slug: p.slug, part: 'overview', title: `${p.title}: the guide`, body: p.overview },
+      ...p.variants.map((v) => ({ id: `problem:${p.slug}/${v.slug}`, slug: p.slug, part: v.slug, title: `${p.title}: ${v.title}`, body: v.notes })),
+    ]),
+    [problems],
+  );
+  const readables = useMemo(
+    () => (inProblems
+      ? problemParts.map((x, i) => ({ id: x.id, number: i + 1, title: x.title, body: x.body }))
+      : items.map((it) => ({ id: it.q.id, number: it.number, title: it.q.question, body: it.q.answer }))),
+    [inProblems, problemParts, items],
+  );
+  const curProblem = problemSel.slug || problems[0]?.slug || '';
+  const problemIndex = Math.max(0, problemParts.findIndex((x) => x.slug === curProblem && x.part === problemSel.part));
+  const curIndex = inProblems ? problemIndex : selIndex;
   const piper = usePiper();
   const speaker = useMemo(() => new Speaker(), []);
   const speakOptions = (): SpeakOptions => {
@@ -164,15 +182,15 @@ export default function App() {
     return { engine: usePiperVoice ? 'piper' : 'browser', rate: settings.rate, browserVoice: settings.voice, piperVoice: voice };
   };
   const player = usePlayer({
-    count: items.length,
-    steps: (i) => buildSteps(items[i].number, items[i].q.question, items[i].q.answer, settings),
-    onIndex: (i) => setSelectedId(items[i].q.id),
+    count: readables.length,
+    steps: (i) => buildSteps(readables[i].number, readables[i].title, readables[i].body, settings, inProblems ? 'part' : 'question'),
+    onIndex: (i) => { if (inProblems) setProblemSel({ slug: problemParts[i].slug, part: problemParts[i].part }); else setSelectedId(items[i].q.id); },
     settings: () => settings,
     speaker,
     speakOptions,
     onDone: (i) => {
-      const it = items[i];
-      if (it && tracking && progress.state.autoTrack && settings.style !== 'brief' && progress.markRead(it.q.id, 'audio')) setToast({ id: it.q.id, text: 'Marked as read' });
+      const r = readables[i];
+      if (r && tracking && progress.state.autoTrack && settings.style !== 'brief' && progress.markRead(r.id, 'audio')) setToast({ id: r.id, text: 'Marked as read' });
     },
   });
   // changing the reading style mid-playback restarts the current question in the new style
@@ -182,16 +200,17 @@ export default function App() {
     firstStyle.current = settings.style;
     if (player.status === 'playing') player.play(player.index);
   }, [settings.style]); // eslint-disable-line react-hooks/exhaustive-deps
-  const listKey = items.map((it) => it.q.id).join('|');
+  const listKey = readables.map((r) => r.id).join('|');
   useEffect(() => { player.stop(); }, [listKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const select = (i: number) => {
-    if (!items[i]) return;
-    if (player.status === 'idle') setSelectedId(items[i].q.id);
-    else player.play(i);
+    if (!readables[i]) return;
+    if (player.status !== 'idle') player.play(i);
+    else if (inProblems) setProblemSel({ slug: problemParts[i].slug, part: problemParts[i].part });
+    else setSelectedId(items[i].q.id);
     setDrawer('');
   };
-  const step = (d: number) => select(Math.min(items.length - 1, Math.max(0, selIndex + d)));
+  const step = (d: number) => select(Math.min(readables.length - 1, Math.max(0, curIndex + d)));
 
   // keep the selected question visible in the list and start the reader at the top
   useEffect(() => {
@@ -295,6 +314,29 @@ export default function App() {
     setDrawer('');
   };
 
+  // ---- lock screen / headset controls and sleep timer ----------------------------------------
+  const mediaHandlers = useRef({ play: () => {}, pause: () => {}, prev: () => {}, next: () => {}, stop: () => {} });
+  mediaHandlers.current = { play: () => player.play(), pause: player.pause, prev: () => step(-1), next: () => step(1), stop: player.stop };
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    const ms = navigator.mediaSession;
+    if (player.status === 'idle') { ms.playbackState = 'none'; ms.metadata = null; return; }
+    ms.metadata = new MediaMetadata({ title: readables[player.index]?.title ?? 'Interview Prep', artist: 'Interview Prep', album: title });
+    ms.playbackState = player.status === 'playing' ? 'playing' : 'paused';
+    const set = (a: MediaSessionAction, fn: () => void) => { try { ms.setActionHandler(a, fn); } catch { /* unsupported action */ } };
+    set('play', () => mediaHandlers.current.play());
+    set('pause', () => mediaHandlers.current.pause());
+    set('previoustrack', () => mediaHandlers.current.prev());
+    set('nexttrack', () => mediaHandlers.current.next());
+    set('stop', () => mediaHandlers.current.stop());
+  }, [player.status, player.index]); // eslint-disable-line react-hooks/exhaustive-deps
+  const listening = player.status !== 'idle';
+  useEffect(() => {
+    if (!listening || !settings.sleepMinutes) return;
+    const t = window.setTimeout(() => player.stop(), settings.sleepMinutes * 60_000);
+    return () => window.clearTimeout(t);
+  }, [listening, settings.sleepMinutes]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ---- keyboard shortcuts -----------------------------------------------------------------
   const keys = useRef<(e: KeyboardEvent) => void>(() => {});
   keys.current = (e) => {
@@ -303,7 +345,7 @@ export default function App() {
     if (e.key === ' ' && !t.matches('button, a')) {
       e.preventDefault();
       if (player.status === 'playing') player.pause();
-      else player.play(player.status === 'paused' ? undefined : selIndex);
+      else player.play(player.status === 'paused' ? undefined : curIndex);
     } else if (e.key === 'ArrowRight') step(1);
     else if (e.key === 'ArrowLeft') step(-1);
     else if (e.key.toLowerCase() === 'f' && selected) void toggleFav(selected);
@@ -440,6 +482,9 @@ export default function App() {
             dark={dark}
             drawer={drawer === 'list'}
             readerRef={problemsReaderRef}
+            onListen={() => player.play(problemIndex)}
+            onPlayBlock={(b) => player.play(problemIndex, b)}
+            activeBlock={player.status !== 'idle' && player.index === problemIndex && player.now?.part === 'answer' ? player.now.block ?? null : null}
             tracking={tracking}
             isRead={progress.isRead}
             onToggleRead={toggleRead}
@@ -458,6 +503,7 @@ export default function App() {
                 {view.kind === 'topic' && (
                   <button className="icon-btn" onClick={() => setResourcesOpen(true)} aria-label="Resources" title="Resources: docs and tutorials"><BookIcon /></button>
                 )}
+                {items.length > 0 && <button className="icon-btn" onClick={() => player.play(0)} aria-label="Play all in this list" title="Play all in this list, from the top"><PlayIcon /></button>}
                 <button className="icon-btn" onClick={() => setEditor({ topicSlug: view.kind === 'topic' ? view.slug : topics[0]?.slug ?? '' })} aria-label="Add question" title="Add question"><PlusIcon /></button>
                 <button className="icon-btn mobile-only" onClick={() => setDrawer('')} aria-label="Close"><CloseIcon /></button>
               </span>
@@ -634,7 +680,7 @@ export default function App() {
         <PlayerBar
           status={player.status}
           position={player.index + 1}
-          total={items.length}
+          total={readables.length}
           now={player.now}
           countdown={player.countdown}
           rate={settings.rate}
