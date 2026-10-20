@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "setup": "npm --prefix app/web install && npm --prefix app/web run build",
+    "kill": "node app/kill.js",
+    "prestart": "node app/kill.js --quiet",
     "start": "node app/server.js",
     "dev": "npm --prefix app/web run dev",
     "build": "node app/build.js",
