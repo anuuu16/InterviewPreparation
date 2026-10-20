@@ -101,7 +101,7 @@ button { cursor: pointer; }
 .sidebar-foot { display: flex; justify-content: space-between; align-items: center; padding: 12px 12px 0; margin-top: 4px; border-top: 1px solid var(--line); }
 
 .list { display: flex; flex-direction: column; }
-.list-head { padding: 16px 16px 8px; position: sticky; top: 0; background: var(--panel); z-index: 1; border-bottom: 1px solid var(--line); }
+.list-head { padding: 16px 16px 8px; position: sticky; top: 0; background: var(--panel); z-index: 5; border-bottom: 1px solid var(--line); }
 .list-title { display: flex; justify-content: space-between; align-items: center; }
 .list-title h2 { margin: 0 0 10px; font-size: 18px; }
 .search { display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--muted); }
