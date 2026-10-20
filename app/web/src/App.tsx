@@ -7,6 +7,7 @@ import Inline from './Inline';
 import Markdown from './Markdown';
 import Notes from './Notes';
 import { warmMermaid } from './Mermaid';
+import Select from './Select';
 import PlayerBar from './PlayerBar';
 import ProgressDialog from './ProgressDialog';
 import ViewDialog, { DEFAULT_HIDDEN, DEFAULT_LAYOUT, moduleKey, type Hidden, type Layout } from './ViewDialog';
@@ -431,10 +432,7 @@ export default function App() {
                 <button className={groupBy === 'module' ? 'active' : ''} onClick={() => setGroupBy('module')}>Module</button>
               </div>
               {modules.length > 1 && (
-                <select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)} aria-label="Filter by module">
-                  <option value="">All modules</option>
-                  {modules.map((m) => <option key={m}>{m}</option>)}
-                </select>
+                <Select label="Filter by module" value={moduleFilter} onChange={setModuleFilter} options={[{ value: '', label: 'All modules' }, ...modules.map((m) => ({ value: m, label: m }))]} />
               )}
             </div>
             {tracking && <div className="segmented" role="group" aria-label="Show">

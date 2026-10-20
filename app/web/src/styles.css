@@ -465,3 +465,14 @@ button { cursor: pointer; }
 .revisit { margin: -6px 0 14px; padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-size: 14px; }
 
 .sidebar-foot .btn { white-space: nowrap; padding: 8px 10px; }
+
+/* ---------- custom dropdown ---------- */
+.dd { position: relative; min-width: 0; }
+.dd-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; max-width: 190px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); font-size: 13px; }
+.dd-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-btn:hover, .dd-btn[aria-expanded='true'] { background: var(--panel-2); }
+.dd-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 40; min-width: 100%; width: max-content; max-width: 280px; max-height: 280px; overflow-y: auto; list-style: none; margin: 0; padding: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); box-shadow: var(--shadow); }
+.dd-menu li { padding: 7px 10px; border-radius: 7px; font-size: 14px; cursor: pointer; }
+.dd-menu li.hover { background: var(--panel-2); }
+.dd-menu li.sel { color: var(--accent); font-weight: 600; }
+.group-row .dd { flex: 1; }
