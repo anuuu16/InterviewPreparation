@@ -7,7 +7,7 @@ Interview questions and answers, organised by language/topic. Read them right he
 <!-- TOPICS:START -->
 | Topic | Total | Basic | Intermediate | Advanced | ⭐ |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| [Golang](questions/golang.md) | 12 | 4 | 5 | 3 | 0 |
+| [Golang](questions/golang.md) | 126 | 28 | 78 | 20 | 0 |
 | [JavaScript](questions/javascript.md) | 4 | 2 | 1 | 1 | 0 |
 | [Kubernetes](questions/kubernetes.md) | 13 | 4 | 6 | 3 | 0 |
 | [Microservices](questions/microservices.md) | 12 | 3 | 6 | 3 | 0 |
@@ -38,7 +38,12 @@ You can also edit a `data/*.json` file directly and run `npm run build`. A quest
 
 ```
 README.md      entry point + generated topic index
+AGENTS.md      how to write/extend questions (style guide for humans and AI agents)
 questions/     generated Markdown, one file per topic (+ favorites.md)
 data/          JSON source of truth
 app/           build script and local manager app
 ```
+
+Each topic page has a numbered table of contents. Diagrams are Mermaid, which GitHub renders automatically. The app shows answers as raw Markdown, so read diagrams on GitHub or in a Mermaid-aware Markdown viewer.
+
+Contributing questions (yourself or with an AI agent)? Read [AGENTS.md](AGENTS.md) first.

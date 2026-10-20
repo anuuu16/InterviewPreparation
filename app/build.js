@@ -21,22 +21,42 @@ function loadTopics() {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function renderQuestion(q) {
+// Mimics GitHub's heading anchors so the table of contents links work.
+function anchorFor(heading, seen) {
+  const base = heading.toLowerCase().replace(/[^\p{L}\p{N}\s_-]/gu, '').replace(/\s/g, '-');
+  const n = seen.get(base) || 0;
+  seen.set(base, n + 1);
+  return n ? `${base}-${n}` : base;
+}
+
+function renderQuestion(q, number) {
   const star = q.favorite ? '⭐ ' : '';
   const tags = q.tags && q.tags.length ? `\n\n_Tags: ${q.tags.join(', ')}_` : '';
-  return `### ${star}${q.question}\n\n${q.answer || '_No answer yet._'}${tags}\n`;
+  const num = number ? `${number}. ` : '';
+  return `### ${num}${star}${q.question}\n\n${q.answer || '_No answer yet._'}${tags}\n`;
 }
 
 function renderTopic(topic) {
   const qs = topic.questions;
   const out = [`# ${topic.name}`, '', `[← Back to index](../README.md) · [⭐ Favorites](favorites.md)`, ''];
   out.push(`${qs.length} questions · ${qs.filter((q) => q.favorite).length} favorites`, '');
-  for (const level of LEVELS) {
-    const group = qs.filter((q) => q.level === level);
-    if (!group.length) continue;
-    out.push(`## ${cap(level)}`, '', ...group.map(renderQuestion));
+  const groups = LEVELS.map((level) => ({ level, items: qs.filter((q) => q.level === level) })).filter((g) => g.items.length);
+  let n = 0;
+  const seen = new Map(LEVELS.map((l) => [cap(l).toLowerCase(), 0]));
+  const toc = ['## Contents', ''];
+  const body = [];
+  for (const g of groups) {
+    toc.push(`**${cap(g.level)}**`, '');
+    body.push(`## ${cap(g.level)}`, '');
+    for (const q of g.items) {
+      n += 1;
+      const heading = `${n}. ${q.favorite ? '⭐ ' : ''}${q.question}`;
+      toc.push(`- [${n}. ${q.question.replace(/([[\]])/g, '\\$1')}](#${anchorFor(heading, seen)})`);
+      body.push(renderQuestion(q, n));
+    }
+    toc.push('');
   }
-  return out.join('\n');
+  return [...out, ...toc, ...body].join('\n');
 }
 
 function renderFavorites(topics) {

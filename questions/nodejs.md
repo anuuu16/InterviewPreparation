@@ -4,9 +4,30 @@
 
 10 questions · 0 favorites
 
+## Contents
+
+**Basic**
+
+- [1. How does the Node.js event loop work?](#1-how-does-the-nodejs-event-loop-work)
+- [2. What is the difference between `process.nextTick`, `setImmediate` and `setTimeout(fn, 0)`?](#2-what-is-the-difference-between-processnexttick-setimmediate-and-settimeoutfn-0)
+- [3. CommonJS vs ES modules in Node?](#3-commonjs-vs-es-modules-in-node)
+
+**Intermediate**
+
+- [4. What are Streams and why use them?](#4-what-are-streams-and-why-use-them)
+- [5. How do you scale a Node.js app to use all CPU cores?](#5-how-do-you-scale-a-nodejs-app-to-use-all-cpu-cores)
+- [6. How do you handle errors properly in async Node code?](#6-how-do-you-handle-errors-properly-in-async-node-code)
+- [7. Express vs NestJS vs Fastify: how do you choose?](#7-express-vs-nestjs-vs-fastify-how-do-you-choose)
+- [8. How do you secure a Node.js API?](#8-how-do-you-secure-a-nodejs-api)
+
+**Advanced**
+
+- [9. How do you find and fix a memory leak or high CPU in a Node service?](#9-how-do-you-find-and-fix-a-memory-leak-or-high-cpu-in-a-node-service)
+- [10. How does backpressure work with HTTP and what happens if you ignore it?](#10-how-does-backpressure-work-with-http-and-what-happens-if-you-ignore-it)
+
 ## Basic
 
-### How does the Node.js event loop work?
+### 1. How does the Node.js event loop work?
 
 Node runs JS on a single thread with libuv handling async I/O (and a thread pool for fs, crypto, DNS). The loop phases: **timers** -> pending callbacks -> poll (I/O) -> **check** (`setImmediate`) -> close callbacks.
 
@@ -14,7 +35,7 @@ Between each callback, `process.nextTick` runs first, then promise microtasks. N
 
 _Tags: event-loop_
 
-### What is the difference between `process.nextTick`, `setImmediate` and `setTimeout(fn, 0)`?
+### 2. What is the difference between `process.nextTick`, `setImmediate` and `setTimeout(fn, 0)`?
 
 - `nextTick`: runs right after the current operation, before promise microtasks and before the loop continues. Can starve I/O if abused.
 - `setImmediate`: runs in the check phase, after the poll phase.
@@ -24,7 +45,7 @@ From the main module, `timeout` vs `immediate` order is non-deterministic; insid
 
 _Tags: event-loop, async_
 
-### CommonJS vs ES modules in Node?
+### 3. CommonJS vs ES modules in Node?
 
 CJS: `require`, synchronous, dynamic, `module.exports`. ESM: `import`/`export`, static analysis (tree-shaking), async loading, top-level `await`, enabled with `.mjs` or `"type": "module"`. ESM has no `__dirname` (use `import.meta.url`), and `require`-ing ESM isn't straightforward. Interop is the main migration pain.
 
@@ -32,7 +53,7 @@ _Tags: modules_
 
 ## Intermediate
 
-### What are Streams and why use them?
+### 4. What are Streams and why use them?
 
 Streams process data in chunks instead of loading it all into memory: Readable, Writable, Duplex, Transform. They give **backpressure** (a slow consumer signals the producer to pause).
 
@@ -44,7 +65,7 @@ Use `pipeline` (handles errors and cleanup) rather than manual `.pipe()`.
 
 _Tags: streams, performance_
 
-### How do you scale a Node.js app to use all CPU cores?
+### 5. How do you scale a Node.js app to use all CPU cores?
 
 - **`cluster`** module / PM2: multiple processes sharing a port.
 - **`worker_threads`** for CPU-bound tasks inside one process (shared memory via `SharedArrayBuffer`).
@@ -52,7 +73,7 @@ _Tags: streams, performance_
 
 _Tags: scaling, concurrency_
 
-### How do you handle errors properly in async Node code?
+### 6. How do you handle errors properly in async Node code?
 
 - Use `async/await` with `try/catch`; always return/await promises (no floating promises).
 - Centralised Express/Nest error middleware or exception filters; custom error classes with status codes.
@@ -61,7 +82,7 @@ _Tags: scaling, concurrency_
 
 _Tags: errors, async_
 
-### Express vs NestJS vs Fastify: how do you choose?
+### 7. Express vs NestJS vs Fastify: how do you choose?
 
 - **Express:** minimal, huge ecosystem, but you define structure yourself.
 - **Fastify:** faster, schema-based validation/serialisation, good plugin model.
@@ -71,7 +92,7 @@ Choose structure vs freedom based on team size and codebase lifespan.
 
 _Tags: frameworks, nestjs_
 
-### How do you secure a Node.js API?
+### 8. How do you secure a Node.js API?
 
 - Validate all input (zod/class-validator), parameterised queries, escape output.
 - AuthN/AuthZ: short-lived JWT or sessions, refresh rotation, RBAC/ABAC checks server-side.
@@ -83,7 +104,7 @@ _Tags: security_
 
 ## Advanced
 
-### How do you find and fix a memory leak or high CPU in a Node service?
+### 9. How do you find and fix a memory leak or high CPU in a Node service?
 
 1. Observe: RSS/heap growth, GC pauses, event-loop lag (Datadog / `perf_hooks.monitorEventLoopDelay`).
 2. Capture heap snapshots (`--inspect`, Chrome DevTools, `v8.writeHeapSnapshot`) at two points and diff; look at retained size.
@@ -93,7 +114,7 @@ Usual leaks: unbounded caches/Maps, listeners never removed, closures holding la
 
 _Tags: debugging, performance_
 
-### How does backpressure work with HTTP and what happens if you ignore it?
+### 10. How does backpressure work with HTTP and what happens if you ignore it?
 
 `writable.write()` returns `false` when its buffer exceeds `highWaterMark`; you should wait for `'drain'`. If ignored, data piles up in memory, causing high RSS and potential OOM when a client is slow. `pipeline` / `pipe` handle this automatically.
 

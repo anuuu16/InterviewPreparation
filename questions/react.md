@@ -4,9 +4,32 @@
 
 12 questions · 0 favorites
 
+## Contents
+
+**Basic**
+
+- [1. What is the virtual DOM and how does reconciliation work?](#1-what-is-the-virtual-dom-and-how-does-reconciliation-work)
+- [2. Why do list items need a stable `key`, and why is the array index a bad key?](#2-why-do-list-items-need-a-stable-key-and-why-is-the-array-index-a-bad-key)
+- [3. Controlled vs uncontrolled components?](#3-controlled-vs-uncontrolled-components)
+- [4. How do `useEffect` dependencies work, and what is cleanup for?](#4-how-do-useeffect-dependencies-work-and-what-is-cleanup-for)
+
+**Intermediate**
+
+- [5. When do `useMemo`, `useCallback` and `React.memo` actually help?](#5-when-do-usememo-usecallback-and-reactmemo-actually-help)
+- [6. How do you avoid unnecessary re-renders with Context?](#6-how-do-you-avoid-unnecessary-re-renders-with-context)
+- [7. Redux vs Context vs local state: how do you decide?](#7-redux-vs-context-vs-local-state-how-do-you-decide)
+- [8. Explain how React 18 concurrent features work (`useTransition`, `useDeferredValue`, Suspense).](#8-explain-how-react-18-concurrent-features-work-usetransition-usedeferredvalue-suspense)
+- [9. How would you structure and optimise a large React + TypeScript app (e.g. an Nx monorepo)?](#9-how-would-you-structure-and-optimise-a-large-react--typescript-app-eg-an-nx-monorepo)
+
+**Advanced**
+
+- [10. What causes a stale closure in hooks, and how do you fix it?](#10-what-causes-a-stale-closure-in-hooks-and-how-do-you-fix-it)
+- [11. How does Server-Side Rendering / hydration work, and what are the pitfalls?](#11-how-does-server-side-rendering--hydration-work-and-what-are-the-pitfalls)
+- [12. How do you test React components and what do you avoid?](#12-how-do-you-test-react-components-and-what-do-you-avoid)
+
 ## Basic
 
-### What is the virtual DOM and how does reconciliation work?
+### 1. What is the virtual DOM and how does reconciliation work?
 
 React keeps a lightweight tree of JS objects describing the UI. On each render it builds a new tree, **diffs** it against the previous one, and applies only the minimal DOM changes.
 
@@ -17,20 +40,20 @@ Diffing heuristics:
 
 _Tags: fundamentals_
 
-### Why do list items need a stable `key`, and why is the array index a bad key?
+### 2. Why do list items need a stable `key`, and why is the array index a bad key?
 
 `key` is how React identifies an item across renders. With index keys, inserting/removing/reordering shifts every index, so React reuses the wrong component instances, causing wrong state (e.g. input text sticking to the wrong row) and wasted renders. Use a stable unique id from the data.
 
 _Tags: lists_
 
-### Controlled vs uncontrolled components?
+### 3. Controlled vs uncontrolled components?
 
 - **Controlled:** form value lives in React state; `value` + `onChange` drive the input. Single source of truth, easy validation.
 - **Uncontrolled:** the DOM keeps the value; you read it via a `ref` (or `FormData`) when needed. Less re-rendering, simpler for big forms or file inputs.
 
 _Tags: forms_
 
-### How do `useEffect` dependencies work, and what is cleanup for?
+### 4. How do `useEffect` dependencies work, and what is cleanup for?
 
 The effect runs after render, and re-runs when any value in the dependency array changed (`Object.is`). `[]` runs once on mount; no array runs after every render. The returned cleanup runs before the next run and on unmount (unsubscribe, clear timers, abort fetches).
 
@@ -40,7 +63,7 @@ _Tags: hooks_
 
 ## Intermediate
 
-### When do `useMemo`, `useCallback` and `React.memo` actually help?
+### 5. When do `useMemo`, `useCallback` and `React.memo` actually help?
 
 They help only when a re-render is measurably expensive or when referential equality matters:
 - `React.memo` skips re-rendering a child if props are shallow-equal.
@@ -50,7 +73,7 @@ They cost memory and comparisons, so don't wrap everything. Profile first. Often
 
 _Tags: performance, hooks_
 
-### How do you avoid unnecessary re-renders with Context?
+### 6. How do you avoid unnecessary re-renders with Context?
 
 Every consumer re-renders when the context value identity changes. Mitigations:
 - Memoize the provider value (`useMemo`).
@@ -60,7 +83,7 @@ Every consumer re-renders when the context value identity changes. Mitigations:
 
 _Tags: context, performance_
 
-### Redux vs Context vs local state: how do you decide?
+### 7. Redux vs Context vs local state: how do you decide?
 
 - **Local state** by default.
 - **Context** for low-frequency, app-wide values (theme, auth user, locale).
@@ -69,7 +92,7 @@ _Tags: context, performance_
 
 _Tags: state, redux_
 
-### Explain how React 18 concurrent features work (`useTransition`, `useDeferredValue`, Suspense).
+### 8. Explain how React 18 concurrent features work (`useTransition`, `useDeferredValue`, Suspense).
 
 Rendering became interruptible. Updates can be marked **non-urgent**:
 - `useTransition` / `startTransition`: keeps the UI responsive (typing) while a heavy update (filtering a big list) renders in the background and can be discarded.
@@ -80,7 +103,7 @@ Rendering must be pure, because React may call it multiple times or throw work a
 
 _Tags: react-18, performance_
 
-### How would you structure and optimise a large React + TypeScript app (e.g. an Nx monorepo)?
+### 9. How would you structure and optimise a large React + TypeScript app (e.g. an Nx monorepo)?
 
 - **Nx/monorepo:** apps + shared libs (ui, data-access, utils, feature libs) with enforced module boundaries (tags and lint rules); affected-only builds/tests and remote caching in CI.
 - **Code splitting:** `React.lazy` + route-level splitting, bundle analysis, tree-shakeable imports.
@@ -92,7 +115,7 @@ _Tags: architecture, typescript, nx_
 
 ## Advanced
 
-### What causes a stale closure in hooks, and how do you fix it?
+### 10. What causes a stale closure in hooks, and how do you fix it?
 
 A function captures the values from the render it was created in. If an effect/timer/event listener lives longer than that render, it sees old state.
 
@@ -106,7 +129,7 @@ Fixes: functional update `setCount(c => c + 1)`, add the dependency, or keep the
 
 _Tags: hooks, closures_
 
-### How does Server-Side Rendering / hydration work, and what are the pitfalls?
+### 11. How does Server-Side Rendering / hydration work, and what are the pitfalls?
 
 The server renders HTML (fast first paint, SEO), the client then **hydrates**: React attaches event handlers to the existing markup, expecting identical output.
 
@@ -114,7 +137,7 @@ Pitfalls: hydration mismatches (using `window`, `Date.now()`, `Math.random()` du
 
 _Tags: ssr, react-18_
 
-### How do you test React components and what do you avoid?
+### 12. How do you test React components and what do you avoid?
 
 Test behaviour as the user sees it: React Testing Library (`getByRole`, `userEvent`), mock the network boundary (MSW) rather than internal modules, and assert on visible output. Avoid testing implementation details (state names, internals, snapshot overuse). Pyramid: many unit/component tests, fewer integration tests, a few E2E flows (Selenium/Cypress on BrowserStack for cross-browser), plus visual diffs for UI regressions.
 

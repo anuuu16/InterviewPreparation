@@ -4,15 +4,38 @@
 
 12 questions · 0 favorites
 
+## Contents
+
+**Basic**
+
+- [1. Monolith vs microservices: when would you NOT choose microservices?](#1-monolith-vs-microservices-when-would-you-not-choose-microservices)
+- [2. Sync (REST/gRPC) vs async (message broker) communication: trade-offs?](#2-sync-restgrpc-vs-async-message-broker-communication-trade-offs)
+- [3. What is an API Gateway and what does it do?](#3-what-is-an-api-gateway-and-what-does-it-do)
+
+**Intermediate**
+
+- [4. How do you handle distributed transactions? Explain the Saga pattern.](#4-how-do-you-handle-distributed-transactions-explain-the-saga-pattern)
+- [5. What are the Outbox pattern and idempotency, and why do they matter?](#5-what-are-the-outbox-pattern-and-idempotency-and-why-do-they-matter)
+- [6. Explain the Circuit Breaker, retry with backoff, timeout and bulkhead patterns.](#6-explain-the-circuit-breaker-retry-with-backoff-timeout-and-bulkhead-patterns)
+- [7. How do you manage data across microservices? (database per service, CQRS, event sourcing)](#7-how-do-you-manage-data-across-microservices-database-per-service-cqrs-event-sourcing)
+- [8. How do you do observability in a microservice system?](#8-how-do-you-do-observability-in-a-microservice-system)
+- [9. API versioning and contract evolution without breaking consumers?](#9-api-versioning-and-contract-evolution-without-breaking-consumers)
+
+**Advanced**
+
+- [10. How do you design for high availability and handle a cascading failure?](#10-how-do-you-design-for-high-availability-and-handle-a-cascading-failure)
+- [11. Service mesh (Istio/Linkerd): what problem does it solve and what does it cost?](#11-service-mesh-istiolinkerd-what-problem-does-it-solve-and-what-does-it-cost)
+- [12. Walk me through how you would design a connected in-flight entertainment platform (FlytEDGE-style).](#12-walk-me-through-how-you-would-design-a-connected-in-flight-entertainment-platform-flytedge-style)
+
 ## Basic
 
-### Monolith vs microservices: when would you NOT choose microservices?
+### 1. Monolith vs microservices: when would you NOT choose microservices?
 
 Microservices buy independent deployment/scaling and team autonomy at the price of distributed-systems complexity (network failures, data consistency, observability, deployment tooling). Prefer a (modular) monolith when the team is small, the domain is unclear, or you lack CI/CD and monitoring maturity. Split along business boundaries (bounded contexts) when team/scale pain actually appears.
 
 _Tags: architecture_
 
-### Sync (REST/gRPC) vs async (message broker) communication: trade-offs?
+### 2. Sync (REST/gRPC) vs async (message broker) communication: trade-offs?
 
 - **Sync:** simple request/response and immediate result, but creates temporal coupling and cascading failures; needs timeouts, retries, circuit breakers.
 - **Async (Kafka/RabbitMQ/Service Bus):** decoupled, buffers load spikes, enables event-driven flows; but eventual consistency, harder debugging, need idempotency and ordering strategy.
@@ -21,7 +44,7 @@ gRPC: binary, typed contracts (protobuf), streaming, good for internal service-t
 
 _Tags: communication_
 
-### What is an API Gateway and what does it do?
+### 3. What is an API Gateway and what does it do?
 
 A single entry point in front of services: routing, authentication, rate limiting, TLS termination, request aggregation, caching, and protocol translation. Related: **BFF** (Backend-for-Frontend), a gateway tailored per client type (web, mobile, seat-back screen). Risk: becoming a bottleneck or a new monolith; keep business logic out of it.
 
@@ -29,7 +52,7 @@ _Tags: gateway_
 
 ## Intermediate
 
-### How do you handle distributed transactions? Explain the Saga pattern.
+### 4. How do you handle distributed transactions? Explain the Saga pattern.
 
 Avoid 2PC across services. A **saga** is a sequence of local transactions, each publishing an event/command to trigger the next; on failure, run **compensating actions** to undo earlier steps.
 - **Choreography:** services react to events (simple, but flow is hard to see).
@@ -39,13 +62,13 @@ Needs idempotent steps and persistent saga state.
 
 _Tags: data, saga_
 
-### What are the Outbox pattern and idempotency, and why do they matter?
+### 5. What are the Outbox pattern and idempotency, and why do they matter?
 
 Problem: updating the DB **and** publishing an event isn't atomic. **Outbox:** write the event to an `outbox` table in the same DB transaction; a relay (poller/CDC like Debezium) publishes it reliably. Delivery is at-least-once, so consumers must be **idempotent**: dedupe by message id / idempotency key, or make operations naturally repeatable (upserts).
 
 _Tags: messaging, reliability_
 
-### Explain the Circuit Breaker, retry with backoff, timeout and bulkhead patterns.
+### 6. Explain the Circuit Breaker, retry with backoff, timeout and bulkhead patterns.
 
 - **Timeout:** never wait forever; set per-call deadlines.
 - **Retry with exponential backoff + jitter:** only for idempotent/transient failures; cap attempts to avoid retry storms.
@@ -56,13 +79,13 @@ Typically provided by a library (Polly, resilience4j, Go libs) or a service mesh
 
 _Tags: resilience_
 
-### How do you manage data across microservices? (database per service, CQRS, event sourcing)
+### 7. How do you manage data across microservices? (database per service, CQRS, event sourcing)
 
 Each service owns its data; others access it via API/events, never the shared DB. Cross-service reads: API composition or **CQRS** read models fed by events. **Event sourcing** stores state as an append-only event log (great audit/replay, but complex). Accept **eventual consistency** and design the UX and invariants for it.
 
 _Tags: data, cqrs_
 
-### How do you do observability in a microservice system?
+### 8. How do you do observability in a microservice system?
 
 The three pillars plus correlation:
 - **Logs:** structured (JSON) with a **correlation/trace id** propagated through headers.
@@ -73,7 +96,7 @@ Tools: Datadog APM/dashboards/monitors. Add health endpoints (liveness/readiness
 
 _Tags: observability, datadog_
 
-### API versioning and contract evolution without breaking consumers?
+### 9. API versioning and contract evolution without breaking consumers?
 
 Prefer **backward-compatible** changes: add optional fields, don't remove/rename. Version via URL/header when breaking changes are unavoidable and run versions side by side with deprecation windows. Use consumer-driven **contract tests** (Pact) and schema registries (protobuf/Avro compatibility rules) in CI.
 
@@ -81,19 +104,19 @@ _Tags: api, contracts_
 
 ## Advanced
 
-### How do you design for high availability and handle a cascading failure?
+### 10. How do you design for high availability and handle a cascading failure?
 
 Redundancy across zones, stateless services with autoscaling, health checks, graceful degradation (serve cached/partial data), load shedding, rate limits, timeouts + circuit breakers to contain failure, queue buffering, and capacity headroom. Test it: chaos experiments, load tests, game days. Post-incident: blameless review and action items.
 
 _Tags: reliability_
 
-### Service mesh (Istio/Linkerd): what problem does it solve and what does it cost?
+### 11. Service mesh (Istio/Linkerd): what problem does it solve and what does it cost?
 
 Sidecar (or ambient) proxies handle mTLS, retries/timeouts, traffic shifting (canary), policy and telemetry uniformly, with no library per language. Costs: extra latency/resources, operational complexity, steep learning curve. Worth it with many services/polyglot stacks and strict security needs.
 
 _Tags: service-mesh, kubernetes_
 
-### Walk me through how you would design a connected in-flight entertainment platform (FlytEDGE-style).
+### 12. Walk me through how you would design a connected in-flight entertainment platform (FlytEDGE-style).
 
 A good structure for a system-design answer:
 1. **Requirements:** content catalogue and streaming to seatbacks/devices, intermittent satellite connectivity, per-airline branding, analytics, thousands of aircraft.
