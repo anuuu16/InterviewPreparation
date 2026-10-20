@@ -1,0 +1,8 @@
+{
+  "title": "Quick sort",
+  "summary": "Pick a pivot, partition smaller items to its left and larger to its right, recurse on both sides.",
+  "order": 5,
+  "complexity": { "best": "O(n log n)", "average": "O(n log n)", "worst": "O(n²)", "space": "O(log n)" },
+  "stable": false,
+  "inPlace": true
+}

@@ -1,0 +1,7 @@
+{
+  "title": "Linear search",
+  "summary": "Check the items one by one from the left. Works on any data, sorted or not. The baseline.",
+  "order": 1,
+  "complexity": { "best": "O(1)", "average": "O(n)", "worst": "O(n)", "space": "O(1)" },
+  "inPlace": true
+}

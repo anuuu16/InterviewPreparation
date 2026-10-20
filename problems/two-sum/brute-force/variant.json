@@ -1,0 +1,6 @@
+{
+  "title": "Brute force (two nested loops)",
+  "summary": "Try every pair of positions. Simple, needs no extra memory, but slow for big arrays.",
+  "order": 1,
+  "complexity": { "best": "O(1)", "average": "O(n²)", "worst": "O(n²)", "space": "O(1)" }
+}

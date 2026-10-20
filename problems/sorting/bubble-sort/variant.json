@@ -1,0 +1,8 @@
+{
+  "title": "Bubble sort",
+  "summary": "Swap neighbours that are out of order, pass after pass, until nothing moves.",
+  "order": 1,
+  "complexity": { "best": "O(n)", "average": "O(n²)", "worst": "O(n²)", "space": "O(1)" },
+  "stable": true,
+  "inPlace": true
+}

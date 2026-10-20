@@ -1,0 +1,8 @@
+{
+  "title": "Sorting",
+  "summary": "Put items in order: the building block behind search, ranking, deduplication and merging.",
+  "level": "basic",
+  "tags": ["sorting", "arrays", "complexity", "divide-and-conquer"],
+  "order": 1,
+  "related": ["golang-054", "golang-007", "javascript-015", "javascript-053", "react-2", "react-029"]
+}

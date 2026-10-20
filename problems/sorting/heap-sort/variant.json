@@ -1,0 +1,8 @@
+{
+  "title": "Heap sort",
+  "summary": "Build a max-heap, then repeatedly move the largest item to the end.",
+  "order": 6,
+  "complexity": { "best": "O(n log n)", "average": "O(n log n)", "worst": "O(n log n)", "space": "O(1)" },
+  "stable": false,
+  "inPlace": true
+}

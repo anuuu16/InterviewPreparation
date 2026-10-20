@@ -1,0 +1,8 @@
+{
+  "title": "Counting sort",
+  "summary": "Count how many times each value appears, then rebuild the output from the counts. No comparisons.",
+  "order": 7,
+  "complexity": { "best": "O(n + k)", "average": "O(n + k)", "worst": "O(n + k)", "space": "O(n + k)" },
+  "stable": true,
+  "inPlace": false
+}

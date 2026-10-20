@@ -1,0 +1,7 @@
+{
+  "title": "Binary search (recursive)",
+  "summary": "The same halving idea written as a function that calls itself on the smaller window.",
+  "order": 3,
+  "complexity": { "best": "O(1)", "average": "O(log n)", "worst": "O(log n)", "space": "O(log n)" },
+  "inPlace": true
+}

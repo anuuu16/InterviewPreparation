@@ -1,0 +1,8 @@
+{
+  "title": "Selection sort",
+  "summary": "Find the smallest remaining item and put it at the front, again and again.",
+  "order": 2,
+  "complexity": { "best": "O(n²)", "average": "O(n²)", "worst": "O(n²)", "space": "O(1)" },
+  "stable": false,
+  "inPlace": true
+}

@@ -65,6 +65,10 @@ for (const p of loadProblems(root)) {
       const tool = lang.special || (lang.compile ? lang.compile[0] : lang.run[0]);
       const label = `${p.slug}/${v.slug} [${f.language}]`;
       if (!have(tool)) { skip += 1; missing.add(tool); console.log(`SKIP ${label} (${tool} not installed)`); continue; }
+      if (f.language === 'go' && have('gofmt')) { // Go files must be gofmt-formatted
+        const unformatted = exec('gofmt', ['-l', path.join(root, p.slug, v.slug, f.file)], root).stdout.trim();
+        if (unformatted) { fail += 1; console.log(`FAIL ${label}\n  not gofmt-formatted: run gofmt -w on the file`); continue; }
+      }
       const t0 = Date.now();
       const r = runOne(lang, path.join(root, p.slug, v.slug, f.file));
       const ms = Date.now() - t0;

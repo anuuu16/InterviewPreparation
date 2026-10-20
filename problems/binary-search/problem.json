@@ -1,0 +1,8 @@
+{
+  "title": "Binary search",
+  "summary": "Find an item in sorted data by halving the search window: the idea behind index lookups, git bisect and many 'search on the answer' problems.",
+  "level": "basic",
+  "tags": ["searching", "binary-search", "arrays", "sorting", "complexity"],
+  "order": 2,
+  "related": ["golang-007", "golang-008", "golang-054", "golang-073", "golang-110", "javascript-015"]
+}

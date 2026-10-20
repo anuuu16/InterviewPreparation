@@ -1,0 +1,8 @@
+{
+  "title": "Merge sort",
+  "summary": "Split in half, sort each half, then merge the two sorted halves.",
+  "order": 4,
+  "complexity": { "best": "O(n log n)", "average": "O(n log n)", "worst": "O(n log n)", "space": "O(n)" },
+  "stable": true,
+  "inPlace": false
+}

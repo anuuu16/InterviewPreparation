@@ -1,0 +1,7 @@
+{
+  "title": "Binary search (iterative)",
+  "summary": "On sorted data, look at the middle item and throw away the half that cannot contain the target. Loop until found or empty.",
+  "order": 2,
+  "complexity": { "best": "O(1)", "average": "O(log n)", "worst": "O(log n)", "space": "O(1)" },
+  "inPlace": true
+}

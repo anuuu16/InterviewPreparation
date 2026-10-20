@@ -1,0 +1,6 @@
+{
+  "title": "Hash map, one pass",
+  "summary": "Remember each value you have seen in a hash map, so finding the partner takes one lookup.",
+  "order": 3,
+  "complexity": { "best": "O(n)", "average": "O(n)", "worst": "O(n²)", "space": "O(n)" }
+}

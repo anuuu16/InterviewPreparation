@@ -1,0 +1,7 @@
+{
+  "title": "First and last occurrence (lower and upper bound)",
+  "summary": "With duplicates, find the first and the last index of the target using two boundary searches (lower bound and upper bound).",
+  "order": 4,
+  "complexity": { "best": "O(log n)", "average": "O(log n)", "worst": "O(log n)", "space": "O(1)" },
+  "inPlace": true
+}

@@ -399,3 +399,4 @@ button { cursor: pointer; }
 .pgroup { list-style: none; }
 .pgroup .qitem { margin-bottom: 2px; }
 .qnum { font-size: 13px; }
+.qmeta.nocap { text-transform: none; }

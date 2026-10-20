@@ -452,6 +452,21 @@ Mermaid is encouraged in *Walkthrough*. Follow section 8 rules.
 - Keep each file under about 80 lines. Simple first; optimise only when it is the point of the approach.
 - Java: public class `Main` in `Main.java` (run with the source launcher). C#: top-level statements or a `Program` class in `Program.cs` (net8). TypeScript: runs with `node --experimental-strip-types`, so use only erasable type syntax (no enums, no parameter properties). C++: C++17, compiled with `clang++`.
 
+**Practical tips** (learned from the first problems):
+
+- An approach folder is only discovered when it has a **`variant.json`**. Without it the runner reports nothing for that folder.
+- `expected.txt` belongs to **one approach**. Different approaches may legitimately print different results for the same input (for example, which duplicate a binary search lands on). Give each approach its own `expected.txt` and say so in its `notes.md`.
+- To keep the seven languages in step, keep the test cases in **one table** (a scratch script or spreadsheet) and generate the shared harness from it. Hand-write only the algorithm in each language. This avoids drift between files.
+- Per-language traps: C++ `size() - 1` on an empty `std::vector` underflows (cast to `int`); in C# top-level statements must come before local functions and type declarations; Java needs `public class Main`; Go `for` loops over ranges copy values; Python integers never overflow, so say which languages do.
+- When a problem has several valid answers, define **one deterministic rule** (for example "smallest first index, then smallest second index"), state it in the notes, and make **every approach** follow it, so one `expected.txt` works across all languages.
+- Integer convention: assume values fit in 32 bits and use 64-bit types for sums and products (`long` in Java/C#, `long long` in C++; Java literals need `L`). Say so in the notes. Do not use a "1e9 + 1e9 overflows" example: 2e9 fits in int32 (the limit is about 2.147e9).
+- `expected.txt` ends with a newline. Escape pipes inside Markdown table cells (`\|`).
+- A walkthrough may trace an input that is not one of the shared test cases, as long as it says so.
+- Go files must be `gofmt`-formatted (`gofmt -w file.go`); the runner fails unformatted files. A multi-agent tip: do not touch `problems/README.md`, it is generated.
+- Number the key steps in comments (`// 1.`, `// 2.`) and match them to the numbered list in *Code explanation*.
+- Never edit the generated `problems/<slug>/README.md`; `npm run build` rewrites it.
+- `related` ids come from `data/*.json`. Search the `question` text of the questions, not a title field.
+
 **Verify** every file by running it:
 
 ```sh

@@ -1,0 +1,8 @@
+{
+  "title": "Insertion sort",
+  "summary": "Grow a sorted prefix by sliding each new item into its place, like sorting playing cards in your hand.",
+  "order": 3,
+  "complexity": { "best": "O(n)", "average": "O(n²)", "worst": "O(n²)", "space": "O(1)" },
+  "stable": true,
+  "inPlace": true
+}

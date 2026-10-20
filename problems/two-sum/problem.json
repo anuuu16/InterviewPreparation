@@ -1,0 +1,8 @@
+{
+  "title": "Two sum",
+  "summary": "Find two numbers that add up to a target: the classic way to learn why a hash map turns a slow search into a fast lookup.",
+  "level": "basic",
+  "tags": ["hashing", "hash-map", "two-pointers", "arrays", "complexity"],
+  "order": 3,
+  "related": ["golang-007", "golang-009", "golang-110", "javascript-015", "javascript-022", "golang-073"]
+}

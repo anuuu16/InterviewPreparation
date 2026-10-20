@@ -11,7 +11,7 @@ Interview questions and answers, organised by language/topic. Read them right he
 | [JavaScript](questions/javascript.md) | 66 | 20 | 34 | 12 | 1 |
 | [Kubernetes](questions/kubernetes.md) | 57 | 15 | 28 | 14 | 0 |
 | [Microservices](questions/microservices.md) | 55 | 13 | 29 | 13 | 0 |
-| [Node.js](questions/nodejs.md) | 10 | 3 | 5 | 2 | 0 |
+| [Node.js](questions/nodejs.md) | 65 | 17 | 28 | 20 | 0 |
 | [React](questions/react.md) | 57 | 15 | 28 | 14 | 0 |
 
 [⭐ All favorites](questions/favorites.md)
@@ -22,7 +22,11 @@ Interview questions and answers, organised by language/topic. Read them right he
 Popular coding problems with a written guide and tested code in several languages (sorting first). Open a problem to see how interviewers ask it, real-life uses and every approach from simple to optimal.
 
 <!-- PROBLEMS:START -->
-_No problems yet._
+| Problem | Approaches | Languages |
+| --- | ---: | ---: |
+| [Sorting](problems/sorting/README.md) | 7 | 7 |
+| [Binary search](problems/binary-search/README.md) | 5 | 7 |
+| [Two sum](problems/two-sum/README.md) | 3 | 7 |
 <!-- PROBLEMS:END -->
 
 ## Study app (read, listen, manage)

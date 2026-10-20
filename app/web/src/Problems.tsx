@@ -64,7 +64,7 @@ export default function Problems({ problems, topics, slug, part, language, dark,
                   <span className="qnum">{'{ }'}</span>
                   <span className="qtext">
                     <span className="qtitle">{v.title}</span>
-                    <span className="qmeta">{v.complexity?.average ?? v.summary}</span>
+                    <span className="qmeta nocap">{v.complexity?.average ?? v.summary}</span>
                   </span>
                 </button>
               ))}
