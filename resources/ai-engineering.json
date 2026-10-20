@@ -1,0 +1,146 @@
+[
+  {
+    "title": "Anthropic documentation",
+    "url": "https://docs.anthropic.com",
+    "type": "official-docs",
+    "description": "API guides, prompting, tool use and model documentation for Claude.",
+    "level": "beginner",
+    "module": "LLM Basics"
+  },
+  {
+    "title": "OpenAI platform documentation",
+    "url": "https://platform.openai.com/docs",
+    "type": "official-docs",
+    "description": "API guides for chat, tools, embeddings and structured outputs.",
+    "level": "beginner",
+    "module": "LLM Basics"
+  },
+  {
+    "title": "Google AI for Developers: Gemini API",
+    "url": "https://ai.google.dev/gemini-api/docs",
+    "type": "official-docs",
+    "description": "Gemini API guides: text, multimodal, function calling and embeddings.",
+    "level": "beginner",
+    "module": "LLM Basics"
+  },
+  {
+    "title": "Machine Learning Crash Course (Google)",
+    "url": "https://developers.google.com/machine-learning/crash-course",
+    "type": "course",
+    "description": "Free course on ML fundamentals: data, loss, overfitting, evaluation.",
+    "level": "beginner",
+    "module": "AI Fundamentals"
+  },
+  {
+    "title": "Neural networks (3Blue1Brown)",
+    "url": "https://www.3blue1brown.com/topics/neural-networks",
+    "type": "tutorial",
+    "description": "Visual explanations of neural networks, gradient descent and transformers.",
+    "level": "beginner",
+    "module": "AI Fundamentals"
+  },
+  {
+    "title": "Hugging Face LLM Course",
+    "url": "https://huggingface.co/learn/llm-course",
+    "type": "course",
+    "description": "Hands-on course on transformers, tokenizers, fine-tuning and sharing models.",
+    "level": "intermediate",
+    "module": "LLM Basics"
+  },
+  {
+    "title": "Intro to Large Language Models (Andrej Karpathy)",
+    "url": "https://www.youtube.com/watch?v=zjkBMFhNj_g",
+    "type": "video",
+    "description": "A one-hour talk on what LLMs are, how they are trained and where they fail.",
+    "level": "beginner",
+    "module": "LLM Basics"
+  },
+  {
+    "title": "Attention Is All You Need",
+    "url": "https://arxiv.org/abs/1706.03762",
+    "type": "reference",
+    "description": "The 2017 paper that introduced the transformer.",
+    "level": "advanced",
+    "module": "LLM Basics"
+  },
+  {
+    "title": "Prompt Engineering Guide",
+    "url": "https://www.promptingguide.ai",
+    "type": "tutorial",
+    "description": "Techniques: few-shot, chain-of-thought, structured output, with examples.",
+    "level": "beginner",
+    "module": "Prompting & Structured Output"
+  },
+  {
+    "title": "Chain-of-Thought Prompting (Wei et al.)",
+    "url": "https://arxiv.org/abs/2201.11903",
+    "type": "reference",
+    "description": "The paper behind step-by-step reasoning prompts.",
+    "level": "advanced",
+    "module": "Prompting & Structured Output"
+  },
+  {
+    "title": "Retrieval-Augmented Generation (Lewis et al.)",
+    "url": "https://arxiv.org/abs/2005.11401",
+    "type": "reference",
+    "description": "The paper that named RAG.",
+    "level": "advanced",
+    "module": "RAG & Embeddings"
+  },
+  {
+    "title": "pgvector",
+    "url": "https://github.com/pgvector/pgvector",
+    "type": "repo",
+    "description": "Vector similarity search inside PostgreSQL: index types and usage.",
+    "level": "intermediate",
+    "module": "RAG & Embeddings"
+  },
+  {
+    "title": "Patterns for building LLM-based systems (Eugene Yan)",
+    "url": "https://eugeneyan.com/writing/llm-patterns/",
+    "type": "article",
+    "description": "Practical patterns: evals, RAG, fine-tuning, caching, guardrails, feedback.",
+    "level": "intermediate",
+    "module": "Production & Cost"
+  },
+  {
+    "title": "Building effective agents (Anthropic)",
+    "url": "https://www.anthropic.com/engineering/building-effective-agents",
+    "type": "article",
+    "description": "When to use workflows vs agents, and simple composable patterns.",
+    "level": "intermediate",
+    "module": "Agents & Tools"
+  },
+  {
+    "title": "Model Context Protocol",
+    "url": "https://modelcontextprotocol.io",
+    "type": "official-docs",
+    "description": "The open protocol for connecting models to tools and data sources.",
+    "level": "intermediate",
+    "module": "Agents & Tools"
+  },
+  {
+    "title": "OWASP Top 10 for LLM Applications",
+    "url": "https://genai.owasp.org/llm-top-10/",
+    "type": "reference",
+    "description": "The main security risks for LLM apps: prompt injection, leakage, excessive agency.",
+    "level": "intermediate",
+    "module": "Safety & Security"
+  },
+  {
+    "title": "NIST AI Risk Management Framework",
+    "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+    "type": "reference",
+    "description": "A voluntary framework for governing and managing AI risk.",
+    "level": "intermediate",
+    "module": "Responsible AI & Governance"
+  },
+  {
+    "title": "EU AI Act explorer",
+    "url": "https://artificialintelligenceact.eu/",
+    "type": "reference",
+    "description": "Readable access to the EU AI Act text and summaries.",
+    "level": "intermediate",
+    "module": "Responsible AI & Governance"
+  }
+]

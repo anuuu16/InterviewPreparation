@@ -2,7 +2,7 @@
 
 [← Back to index](../README.md) · [⭐ Favorites](favorites.md)
 
-57 questions · 0 favorites
+57 questions · 0 favorites · [📚 Resources](#resources)
 
 ## Contents
 
@@ -2542,3 +2542,40 @@ Creating a fresh client for each test avoids shared cache between tests, and tur
 **Interview tip:** Mention that `renderHook` was moved into React Testing Library core in version 13.1. The older separate package `@testing-library/react-hooks` does not support React 18.
 
 _Module: Architecture & Quality · Tags: testing, custom-hooks, rtl_
+
+---
+
+## Resources
+
+Where to read more at the source. Official docs and references come first.
+
+**Official docs**
+
+- [React documentation](https://react.dev) — The official docs: learn, reference, blog. Start here for any React question. _(beginner)_
+- [Using TypeScript with React](https://react.dev/learn/typescript) — Typing props, state, events and hooks. _(intermediate)_
+- [TanStack Query docs](https://tanstack.com/query/latest) — Server-state caching, invalidation and mutations. _(intermediate)_
+- [React Router docs](https://reactrouter.com) — Routing, nested routes, loaders and actions. _(intermediate)_
+- [Redux Toolkit docs](https://redux-toolkit.js.org) — The modern way to write Redux: slices, thunks, RTK Query. _(intermediate)_
+- [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) — Test components the way users use them. _(intermediate)_
+- [Nx documentation](https://nx.dev/getting-started/intro) — Monorepo tooling: project graph, caching, module boundaries. _(intermediate)_
+- [Material UI docs](https://mui.com/material-ui/getting-started/) — Component library, theming and styling system. _(beginner)_
+- [Tailwind CSS docs](https://tailwindcss.com/docs) — Utility-first CSS: setup, responsive design and customisation. _(beginner)_
+
+**Reference**
+
+- [React API reference](https://react.dev/reference/react) — Every hook and API with parameters, caveats and examples. _(intermediate)_
+- [WAI-ARIA Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/) — Accessible patterns for dialogs, tabs, menus and more. _(intermediate)_
+
+**Tutorial**
+
+- [Learn React](https://react.dev/learn) — The official course: components, state, effects, thinking in React. _(beginner)_
+- [Tutorial: Tic-Tac-Toe](https://react.dev/learn/tutorial-tic-tac-toe) — Build a small game and learn the core ideas by doing. _(beginner)_
+
+**Article**
+
+- [Thinking in React](https://react.dev/learn/thinking-in-react) — How to break a UI into components and decide where state lives. _(beginner)_
+- [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect) — When not to use useEffect and what to do instead. Required reading. _(intermediate)_
+- [Synchronizing with Effects](https://react.dev/learn/synchronizing-with-effects) — How effects, dependencies and cleanup really work. _(intermediate)_
+- [React blog](https://react.dev/blog) — Release notes and announcements (React 19, Compiler, Server Components). _(intermediate)_
+- [A Complete Guide to useEffect (Overreacted)](https://overreacted.io/a-complete-guide-to-useeffect/) — Dan Abramov's deep dive into effects, closures and dependencies. _(advanced)_
+- [Core Web Vitals (web.dev)](https://web.dev/articles/vitals) — LCP, INP and CLS: what they measure and how to improve them. _(intermediate)_

@@ -209,7 +209,7 @@ The reader is preparing for interviews and wants to **understand**, not memorise
 
 GitHub and the app render ` ```mermaid ` blocks. Use one when it makes a **flow, lifecycle, sequence or structure** clearer. Do not add one for decoration.
 
-- Use `flowchart LR|TD`, `sequenceDiagram`, `stateDiagram-v2` (these render reliably). Avoid exotic diagram types.
+- Use `flowchart LR|TD`, `sequenceDiagram`, `stateDiagram-v2` (these render reliably). `classDiagram`, `erDiagram` and `gitGraph` are allowed where the topic needs them (design, databases, git). Avoid exotic diagram types.
 - 5–12 nodes. Short labels. One idea per diagram. Add a one-line sentence under it explaining how to read it.
 - Quote any label that contains `()`, `:`, `/`, `[]` or other punctuation: `A["ctx.Done()"]`.
 - A subgraph with a multi-word title needs an id: `subgraph H["Slice header"]` (not `subgraph Slice header`).
@@ -252,13 +252,25 @@ Target shape for a "complete" topic: **50–130 questions**, roughly 25% basic, 
 | Topic | File | Status |
 | --- | --- | --- |
 | Golang | `data/golang.json` | Complete (126) |
-| JavaScript | `data/javascript.json` | Complete (66): core, Tech Lead, intermediate, advanced; extend with more output puzzles |
+| JavaScript | `data/javascript.json` | Complete (66); extend with more output puzzles |
+| Node.js | `data/nodejs.json` | Complete (65) |
 | React | `data/react.json` | Complete (57); extend with forms and testing depth |
+| TypeScript | `data/typescript.json` | **In progress** (58): basics and Tech Lead done; still needs the advanced section (compiler internals, type-level programming, performance) and type challenges verified with `tsc` |
 | Kubernetes | `data/kubernetes.json` | Complete (57); extend with AKS and service mesh |
-| Microservices | `data/microservices.json` | Complete (55); extend with more system design cases |
-| Node.js | `data/nodejs.json` | Short answers only; needs the detailed format |
-| TypeScript, Azure, Docker, SQL/PostgreSQL, Python, .NET, system design, behavioural/leadership | not started | Planned |
-| Problems (code library) | `problems/` | Started: see section 15 for the standard and the planned list |
+| Microservices | `data/microservices.json` | Complete (55) |
+| Databases | `data/databases.json` | Complete (76) |
+| System Design | `data/system-design.json` | Complete (67) |
+| DevOps & CI/CD | `data/devops-ci-cd.json` | Complete (65) |
+| Git & Version Control | `data/git-version-control.json` | **In progress** (33): basics done; still needs most of Tech Lead, intermediate and advanced (see the outline in the original request: rebase in depth, reflog, bisect, internals, monorepo practice) |
+| Azure & Cloud | `data/azure-cloud.json` | Complete (71) |
+| Networking & Security | `data/networking-security.json` | Complete (73) |
+| AI Engineering | `data/ai-engineering.json` | Complete (72); revisit facts that change fast (providers, protocols) |
+| Design Principles | `data/design-principles.json` | Complete (83) |
+| Leadership & Behavioral | `data/leadership-behavioral.json` | Complete (63) |
+| Problems (code library) | `problems/` | Sorting, binary search, two sum done; see section 15.9 for the planned list |
+| Planned | | Software process (waterfall, agile, Scrum, Kanban), Python, .NET/C#, data structures as problems |
+
+Every topic also has a curated list in `resources/<topic>.json` (official docs, tutorials, references). Add one when you create a topic; verify links with `npm run resources:check`.
 
 **Outline template for a new language/framework topic**
 

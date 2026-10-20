@@ -1,0 +1,146 @@
+[
+  {
+    "title": "Docker documentation",
+    "url": "https://docs.docker.com",
+    "type": "official-docs",
+    "description": "Official docs for Docker Engine, Build, Compose and Desktop.",
+    "level": "beginner",
+    "module": "Docker & Containers"
+  },
+  {
+    "title": "Dockerfile best practices",
+    "url": "https://docs.docker.com/build/building/best-practices/",
+    "type": "official-docs",
+    "description": "Small, cacheable, secure images: ordering, multi-stage, pinned bases.",
+    "level": "intermediate",
+    "module": "Docker & Containers"
+  },
+  {
+    "title": "Multi-stage builds",
+    "url": "https://docs.docker.com/build/building/multi-stage/",
+    "type": "official-docs",
+    "description": "Compile in one stage, ship a tiny runtime image.",
+    "level": "intermediate",
+    "module": "Docker & Containers"
+  },
+  {
+    "title": "Docker Compose",
+    "url": "https://docs.docker.com/compose/",
+    "type": "official-docs",
+    "description": "Define and run multi-container apps locally.",
+    "level": "beginner",
+    "module": "Docker & Containers"
+  },
+  {
+    "title": "GitLab CI/CD documentation",
+    "url": "https://docs.gitlab.com/ci/",
+    "type": "official-docs",
+    "description": "Pipelines, jobs, runners, variables, environments.",
+    "level": "beginner",
+    "module": "GitLab CI"
+  },
+  {
+    "title": "GitLab CI/CD YAML reference",
+    "url": "https://docs.gitlab.com/ci/yaml/",
+    "type": "reference",
+    "description": "Every keyword of .gitlab-ci.yml: rules, needs, cache, artifacts, include.",
+    "level": "intermediate",
+    "module": "GitLab CI"
+  },
+  {
+    "title": "GitLab pipeline efficiency",
+    "url": "https://docs.gitlab.com/ci/pipelines/pipeline_efficiency/",
+    "type": "official-docs",
+    "description": "Make pipelines faster and cheaper: cache, DAG, interruptible jobs.",
+    "level": "intermediate",
+    "module": "CI/CD Pipelines"
+  },
+  {
+    "title": "DORA research and metrics",
+    "url": "https://dora.dev/",
+    "type": "reference",
+    "description": "The four key delivery metrics and the research behind them.",
+    "level": "intermediate",
+    "module": "Platform & Leadership"
+  },
+  {
+    "title": "Continuous Integration (Martin Fowler)",
+    "url": "https://martinfowler.com/articles/continuousIntegration.html",
+    "type": "article",
+    "description": "The classic definition and practices of CI.",
+    "level": "beginner",
+    "module": "DevOps Fundamentals"
+  },
+  {
+    "title": "Continuous Delivery",
+    "url": "https://continuousdelivery.com/",
+    "type": "article",
+    "description": "Principles of deployment pipelines and release automation.",
+    "level": "intermediate",
+    "module": "Release Strategies"
+  },
+  {
+    "title": "Trunk Based Development",
+    "url": "https://trunkbaseddevelopment.com",
+    "type": "reference",
+    "description": "Branching model, short-lived branches and release techniques.",
+    "level": "intermediate",
+    "module": "Git & Workflow"
+  },
+  {
+    "title": "The Twelve-Factor App",
+    "url": "https://12factor.net",
+    "type": "reference",
+    "description": "Principles for portable, cloud-ready services.",
+    "level": "beginner",
+    "module": "DevOps Fundamentals"
+  },
+  {
+    "title": "Terraform documentation",
+    "url": "https://developer.hashicorp.com/terraform/docs",
+    "type": "official-docs",
+    "description": "Providers, state, modules and the plan/apply workflow.",
+    "level": "intermediate",
+    "module": "Infrastructure as Code"
+  },
+  {
+    "title": "Terraform tutorials",
+    "url": "https://developer.hashicorp.com/terraform/tutorials",
+    "type": "tutorial",
+    "description": "Hands-on tutorials from first config to remote state and modules.",
+    "level": "beginner",
+    "module": "Infrastructure as Code"
+  },
+  {
+    "title": "SLSA supply-chain framework",
+    "url": "https://slsa.dev",
+    "type": "reference",
+    "description": "Levels of build integrity and provenance.",
+    "level": "advanced",
+    "module": "Supply Chain & Security"
+  },
+  {
+    "title": "Sigstore documentation",
+    "url": "https://docs.sigstore.dev/",
+    "type": "official-docs",
+    "description": "Sign and verify artifacts and images (cosign).",
+    "level": "advanced",
+    "module": "Supply Chain & Security"
+  },
+  {
+    "title": "Trivy",
+    "url": "https://trivy.dev/",
+    "type": "tool",
+    "description": "Scan images, filesystems and IaC for vulnerabilities and misconfiguration.",
+    "level": "intermediate",
+    "module": "Supply Chain & Security"
+  },
+  {
+    "title": "OCI image specification",
+    "url": "https://github.com/opencontainers/image-spec",
+    "type": "repo",
+    "description": "How container images are structured: layers, manifests, config.",
+    "level": "advanced",
+    "module": "Container Internals"
+  }
+]

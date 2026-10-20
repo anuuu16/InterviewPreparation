@@ -1,0 +1,976 @@
+{
+  "name": "Databases",
+  "questions": [
+    {
+      "id": "databases-001",
+      "question": "What is the relational model, and what do tables, rows, columns and relationships mean?",
+      "answer": "**Short answer:** A relational database stores data as tables. A table is a set of rows, and every row has the same columns with fixed types. Tables are linked by shared values (keys), not by pointers, and you ask questions with SQL, which says what you want, not how to get it.\n\nThink of a spreadsheet with strict rules. Each sheet is about one kind of thing (`customers`, `orders`, `payments`). Each row is one thing. Each column is one fact about it, and every cell must match the column type.\n\nThe power comes from relationships. An order does not copy the customer name. It stores `customer_id`, and the database joins the two tables when you ask. The name lives in one place, so you fix it once.\n\n```sql\nCREATE TABLE customers (\n  id   INTEGER PRIMARY KEY,\n  name TEXT NOT NULL\n);\nCREATE TABLE orders (\n  id          INTEGER PRIMARY KEY,\n  customer_id INTEGER NOT NULL REFERENCES customers(id), -- relationship\n  total_cents INTEGER NOT NULL\n);\n```\n\n| Idea | What it means |\n| --- | --- |\n| Table (relation) | A set of rows about one kind of thing |\n| Row (tuple) | One record |\n| Column (attribute) | One typed fact about the record |\n| Key | A value that identifies a row or points to another table |\n| Schema | The tables, columns, types and rules |\n\n**What the model gives you**\n- A declarative query language: the planner picks the access path.\n- Integrity rules (types, keys, constraints) enforced by the database, not by every app.\n- Transactions, so many users can change data safely.\n\n**Gotcha:** tables are sets, so row order is not guaranteed unless you write `ORDER BY`. Many bugs come from relying on \"it usually comes back in insert order\".\n\n**Interview tip:** say that the relational model fits data with clear structure and many relationships, and that you would pick something else only for a specific reason such as huge write volume or flexible documents.",
+      "level": "basic",
+      "module": "Data Modeling",
+      "tags": [
+        "relational",
+        "fundamentals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-002",
+      "question": "What are primary, foreign, unique and composite keys, and how do surrogate keys differ from natural keys?",
+      "answer": "**Short answer:** A primary key uniquely identifies each row and cannot be NULL. A foreign key points to a primary (or unique) key in another table and keeps the link valid. A unique key stops duplicates but allows NULLs (rules vary by database). A composite key uses two or more columns together. A surrogate key is an invented ID. A natural key is a real-world value such as an email.\n\n```sql\nCREATE TABLE order_items (\n  order_id   INTEGER NOT NULL REFERENCES orders(id),   -- foreign key\n  product_id INTEGER NOT NULL REFERENCES products(id), -- foreign key\n  quantity   INTEGER NOT NULL CHECK (quantity > 0),\n  PRIMARY KEY (order_id, product_id)                   -- composite key\n);\n```\n\nHere a product can appear only once per order, and both ids must exist.\n\n| Type | Purpose | Example |\n| --- | --- | --- |\n| Primary key | Identify one row | `orders.id` |\n| Foreign key | Link to another table | `orders.customer_id` |\n| Unique key | No duplicates in a column set | `users.email` |\n| Composite key | Identity needs several columns | `(order_id, product_id)` |\n| Surrogate key | Meaningless generated id | identity, UUID |\n| Natural key | Real-world identifier | ISBN, country code |\n\n**Surrogate versus natural**\n- Natural keys can change (people change emails) and change is painful when other tables point to them.\n- Surrogate keys never change and are small, so joins are cheap.\n- A good habit: use a surrogate primary key and add a unique constraint on the natural key.\n\n**Gotcha:** foreign keys are not automatically indexed in PostgreSQL or SQL Server. Deleting a customer or joining orders to customers can scan the whole child table. Index foreign key columns you join or delete on.\n\n**Interview tip:** mention that foreign keys cost a little on writes but catch whole classes of bugs. Teams that drop them for speed usually regret it.",
+      "level": "basic",
+      "module": "Data Modeling",
+      "tags": [
+        "keys",
+        "constraints",
+        "schema"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-003",
+      "question": "How do SELECT, WHERE, ORDER BY and LIMIT work, and in what order does the database run them?",
+      "answer": "**Short answer:** `SELECT` picks columns, `WHERE` filters rows, `ORDER BY` sorts, and `LIMIT` (or `TOP` in SQL Server) cuts the count. You write SELECT first, but the database logically runs FROM, then WHERE, GROUP BY, HAVING, SELECT, ORDER BY and finally LIMIT.\n\nThat order explains common errors. You cannot use a column alias from `SELECT` inside `WHERE`, because `WHERE` runs before the alias exists. You can use it in `ORDER BY`, which runs after.\n\n```sql\nSELECT id, total_cents / 100.0 AS total       -- 4. choose columns\nFROM orders                                    -- 1. read the table\nWHERE status = 'paid'                          -- 2. filter rows\nORDER BY total DESC                            -- 5. sort (alias works here)\nLIMIT 3;                                       -- 6. cut\n```\n\n| Task | PostgreSQL / standard | SQL Server |\n| --- | --- | --- |\n| First 3 rows | `LIMIT 3` or `FETCH FIRST 3 ROWS ONLY` | `SELECT TOP 3 ...` |\n| Skip and take | `LIMIT 3 OFFSET 6` | `ORDER BY ... OFFSET 6 ROWS FETCH NEXT 3 ROWS ONLY` |\n\nIn SQL Server, `OFFSET ... FETCH` needs an `ORDER BY`. The `TOP` keyword goes right after `SELECT`.\n\n**Rules of thumb**\n- Always add `ORDER BY` when you use `LIMIT`, or the rows you get are random.\n- Avoid `SELECT *` in application code. It breaks when columns change and sends extra data.\n- Use `ORDER BY` on a unique column last, so ties give a stable order.\n\n**Gotcha:** `WHERE status = 'paid' OR status = 'new' AND total > 100` mixes `AND` and `OR`. `AND` binds tighter, so add brackets.\n\n**Interview tip:** being able to say the logical order of clauses shows you understand why aliases and aggregates behave as they do.",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "sql",
+        "select",
+        "fundamentals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-004",
+      "question": "What are the different types of JOIN, and when do you use each?",
+      "answer": "**Short answer:** A join combines rows from two tables on a condition. `INNER JOIN` keeps only matches. `LEFT JOIN` keeps all left rows, with NULLs where nothing matches. `RIGHT JOIN` is the mirror. `FULL JOIN` keeps all rows from both. `CROSS JOIN` gives every pair. A self join joins a table to itself.\n\nSample data: customers Asha, Ben, Chen; orders 1 and 2 for Asha, 3 and 4 for Ben, and Chen has none.\n\n```sql\n-- INNER: only customers that have orders\nSELECT c.name, o.id FROM customers c\nINNER JOIN orders o ON o.customer_id = c.id;\n-- prints: Asha 1, Asha 2, Ben 3, Ben 4\n\n-- LEFT: all customers, order id is NULL for Chen\nSELECT c.name, o.id FROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id;\n-- prints: Asha 1, Asha 2, Ben 3, Ben 4, Chen NULL\n\n-- Anti-join: customers with no orders\nSELECT c.name FROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE o.id IS NULL;\n-- prints: Chen\n```\n\n```mermaid\nflowchart LR\n    A[\"Inner: matches only\"] --> B[\"Left: all left + matches\"]\n    B --> C[\"Full: all rows from both\"]\n    A --> D[\"Cross: every pair\"]\n```\n\nRead it as increasing the rows you keep. Right join is a left join with the tables swapped, so most teams only write left joins.\n\n| Join | Keeps | Typical use |\n| --- | --- | --- |\n| Inner | matches | orders with their customers |\n| Left | all left rows | customers, even without orders |\n| Full | all rows both sides | reconcile two systems |\n| Cross | every pair | generate a calendar times a product list |\n| Self | one table twice | employee and manager in `employees` |\n\n**Gotcha:** putting a filter on the right table in `WHERE` turns a left join into an inner join, because the NULL rows are removed. Put that filter in the `ON` clause instead. Joining on a non-unique column also multiplies rows.\n\n**Interview tip:** be ready to write the \"customers with no orders\" query and to say why `NOT EXISTS` or the left join anti-pattern beats `NOT IN`.",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "joins",
+        "sql"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-005",
+      "question": "How do GROUP BY, HAVING and aggregate functions work?",
+      "answer": "**Short answer:** `GROUP BY` collapses rows into groups, and aggregate functions such as `COUNT`, `SUM`, `AVG`, `MIN` and `MAX` calculate one value per group. `WHERE` filters rows before grouping. `HAVING` filters groups after aggregating.\n\n```sql\nSELECT customer_id, COUNT(*) AS orders, SUM(total) AS spent\nFROM orders\nWHERE customer_id IS NOT NULL      -- row filter, before grouping\nGROUP BY customer_id\nHAVING SUM(total) > 200            -- group filter, after aggregating\nORDER BY customer_id;\n-- prints: 1 | 2 | 350\n--         2 | 2 | 380\n```\n\nEvery selected column must be either in `GROUP BY` or inside an aggregate. PostgreSQL and SQL Server enforce this (SQLite and old MySQL do not, which hides bugs).\n\n**Key facts about aggregates**\n- `COUNT(*)` counts rows. `COUNT(col)` counts rows where `col` is not NULL. `COUNT(DISTINCT col)` counts unique non-NULL values.\n- `SUM` and `AVG` ignore NULLs. `AVG` of 1, NULL, 3 is 2, not 1.33.\n- `SUM` over zero rows is NULL, so wrap it: `COALESCE(SUM(x), 0)`.\n- Integer division truncates in many databases. `SUM(a) / COUNT(*)` may give a whole number. Cast to decimal first.\n\n**Gotcha:** using `HAVING` for a plain row filter works but is slower, because rows are grouped first. If a condition does not use an aggregate, put it in `WHERE`.\n\n**Interview tip:** a favourite question is \"WHERE versus HAVING\". Answer with the order: rows are filtered, then grouped, then groups are filtered.",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "aggregates",
+        "group-by"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-006",
+      "question": "When do you use a subquery and when a CTE?",
+      "answer": "**Short answer:** A subquery is a query inside another query. A CTE (common table expression, `WITH name AS (...)`) gives a subquery a name so the main query reads top to bottom. Most of the time they give the same result. Use a CTE for readability, reuse in the same statement, and recursion.\n\n```sql\n-- Subquery: customers whose paid total is above 300\nSELECT name FROM customers\nWHERE id IN (SELECT customer_id FROM orders\n             WHERE status = 'paid'\n             GROUP BY customer_id HAVING SUM(total) > 300);\n\n-- Same idea as a CTE: named steps\nWITH paid AS (\n  SELECT customer_id, SUM(total) AS spent\n  FROM orders WHERE status = 'paid'\n  GROUP BY customer_id\n)\nSELECT c.name, paid.spent\nFROM paid JOIN customers c ON c.id = paid.customer_id\nORDER BY c.name;\n-- prints: Asha 350, Ben 300\n```\n\n**Choosing**\n- Subquery: short, one-off filters (`IN`, `EXISTS`, scalar value).\n- CTE: several steps, or the same intermediate result used twice.\n- Recursive CTE: trees such as categories or org charts (`WITH RECURSIVE` in PostgreSQL, plain `WITH` in SQL Server).\n\n**Gotcha:** a CTE is not always a cached temp table. In SQL Server it is inlined like a view. In PostgreSQL 12 and later it is inlined too, unless it is used more than once or you write `AS MATERIALIZED`. Before PostgreSQL 12 it was always materialised and acted as an optimisation fence. Do not assume a CTE speeds a query up.\n\n**Interview tip:** say you choose between them for readability first, then check the plan if performance matters.",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "cte",
+        "subquery"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-007",
+      "question": "How does NULL work in SQL, and what are the common NULL bugs?",
+      "answer": "**Short answer:** NULL means \"unknown\", not zero and not an empty string. Any comparison with NULL gives UNKNOWN, not true or false, so `NULL = NULL` is not true. SQL uses three-valued logic: true, false, unknown. A `WHERE` clause keeps only rows that are true.\n\n```sql\n-- customers: Asha (Pune), Ben (Delhi), Chen (city is NULL)\nSELECT name FROM customers WHERE city <> 'Pune';\n-- prints: Ben          (Chen is missing! NULL <> 'Pune' is unknown)\n\nSELECT name FROM customers WHERE city IS NULL;\n-- prints: Chen         (use IS NULL, never = NULL)\n\nSELECT COUNT(*), COUNT(city) FROM customers;\n-- prints: 3 | 2        (COUNT(col) skips NULLs)\n```\n\n**Common NULL bugs**\n- `col = NULL` never matches. Use `IS NULL`. PostgreSQL also has `IS NOT DISTINCT FROM` for null-safe equality.\n- `NOT IN (subquery)` returns no rows at all if the subquery contains one NULL. Use `NOT EXISTS`.\n- `NULL + 5` is NULL. Concatenating NULL with text gives NULL in standard SQL and in SQL Server, but PostgreSQL's `concat()` function ignores NULL.\n- `COUNT`, `SUM` and `AVG` skip NULLs, which changes averages.\n- `UNIQUE` columns: PostgreSQL allows many NULLs. SQL Server allows only one NULL in a unique index unless you add a filtered index.\n- Sorting: PostgreSQL puts NULLs last in ascending order. SQL Server puts them first.\n\nHandle NULL with `COALESCE(x, default)` (standard, works everywhere). SQL Server also has `ISNULL(x, default)`, which takes the type of the first argument.\n\n**Gotcha:** the `NOT IN` trap is the one that reaches production. A single missing `customer_id` silently empties the result.\n\n**Interview tip:** show the `NOT IN` versus `NOT EXISTS` example. Interviewers use it to see if you have been bitten.",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "null",
+        "three-valued-logic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-008",
+      "question": "What is the difference between DISTINCT, UNION and UNION ALL?",
+      "answer": "**Short answer:** `DISTINCT` removes duplicate rows from one result. `UNION` stacks two results and removes duplicates. `UNION ALL` stacks them and keeps everything. `UNION ALL` is faster because it skips the duplicate removal, so prefer it when duplicates are impossible or acceptable.\n\n```sql\nSELECT status FROM orders UNION SELECT 'x';\n-- prints: new, paid, x            (duplicates gone, sorted/hashed internally)\n\nSELECT status FROM orders UNION ALL SELECT 'new';\n-- prints 6 rows: paid, paid, new, paid, new, new\n```\n\nRemoving duplicates means sorting or hashing every row, which can be costly on big results and may spill to disk.\n\n**Rules**\n- Both queries must return the same number of columns with compatible types.\n- Column names come from the first query.\n- `UNION` and `DISTINCT` compare all selected columns, with NULLs treated as equal to each other.\n- Related operators: `INTERSECT` (rows in both) and `EXCEPT` (rows in the first only; `MINUS` in Oracle).\n\n| Operator | Duplicates | Cost |\n| --- | --- | --- |\n| `UNION ALL` | kept | cheapest |\n| `UNION` | removed | sort or hash |\n| `DISTINCT` | removed within one result | sort or hash |\n\n**Gotcha:** `SELECT DISTINCT` is often used to hide a join that multiplied rows. Fix the join (or use `EXISTS`) instead of covering it up.\n\n**Interview tip:** say \"I default to UNION ALL and use UNION only when I need the dedupe\", and mention that the sum of the parts can double count if you pick wrongly.",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "union",
+        "distinct"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-009",
+      "question": "What are window functions, and how do ROW_NUMBER, RANK, LAG, LEAD and running totals work?",
+      "answer": "**Short answer:** A window function calculates a value for each row using a set of related rows (the window), without collapsing rows like `GROUP BY` does. You write `function() OVER (PARTITION BY ... ORDER BY ...)`. They are used for ranking, previous and next row, and running totals.\n\n```sql\nSELECT id, customer_id, total,\n  ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY total DESC) AS rn,\n  RANK()       OVER (ORDER BY total DESC)                          AS rk,\n  SUM(total)   OVER (ORDER BY id)                                  AS running\nFROM orders ORDER BY id;\n-- id customer_id total rn rk running\n-- 1  1           100   2  3  100\n-- 2  1           250   1  2  350\n-- 3  2           80    2  4  430\n-- 4  2           300   1  1  730\n-- 5  NULL        50    1  5  780\n\nSELECT id, total, LAG(total) OVER (ORDER BY id) AS prev,\n                  LEAD(total) OVER (ORDER BY id) AS next\nFROM orders;\n-- order 2 has prev 100 and next 80\n```\n\n| Function | What it does |\n| --- | --- |\n| `ROW_NUMBER()` | 1, 2, 3 with no ties |\n| `RANK()` | ties share a rank, then a gap (1, 1, 3) |\n| `DENSE_RANK()` | ties share a rank, no gap (1, 1, 2) |\n| `LAG(x)` / `LEAD(x)` | value from the previous or next row |\n| `SUM(x) OVER (ORDER BY ...)` | running total |\n\n`PARTITION BY` splits the rows into independent groups, like `GROUP BY` without collapsing. `ORDER BY` inside `OVER` sets the order for ranking and running calculations.\n\n**Gotcha:** a running `SUM ... OVER (ORDER BY x)` uses a default frame that treats equal `x` values as one group (RANGE mode), so ties get the same running total. Add a unique tie-breaker in the order, or write `ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`. Also, you cannot filter on a window function in `WHERE`. Wrap the query in a CTE or subquery.\n\n**Interview tip:** top N per group and \"compare to the previous row\" are the two classic uses. Know both patterns by heart.",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "window-functions",
+        "analytics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-010",
+      "question": "What is normalisation (1NF to BCNF), and when should you denormalise?",
+      "answer": "**Short answer:** Normalisation organises tables so each fact is stored once, which prevents update, insert and delete anomalies. The usual target is third normal form (3NF) or BCNF. You denormalise on purpose, with measured reasons, when joins become too slow or when reads hugely outnumber writes.\n\n**The forms in plain words**\n- 1NF: each cell holds one value, no repeating groups (no `phones = '1,2,3'`).\n- 2NF: every non-key column depends on the whole key, not just part of a composite key.\n- 3NF: non-key columns depend on the key and nothing else. No `customer_city` stored in `orders` when it depends on `customer_id`.\n- BCNF: a stricter 3NF. Every determining column must be a candidate key.\n\nA short memory line: every column depends on the key, the whole key, and nothing but the key.\n\n```text\n❌ orders(id, customer_id, customer_name, customer_city)\n   Change a city and you must update many order rows.\n\n✅ customers(id, name, city)\n   orders(id, customer_id)\n```\n\n**When to denormalise**\n- Heavy read paths where a join across many tables is the bottleneck.\n- Reporting tables or read models, built from the normal tables.\n- Snapshot data that must not change later, such as the price and address on an order at the time of purchase. That is a real business fact, not duplication.\n\n| Normalised | Denormalised |\n| --- | --- |\n| Less storage, no anomalies | Faster reads, fewer joins |\n| More joins | Copies must be kept in sync |\n| Best for OLTP writes | Best for reporting and read models |\n\n**Gotcha:** denormalising without a plan to keep copies in sync (trigger, job, event) creates silent drift.\n\n**Interview tip:** say \"normalise first, denormalise with a measurement\", and give the order-price-snapshot example.",
+      "level": "basic",
+      "module": "Data Modeling",
+      "tags": [
+        "normalization",
+        "schema-design"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-011",
+      "question": "What does ACID mean in plain words?",
+      "answer": "**Short answer:** ACID is the set of promises a transactional database makes. Atomicity: all of a transaction happens or none of it. Consistency: the data moves from one valid state to another, obeying the rules. Isolation: concurrent transactions do not see each other's half-finished work. Durability: once committed, data survives a crash.\n\nTake a money transfer of 70 from account 1 to account 2.\n\n| Letter | Promise | In the transfer |\n| --- | --- | --- |\n| Atomicity | all or nothing | both updates apply, or neither does |\n| Consistency | rules always hold | the balance never goes below zero (a `CHECK` constraint) |\n| Isolation | transactions do not interfere | another reader never sees money removed but not yet added |\n| Durability | committed means safe | after `COMMIT`, a power cut cannot lose it |\n\n**How databases deliver it**\n- Atomicity and durability: the write-ahead log. Changes are written to a log on disk first.\n- Consistency: constraints, plus your application logic. The database enforces only the rules you declare.\n- Isolation: locks or multi-version concurrency control, with a choice of isolation levels.\n\n**Gotcha:** \"consistency\" in ACID is not the same word as consistency in the CAP theorem. In ACID it means rules hold. In CAP it means all nodes agree on the latest value.\n\nAnother gotcha: isolation is a dial, not a switch. The default levels of PostgreSQL and SQL Server (read committed) allow some anomalies. Full isolation is `SERIALIZABLE`, which costs throughput.\n\n**Interview tip:** give the bank transfer example, then name one thing that can still go wrong under read committed (a lost update). It shows depth.",
+      "level": "basic",
+      "module": "Transactions & Concurrency",
+      "tags": [
+        "acid",
+        "transactions"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-012",
+      "question": "How do transactions work: BEGIN, COMMIT, ROLLBACK and savepoints?",
+      "answer": "**Short answer:** A transaction groups statements into one unit. `BEGIN` starts it, `COMMIT` makes all changes permanent, and `ROLLBACK` throws them all away. Without an explicit transaction, most databases treat each statement as its own transaction (autocommit).\n\n```sql\nBEGIN;\nUPDATE accounts SET balance = balance - 70 WHERE id = 1;\nUPDATE accounts SET balance = balance + 70 WHERE id = 2;\nCOMMIT;   -- both changes become visible together and are durable\n```\n\nIf the second update fails, you run `ROLLBACK` and the first update is undone. In SQL Server the keywords are `BEGIN TRANSACTION`, `COMMIT TRANSACTION`, and you can set `SET XACT_ABORT ON` so any runtime error rolls back the whole transaction.\n\n**Good habits**\n- Keep transactions short. Open them, do the writes, commit. Never wait on a user or an HTTP call inside one.\n- Do reads that need no protection outside the transaction.\n- Always handle errors and roll back. A connection returned to a pool with an open transaction is a classic outage cause.\n- Use savepoints (`SAVEPOINT name`, `ROLLBACK TO name`) to undo part of a transaction. SQL Server uses `SAVE TRANSACTION`.\n\n**Gotcha:** in PostgreSQL, after an error inside a transaction, every further statement fails with \"current transaction is aborted\" until you roll back (or roll back to a savepoint). In SQL Server, locks are held until commit, so a long transaction blocks others.\n\nA Go sketch of the safe shape:\n\n```go\ntx, err := db.BeginTx(ctx, nil)\nif err != nil { return err }\ndefer tx.Rollback() // safe no-op after a successful Commit\nif _, err = tx.ExecContext(ctx, `UPDATE accounts SET balance = balance - $1 WHERE id = $2`, 70, 1); err != nil {\n    return err\n}\n// ... second update ...\nreturn tx.Commit()\n```\n\n**Interview tip:** mention \"idle in transaction\" sessions. They hold locks, block vacuum in PostgreSQL, and are a common production problem.",
+      "level": "basic",
+      "module": "Transactions & Concurrency",
+      "tags": [
+        "transactions",
+        "commit"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-013",
+      "question": "What is a database index, how does a B-tree work, and what does an index cost?",
+      "answer": "**Short answer:** An index is a separate, sorted structure that lets the database find rows without reading the whole table, like the index at the back of a book. Most indexes are B-trees. They make reads faster but cost extra storage and make every insert, update and delete slower.\n\nA B-tree is a shallow, wide tree of sorted pages. The database starts at the root page, follows pointers down two or three levels, and reaches the leaf page with your key. For millions of rows it takes only a few page reads. The leaves are linked in order, so range queries (`BETWEEN`, `ORDER BY`) are also fast.\n\n```mermaid\nflowchart TD\n    R[\"Root page: 100, 200\"] --> A[\"Page: keys below 100\"]\n    R --> B[\"Page: 100 to 199\"]\n    R --> C[\"Page: 200 and up\"]\n    B --> L1[\"Leaf: 100, 120, 150\"]\n    B --> L2[\"Leaf: 160, 180, 199\"]\n    L1 -. next leaf .-> L2\n```\n\nRead it from the root down. Each step narrows the search. Leaves point to the next leaf for ranges.\n\n```sql\nCREATE INDEX ix_orders_customer ON orders (customer_id);\n-- Fast: WHERE customer_id = 42\n-- Fast: WHERE customer_id = 42 ORDER BY id (if the index covers it)\n```\n\n| Benefit | Cost |\n| --- | --- |\n| Fast lookups and range scans | Extra disk and memory |\n| Can avoid sorting | Every write updates every index |\n| Enforces uniqueness | Slower bulk loads |\n| | The planner has more choices to get wrong |\n\n**Rules of thumb**\n- Index columns used in `WHERE`, `JOIN` and `ORDER BY` of hot queries.\n- Skip tiny tables and columns with very few distinct values (a boolean).\n- Measure with `EXPLAIN` before and after.\n\n**Gotcha:** more indexes is not better. A table with ten indexes does ten extra writes per insert.\n\n**Interview tip:** explain it as a few page reads instead of a full scan, then immediately mention the write cost. That balance is what interviewers look for.",
+      "level": "basic",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "indexes",
+        "b-tree"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-014",
+      "question": "What are views and materialised views, and when do you use them?",
+      "answer": "**Short answer:** A view is a saved query that you use like a table. It stores no data, so it is always current. A materialised view stores the query result on disk, so reads are fast but the data is as old as the last refresh.\n\n```sql\n-- Regular view: hides a join, always fresh\nCREATE VIEW paid_orders AS\nSELECT o.id, c.name, o.total\nFROM orders o JOIN customers c ON c.id = o.customer_id\nWHERE o.status = 'paid';\n\n-- PostgreSQL materialised view: stored result\nCREATE MATERIALIZED VIEW daily_sales AS\nSELECT created_on, SUM(total) AS revenue FROM orders GROUP BY created_on;\n\nREFRESH MATERIALIZED VIEW daily_sales;                  -- locks readers while it runs\nREFRESH MATERIALIZED VIEW CONCURRENTLY daily_sales;     -- needs a unique index\n```\n\n| | View | Materialised view |\n| --- | --- | --- |\n| Stores data | no | yes |\n| Freshness | always current | as of last refresh |\n| Read speed | same as the underlying query | fast |\n| Good for | simplifying joins, hiding columns, security | dashboards, heavy aggregations |\n\n**SQL Server note:** it has no `CREATE MATERIALIZED VIEW`. The equivalent is an indexed view (a view with `WITH SCHEMABINDING` and a unique clustered index), which the engine keeps up to date on every write. It has many restrictions and adds write cost.\n\n**When to use**\n- Views: reuse a hard join, give a stable interface to an app, restrict which columns a role may see.\n- Materialised views: expensive reports that tolerate stale data.\n\n**Gotcha:** a view does not make a slow query fast. Stacking views on views hides cost, and the planner may expand them into huge queries. PostgreSQL does not refresh a materialised view by itself, so schedule it.\n\n**Interview tip:** mention that you would use a materialised view or a summary table for dashboards instead of running heavy aggregates on the live tables.",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "views",
+        "materialized-views"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-015",
+      "question": "What are stored procedures, functions and triggers, and what are their pros and cons?",
+      "answer": "**Short answer:** A stored procedure is a named block of SQL logic saved in the database. A function returns a value and can be used inside queries. A trigger runs automatically when rows change. They keep logic close to the data and can be fast, but they are harder to test, version, review and observe than application code.\n\n| Object | Called how | Typical use |\n| --- | --- | --- |\n| Stored procedure | `CALL` (PostgreSQL) or `EXEC` (SQL Server) | multi-step batch work, admin tasks |\n| Function | inside `SELECT` | calculations, reusable logic |\n| Trigger | automatically on `INSERT`, `UPDATE`, `DELETE` | audit trail, keeping `updated_at` current |\n\n```sql\n-- PostgreSQL trigger keeping updated_at fresh\nCREATE FUNCTION touch_updated_at() RETURNS trigger AS $$\nBEGIN\n  NEW.updated_at = now();\n  RETURN NEW;\nEND $$ LANGUAGE plpgsql;\n\nCREATE TRIGGER trg_orders_touch BEFORE UPDATE ON orders\nFOR EACH ROW EXECUTE FUNCTION touch_updated_at();\n```\n\n**Pros**\n- Fewer network round trips for multi-step work.\n- One place for rules that many apps share.\n- Permissions can be granted on a procedure instead of tables.\n\n**Cons**\n- Logic is split between app and database, so debugging is harder.\n- Hard to unit test, and version control and deployments need extra discipline.\n- Vendor-specific languages (PL/pgSQL, T-SQL) lock you in.\n- Triggers are invisible side effects. They slow writes, can fire in cascades, and surprise developers.\n- Scaling: database CPU is the most expensive CPU you have.\n\n**Gotcha:** a scalar user-defined function in a `WHERE` clause may run once per row and block parallel plans. In SQL Server 2019 and later, some scalar functions are inlined, but do not count on it.\n\n**Interview tip:** a balanced answer is \"app logic by default, small triggers for audit and timestamps, procedures for bulk data work or where a team already owns them\".",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "stored-procedures",
+        "triggers"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-016",
+      "question": "What are the common data type gotchas: money, floats, dates, time zones and text?",
+      "answer": "**Short answer:** Never store money in floating point. Store dates and times as UTC instants with a time zone aware type. Pick the string type by what the database really needs, not by habit. Types are a contract, so wrong types cause quiet bugs.\n\n**Money**\n\nFloating point cannot represent 0.1 exactly. In SQLite, `0.1 + 0.2 = 0.3` is false. Use `NUMERIC(12,2)` or `DECIMAL(12,2)`, or store integer minor units (cents) with the currency code in another column. Avoid the `money` type in PostgreSQL (locale dependent) and SQL Server (rounding surprises in division).\n\n```sql\nSELECT 0.1 + 0.2 = 0.3;   -- false with floating point (prints 0)\n-- ✅ use NUMERIC(12,2) or integer cents\n```\n\n**Dates and time zones**\n- PostgreSQL `timestamptz` stores an instant (internally UTC) and shows it in the session time zone. `timestamp` has no zone, which is a trap.\n- SQL Server: `datetime2` (no zone) or `datetimeoffset` (with an offset). Avoid old `datetime` (about 3 ms precision) for new work.\n- Store in UTC, convert in the UI. Keep a separate zone name (such as `Asia/Kolkata`) when the local wall-clock time matters, for example a future appointment.\n- Date-only values (birthday, invoice date) need a `date` type, not a timestamp at midnight.\n\n**Text**\n- PostgreSQL: `text` and `varchar(n)` perform the same. Use a length limit only when it is a real rule.\n- SQL Server: `varchar` is single byte per char in many collations, `nvarchar` is Unicode (2 bytes). Mixing them in a join can cause implicit conversions that kill index use.\n- Collation decides case and accent sensitivity. SQL Server defaults are often case-insensitive. PostgreSQL's usually are case-sensitive.\n\n| Data | Use | Avoid |\n| --- | --- | --- |\n| Money | `NUMERIC` / integer cents | `FLOAT`, `money` |\n| Instants | `timestamptz` / `datetimeoffset` | `timestamp` without zone |\n| Flags | `boolean` / `bit` | `'Y'/'N'` strings |\n| Ids | `bigint`, UUID | `int` for fast-growing tables |\n\n**Interview tip:** tell the story of a 32-bit `int` id running out at about 2.1 billion rows. It happens in real systems.",
+      "level": "basic",
+      "module": "Data Modeling",
+      "tags": [
+        "data-types",
+        "money",
+        "time"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-017",
+      "question": "What constraints does SQL provide, and why should the database enforce them?",
+      "answer": "**Short answer:** Constraints are rules the database enforces on every write: `NOT NULL`, `UNIQUE`, `PRIMARY KEY`, `FOREIGN KEY`, `CHECK` and `DEFAULT`. They are the last line of defence for data quality. Application checks can be bypassed by bugs, scripts and other services. Database constraints cannot.\n\n```sql\nCREATE TABLE payments (\n  id           INTEGER PRIMARY KEY,\n  order_id     INTEGER NOT NULL REFERENCES orders(id),\n  amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),\n  currency     TEXT    NOT NULL DEFAULT 'INR',\n  idem_key     TEXT    NOT NULL UNIQUE      -- stops double charges on retry\n);\n```\n\n| Constraint | Stops |\n| --- | --- |\n| `NOT NULL` | missing values |\n| `UNIQUE` | duplicates (emails, idempotency keys) |\n| `PRIMARY KEY` | duplicates and NULL identity |\n| `FOREIGN KEY` | orphan rows, and can control deletes (`ON DELETE CASCADE`, `RESTRICT`, `SET NULL`) |\n| `CHECK` | impossible values (negative amounts, bad status) |\n\n**Why this matters in production**\n- Many services and scripts write to the same tables. Rules in one app do not protect against another.\n- A `UNIQUE` constraint is the only reliable way to stop duplicates under concurrency. A \"check then insert\" in code has a race.\n- Constraints document the model for the next developer.\n\n**Gotchas**\n- `ON DELETE CASCADE` can delete far more than expected. Prefer `RESTRICT` or soft deletes for important data.\n- Adding a constraint to a big existing table can lock it. PostgreSQL lets you add `NOT VALID` first and then `VALIDATE CONSTRAINT` with a lighter lock.\n- A `CHECK` on a status list is harder to change than a lookup table with a foreign key.\n\n**Interview tip:** the idempotency key unique constraint is a strong example. It turns a race condition into a clean error you can handle.",
+      "level": "basic",
+      "module": "Data Modeling",
+      "tags": [
+        "constraints",
+        "integrity"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-018",
+      "question": "What is SQL injection, and how do parameterised queries prevent it?",
+      "answer": "**Short answer:** SQL injection happens when user input is glued into SQL text, so the input can change the meaning of the query. The fix is parameterised queries (prepared statements): the SQL text and the values travel separately, so values are never executed as code.\n\n```ts\n// ❌ bad: input becomes part of the SQL\nconst email = req.query.email; // \"x' OR '1'='1\"\nawait db.query(`SELECT * FROM users WHERE email = '${email}'`);\n// becomes: WHERE email = 'x' OR '1'='1'  -> returns every user\n\n// ✅ good: placeholder, value sent separately (node-postgres style)\nawait db.query('SELECT * FROM users WHERE email = $1', [email]);\n```\n\nThe placeholder syntax depends on the driver: `$1` in PostgreSQL drivers, `?` in many others, `@email` in SQL Server and .NET.\n\n**Defence in depth**\n- Always use parameters. ORMs do this by default, but raw SQL fragments and string interpolation in them are still dangerous.\n- Placeholders cannot be used for table names, column names or `ORDER BY` direction. Allow-list those from fixed values in code.\n- Give the app database user the least privilege: no `DROP`, no superuser, read-only users for reports.\n- Validate input types. An id should be an integer before it gets near SQL.\n- Do not show raw database errors to users.\n- Dynamic SQL inside stored procedures (`EXEC(@sql)`) can be injectable too. Use `sp_executesql` with parameters in SQL Server.\n\n**Gotcha:** escaping quotes by hand is not a fix. Encoding tricks and edge cases always find a hole. Also, a parameter is not a cure for `LIKE`: wildcards inside the value still act as wildcards, which is a data leak risk, not code execution.\n\n**Interview tip:** say \"parameters for values, allow-lists for identifiers, least privilege for the account\". That covers the three layers.",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "security",
+        "sql-injection"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-019",
+      "question": "What is the difference between DELETE, TRUNCATE and DROP?",
+      "answer": "**Short answer:** `DELETE` removes chosen rows one by one, can use `WHERE`, fires triggers and is fully logged. `TRUNCATE` empties the whole table quickly by deallocating its pages. `DROP` removes the table itself, including its structure and indexes.\n\n| | DELETE | TRUNCATE | DROP |\n| --- | --- | --- | --- |\n| Removes | rows you select | all rows | the table |\n| `WHERE` allowed | yes | no | no |\n| Speed on big tables | slow, logs each row | very fast | very fast |\n| Triggers fire | yes (row triggers) | no row triggers | no |\n| Resets identity | no | SQL Server: yes. PostgreSQL: only with `RESTART IDENTITY` | n/a |\n| Rollback inside a transaction | yes | yes in PostgreSQL and SQL Server | yes |\n| Needs | delete permission | stronger permission, table lock | owner or stronger |\n\n```sql\nDELETE FROM orders WHERE status = 'cancelled' AND created_on < '2023-01-01';\nTRUNCATE TABLE staging_orders;               -- clear a staging table\nDROP TABLE staging_orders;                   -- remove it entirely\n```\n\n**Things to know**\n- `DELETE` on millions of rows creates big logs, holds locks a long time and in PostgreSQL leaves dead rows that need vacuum. Delete in batches (for example 10,000 rows at a time), or use partitions and drop old partitions.\n- `TRUNCATE` takes a strong table lock. In PostgreSQL it needs `CASCADE` if other tables have foreign keys to it, and in SQL Server it fails when a foreign key references the table.\n- `TRUNCATE` does not fire `ON DELETE` triggers, so audit triggers will not see it.\n\n**Gotcha:** `DELETE FROM orders;` without a `WHERE` deletes everything. Many teams require running destructive statements inside a transaction first and checking the row count, or using safe-update settings on the client.\n\n**Interview tip:** for retention jobs say you would partition by month and drop old partitions, because that is instant and leaves no bloat.",
+      "level": "basic",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "delete",
+        "truncate",
+        "drop"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-020",
+      "question": "What are the trade-offs between auto-increment ids and UUID or ULID primary keys?",
+      "answer": "**Short answer:** Auto-increment (identity or sequence) ids are small, fast and ordered, but they are guessable, hard to generate across many databases, and leak growth. Random UUIDs can be created anywhere without coordination, but they are larger and random, which fragments indexes. Time-ordered ids (UUIDv7, ULID) give most of both.\n\n| Key | Size | Order | Good | Weak |\n| --- | --- | --- | --- | --- |\n| `bigint` identity | 8 bytes | increasing | compact, cache friendly, easy to read | guessable, needs one writer, leaks counts |\n| UUIDv4 | 16 bytes | random | generate anywhere, unguessable | random inserts split B-tree pages, bigger indexes |\n| UUIDv7 / ULID | 16 bytes | roughly by time | generate anywhere, mostly append-only | reveals creation time, library support varies |\n\n**Why random keys hurt**\n\nA B-tree clustered or primary index that receives random keys writes into random pages all over the tree. Pages split, the cache is less effective, and every secondary index (in SQL Server, every non-clustered index stores the clustered key) gets bigger. With time-ordered keys, new rows go to the end of the index, like an auto-increment.\n\n**Practical advice**\n- Single database, internal ids: `bigint` identity. In PostgreSQL use `GENERATED ALWAYS AS IDENTITY` rather than the old `serial`.\n- Ids exposed in URLs or created by several services: UUIDv7 or ULID. PostgreSQL 18 added a built-in `uuidv7()`. Before that, generate them in the app.\n- SQL Server: random `NEWID()` as a clustered key is a known problem. Use `NEWSEQUENTIALID()` or an app-generated ordered id.\n- Never expose sequential ids as the only access control. Check ownership on every request.\n\n**Gotcha:** using `int` (32-bit) for a table that grows fast. It stops at about 2.1 billion, and changing the type later on a huge table is painful.\n\n**Interview tip:** show you can pick by context, and mention index fragmentation as the concrete cost of UUIDv4.",
+      "level": "basic",
+      "module": "Data Modeling",
+      "tags": [
+        "primary-key",
+        "uuid"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-021",
+      "question": "[Tech Lead] How do you triage a slow query or a slow database in production?",
+      "answer": "**Short answer:** Work from the outside in. First decide whether it is one query, one resource or the whole server. Look at metrics, then the top queries by total time, then the plan of the worst one. Change one thing at a time and measure again. Do not start by adding indexes.\n\n**A method I follow**\n1. Scope it: since when, which endpoints, which tenants, what changed (deploy, data growth, new traffic, failover).\n2. Check the host: CPU, memory, disk latency, IOPS, connections, replication lag. In Datadog or Azure Monitor, line these up with the start time.\n3. Check waiting: are sessions blocked on locks, waiting on disk or running on CPU? PostgreSQL: `pg_stat_activity` (`wait_event`, `state`), `pg_locks`. SQL Server: `sys.dm_exec_requests`, wait stats.\n4. Find the top queries by total time (not just slowest single run). PostgreSQL: `pg_stat_statements`. SQL Server: Query Store. Also the slow query log (`log_min_duration_statement`).\n5. Read the plan: `EXPLAIN (ANALYZE, BUFFERS)` in PostgreSQL or the actual execution plan in SQL Server. Compare estimated rows with actual rows.\n6. Fix the cause: index, rewrite, statistics refresh, batch size, missing limit, or a plan regression.\n7. Verify with the same metric, then write down what happened.\n\n```sql\n-- PostgreSQL: top queries by total time (needs the pg_stat_statements extension)\nSELECT calls, round(total_exec_time) AS total_ms,\n       round(mean_exec_time::numeric, 1) AS mean_ms, left(query, 80) AS query\nFROM pg_stat_statements\nORDER BY total_exec_time DESC\nLIMIT 5;\n```\n\n(Column names are for PostgreSQL 13 and later; older versions use `total_time`.)\n\n**Common culprits**\n- A new query with no supporting index, or a plan that flipped after statistics changed.\n- N+1 queries after a code change.\n- Long transactions blocking others, or `idle in transaction` sessions.\n- Connection storm after a restart or deploy.\n- A table that grew past memory, so reads now hit disk.\n\n**Gotcha:** `EXPLAIN ANALYZE` really runs the statement. On an `UPDATE` wrap it in `BEGIN ... ROLLBACK`. On a struggling primary, run it on a replica if the query is a read.\n\n**Interview tip:** narrate the sequence: scope, resource, wait, top query, plan, fix, verify. Interviewers listen for a method more than for a trick.",
+      "level": "intermediate",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "tech-lead",
+        "performance",
+        "troubleshooting"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-022",
+      "question": "[Tech Lead] How do you decide an index strategy and review indexes on a growing system?",
+      "answer": "**Short answer:** Index for the real queries, not the columns. Start from the slow and frequent queries, add the smallest index that serves them, and remove indexes nobody uses. Every index costs write time, storage, memory and vacuum or maintenance work, so each one needs an owner and a reason.\n\n**How I choose**\n- Collect the top queries (pg_stat_statements or Query Store), grouped by shape.\n- For each, look at equality columns first, then range columns, then sort columns. That gives a composite index order.\n- Check selectivity: does the filter cut the table to a small part?\n- Prefer one composite index that serves several queries over many single-column ones.\n- Use partial indexes for hot slices (`WHERE status = 'pending'`) and `INCLUDE` columns to avoid table lookups.\n\n**How I find waste and gaps**\n\n```sql\n-- PostgreSQL: indexes never used since stats reset (keep unique/PK ones!)\nSELECT relname AS table, indexrelname AS index, idx_scan,\n       pg_size_pretty(pg_relation_size(indexrelid)) AS size\nFROM pg_stat_user_indexes\nWHERE idx_scan = 0\nORDER BY pg_relation_size(indexrelid) DESC;\n```\n\n- SQL Server: `sys.dm_db_index_usage_stats` shows reads versus updates. `sys.dm_db_missing_index_details` suggests gaps, but treat suggestions as hints. They are often duplicates or too wide.\n- Look for duplicates and prefixes: an index on `(a)` is redundant when `(a, b)` exists.\n- Check on replicas too. An index unused on the primary may serve reporting on a replica.\n\n**Write cost rule of thumb:** each extra index adds work to every insert and to every update of an indexed column. Hot write tables should have few, narrow indexes.\n\n**Team practice**\n- Every index change goes through code review with the query it helps and a plan before and after.\n- Create indexes online (`CREATE INDEX CONCURRENTLY` in PostgreSQL, `ONLINE = ON` in SQL Server where the edition supports it).\n- Review quarterly: size, usage, bloat.\n\n**Gotcha:** usage stats reset on restart or failover and cover only the observation window. A month-end report index may look unused all month.\n\n**Interview tip:** say \"I treat indexes like code: justified by a query, reviewed, and removable\".",
+      "level": "intermediate",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "tech-lead",
+        "indexes",
+        "review"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-023",
+      "question": "[Tech Lead] How do you run zero-downtime schema migrations?",
+      "answer": "**Short answer:** Change the schema in small, backward-compatible steps using expand and contract. Add the new thing, deploy code that works with both old and new, backfill in batches, switch reads, and only then remove the old thing. Each step must be safe with the old code still running.\n\n```mermaid\nflowchart LR\n    A[\"Expand: add nullable column\"] --> B[\"Deploy code writes both\"]\n    B --> C[\"Backfill in batches\"]\n    C --> D[\"Switch reads to new\"]\n    D --> E[\"Contract: drop old column\"]\n```\n\nRead it left to right. Nothing breaks at any step, so you can pause or roll back between steps.\n\n**Rules for a safe step**\n- Adding a nullable column is cheap. In PostgreSQL 11 and later, adding a column with a constant default is also cheap (no table rewrite). A volatile default (like `random()`) still rewrites.\n- Never rename or drop a column in the same release as the code change. Rename means add new, copy, switch, drop later.\n- Backfill in small batches with pauses, not one giant `UPDATE`, to avoid long locks, replication lag and huge logs.\n- Build indexes online: `CREATE INDEX CONCURRENTLY` (PostgreSQL; cannot run in a transaction and can leave an invalid index to drop on failure) or `WITH (ONLINE = ON)` (SQL Server Enterprise and Azure SQL).\n- Add constraints in two steps. PostgreSQL: `ADD CONSTRAINT ... NOT VALID`, then `VALIDATE CONSTRAINT`. `SET NOT NULL` on a large table scans it, so add a `CHECK (col IS NOT NULL) NOT VALID` first.\n- Set `lock_timeout` so a migration that cannot get its lock fails fast instead of queueing behind a long query and blocking everyone.\n\n```sql\n-- PostgreSQL: fail fast instead of blocking the app\nSET lock_timeout = '3s';\nALTER TABLE orders ADD COLUMN currency text;   -- nullable, cheap\nCREATE INDEX CONCURRENTLY ix_orders_currency ON orders (currency);\n```\n\n**Gotcha:** an `ALTER TABLE` waiting for a lock blocks every query behind it, even simple reads. That queue is how a \"tiny\" migration causes an outage.\n\n**Process:** run migrations as a separate step before the app rollout, test them on a production-sized copy, keep each migration idempotent, and have a rollback or forward-fix plan.\n\n**Interview tip:** name expand and contract, batched backfills, online indexes and `lock_timeout`. That is the full answer.",
+      "level": "intermediate",
+      "module": "Operations & Migrations",
+      "tags": [
+        "tech-lead",
+        "migrations",
+        "zero-downtime"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-024",
+      "question": "[Tech Lead] How do you manage connection pooling and connection limits across many pods?",
+      "answer": "**Short answer:** Total connections equal the number of pods times the pool size per pod, and the database has a fixed maximum. Size pools small, cap the total, and put a pooler such as PgBouncer in front when you have many pods. More connections do not mean more throughput.\n\nPostgreSQL runs one process per connection, with real memory and context-switch cost. SQL Server uses worker threads and also degrades under thousands of sessions. A database with 8 cores usually gives best throughput with a few dozen active connections, not hundreds.\n\n**The arithmetic**\n\n```text\npods x pool_max  <=  max_connections - reserved (admin, replicas, migrations, cron)\n20 pods x 10 = 200 connections, and HPA can scale to 60 pods = 600\n```\n\nAutoscaling is the trap: pods grow under load, exactly when the database is already busy, and the extra connections make it worse.\n\n**Options**\n\n| Option | What it does | Watch for |\n| --- | --- | --- |\n| Small per-pod pool | Each pod holds 3 to 10 connections | still multiplies with pod count |\n| PgBouncer transaction mode | Many client connections share few server connections, a connection is held only during a transaction | session features break: `SET`, advisory locks, `LISTEN`, and older versions lack prepared statement support |\n| Managed pooler | Azure Database for PostgreSQL Flexible Server has built-in PgBouncer; Azure SQL manages sessions for you | still set client pool limits |\n| Queue the work | Put a concurrency limit in front (semaphore, queue) | latency under load |\n\n```ts\n// node-postgres: pool per pod, small and with timeouts\nconst pool = new Pool({\n  max: 10,                       // per pod\n  idleTimeoutMillis: 30_000,\n  connectionTimeoutMillis: 2_000 // fail fast instead of piling up\n});\n```\n\n**Operational checks:** alert on connections in use versus max, on pool wait time and on `idle in transaction` sessions. Always return connections (`release()`, `defer rows.Close()` in Go) or the pool leaks and the service hangs.\n\n**Gotcha:** a rolling deploy briefly runs old and new pods together, so peak connections can double.\n\n**Interview tip:** show the multiplication, mention autoscaling and PgBouncer, and say you size pools from database capacity, not from app thread count.",
+      "level": "intermediate",
+      "module": "Operations & Migrations",
+      "tags": [
+        "tech-lead",
+        "connection-pool",
+        "kubernetes"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-025",
+      "question": "[Tech Lead] How do backups, point-in-time recovery, RPO and RTO work, and how do you prove you can restore?",
+      "answer": "**Short answer:** RPO (recovery point objective) is how much data you can afford to lose, measured in time. RTO (recovery time objective) is how long you can be down. Backups only count if you have restored from them. Point-in-time recovery combines a full backup with a continuous log of changes so you can restore to a chosen second.\n\n**How PITR works**\n- PostgreSQL: a base backup plus archived WAL files. You restore the base backup and replay WAL up to a target time (`recovery_target_time`). Tools: pgBackRest, Barman, WAL-G, or the managed service.\n- SQL Server: full backups, differential backups and transaction log backups, in the full recovery model. Restore the full, the latest differential, then the log chain `WITH STOPAT`.\n- Azure managed databases take automatic backups with point-in-time restore. The retention period is configurable, so check the default and set it to match policy.\n\n| Term | Question it answers | Driven by |\n| --- | --- | --- |\n| RPO | How much data can we lose? | backup and log frequency, replication mode |\n| RTO | How long until we are back? | database size, restore speed, runbook, automation |\n\nA replica is not a backup. A bad `DELETE` or `DROP` replicates in seconds. Backups protect against human error and corruption. Replicas protect against hardware failure.\n\n**What a lead should insist on**\n- Written RPO and RTO per system, agreed with the business.\n- Backups stored outside the failure domain (another region or account), encrypted, and protected from deletion.\n- Regular restore drills, automated: restore into a scratch server, run integrity checks and a few row counts, record the time taken. That time is your real RTO.\n- Monitoring that alerts when a backup or WAL archive is late.\n- A runbook for \"restore to just before 14:03\".\n\n**Gotcha:** an unmonitored WAL archive that fails silently fills the disk in PostgreSQL, or the log chain breaks in SQL Server, and you discover it during the disaster.\n\n**Interview tip:** say \"an untested backup is a hope, not a backup\" and describe your restore drill.",
+      "level": "intermediate",
+      "module": "Operations & Migrations",
+      "tags": [
+        "tech-lead",
+        "backup",
+        "disaster-recovery"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-026",
+      "question": "[Tech Lead] How do you choose a database: relational, document, key-value, wide-column, search, time-series or graph?",
+      "answer": "**Short answer:** Start from the access patterns and the guarantees you need, not from the technology. For most business systems with relationships and transactions, a relational database (PostgreSQL or SQL Server) is the right default. Add a specialised store only when a clear requirement cannot be met well by it.\n\n**Questions to ask first**\n- What are the top reads and writes, and what are their rates and latency targets?\n- Do I need transactions across several records, joins, or ad hoc queries?\n- How big will the data get, and how fast does it grow?\n- What consistency can I accept? Can a read be slightly stale?\n- Who operates it, and does the team know it?\n\n| Need | Fits | Example products |\n| --- | --- | --- |\n| Transactions, relations, ad hoc queries | Relational | PostgreSQL, SQL Server |\n| Flexible nested documents read as a whole | Document | MongoDB, Cosmos DB, or PostgreSQL JSONB |\n| Very fast lookup by key, caching, sessions | Key-value | Redis, DynamoDB |\n| Huge write volume, known query paths, many nodes | Wide-column | Cassandra, ScyllaDB |\n| Free text, relevance ranking, facets | Search | Elasticsearch, OpenSearch |\n| Metrics and events over time | Time-series | TimescaleDB, InfluxDB, Prometheus |\n| Deep relationship traversal | Graph | Neo4j, Neptune |\n\n**Decision habits**\n- Default to the boring option. A single PostgreSQL covers JSON, full text, queues, geo and vectors for many products.\n- Each extra database adds backups, monitoring, security, skills and data sync. Count that cost.\n- Keep one source of truth. Search indexes and caches are derived copies that you can rebuild.\n- Prove the need with a number: \"we need 200k writes per second\", not \"NoSQL scales better\".\n\n**Gotcha:** choosing a store for the resume, then discovering you need joins and transactions and rebuilding them in application code.\n\n**Interview tip:** answer with the framework (access patterns, consistency, scale, operations) and give one example of where you would add a second store, such as Elasticsearch for product search fed from the main database.",
+      "level": "intermediate",
+      "module": "NoSQL & Caching",
+      "tags": [
+        "tech-lead",
+        "architecture",
+        "decision"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-027",
+      "question": "[Tech Lead] What breaks when you use read replicas, and how do you handle replication lag?",
+      "answer": "**Short answer:** Read replicas spread read load, but they are usually asynchronous, so they lag behind the primary. Users can write something and then not see it. You handle this by routing reads that need fresh data to the primary, measuring lag, and designing screens and APIs to tolerate stale reads.\n\n**Typical failures**\n- Read-your-writes: a user places an order and the next page, served from a replica, says there is no order.\n- Monotonic reads: two requests hit different replicas, so data appears to go back in time.\n- Reports and exports that read a replica during heavy write load and fall far behind.\n- A long query on a PostgreSQL replica gets cancelled because it conflicts with replay (recovery conflicts), unless you tune `hot_standby_feedback` or the max standby delay, which brings its own trade-offs such as bloat on the primary.\n\n**Techniques**\n- Route by intent: transactional paths and \"read after write\" go to the primary. Dashboards, search pages and exports go to replicas.\n- Sticky reads: after a write, send that user's reads to the primary for a short window (a few seconds), or until the replica's position passes the write's position.\n- Use a version or timestamp token from the write and wait for the replica to reach it.\n- Monitor lag in bytes and in seconds. PostgreSQL: `pg_stat_replication` (`replay_lag`) on the primary, or `now() - pg_last_xact_replay_timestamp()` on the replica. SQL Server: availability group dashboards and DMVs. Alert on a threshold and remove a lagging replica from the pool automatically.\n- Use synchronous replication only for data you cannot lose, accepting higher write latency and the risk that a dead standby blocks commits.\n\n```mermaid\nsequenceDiagram\n    participant U as User\n    participant P as Primary\n    participant R as Replica\n    U->>P: place order\n    P-->>U: ok\n    P-)R: replicate (async)\n    U->>R: view order\n    R-->>U: not found (lag)\n```\n\nThe final read arrives before the change has reached the replica.\n\n**Gotcha:** replicas do not help write scaling, and a replica that is too far behind is a bad failover target.\n\n**Interview tip:** name \"read your own writes\" and explain how you would route traffic for it.",
+      "level": "intermediate",
+      "module": "Scaling & Replication",
+      "tags": [
+        "tech-lead",
+        "replication",
+        "read-replicas"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-028",
+      "question": "[Tech Lead] When should you shard or partition a database, and when should you not?",
+      "answer": "**Short answer:** Partitioning splits one big table inside one database. Sharding splits data across several database servers. Both add complexity, so first exhaust simpler options: better queries and indexes, caching, read replicas, archiving old data and a bigger machine. Shard only when a single node truly cannot handle the writes or the data size.\n\n| Technique | Where data lives | Solves | Cost |\n| --- | --- | --- | --- |\n| Partitioning | same server | maintenance, retention, pruning scans | design of the key |\n| Read replicas | copies of all data | read throughput | lag |\n| Sharding | different servers | write throughput, storage beyond one node | large: routing, cross-shard queries, resharding |\n\n**What sharding takes away**\n- Cross-shard joins and transactions become hard or impossible.\n- Unique constraints across shards need extra design.\n- Reporting needs a separate path (a warehouse).\n- Rebalancing when a shard gets full is painful.\n- Hot shards: one big tenant or a celebrity key.\n- Operations multiply: backups, migrations, monitoring per shard.\n\n**My checklist before agreeing to shard**\n1. Show the evidence: CPU or IO saturated on the largest instance, after tuning.\n2. Archive or drop cold data. Often 80 percent of rows are never read.\n3. Try partitioning by time with a retention policy.\n4. Consider a managed distributed option (Citus, CockroachDB, Cosmos DB, Azure SQL Hyperscale) that hides the routing.\n5. If sharding is still needed, choose a key that groups data accessed together, usually the tenant or customer id, with many more logical shards than servers so they can be moved.\n\n**Gotcha:** sharding by something like `created_at` sends every new write to one shard. A good shard key spreads writes and keeps queries on one shard.\n\n**Interview tip:** say \"I would not shard until measurements force it\", and then show that you know the key choice and the lost features.",
+      "level": "advanced",
+      "module": "Scaling & Replication",
+      "tags": [
+        "tech-lead",
+        "sharding",
+        "partitioning"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-029",
+      "question": "[Tech Lead] How do you design a multi-tenant data model?",
+      "answer": "**Short answer:** There are three main models: all tenants share tables with a `tenant_id` column, each tenant gets its own schema, or each tenant gets its own database. Shared tables are cheapest and simplest to operate. Separate databases give the strongest isolation and the highest cost. Choose by tenant count, size variation, isolation needs and compliance.\n\n| Model | Isolation | Cost per tenant | Operations | Good for |\n| --- | --- | --- | --- | --- |\n| Shared tables with `tenant_id` | logical | lowest | one schema to migrate | thousands of small tenants |\n| Schema per tenant | medium | medium | migrations run N times | tens to hundreds of tenants |\n| Database per tenant | strongest | highest | N backups, N pools | few large or regulated tenants |\n\n**Shared tables: the rules**\n- Put `tenant_id` on every table, include it in every index that serves tenant queries, and put it first in composite keys.\n- Make the foreign keys composite too, `(tenant_id, customer_id)`, so a row can never point at another tenant's data.\n- Enforce isolation in the database, not only in the app. PostgreSQL has row level security (`CREATE POLICY ... USING (tenant_id = current_setting('app.tenant_id')::int)`). SQL Server has row-level security with security policies (since 2016).\n- Watch for the noisy neighbour: one large tenant slows everyone. Use rate limits, per-tenant metrics and the ability to move a big tenant to its own database.\n\n```sql\nCREATE TABLE orders (\n  tenant_id INT NOT NULL,\n  id        BIGINT NOT NULL,\n  total     INT NOT NULL,\n  PRIMARY KEY (tenant_id, id)\n);\nCREATE INDEX ix_orders_tenant_created ON orders (tenant_id, id);\n```\n\n**Gotchas**\n- A forgotten `WHERE tenant_id = ...` leaks data. A shared ORM filter, row level security and tests that try cross-tenant access all reduce the risk.\n- Per-tenant restore is hard with shared tables. Decide early how you would restore one customer.\n- Connection pooling and row level security need care: set the tenant context per transaction, not per connection.\n\n**Interview tip:** recommend a hybrid: shared tables by default, with a path to move big or regulated tenants to dedicated databases.",
+      "level": "intermediate",
+      "module": "Data Modeling",
+      "tags": [
+        "tech-lead",
+        "multi-tenancy",
+        "saas"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-030",
+      "question": "[Tech Lead] What do you check in a data model review?",
+      "answer": "**Short answer:** I review the model against real queries and real failure modes: correct keys and constraints, sensible types, indexes for the top queries, safe growth, evolution without downtime, and data protection. A schema is the hardest thing to change later, so the review is cheap compared with a migration.\n\n**Checklist**\n- Entities and keys: every table has a primary key, natural unique keys are enforced, foreign keys exist and have indexes.\n- Integrity: `NOT NULL` by default, `CHECK` for ranges and states, no \"magic\" values like `-1` for unknown.\n- Types: money as decimal or integer cents, timestamps in UTC with zone, `bigint` for growing ids, UUID choices justified.\n- Normalisation: no repeated facts, and any denormalised copy has a named owner and a sync mechanism.\n- History: what must be remembered (price at purchase, address on the order)? Soft delete versus real delete; audit needs.\n- Queries: the top five reads and writes are written down, with the index that serves each.\n- Volume: rows per day, total in a year, largest tenant. Plan for partitioning or archiving if the table will reach hundreds of millions of rows.\n- Concurrency: where can two requests write the same row? Version column, unique constraint, or lock?\n- Evolution: can columns be added without a rewrite? Are enums changeable? Is there a migration plan?\n- Security: where is PII, is it encrypted or tokenised, and who can read it?\n- Naming: consistent names, no reserved words, no abbreviations nobody knows.\n\n**Smells**\n- JSON blob holding fields you filter on.\n- A status column with no list of valid values.\n- Many-to-many data in a comma separated column.\n- One huge \"generic\" table with a type column and mostly NULL columns.\n- A table with no way to tell which row is current.\n\n**Interview tip:** say you bring the top queries and a volume estimate to the review. Without them the review is just opinions.",
+      "level": "intermediate",
+      "module": "Data Modeling",
+      "tags": [
+        "tech-lead",
+        "schema-design",
+        "review"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-031",
+      "question": "[Tech Lead] How do you handle PII, encryption, retention and audit in a database?",
+      "answer": "**Short answer:** Know where personal data lives, collect less of it, protect it in transit and at rest, limit who can read it, delete it on a schedule, and keep a trustworthy record of access and changes. Treat these as design requirements from the start, not as a later patch.\n\n**Layers**\n- Inventory and minimise: list columns that hold PII (name, email, phone, address, ids). Do not store what you do not need. Keep it out of logs and analytics copies.\n- In transit: TLS between app and database. Require it in the connection settings.\n- At rest: disk or transparent data encryption (TDE in SQL Server, managed disk encryption on Azure). This protects stolen disks and backups, not a rogue query.\n- Column level: encrypt or tokenise very sensitive fields (national ids, card data). SQL Server has Always Encrypted. In PostgreSQL use application-side encryption or `pgcrypto` with care for keys. Do not store raw card numbers. Use a payment provider's token.\n- Keys: keep them in a key vault (Azure Key Vault), rotate them, and never put them in the same place as the data.\n- Access control: least privilege roles, no shared admin logins, short-lived credentials, separate read-only roles. Use views or column permissions, masking (SQL Server dynamic data masking, which is a convenience and not strong security) for support tools.\n- Audit: record who read or changed sensitive data and when. Options: audit tables and triggers, PostgreSQL `pgaudit`, SQL Server Audit, plus append-only storage for the logs.\n- Retention and deletion: define how long each data type is kept. Delete or anonymise on schedule. Partitioning by time makes this fast. Right-to-erasure requests need a path that also reaches backups, replicas and search indexes (often by expiring backups and keeping a deletion list to replay after restore).\n\n**Gotchas**\n- Production data copied to staging or laptops is the most common leak. Mask or generate test data.\n- Soft delete is not erasure.\n- Backups and logs also contain PII, so apply the same controls.\n\n**Interview tip:** structure the answer as find, minimise, protect, control access, audit, delete. Mention that legal requirements (GDPR, local rules) come from your compliance team, and you build the mechanisms.",
+      "level": "advanced",
+      "module": "Operations & Migrations",
+      "tags": [
+        "tech-lead",
+        "security",
+        "privacy"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-032",
+      "question": "[Tech Lead] How do you plan database capacity and control cost?",
+      "answer": "**Short answer:** Measure current usage and growth, forecast with headroom, and review the biggest cost drivers regularly. Most database cost is oversized instances, unused storage and IOPS, copies of data nobody needs and inefficient queries. Fixing queries is usually cheaper than buying hardware.\n\n**What I track**\n- Compute: CPU, active connections, queue depth. Keep average CPU well below saturation (for example 40 to 60 percent at peak) so spikes and failovers have room.\n- Memory: cache hit ratio and whether the working set fits in memory. When it stops fitting, latency jumps.\n- Storage: size, daily growth, index share, bloat, and how fast you will fill the disk. Alert at a growth-based time-to-full, not only at 80 percent.\n- IO: IOPS and latency against the limit of the disk tier. Cloud disks have caps.\n- Growth drivers: rows per day, per tenant, per table.\n\n**Forecasting:** take 90 days of data, find the trend, add the business plan (new customers, features), and plan the next upgrade date with a margin. Load test with production-sized data before big launches.\n\n**Levers to save money and risk**\n- Fix the top queries first. One missing index can cut CPU by half.\n- Archive or drop cold data (partitions). Move old events to cheap storage or a warehouse.\n- Right-size: use Query Store or pg_stat_statements and metrics before changing instance size. Use reserved capacity for steady loads, and autoscaling or serverless tiers for spiky ones.\n- Remove unused indexes and unused replicas. Run non-production databases smaller or switch them off outside working hours.\n- Control backup retention and log volume.\n- Prefer a cache for repeated reads of hot data.\n\n**Gotchas**\n- Scaling up hides a bad query for a month, then the bill and the problem return.\n- Cross-region replication and data transfer fees are easy to overlook.\n\n**Interview tip:** talk about unit costs, for example cost per 1,000 orders, so the business sees the trend, not just the invoice.",
+      "level": "intermediate",
+      "module": "Operations & Migrations",
+      "tags": [
+        "tech-lead",
+        "capacity",
+        "cost"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-033",
+      "question": "[Tech Lead] ORMs versus raw SQL: how do you avoid N+1 queries and keep migrations disciplined?",
+      "answer": "**Short answer:** Use an ORM for everyday CRUD and for productivity, and drop to hand-written SQL for reports, bulk work and hot paths. The risks are hidden queries (N+1), badly generated SQL and sloppy migrations. Reduce them with query logging in tests, eager loading, code review of generated SQL and versioned, reviewed migrations.\n\n**Where each wins**\n\n| Use case | Better with |\n| --- | --- |\n| Simple CRUD, forms, admin screens | ORM |\n| Complex joins, window functions, reports | SQL (query builder or raw) |\n| Bulk insert and update | SQL, or the ORM's bulk API |\n| Hot path with strict latency | hand-tuned SQL |\n\n**Team rules**\n- Log SQL in development and in test runs. A test that asserts \"this endpoint runs at most 5 queries\" catches N+1 early.\n- Fetch related data deliberately: join or `include` (eager loading), or one batched `WHERE id IN (...)`. Avoid lazy loading inside loops.\n- Select only needed columns for list views. Avoid loading whole entity graphs.\n- Review the SQL the ORM produces for new endpoints. Datadog APM traces show repeated identical queries.\n- Keep transactions explicit and short. Do not let a request hold one open across an HTTP call.\n- Migrations are code: generated or hand-written files in version control, applied by the pipeline, forward-only in production, one change per file, reviewed for locks (see the zero-downtime question). Never edit an applied migration. Never let the app auto-migrate on startup in a multi-pod deployment, because pods race.\n- Keep the ORM schema, the migration history and the real database in sync with a check in CI.\n\n**Gotcha:** the ORM can hide that a `findAll()` loads a million rows or that a `save()` in a loop issues a million statements. The abstraction is leaky when scale arrives.\n\n**Interview tip:** say you are not for or against ORMs. You set guardrails: query counts in tests, observability on SQL, and an agreed escape hatch to SQL.",
+      "level": "intermediate",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "tech-lead",
+        "orm",
+        "migrations"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-034",
+      "question": "[Tech Lead] How would you run and write up a database outage incident?",
+      "answer": "**Short answer:** Stabilise first, understand later. Assign roles, restore service with the safest action, communicate clearly, preserve evidence, and then write a blameless review with a timeline, root causes, and follow-up actions that have owners and dates.\n\n**During the incident**\n1. Declare it, name an incident commander, and keep one channel for the timeline.\n2. Check recent changes first: deploy, migration, config, traffic, failover. Rolling back a change is often the fastest fix.\n3. Protect the database: shed load (feature flags, rate limits), stop runaway queries (`pg_cancel_backend`, `KILL` in SQL Server), pause batch jobs, and cap connections.\n4. Avoid risky moves under pressure, such as a restore over the live database or dropping indexes, unless the plan is clear.\n5. Communicate every 15 to 30 minutes: what we know, what we do, when the next update comes.\n\n**Write-up template (blameless)**\n\n| Section | Content |\n| --- | --- |\n| Summary | one paragraph: impact, duration, customers affected |\n| Impact | error rates, lost orders, SLA effects, data loss yes or no |\n| Timeline | detection, escalation, mitigation, recovery, with timestamps |\n| Root cause | the chain of causes, using \"five whys\" down to the process level |\n| Detection | how we found out, and why the alert was late or missing |\n| What went well | what helped |\n| Action items | each with owner, priority and date |\n\n**Example root cause chain:** a migration added an index without `CONCURRENTLY`, it blocked writes for 8 minutes, the connection pool filled, health checks failed and pods restarted, making a connection storm. Actions: lint migrations for blocking statements, set `lock_timeout`, cap pool size, add a pool wait alert.\n\n**Gotchas**\n- Fixing only the trigger (the index) and not the amplifier (no limits on connections).\n- Action items that nobody tracks.\n- Blaming a person instead of the gap that allowed the mistake.\n\n**Interview tip:** have one real story ready in this shape. Say what you changed in the system afterwards, not only what you fixed that night.",
+      "level": "advanced",
+      "module": "Operations & Migrations",
+      "tags": [
+        "tech-lead",
+        "incident-response",
+        "postmortem"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-035",
+      "question": "What are transaction isolation levels, and which anomalies does each allow?",
+      "answer": "**Short answer:** Isolation levels decide how much one transaction can see of another's work. Lower levels are faster but allow anomalies: dirty reads, non-repeatable reads, phantom reads, lost updates and write skew. `SERIALIZABLE` prevents all of them, as if transactions ran one after another, at a cost.\n\n**The anomalies**\n- Dirty read: you read data another transaction has not committed yet. It may be rolled back.\n- Non-repeatable read: you read a row twice and it changed in between, because someone committed.\n- Phantom read: you run the same query twice and new rows appear that match.\n- Lost update: two transactions read the same value, both write, and one overwrites the other.\n- Write skew: two transactions read overlapping data, each writes a different row, and together they break a rule. Example: two doctors are on call, both see \"2 on call\", both go off call, now none is on call.\n\n| Level | Dirty read | Non-repeatable | Phantom | Notes |\n| --- | --- | --- | --- | --- |\n| Read uncommitted | possible | possible | possible | PostgreSQL treats it as read committed |\n| Read committed | no | possible | possible | default in PostgreSQL and SQL Server |\n| Repeatable read | no | no | standard allows; PostgreSQL does not show them | PostgreSQL uses snapshot isolation; write skew still possible |\n| Serializable | no | no | no | PostgreSQL uses SSI and may abort with a serialisation error |\n\nSQL Server also has `SNAPSHOT` isolation and the option `READ_COMMITTED_SNAPSHOT` (RCSI), which changes read committed to use row versions instead of shared locks.\n\n```sql\n-- Lost update at read committed\n-- T1: SELECT balance FROM accounts WHERE id = 1;   -- 100\n-- T2: SELECT balance FROM accounts WHERE id = 1;   -- 100\n-- T1: UPDATE accounts SET balance = 100 + 50 WHERE id = 1;  COMMIT;\n-- T2: UPDATE accounts SET balance = 100 - 30 WHERE id = 1;  COMMIT; -- T1's +50 is lost\n-- ✅ fix: UPDATE accounts SET balance = balance - 30 WHERE id = 1;  (atomic)\n```\n\n**How to cope with a weaker level**\n- Make the change atomic in SQL (`balance = balance - 30`).\n- Lock the row you read: `SELECT ... FOR UPDATE`.\n- Use a version column and check it on update.\n- Choose `SERIALIZABLE` for rules that span rows, and retry on serialisation failure (SQLSTATE 40001 in PostgreSQL, error 1205 for a deadlock in SQL Server).\n\n**Gotcha:** higher isolation is not free. In PostgreSQL, serialisable and repeatable read transactions may fail with an error that your code must retry.\n\n**Interview tip:** explain write skew with the on-call doctors story. It is the anomaly most candidates have not seen.",
+      "level": "intermediate",
+      "module": "Transactions & Concurrency",
+      "tags": [
+        "isolation",
+        "anomalies",
+        "concurrency"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-036",
+      "question": "How does MVCC in PostgreSQL differ from locking-based isolation in SQL Server?",
+      "answer": "**Short answer:** MVCC keeps several versions of a row, so readers see a consistent snapshot and do not block writers. PostgreSQL always works this way. SQL Server's default read committed uses locks, so readers can block writers, unless you turn on read committed snapshot isolation (RCSI) or snapshot isolation, which use row versions.\n\n**PostgreSQL**\n- An `UPDATE` writes a new row version and marks the old one as dead. Each transaction sees the versions that were committed when its statement (read committed) or transaction (repeatable read) began.\n- Readers never block writers, and writers never block readers. Writers still block other writers on the same row.\n- The price is dead rows, which `VACUUM` must clean. Long transactions keep old versions alive and cause bloat.\n\n**SQL Server**\n- Default read committed takes short shared locks on reads. A reader waits for an uncommitted writer on the same row, and a writer waits for readers.\n- With `ALTER DATABASE ... SET READ_COMMITTED_SNAPSHOT ON`, reads use row versions kept in tempdb. Azure SQL Database enables RCSI by default.\n- `SNAPSHOT` isolation gives repeatable snapshot reads for a whole transaction, and needs `ALLOW_SNAPSHOT_ISOLATION ON`.\n- The version store grows with long transactions, so watch tempdb (with Accelerated Database Recovery in SQL Server 2019 and later, versions live in the user database).\n\n| | PostgreSQL | SQL Server default | SQL Server with RCSI |\n| --- | --- | --- | --- |\n| Reader blocks writer | no | yes (short locks) | no |\n| Writer blocks reader | no | yes | no |\n| Old versions kept | in the table, cleaned by vacuum | none | in the version store |\n| Main risk | bloat, long transactions | blocking, deadlocks | tempdb or version store growth |\n\n**Gotcha:** switching an old SQL Server application to RCSI can change behaviour. Code that relied on a reader waiting for a writer now reads the older committed value.\n\n**Interview tip:** the line \"readers do not block writers under MVCC, but dead versions have to be cleaned up\" captures both the benefit and the cost.",
+      "level": "intermediate",
+      "module": "Transactions & Concurrency",
+      "tags": [
+        "mvcc",
+        "postgresql",
+        "sql-server"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-037",
+      "question": "What are locks and deadlocks, and how do you avoid and diagnose them?",
+      "answer": "**Short answer:** Locks protect rows and tables while a transaction changes them. A deadlock happens when two transactions each hold a lock the other needs, so neither can continue. The database detects it, aborts one transaction (the victim) and the app must retry. Avoid deadlocks by locking in a consistent order and keeping transactions short.\n\n```mermaid\nsequenceDiagram\n    participant A as Transaction A\n    participant B as Transaction B\n    A->>A: lock order 1\n    B->>B: lock order 2\n    A->>B: wants order 2 (waits)\n    B->>A: wants order 1 (waits)\n    Note over A,B: deadlock, one is aborted\n```\n\nEach transaction waits for the lock the other holds. The cycle never ends by itself.\n\n**Avoid**\n- Touch tables and rows in the same order everywhere. If you update many rows, sort the ids first.\n- Keep transactions short, with no user input or network calls inside.\n- Index the columns you filter on in `UPDATE` and `DELETE`, so the database locks fewer rows (in SQL Server, a missing index can cause a scan that takes many locks).\n- Lock early with `SELECT ... FOR UPDATE` if you will update the rows anyway.\n- Use a lower lock level when safe, or row versioning (RCSI) so reads do not lock.\n\n**Diagnose**\n- PostgreSQL: set `log_lock_waits = on`. Deadlocks are logged with both statements (error 40P01). Use `pg_locks` joined to `pg_stat_activity` and `pg_blocking_pids(pid)` for live blocking.\n- SQL Server: error 1205. Read the deadlock graph from the `system_health` Extended Events session or a trace. `sys.dm_tran_locks` and `sys.dm_exec_requests` (`blocking_session_id`) show live blocking.\n\n**Handle in code:** treat deadlock and serialisation errors as retryable. Retry the whole transaction a few times with a small random delay.\n\n**Gotcha:** blocking is not a deadlock. A long transaction that holds a lock can stall dozens of requests without any deadlock. The fix there is to find the head blocker.\n\n**Interview tip:** describe the consistent ordering rule and the retry. Those two answers cover most follow-ups.",
+      "level": "intermediate",
+      "module": "Transactions & Concurrency",
+      "tags": [
+        "locks",
+        "deadlocks"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-038",
+      "question": "What is the difference between optimistic and pessimistic concurrency, and how do version columns, SELECT FOR UPDATE and SKIP LOCKED fit in?",
+      "answer": "**Short answer:** Pessimistic concurrency locks the row up front so nobody else can change it while you work. Optimistic concurrency does not lock. It checks at write time that nobody changed the row since you read it, using a version column, and retries or fails if someone did. Use optimistic for low conflict, pessimistic for high conflict.\n\n**Optimistic: version column**\n\n```sql\n-- read: id=7, version=3\nUPDATE orders\nSET status = 'shipped', version = version + 1\nWHERE id = 7 AND version = 3;\n-- rows affected = 1: success\n-- rows affected = 0: someone else changed it, reload and retry or tell the user\n```\n\nThis catches lost updates without holding locks during a user's think time. SQL Server's `rowversion` column type or an ETag in an API do the same job.\n\n**Pessimistic: SELECT FOR UPDATE**\n\n```sql\nBEGIN;\nSELECT * FROM inventory WHERE sku = 'A1' FOR UPDATE;  -- others wait here\nUPDATE inventory SET qty = qty - 1 WHERE sku = 'A1';\nCOMMIT;\n```\n\nSQL Server uses table hints, for example `WITH (UPDLOCK, ROWLOCK)`.\n\n**Job queue: SKIP LOCKED**\n\nMany workers can take different rows without waiting for each other:\n\n```sql\n-- PostgreSQL (9.5+); SQL Server uses WITH (UPDLOCK, READPAST)\nUPDATE jobs SET status = 'running'\nWHERE id = (\n  SELECT id FROM jobs WHERE status = 'pending'\n  ORDER BY id LIMIT 1\n  FOR UPDATE SKIP LOCKED\n)\nRETURNING id;\n```\n\n| Style | Good when | Cost |\n| --- | --- | --- |\n| Optimistic | conflicts are rare, long user think time | retries on conflict |\n| Pessimistic | conflicts are common, short critical section | waiting, deadlock risk |\n| SKIP LOCKED | a table used as a work queue | no strict ordering across workers |\n\n**Gotcha:** locks are held until the transaction ends. Never keep a pessimistic lock while waiting for a human or a remote call.\n\n**Interview tip:** for a \"reserve the last item\" problem, a single atomic `UPDATE ... SET qty = qty - 1 WHERE qty > 0` and checking the row count is often the simplest and best answer.",
+      "level": "intermediate",
+      "module": "Transactions & Concurrency",
+      "tags": [
+        "optimistic-locking",
+        "concurrency",
+        "queues"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-039",
+      "question": "How do you read a query plan: EXPLAIN ANALYZE, scan types and join algorithms?",
+      "answer": "**Short answer:** A query plan is the tree of steps the database chose. `EXPLAIN` shows the estimated plan. `EXPLAIN ANALYZE` (PostgreSQL) also runs the query and shows real rows and time. Read it from the innermost step outward, compare estimated rows with actual rows, and look for the node where most time is spent.\n\n```sql\nEXPLAIN (ANALYZE, BUFFERS)\nSELECT * FROM orders WHERE customer_id = 42 AND status = 'paid';\n-- Index Scan using ix_orders_customer on orders  (cost=0.43..8.45 rows=3 width=40)\n--   (actual time=0.03..0.05 rows=2 loops=1)\n--   Index Cond: (customer_id = 42)\n--   Filter: (status = 'paid')\n```\n\n(The numbers above are an illustration of the shape, not output from a real run.)\n\nSQL Server shows the same ideas in the graphical actual execution plan, or with `SET STATISTICS IO, TIME ON`.\n\n**Access methods**\n- Sequential (table) scan: reads everything. Fine for small tables or when most rows are needed.\n- Index scan or seek: walks the index to matching rows, then fetches the table rows.\n- Index-only scan (PostgreSQL) or covering index (SQL Server): all needed columns are in the index, no table fetch. PostgreSQL also needs the visibility map to be up to date.\n- Bitmap scan (PostgreSQL): collects many matching row locations, then reads table pages in order.\n\n**Join algorithms**\n\n| Algorithm | How | Best when |\n| --- | --- | --- |\n| Nested loop | for each outer row, look up the inner | few outer rows and an index on the inner side |\n| Hash join | build a hash table of one side, probe with the other | larger, unsorted inputs, equality joins |\n| Merge join | walk two sorted inputs together | both sides already sorted (or sorted cheaply) |\n\n**What to look for**\n- Estimated rows far from actual rows: stale statistics or correlated columns. This is the root of most bad plans.\n- A scan that returns few rows out of many: a missing index.\n- Sorts and hashes that spill to disk (`external merge`, `Batches > 1`, tempdb spills).\n- A nested loop with a large `loops` count.\n- Many shared buffer reads (`Buffers: shared read`): IO bound.\n\n**Gotcha:** `EXPLAIN ANALYZE` executes data-changing statements. Wrap them in `BEGIN; ... ROLLBACK;`.\n\n**Interview tip:** say \"I compare estimated and actual rows first\". It signals real experience.",
+      "level": "intermediate",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "explain",
+        "query-plan",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-040",
+      "question": "What are composite, covering, partial and expression indexes?",
+      "answer": "**Short answer:** A composite index covers several columns in a set order. A covering index holds every column a query needs, so the table is never touched. A partial (filtered) index covers only some rows. An expression index is built on a computed value, such as `lower(email)`.\n\n```sql\n-- Composite: serves WHERE customer_id = ? AND created_on > ?  ORDER BY created_on\nCREATE INDEX ix_orders_cust_date ON orders (customer_id, created_on);\n\n-- Covering (PostgreSQL 11+ INCLUDE; SQL Server INCLUDE too)\nCREATE INDEX ix_orders_cust_cover ON orders (customer_id) INCLUDE (total);\n\n-- Partial: tiny index for the hot slice (PostgreSQL syntax; SQL Server calls it a filtered index)\nCREATE INDEX ix_orders_pending ON orders (created_on) WHERE status = 'pending';\n\n-- Expression (PostgreSQL): case-insensitive lookup\nCREATE INDEX ix_users_email_lower ON users (lower(email));\n-- WHERE lower(email) = 'a@x.com' can now use the index\n```\n\n| Type | Helps with | Trade-off |\n| --- | --- | --- |\n| Composite | multi-column filters and sort | order matters, wide indexes cost more |\n| Covering | read-heavy queries needing a few columns | larger index, more write cost |\n| Partial | queues, \"active\" rows, soft-deleted tables | only helps queries that include the same condition |\n| Expression | queries that filter on a function | query must use the exact same expression |\n| Unique (any of the above) | enforce rules and speed up lookups | write cost |\n\n**Notes**\n- In SQL Server, computed columns can be indexed for the same effect as expression indexes. Filtered indexes have limits on which predicates the optimiser can match.\n- A covering index removes the \"key lookup\" (SQL Server) or heap fetch (PostgreSQL). With included columns, they are stored in the leaf only and are not part of the sort order.\n- Partial indexes for `status = 'pending'` stay small even if the table has billions of finished rows.\n\n**Gotcha:** a covering index that includes many columns starts to duplicate the table and slows writes. Include only what the hot query selects.\n\n**Interview tip:** the \"pending jobs\" partial index is a good concrete example to quote.",
+      "level": "intermediate",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "indexes",
+        "composite",
+        "covering"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-041",
+      "question": "What are index selectivity, column order and the leftmost-prefix rule?",
+      "answer": "**Short answer:** Selectivity is how few rows a condition matches. A highly selective column (like `email`) narrows quickly. A low selectivity one (like `is_active`) does not. In a composite index, the leftmost-prefix rule says the index helps queries that use the first column, or the first two, and so on, but usually not a query that skips the first column.\n\nFor an index on `(customer_id, status, created_on)`:\n\n| Query filters on | Uses the index well? |\n| --- | --- |\n| `customer_id` | yes |\n| `customer_id` and `status` | yes |\n| `customer_id`, `status`, `created_on` | yes, fully |\n| `customer_id` and `created_on` (skips `status`) | partly: seeks on `customer_id`, filters the rest |\n| `status` only | no (or a slow full index scan) |\n| `created_on` only | no |\n\nIt works like a phone book sorted by last name, then first name. You can find \"Singh, Anu\" or all the Singhs, but you cannot find everyone called Anu without reading the whole book.\n\n**Choosing the order**\n- Put columns used with equality first, then the range column, then sort columns. Equality then range lets the index walk one contiguous slice.\n- Among equality columns, put the more selective one first if queries sometimes use only one. If all queries use all of them, the order matters less for lookup but still affects what other queries it can serve.\n- A range column stops the prefix: after a `>` condition, later columns cannot narrow the seek.\n- Match the `ORDER BY` direction to avoid a sort.\n\n```sql\n-- Index (customer_id, created_on) serves both:\nSELECT * FROM orders WHERE customer_id = 7 ORDER BY created_on DESC LIMIT 10;\n-- one seek, reads 10 entries from the end, no sort step\n```\n\n**Gotcha:** low-selectivity columns on their own (booleans, status) make poor indexes, but they can be fine as the second column or in a partial index. Selectivity depends on the data distribution. A rare status value is selective, a common one is not, which is why statistics matter.\n\n**Interview tip:** use the phone book analogy, then state the equality, range, sort order rule.",
+      "level": "intermediate",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "indexes",
+        "selectivity",
+        "composite"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-042",
+      "question": "Why might the database ignore your index?",
+      "answer": "**Short answer:** The index may not match the query, the query may hide the column from the index, or the planner may judge that a scan is cheaper. Common causes are a function on the column, a type mismatch, a leading wildcard, `OR` conditions, low selectivity and stale statistics.\n\n| Cause | Example | Fix |\n| --- | --- | --- |\n| Function on the column | `WHERE date(created_at) = '2024-05-01'` | range: `created_at >= '2024-05-01' AND created_at < '2024-05-02'` |\n| Implicit cast | column `varchar`, parameter `nvarchar` (SQL Server) or text vs int | match the types in the query and the schema |\n| Leading wildcard | `LIKE '%shirt'` | full text search, trigram index (PostgreSQL `pg_trgm`) |\n| Leftmost prefix broken | index `(a, b)` and `WHERE b = 1` | new index or reorder |\n| `OR` across columns | `WHERE a = 1 OR b = 2` | `UNION` of two queries, or separate indexes the planner can combine |\n| Low selectivity | `WHERE is_active = true` on 95 percent of rows | partial index or accept the scan |\n| Stale statistics | row counts changed a lot | `ANALYZE` (PostgreSQL), update statistics (SQL Server) |\n| Small table | a few hundred rows | the scan really is faster |\n| Wrong collation or case | `lower(email)` vs plain index | expression index |\n\n```sql\n-- ❌ bad: function on the column, index on created_at is skipped\nSELECT * FROM orders WHERE date(created_at) = '2024-05-01';\n\n-- ✅ good: index friendly range\nSELECT * FROM orders\nWHERE created_at >= '2024-05-01' AND created_at < '2024-05-02';\n```\n\nA condition the index can use is called sargable (search ARGument ABLE).\n\n**Implicit conversion in SQL Server**\n\nIf a `varchar` column is compared with an `nvarchar` parameter, SQL Server converts the column side, which turns a seek into a scan. .NET and ORMs send strings as `nvarchar` by default, so set the column type on the parameter.\n\n**Gotcha:** the planner is not broken when it ignores an index. Check the plan first. In PostgreSQL you can test with `SET enable_seqscan = off` to see whether the index could work, but never leave it like that in production.\n\n**Interview tip:** name three causes without hesitation (function on column, type mismatch, leading wildcard) and say how you prove it with the plan.",
+      "level": "intermediate",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "indexes",
+        "troubleshooting",
+        "sargable"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-043",
+      "question": "How does pagination work: OFFSET versus keyset?",
+      "answer": "**Short answer:** `OFFSET` pagination skips N rows and gets slower as N grows, because the database still reads and throws away the skipped rows. Keyset (cursor, seek) pagination remembers the last seen key and asks for rows after it, so each page costs the same. Use keyset for large or infinite lists.\n\nTable with ids 1 to 6, two rows per page:\n\n```sql\n-- OFFSET: page 2\nSELECT id FROM o ORDER BY id LIMIT 2 OFFSET 2;\n-- prints: 3, 4\n\n-- Keyset: page 2, given that the last id on page 1 was 2\nSELECT id FROM o WHERE id > 2 ORDER BY id LIMIT 2;\n-- prints: 3, 4\n```\n\nBoth give the same page, but the second one jumps straight to id 3 using the index.\n\n| | OFFSET | Keyset |\n| --- | --- | --- |\n| Deep pages | slow (reads skipped rows) | constant time |\n| Rows inserted while paging | duplicates or skipped rows | stable |\n| Jump to page 50 | easy | not possible, only next and previous |\n| Needs | any ORDER BY | an index on a unique ordering |\n\n**Sorting by a non-unique column**\n\nUse a tie-breaker so the order is total, and compare both columns:\n\n```sql\n-- sort by created_on DESC, id DESC; last row seen: ('2024-05-01', 120)\nSELECT id, created_on FROM orders\nWHERE (created_on, id) < ('2024-05-01', 120)   -- row-value comparison (PostgreSQL)\nORDER BY created_on DESC, id DESC\nLIMIT 20;\n-- index: (created_on DESC, id DESC)\n```\n\nSQL Server has no row-value comparison, so write it out: `created_on < @d OR (created_on = @d AND id < @id)`.\n\n**API design:** return an opaque cursor (encoded last key) with each page, not a page number.\n\n**Gotcha:** `COUNT(*)` for \"page 1 of 500\" is also expensive on big tables. Show \"next\" and \"previous\" or an approximate count.\n\n**Interview tip:** explain the cost of OFFSET in words, \"to show page 1,000 it reads 20,000 rows to throw away 19,980\", and offer keyset as the fix.",
+      "level": "intermediate",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "pagination",
+        "keyset",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-044",
+      "question": "What is the N+1 query problem, and how do you fix it?",
+      "answer": "**Short answer:** N+1 means you run one query to get N parent rows, then one more query for each parent to get its children, so 1 + N queries instead of 1 or 2. It looks fine with 10 rows in development and kills performance with 1,000 rows in production, because each query pays network latency.\n\n```ts\n// ❌ bad: 1 query for orders + one per order\nconst orders = await db.query('SELECT id, customer_id FROM orders LIMIT 100');\nfor (const o of orders.rows) {\n  const c = await db.query('SELECT name FROM customers WHERE id = $1', [o.customer_id]);\n  // 100 extra round trips\n}\n\n// ✅ good option 1: a join, one query\nconst rows = await db.query(\n  `SELECT o.id, c.name FROM orders o JOIN customers c ON c.id = o.customer_id LIMIT 100`);\n\n// ✅ good option 2: batch the children, two queries total\nconst ids = orders.rows.map(o => o.customer_id);\nconst customers = await db.query('SELECT id, name FROM customers WHERE id = ANY($1)', [ids]);\n```\n\n(`ANY($1)` with an array is PostgreSQL. In SQL Server use a table-valued parameter or `IN (...)`.)\n\n**Where it hides**\n- ORMs with lazy loading: `order.customer.name` inside a loop. Fix with eager loading (`include`, `Include()`, `joinedload`, `preload`).\n- GraphQL resolvers that load one child per parent. Fix with a batching layer such as DataLoader.\n- Microservices calling another service once per item.\n\n**Detect**\n- Log SQL in tests and assert query counts per endpoint.\n- Datadog APM or similar: look for the same query shape repeated many times in one trace.\n- `pg_stat_statements`: a tiny query with a huge call count.\n\n**Trade-off:** a join can multiply rows when loading a one-to-many (an order with 50 items repeats the order columns 50 times). For wide parents, two queries with `IN` are often better than one big join.\n\n**Gotcha:** the loop is not always visible. Serialisers, templates and permission checks can trigger lazy loads.\n\n**Interview tip:** give the numbers: \"100 queries at 2 ms of network each is 200 ms before the database even works\".",
+      "level": "intermediate",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "n-plus-one",
+        "orm",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-045",
+      "question": "How do bulk inserts and upserts work: ON CONFLICT and MERGE?",
+      "answer": "**Short answer:** For bulk loads, send many rows per statement or use the bulk copy API, inside one transaction. An upsert inserts a row, or updates it if the key already exists, in one atomic statement. PostgreSQL and SQLite use `INSERT ... ON CONFLICT`. SQL Server uses `MERGE`, which has pitfalls.\n\n**Upsert (PostgreSQL / SQLite syntax; verified in SQLite)**\n\n```sql\nCREATE TABLE stock (sku TEXT PRIMARY KEY, qty INT);\nINSERT INTO stock VALUES ('A', 5);\n\nINSERT INTO stock VALUES ('A', 3), ('B', 7)\nON CONFLICT (sku) DO UPDATE SET qty = stock.qty + excluded.qty;\n\nSELECT * FROM stock ORDER BY sku;\n-- prints: A | 8\n--         B | 7\n```\n\n`excluded` means the row you tried to insert. `DO NOTHING` skips duplicates instead (useful for idempotent consumers).\n\n**SQL Server MERGE**\n\n```sql\nMERGE stock WITH (HOLDLOCK) AS t\nUSING (VALUES ('A', 3), ('B', 7)) AS s (sku, qty) ON t.sku = s.sku\nWHEN MATCHED THEN UPDATE SET t.qty = t.qty + s.qty\nWHEN NOT MATCHED THEN INSERT (sku, qty) VALUES (s.sku, s.qty);\n```\n\nCaveats: without `HOLDLOCK`, two sessions can both decide \"not matched\" and one hits a duplicate key error. `MERGE` has had several bugs over the years, and many teams prefer separate `UPDATE` then `INSERT` inside a transaction with proper locking. PostgreSQL 15 added a standard `MERGE` too, but `ON CONFLICT` remains the safer upsert there.\n\n**Fast bulk loading**\n\n| Method | Notes |\n| --- | --- |\n| Multi-row `INSERT ... VALUES (...), (...)` | batch of hundreds to a few thousand rows |\n| PostgreSQL `COPY` | fastest way to load files or streams |\n| SQL Server `BULK INSERT`, `bcp`, `SqlBulkCopy` | bulk path with minimal logging options |\n| Drop or defer indexes for huge initial loads | rebuild after, check constraints first |\n\n**Rules of thumb**\n- Batch in chunks (for example 1,000 rows) inside a transaction. One row per round trip is the slow way.\n- Make writes idempotent so retries are safe.\n- Large single statements make long locks and replication lag, so pause between batches.\n\n**Gotcha:** upsert with a trigger or serial id can burn sequence numbers even when the row is not inserted. That is normal.\n\n**Interview tip:** the point to make is that \"check then insert\" in application code has a race, while an upsert is atomic.",
+      "level": "intermediate",
+      "module": "SQL Fundamentals",
+      "tags": [
+        "upsert",
+        "bulk-insert",
+        "merge"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-046",
+      "question": "What are JSON and JSONB columns in PostgreSQL, and when should you use them?",
+      "answer": "**Short answer:** PostgreSQL can store JSON in a `jsonb` column, which is a binary format you can index and query. Use it for flexible, sparse or rarely filtered attributes, such as extra metadata or webhook payloads. Do not use it to hide a proper schema for data you join, filter and constrain often.\n\n```sql\nCREATE TABLE events (\n  id      BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  payload JSONB NOT NULL\n);\n\n-- Read fields\nSELECT payload->>'type' AS type,                -- ->> returns text\n       payload->'customer'->>'id' AS customer   -- -> returns JSON, so you can keep drilling\nFROM events;\n\n-- Containment test, can use a GIN index\nSELECT id FROM events WHERE payload @> '{\"type\": \"refund\"}';\n\nCREATE INDEX ix_events_payload ON events USING GIN (payload);\n-- Or index one field only\nCREATE INDEX ix_events_type ON events ((payload->>'type'));\n```\n\n(PostgreSQL syntax; not runnable in SQLite.)\n\n| | `json` | `jsonb` |\n| --- | --- | --- |\n| Storage | exact text copy | parsed binary |\n| Key order and duplicates kept | yes | no |\n| Indexable | no | yes (GIN, expression indexes) |\n| Use | keep exact input | almost always |\n\n**Good uses:** audit payloads, third-party responses, user preferences, per-tenant custom fields, a short time before you know the final columns.\n\n**Costs and limits**\n- No type safety or foreign keys on values inside. Constraints must use `CHECK` on expressions.\n- Updating one key rewrites the whole value.\n- Big values are stored out of line (TOAST), so reading a small field can still read a lot.\n- Statistics on JSON fields are weak, so plans can be worse than with real columns.\n- Reporting is harder.\n\n**Hybrid pattern:** real columns for what you filter, join and constrain, and one `jsonb` column for the rest. When a JSON field becomes important, promote it to a real column.\n\nSQL Server stores JSON as text in `nvarchar(max)`, with functions such as `JSON_VALUE` and `OPENJSON`, and you index it through computed columns.\n\n**Gotcha:** \"schemaless\" moves the schema into the code and the data, where it is harder to see.\n\n**Interview tip:** say \"JSONB for flexible edges, columns for the core\".",
+      "level": "intermediate",
+      "module": "PostgreSQL",
+      "tags": [
+        "postgresql",
+        "jsonb",
+        "semi-structured"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-047",
+      "question": "How does full-text search work in a relational database?",
+      "answer": "**Short answer:** Full-text search breaks text into normalised words (tokens), stores them in an inverted index (word to list of rows), and ranks matches. It handles stemming (\"running\" matches \"run\"), stop words and relevance. It is much better than `LIKE '%word%'`, which cannot use a normal index.\n\n**PostgreSQL**\n\n```sql\nALTER TABLE products ADD COLUMN search tsvector\n  GENERATED ALWAYS AS (to_tsvector('english', name || ' ' || coalesce(description, ''))) STORED;\n\nCREATE INDEX ix_products_search ON products USING GIN (search);\n\nSELECT id, name\nFROM products\nWHERE search @@ websearch_to_tsquery('english', 'red running shoes -sandals')\nORDER BY ts_rank(search, websearch_to_tsquery('english', 'red running shoes -sandals')) DESC\nLIMIT 20;\n```\n\n`tsvector` is the prepared document. `tsquery` is the prepared query. `@@` is the match operator. A GIN index makes it fast. For typo-tolerant or substring matching, the `pg_trgm` extension indexes three-letter pieces and supports `LIKE '%word%'` and similarity.\n\n**SQL Server**\n\n```sql\nCREATE FULLTEXT CATALOG ft_catalog;\nCREATE FULLTEXT INDEX ON dbo.products (name, description)\n  KEY INDEX pk_products ON ft_catalog;\n\nSELECT id, name FROM dbo.products WHERE CONTAINS((name, description), '\"running\" AND \"shoes\"');\n```\n\n**When the database is enough, and when to add a search engine**\n\n| Need | Database full-text | Elasticsearch or OpenSearch |\n| --- | --- | --- |\n| Simple keyword search on one table | enough | overkill |\n| Same transaction as the data | yes | no, it is a copy that lags |\n| Facets, fuzzy matching, many languages, relevance tuning | limited | built for it |\n| Millions of searches per day, heavy analytics | strained | scales out |\n\n**Gotcha:** keeping a separate search engine in sync needs a pipeline (CDC or outbox) and handling of lag and re-indexing. Start with the database, and move when you can name the missing feature.\n\n**Interview tip:** show the three words tokenise, index, rank, and then say when you would graduate to Elasticsearch.",
+      "level": "intermediate",
+      "module": "PostgreSQL",
+      "tags": [
+        "full-text-search",
+        "postgresql",
+        "sql-server"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-048",
+      "question": "What is table partitioning (range, hash, list), and what are its benefits?",
+      "answer": "**Short answer:** Partitioning splits one logical table into smaller physical pieces by a key. Range partitions split by value ranges (usually dates), list partitions by explicit values (region), and hash partitions by a hash of the key to spread rows evenly. The main benefits are fast data removal, smaller indexes, partition pruning and easier maintenance.\n\n```sql\n-- PostgreSQL declarative partitioning (version 10 and later)\nCREATE TABLE payments (\n  id         BIGINT NOT NULL,\n  created_on DATE   NOT NULL,\n  amount     INT    NOT NULL,\n  PRIMARY KEY (id, created_on)          -- the key must include the partition column\n) PARTITION BY RANGE (created_on);\n\nCREATE TABLE payments_2024_05 PARTITION OF payments\n  FOR VALUES FROM ('2024-05-01') TO ('2024-06-01');\n\n-- Retention: instant, no big delete, no bloat\nALTER TABLE payments DETACH PARTITION payments_2024_05;\nDROP TABLE payments_2024_05;\n```\n\nSQL Server uses a partition function and partition scheme, and `SWITCH` moves a partition in or out in a metadata operation. Partitioning in SQL Server is available in Standard edition from SQL Server 2016 SP1.\n\n| Type | Splits by | Good for |\n| --- | --- | --- |\n| Range | date or number ranges | time series, logs, retention |\n| List | fixed values | region, tenant group |\n| Hash | hash of a key | spreading load evenly, no natural range |\n\n**Benefits**\n- Partition pruning: a query with a filter on the key reads only the matching partitions.\n- Dropping or archiving old data is a metadata step.\n- Vacuum or index maintenance runs per partition.\n- Hot recent data stays in cache.\n\n**Costs and limits**\n- Queries without the partition key scan all partitions.\n- Unique constraints must include the partition key.\n- Too many partitions (thousands) slow down planning.\n- You must create future partitions ahead of time (a job or `pg_partman`).\n- It does not make a badly indexed query fast, and it is not sharding because all partitions live on the same server.\n\n**Gotcha:** partitioning by a column nobody filters on gives all the cost and none of the pruning.\n\n**Interview tip:** say time-range partitioning for retention is the best-known reason, and that you check the query plan shows pruning.",
+      "level": "intermediate",
+      "module": "Scaling & Replication",
+      "tags": [
+        "partitioning",
+        "postgresql",
+        "retention"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-049",
+      "question": "What are the types of database replication, and how do failover and high availability work?",
+      "answer": "**Short answer:** Replication copies changes from a primary to other servers. It can be synchronous (the commit waits for the copy) or asynchronous (it does not), and physical (copies storage-level log records, so the replica is an exact byte-level copy) or logical (copies row-level changes, so you can replicate part of the data or to a different version). High availability means a replica can take over quickly when the primary fails.\n\n| Choice | Option A | Option B |\n| --- | --- | --- |\n| Timing | Synchronous: no committed data lost on failover, slower commits, a down standby can stall writes | Asynchronous: fast commits, a failover can lose the last few transactions |\n| Format | Physical (streaming WAL in PostgreSQL): whole cluster, same major version, replica read-only | Logical (publication and subscription): selected tables, cross-version, can feed other systems, schema changes are not replicated automatically |\n\n**Failover steps**\n1. Detect the failure with health checks, with a timeout long enough to avoid false alarms.\n2. Pick the most up-to-date replica.\n3. Promote it to primary.\n4. Move traffic: a virtual IP, DNS change, proxy or a connection listener.\n5. Rebuild the old primary as a replica. If it has data that never reached the new primary, you must rewind or re-clone it.\n\n```mermaid\nflowchart LR\n    A[\"App\"] --> L[\"Endpoint / listener\"]\n    L --> P[\"Primary\"]\n    P -- WAL stream --> R1[\"Standby 1\"]\n    P -- WAL stream --> R2[\"Standby 2\"]\n    M[\"Failover manager\"] -. promotes .-> R1\n```\n\nThe app talks to one stable endpoint. The manager promotes a standby and moves the endpoint.\n\n**Tools:** PostgreSQL commonly uses Patroni (with a consensus store like etcd) or the managed service's built-in HA. SQL Server uses Always On availability groups or failover cluster instances. Azure managed services offer zone-redundant HA.\n\n**Gotchas**\n- Split brain: two nodes both think they are primary. Fencing and consensus prevent it.\n- Applications must reconnect and retry. Test with real failovers (game days), including how long connections stay broken.\n- Failover is not backup. A bad delete replicates.\n- Synchronous commit to a standby in another region adds that round trip to every write.\n\n**Interview tip:** state the RPO difference: synchronous gives zero data loss in theory, asynchronous gives a small loss window. Then mention fencing.",
+      "level": "intermediate",
+      "module": "Scaling & Replication",
+      "tags": [
+        "replication",
+        "failover",
+        "high-availability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-050",
+      "question": "How does PostgreSQL VACUUM work, and what are bloat and autovacuum?",
+      "answer": "**Short answer:** Because of MVCC, an `UPDATE` or `DELETE` in PostgreSQL leaves the old row version behind as a dead row. `VACUUM` marks that space reusable and keeps visibility information up to date. Autovacuum runs it automatically. If it falls behind, tables and indexes bloat, queries slow down and in the worst case the database must stop to avoid transaction id wraparound.\n\n**What vacuum does**\n- Removes dead rows from view so their space can be reused (it does not normally shrink the file).\n- Updates the visibility map, which enables index-only scans.\n- Freezes old row versions so transaction ids can be reused safely (this prevents wraparound).\n- `ANALYZE` (often run together) refreshes planner statistics.\n\n```sql\n-- Which tables have the most dead rows?\nSELECT relname, n_live_tup, n_dead_tup, last_autovacuum\nFROM pg_stat_user_tables\nORDER BY n_dead_tup DESC\nLIMIT 5;\n```\n\n**Autovacuum triggers** when dead rows exceed a threshold plus a fraction of the table (by default 50 rows plus 20 percent of the table). For a 100-million-row table, 20 percent is far too late, so lower `autovacuum_vacuum_scale_factor` for large, busy tables:\n\n```sql\nALTER TABLE payments SET (autovacuum_vacuum_scale_factor = 0.02);\n```\n\n**Why vacuum may not keep up**\n- A long-running transaction, an `idle in transaction` session, or a stuck replication slot or hot standby feedback holds back cleanup. Dead rows still visible to them cannot be removed.\n- Very high update rates with default settings.\n- Too few autovacuum workers or too low a cost limit.\n\n**Bloat and fixes**\n- `VACUUM FULL` rewrites the table and shrinks it but takes an exclusive lock. Use `pg_repack` for online compaction.\n- Reduce churn: avoid updating rows when nothing changed, and keep rows small. A `fillfactor` below 100 lets updates stay on the same page (HOT updates) if the changed columns are not indexed.\n\n| Symptom | Likely cause |\n| --- | --- |\n| Table much bigger than the data | bloat, vacuum behind |\n| Index-only scans still read the table | visibility map out of date |\n| Warnings about wraparound | freeze not finishing, a blocker holds the horizon |\n\n**Gotcha:** disabling autovacuum \"for performance\" is a classic mistake that ends in an outage.\n\n**Interview tip:** link it to MVCC: \"dead row versions are the price of non-blocking reads, and vacuum pays the bill\".",
+      "level": "intermediate",
+      "module": "PostgreSQL",
+      "tags": [
+        "postgresql",
+        "vacuum",
+        "bloat"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-051",
+      "question": "What are PostgreSQL extensions such as pgvector and PostGIS, and when do they fit?",
+      "answer": "**Short answer:** Extensions add types, functions, index methods and sometimes background features to PostgreSQL. Popular ones include PostGIS for geographic data, pgvector for embeddings and similarity search, pg_stat_statements for query statistics, pg_trgm for fuzzy text and TimescaleDB for time series. They let one database cover needs that would otherwise need a separate system.\n\n```sql\nCREATE EXTENSION IF NOT EXISTS vector;\n\nCREATE TABLE docs (\n  id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  body      TEXT,\n  embedding vector(3)          -- real models use hundreds or thousands of dimensions\n);\n\nCREATE INDEX ix_docs_embedding ON docs USING hnsw (embedding vector_cosine_ops);\n\n-- nearest neighbours by cosine distance\nSELECT id FROM docs ORDER BY embedding <=> '[0.1, 0.2, 0.3]' LIMIT 5;\n```\n\n(PostgreSQL with pgvector; shown to explain the concept, not run here.)\n\n| Extension | Adds | Typical use |\n| --- | --- | --- |\n| PostGIS | geometry types, spatial indexes and functions | \"find stores within 5 km\" |\n| pgvector | vector type, similarity operators, HNSW and IVFFlat indexes | semantic search, retrieval for AI |\n| pg_stat_statements | per-query statistics | finding slow queries |\n| pg_trgm | trigram similarity and indexes | fuzzy and `LIKE '%x%'` search |\n| pgcrypto | hashing and encryption functions | careful, small uses |\n\n**Why use them**\n- Same transactions, backups, permissions and joins as the rest of your data.\n- No sync pipeline to a second system.\n- Often enough for moderate scale.\n\n**Limits to check**\n- Managed services allow only an approved list of extensions, so verify yours is available on Azure Database for PostgreSQL.\n- Approximate vector indexes trade recall for speed and use a lot of memory. Dedicated vector databases scale better at very large sizes.\n- Extension upgrades must match the PostgreSQL major version plan.\n\n**Gotcha:** an extension is one more thing to test during major upgrades.\n\n**Interview tip:** the decision is \"stay in PostgreSQL until a measured limit forces a separate store\".",
+      "level": "intermediate",
+      "module": "PostgreSQL",
+      "tags": [
+        "postgresql",
+        "extensions",
+        "pgvector"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-052",
+      "question": "What are clustered and non-clustered indexes in SQL Server?",
+      "answer": "**Short answer:** In SQL Server, a clustered index is the table itself, stored in the order of the index key. There can be only one per table. A non-clustered index is a separate structure whose entries point back to the rows, using the clustered key as the row locator. A table with no clustered index is a heap.\n\n```sql\nCREATE TABLE dbo.Orders (\n  OrderId    BIGINT IDENTITY(1,1) NOT NULL,\n  CustomerId INT NOT NULL,\n  Total      DECIMAL(12,2) NOT NULL,\n  CONSTRAINT PK_Orders PRIMARY KEY CLUSTERED (OrderId)\n);\n\nCREATE NONCLUSTERED INDEX IX_Orders_Customer\n  ON dbo.Orders (CustomerId)\n  INCLUDE (Total);       -- covers queries that need CustomerId and Total\n```\n\n(SQL Server syntax; not run here.)\n\n| | Clustered | Non-clustered |\n| --- | --- | --- |\n| Count per table | one | many (up to 999) |\n| Holds | the full rows in key order | key columns, included columns and the clustered key |\n| Lookup cost | direct | may need a key lookup into the clustered index |\n| Range scans on the key | very fast | fast if covering |\n\n**Design advice**\n- The clustered key is copied into every non-clustered index. Keep it narrow, unique, ever-increasing and stable (an identity `BIGINT` is the usual pick). A random `NEWID()` clustered key causes page splits and bloats every other index.\n- The primary key is clustered by default, but you can choose otherwise.\n- A key lookup per row is cheap for a few rows and costly for thousands. Add `INCLUDE` columns for hot queries or let the optimiser scan.\n- Columnstore indexes (clustered or non-clustered) suit analytics and large scans.\n\n**PostgreSQL comparison:** PostgreSQL tables are heaps and every index is secondary and points to a physical row location. `CLUSTER` reorders a table once but does not keep it ordered afterwards.\n\n**Gotcha:** the clustered key decides the physical order, so an update that changes it moves the row.\n\n**Interview tip:** mention that the clustered key choice affects every other index, which is why a narrow sequential key is the default advice.",
+      "level": "intermediate",
+      "module": "SQL Server",
+      "tags": [
+        "sql-server",
+        "clustered-index",
+        "indexes"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-053",
+      "question": "What are SQL Server execution plans and parameter sniffing?",
+      "answer": "**Short answer:** SQL Server compiles a query into an execution plan and caches it for reuse. With parameter sniffing, the first call's parameter values are used to choose the plan. That is good when values are typical and bad when the data is skewed: a plan built for a rare value can be terrible for a common one.\n\nExample: `WHERE CustomerId = @id`. For a customer with 3 orders the best plan is an index seek plus lookups. For a customer with 2 million orders a scan is better. If the plan for the small customer is cached, the big customer's call runs a slow plan, and the reverse.\n\n**How to spot it**\n- The same procedure is fast in Management Studio but slow from the app (different SET options give a different cached plan), or fast for some inputs and slow for others.\n- Query Store shows multiple plans for one query with very different durations.\n- In the actual plan, compare \"Parameter Compiled Value\" with \"Parameter Runtime Value\", and estimated rows with actual rows.\n\n**Fixes, from least to most invasive**\n| Fix | Effect |\n| --- | --- |\n| Update statistics | better estimates |\n| `OPTION (RECOMPILE)` | new plan each call, costs CPU, fine for rare heavy queries |\n| `OPTION (OPTIMIZE FOR (@id UNKNOWN))` | plan based on average density |\n| Query Store plan forcing | pin a known good plan (SQL Server 2016 and later) |\n| Split the code path | a separate query or procedure for large customers |\n| Parameter Sensitive Plan optimisation | built in to SQL Server 2022 at compatibility level 160, keeps several plans per query |\n\n```sql\nSELECT OrderId, Total\nFROM dbo.Orders\nWHERE CustomerId = @CustomerId\nOPTION (RECOMPILE);\n```\n\n**Reading plans:** start at the top right, follow the thickest arrows (rows), look for key lookups, scans on big tables, sort or hash spills and warnings about implicit conversion.\n\n**Gotcha:** clearing the whole plan cache in production to \"fix\" it causes a compile storm. Target the single plan instead.\n\n**Interview tip:** explain it with the small customer versus big customer story, then list three fixes and why `OPTION (RECOMPILE)` is not free.",
+      "level": "intermediate",
+      "module": "SQL Server",
+      "tags": [
+        "sql-server",
+        "execution-plan",
+        "parameter-sniffing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-054",
+      "question": "What should you know about tempdb and the key T-SQL differences from standard SQL and PostgreSQL?",
+      "answer": "**Short answer:** tempdb is SQL Server's shared scratch database. It holds temp tables, table variables, sort and hash spills, and row versions for snapshot isolation. Because every database uses it, a heavy workload there slows everyone. T-SQL also differs from other dialects in syntax details that matter when you port queries.\n\n**tempdb**\n- Used for: `#temp` tables, `@table` variables, worktables, spills when a sort or hash does not get enough memory, version store for RCSI and snapshot isolation, index builds with `SORT_IN_TEMPDB`.\n- Recreated at every restart. Use several equally sized data files (commonly up to 8) to reduce allocation contention, and put it on fast storage.\n- Watch: file growth, version store size, long open transactions, and queries with spill warnings.\n\n**T-SQL differences**\n\n| Task | Standard / PostgreSQL | T-SQL |\n| --- | --- | --- |\n| Limit rows | `LIMIT n` | `SELECT TOP (n)` or `OFFSET ... FETCH` |\n| Null fallback | `COALESCE(a, b)` | `ISNULL(a, b)` also works, but returns the type of the first argument, so a short column can truncate the result |\n| Auto id | `GENERATED ... AS IDENTITY` | `IDENTITY(1,1)` |\n| Concatenate | `a \\|\\| b` | `a + b` or `CONCAT(a, b)` |\n| Current time | `now()` | `SYSUTCDATETIME()`, `GETDATE()` |\n| Boolean type | `boolean` | no boolean column, use `BIT` |\n| String aggregate | `string_agg(x, ',')` | `STRING_AGG(x, ',')` (2017 and later) |\n| Upsert | `ON CONFLICT` | `MERGE` (with caveats) |\n| Variables | `:name` or `$1` | `@name`, `DECLARE @x INT` |\n\nOther points: identifiers can be quoted with `[brackets]`, `SET NOCOUNT ON` in procedures stops \"rows affected\" chatter, and `TRY ... CATCH` with `THROW` handles errors. `SET XACT_ABORT ON` makes runtime errors roll back the transaction.\n\n```sql\n-- T-SQL: top 3 biggest orders\nSELECT TOP (3) OrderId, Total\nFROM dbo.Orders\nORDER BY Total DESC;\n```\n\n**Gotcha:** table variables had poor row estimates for years (fixed in part by deferred compilation in SQL Server 2019). A temp table with statistics is often better for large intermediate sets.\n\n**Interview tip:** show you can move between dialects: name TOP, ISNULL, IDENTITY and MERGE as the first four differences.",
+      "level": "intermediate",
+      "module": "SQL Server",
+      "tags": [
+        "sql-server",
+        "tempdb",
+        "t-sql"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-055",
+      "question": "What are Always On availability groups in SQL Server?",
+      "answer": "**Short answer:** An Always On availability group (AG) keeps one or more databases synchronised from a primary replica to up to several secondary replicas. Secondaries can take over after a failure and can serve read-only queries or backups. A listener gives clients one stable name that always points to the current primary.\n\n**Concepts**\n- Replicas: one primary accepts writes. Secondaries receive the transaction log.\n- Synchronous commit: the primary waits for the secondary to harden the log. No data loss, supports automatic failover, adds latency. Used within a data centre or zone.\n- Asynchronous commit: no wait. Possible data loss on failover. Used across regions for disaster recovery.\n- Listener: a virtual network name. Clients connect to it, ideally with `MultiSubnetFailover=True` for fast reconnect.\n- Cluster manager: Windows Server Failover Clustering on Windows, Pacemaker on Linux, decides failover and prevents split brain through quorum.\n- Readable secondaries: offload reports and backups. Read-only routing sends `ApplicationIntent=ReadOnly` connections to a secondary.\n\n```mermaid\nflowchart LR\n    C[\"App\"] --> L[\"AG listener\"]\n    L --> P[\"Primary replica\"]\n    P -- \"sync log\" --> S1[\"Secondary: sync, same zone\"]\n    P -- \"async log\" --> S2[\"Secondary: async, other region\"]\n```\n\nThe listener always points at the primary. A synchronous secondary gives safe failover. An asynchronous one gives disaster recovery.\n\n**Compared with other options**\n\n| Option | Level | Notes |\n| --- | --- | --- |\n| Failover cluster instance | whole instance, shared storage | no readable copy |\n| Availability group | database level | readable secondaries, several copies |\n| Log shipping | database level, manual failover | simple, higher RPO |\n| Azure SQL Database | managed | HA built in, no setup |\n\n**Edition note:** Standard edition supports only Basic availability groups (limited: one database, no readable secondary). Full AGs need Enterprise. Check the current licensing docs before you plan.\n\n**Gotchas**\n- Logins, jobs and linked servers are not replicated with the database. Keep them in sync yourself.\n- Long-running transactions on the primary slow log truncation, and a slow secondary can build a large send queue.\n- Readable secondaries use snapshot isolation, which adds version store load.\n\n**Interview tip:** say sync for HA within a region and async for DR across regions, and mention the listener and quorum.",
+      "level": "intermediate",
+      "module": "SQL Server",
+      "tags": [
+        "sql-server",
+        "always-on",
+        "high-availability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-056",
+      "question": "How do you put Redis in front of a database: cache-aside and invalidation?",
+      "answer": "**Short answer:** In the cache-aside pattern the app checks Redis first. On a miss it reads the database, stores the result in Redis with a time to live (TTL), and returns it. On writes the app updates the database and deletes the cached key. It is simple and safe, but the cache can be briefly stale.\n\n```ts\nasync function getProduct(id: string) {\n  const key = `product:${id}`;\n  const cached = await redis.get(key);\n  if (cached) return JSON.parse(cached);              // hit\n\n  const row = await db.query('SELECT * FROM products WHERE id = $1', [id]);\n  if (row.rows[0]) {\n    // TTL with a little random jitter so keys do not all expire together\n    const ttl = 300 + Math.floor(Math.random() * 60);\n    await redis.set(key, JSON.stringify(row.rows[0]), { EX: ttl });\n  }\n  return row.rows[0];\n}\n\nasync function updateProduct(id: string, data: object) {\n  await db.query('UPDATE products SET name = $2 WHERE id = $1', [id, (data as any).name]);\n  await redis.del(`product:${id}`);                   // invalidate, do not update the cache\n}\n```\n\n**Why delete instead of update on write:** two concurrent writers could write the cache in the wrong order. Deleting makes the next read reload the latest committed value.\n\n| Pattern | How | Risk |\n| --- | --- | --- |\n| Cache-aside | app manages cache | stale reads, cold cache |\n| Read-through | cache library loads on miss | same, simpler code |\n| Write-through | write cache and DB together | slower writes, double-write consistency |\n| Write-behind | write cache, DB later | data loss if the cache dies |\n\n**Problems to plan for**\n- Cache stampede: a hot key expires and 1,000 requests hit the database. Use a lock or single flight, stale-while-revalidate, and TTL jitter.\n- Stale data: pick the TTL by how wrong the data may be. Invalidate on writes where it matters.\n- Negative caching: also cache \"not found\" briefly to stop repeated misses.\n- Cold start after a restart: the database takes the full load, so warm hot keys or protect it with rate limits.\n- The race: a reader loads old data, a writer updates and deletes the key, then the reader stores the old data. A short TTL limits the damage.\n\n**Gotcha:** caching hides a bad query. Fix the query first when it is cheap to do so.\n\n**Interview tip:** the sentence \"there are only two hard problems, and one is cache invalidation\" gets a smile, but follow it with TTL plus delete on write plus stampede protection.",
+      "level": "intermediate",
+      "module": "NoSQL & Caching",
+      "tags": [
+        "redis",
+        "caching",
+        "cache-aside"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-057",
+      "question": "What types of NoSQL databases exist, and when does each fit?",
+      "answer": "**Short answer:** NoSQL covers several different designs: document stores, key-value stores, wide-column stores, graph databases, search engines and time-series databases. Each trades some relational features (joins, strict schema, multi-row transactions) for scale, flexibility or speed in one access pattern.\n\n| Type | Data shape | Strength | Weakness | Examples |\n| --- | --- | --- | --- | --- |\n| Document | JSON-like documents | flexible schema, one read gets a whole aggregate | joins and cross-document transactions are limited or costly | MongoDB, Cosmos DB |\n| Key-value | key to value | microsecond lookup, simple | query only by key | Redis, DynamoDB |\n| Wide-column | rows with sparse columns grouped by partition key | huge write throughput, linear scale | you must design tables per query, limited ad hoc queries | Cassandra, ScyllaDB |\n| Graph | nodes and edges | deep relationship queries (friends of friends) | not for bulk analytics | Neo4j, Neptune |\n| Search | inverted index | full text, facets, relevance | not a source of truth, eventual consistency | Elasticsearch, OpenSearch |\n| Time-series | timestamped points | compression, rollups, retention | narrow use | TimescaleDB, InfluxDB |\n\n**Fit examples**\n- Product catalogue with varied attributes read as one unit: document.\n- Sessions, rate limits, leaderboards, locks: key-value (Redis).\n- Messages or sensor events at very high write rates with a known read path: wide-column.\n- Recommendation or fraud rings: graph.\n- Site search: search engine fed from the main database.\n- Metrics: time-series.\n\n**The honest comparison with a relational database**\n- PostgreSQL covers documents (JSONB), search, vectors, queues and time-series (with an extension) at moderate scale, with transactions.\n- NoSQL \"scale\" often means giving up consistency or flexibility of queries. In wide-column stores you decide your queries before the schema.\n- Many NoSQL systems are eventually consistent by default, with tunable levels.\n\n**Gotchas**\n- Modelling relational data in a document store and then needing joins everywhere.\n- Treating a cache or search index as the source of truth.\n- Hot partitions on a skewed key.\n\n**Interview tip:** give a one-line \"choose it when\" for each type, and say you start with a relational database and add a specialist for a measured need.",
+      "level": "intermediate",
+      "module": "NoSQL & Caching",
+      "tags": [
+        "nosql",
+        "mongodb",
+        "cassandra"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-058",
+      "question": "How do B-tree and LSM-tree storage engines differ, and what is each good at?",
+      "answer": "**Short answer:** A B-tree updates data in place in sorted pages on disk, which gives fast reads and predictable latency. An LSM-tree (log-structured merge-tree) buffers writes in memory, flushes them as immutable sorted files, and merges those files in the background. It gives very high write throughput, but reads may check several files and compaction uses extra disk work.\n\n**B-tree (PostgreSQL, SQL Server, MySQL InnoDB)**\n- Find a key in a few page reads. Update the page in place, protected by the write-ahead log.\n- Random writes mean random IO. Page splits can fragment the tree.\n- Read cost is stable: height of the tree.\n\n**LSM-tree (Cassandra, RocksDB, LevelDB, many embedded stores)**\n1. A write goes to the log (for safety) and an in-memory sorted table (memtable).\n2. When full, the memtable is written as an immutable sorted file (SSTable).\n3. A read checks the memtable, then files from newest to oldest. Bloom filters skip files that cannot contain the key.\n4. Compaction merges files, drops overwritten and deleted entries, and keeps the file count low.\n\n```mermaid\nflowchart LR\n    W[\"Write\"] --> L[\"Log\"]\n    W --> M[\"Memtable in memory\"]\n    M -- flush --> S1[\"Sorted file L0\"]\n    S1 -- compaction --> S2[\"Bigger sorted file L1\"]\n    R[\"Read\"] --> M\n    R --> S1\n    R --> S2\n```\n\nWrites are appended and sorted in memory. Background merges keep reads from touching too many files.\n\n| | B-tree | LSM-tree |\n| --- | --- | --- |\n| Write pattern | random in-place updates | sequential appends |\n| Write throughput | good | very high |\n| Read latency | steady, one lookup path | can be higher, several files, bloom filters help |\n| Write amplification | moderate (page rewrites, log) | can be high from repeated compaction |\n| Space | fragmentation inside pages | old versions until compaction |\n| Deletes | in place | tombstones that linger until compaction |\n| Good for | OLTP with mixed reads and writes, range queries | ingest-heavy workloads, logs, time-series, key-value |\n\n**Gotchas**\n- LSM stores can stall writes when compaction cannot keep up.\n- Tombstones from many deletes slow reads (a known Cassandra issue).\n- B-trees with random keys (UUIDv4) have poor locality.\n\n**Interview tip:** relate it to cost. B-trees pay at write time with random IO. LSM-trees pay later with compaction and on reads with multiple lookups.",
+      "level": "advanced",
+      "module": "Storage Internals",
+      "tags": [
+        "storage-engine",
+        "b-tree",
+        "lsm-tree"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-059",
+      "question": "What is the write-ahead log (WAL), and how does crash recovery work?",
+      "answer": "**Short answer:** The write-ahead log is a sequential file where the database records every change before it changes the data pages. A commit is durable once its log record is flushed to disk. After a crash, the database replays the log to redo committed work and undo unfinished work, so it returns to a consistent state.\n\n**Why a log:** writing a data page in place is random IO, slow and not atomic if power fails halfway. Appending a small record to a log is sequential and fast. So the rule is: log first, then change pages later (in memory first, written to disk lazily at a checkpoint).\n\n**How it fits together**\n1. A transaction changes a page in the buffer pool and writes a log record.\n2. On `COMMIT`, the log is flushed (fsync). Then the client gets \"ok\". The data pages may still be only in memory.\n3. A checkpoint periodically writes dirty pages to disk and records how far the log has been applied.\n4. After a crash, recovery starts from the last checkpoint: redo the logged changes, then roll back transactions that never committed.\n\n```mermaid\nsequenceDiagram\n    participant C as Client\n    participant D as Database\n    participant L as WAL on disk\n    participant P as Data pages\n    C->>D: UPDATE and COMMIT\n    D->>L: append log record, fsync\n    D-->>C: committed\n    D-->>P: write dirty pages later at checkpoint\n```\n\nThe client waits only for the log flush. Data pages catch up later.\n\n**Where else the WAL is used**\n- Replication: PostgreSQL streams WAL to standbys. SQL Server sends log blocks to AG secondaries.\n- Point-in-time recovery: keep the log and replay it up to a chosen time.\n- Logical decoding and CDC read the log to see changes.\n\n**Tuning trade-offs**\n- Flush on every commit (default) is safest. PostgreSQL's `synchronous_commit = off` lowers commit latency but can lose the last fraction of a second of commits after a crash (it does not corrupt data).\n- Frequent checkpoints shorten recovery but cause more IO. Rare ones do the opposite.\n- Fast disks for the log matter more than for data in write-heavy systems.\n\n**Gotcha:** a full WAL disk stops the database. Causes are a stuck replication slot, a failing archive command or long transactions that prevent log truncation.\n\n**Interview tip:** the phrase \"log first, pages later, replay on recovery\" is the whole story. Add that replication and PITR reuse the same log.",
+      "level": "advanced",
+      "module": "Storage Internals",
+      "tags": [
+        "wal",
+        "durability",
+        "crash-recovery"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-060",
+      "question": "What is the buffer pool, and why does memory matter so much for a database?",
+      "answer": "**Short answer:** Databases read and write fixed-size pages (usually 8 KB in PostgreSQL and SQL Server). The buffer pool is the memory area that caches those pages. A read from memory takes microseconds, from SSD around a hundred microseconds, from network storage a millisecond or more. When your working set fits in memory, queries are fast. When it does not, they become IO bound.\n\n**How it works**\n- A query needs a page. If it is in the pool, that is a hit. If not, the page is read from disk (a miss) and an old page is evicted, usually the least recently used.\n- Writes change pages in memory first (marked dirty). They are flushed later by a background writer or at checkpoints. The WAL protects them meanwhile.\n- A big scan can push hot pages out of the cache. Databases use special rules (ring buffers for large scans) to limit that.\n\n**Settings and sizing**\n- PostgreSQL: `shared_buffers` is the database's own cache, commonly around 25 percent of RAM as a starting point, and the operating system page cache holds much of the rest. `effective_cache_size` tells the planner how much total cache to assume. `work_mem` is per sort or hash operation, so many connections times several operations can use a lot of memory.\n- SQL Server: it uses most of the memory it is allowed by `max server memory`. Set that so the OS and other processes keep some room.\n\n**What to measure**\n- Cache hit ratio (aim for very high on OLTP, but treat it as a hint).\n- Page life expectancy or buffer reads in SQL Server, `blks_read` versus `blks_hit` in PostgreSQL.\n- Read latency on the disks.\n\n```sql\n-- PostgreSQL: hit ratio per database (rough guide)\nSELECT datname, round(100.0 * blks_hit / nullif(blks_hit + blks_read, 0), 2) AS hit_pct\nFROM pg_stat_database ORDER BY blks_read DESC LIMIT 3;\n```\n\n**Practical effects**\n- Adding RAM is often the cheapest fix for a database that grew beyond memory.\n- Indexes that fit in memory beat huge ones. Remove unused indexes to free cache.\n- Random UUID keys touch pages all over the index and need more cache than ordered keys.\n- After a restart or failover the cache is cold, so latency is higher for a while. Some systems can pre-warm it.\n\n**Gotcha:** giving all RAM to the database cache starves the OS and the per-query memory, causing swapping, which is far worse.\n\n**Interview tip:** connect it to a symptom: \"latency jumped when the table outgrew memory\".",
+      "level": "advanced",
+      "module": "Storage Internals",
+      "tags": [
+        "buffer-pool",
+        "memory",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-061",
+      "question": "How do planner statistics and cardinality estimates work, and why do plans go bad?",
+      "answer": "**Short answer:** The planner chooses a plan by estimating how many rows each step returns (cardinality) using statistics: row counts, distinct counts, most common values and histograms. If the estimates are wrong, it picks a wrong join method or access path, and a query that was fast suddenly becomes slow.\n\n**What statistics hold**\n- Number of rows and pages.\n- Number of distinct values per column.\n- Most common values and their frequency.\n- A histogram of the rest.\n- PostgreSQL: `pg_stats`, updated by `ANALYZE` (also autovacuum). SQL Server: statistics objects per index or column, updated automatically when enough rows change, or with `UPDATE STATISTICS`.\n\n**Why estimates go wrong**\n- Stale statistics after a large load or delete.\n- Correlated columns. If `city = 'Pune'` and `state = 'MH'` are related, the planner multiplies the two selectivities as if they were independent and under-estimates. PostgreSQL has extended statistics (`CREATE STATISTICS ... (dependencies)`), SQL Server has multi-column statistics.\n- Skewed data: one value has 90 percent of rows.\n- Estimates through functions, expressions, `OR`, table variables or complex joins.\n- Parameter values the plan was not built for (see parameter sniffing).\n- Sampling: statistics are based on a sample, so rare values can be missed.\n\n```sql\n-- PostgreSQL: look for a big gap between \"rows=\" (estimate) and \"actual ... rows=\"\nEXPLAIN (ANALYZE) SELECT * FROM orders WHERE status = 'new' AND region = 'EU';\n\n-- Fix ideas\nANALYZE orders;\nALTER TABLE orders ALTER COLUMN status SET STATISTICS 500;       -- finer histogram\nCREATE STATISTICS st_orders (dependencies) ON status, region FROM orders;\nANALYZE orders;\n```\n\n**How a bad estimate hurts:** the planner thinks 10 rows will match, picks a nested loop with an index lookup per row, and then 2 million rows arrive. A hash join would have been 100 times faster.\n\n**Operational habits**\n- Compare estimated and actual rows in every plan review.\n- Run `ANALYZE` after bulk loads and big migrations.\n- Use Query Store or `auto_explain` to catch plan regressions after deployments or upgrades.\n- Do not force plans with hints as a first reaction. Fix the statistics or the query shape.\n\n**Gotcha:** a plan flip can happen without any code change, just because data crossed a threshold. That is why \"it worked yesterday\" is normal.\n\n**Interview tip:** say \"bad plans come from bad estimates\" and name stale stats, correlation and skew.",
+      "level": "advanced",
+      "module": "Indexing & Query Performance",
+      "tags": [
+        "statistics",
+        "query-planner",
+        "cardinality"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-062",
+      "question": "What do CAP and PACELC mean, and how do they affect choosing a database?",
+      "answer": "**Short answer:** CAP says that when a network partition happens, a distributed system must choose between consistency (every read sees the latest write) and availability (every request gets an answer). Partitions cannot be ruled out, so the real choice is C or A during a partition. PACELC adds the everyday case: even with no partition, you trade latency against consistency.\n\n**CAP in plain words:** two replicas lose contact with each other. A client writes to one of them. If the other keeps answering reads, it may return old data (available, not consistent). If it refuses to answer until it can sync, it stays consistent but is unavailable.\n\n**PACELC:** if there is a Partition, choose Availability or Consistency; Else (normal operation), choose Latency or Consistency. Even without failures, waiting for replicas to confirm a write costs time.\n\n| System style | During a partition | Normal operation | Examples (typical configuration) |\n| --- | --- | --- | --- |\n| PC/EC | consistent, may reject requests | consistent, higher latency | Spanner, CockroachDB, ZooKeeper-style stores |\n| PA/EL | stays available, may be stale | low latency, eventually consistent | Cassandra and DynamoDB with weak read settings |\n| PA/EC or PC/EL | mixed, depends on settings | depends | many databases with tunable options |\n\nMany systems are tunable per operation, for example Cassandra quorum reads and writes, or DynamoDB strongly consistent reads.\n\n**What it means for you**\n- A single-node PostgreSQL has no partition problem inside the node, but async replicas show the same trade-off: reading a replica favours latency and availability over consistency.\n- Money, inventory and uniqueness rules need strong consistency, so accept higher latency and possible unavailability in a partition.\n- Feeds, counters, likes and caches can accept stale data for lower latency.\n\n**Gotchas**\n- CAP \"consistency\" means linearizability, not the C in ACID.\n- \"CA\" systems do not exist in a real network. Single-node systems skip the question.\n- The labels are simplifications. Check each product's actual behaviour and settings.\n\n**Interview tip:** say you start from the business rule (\"can two users book the same seat?\") and then pick the consistency level, not the other way round.",
+      "level": "advanced",
+      "module": "Scaling & Replication",
+      "tags": [
+        "cap-theorem",
+        "pacelc",
+        "distributed-systems"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-063",
+      "question": "What is distributed SQL (NewSQL), such as Spanner and CockroachDB, and when would you use it?",
+      "answer": "**Short answer:** Distributed SQL databases give you SQL, transactions and strong consistency, while spreading data across many nodes and regions automatically. They split tables into ranges, replicate each range with consensus (Raft or Paxos), and coordinate transactions across ranges. They fit when you need relational semantics and scale beyond one primary, or survival of a region failure.\n\n**How they work, simply**\n- Data is cut into ranges by primary key. Each range has several replicas on different nodes.\n- A consensus group per range picks a leader. Writes go through the leader and commit once a majority of replicas have them.\n- Transactions that touch several ranges use a commit protocol (such as two-phase commit) on top of this.\n- Clock handling gives a global order. Spanner uses TrueTime with atomic clocks and GPS. CockroachDB uses hybrid logical clocks and, by default, serializable isolation.\n- Nodes can be added or removed and ranges rebalance automatically.\n\n| Aspect | Single-node PostgreSQL | Distributed SQL |\n| --- | --- | --- |\n| Write scale | one primary | many leaders, one per range |\n| Region failure | failover with possible data loss (async) | survives with no loss (quorum) |\n| Single-row latency | low | higher: network and quorum |\n| Cross-range transaction | cheap | costly: extra round trips |\n| Operational model | simple | more nodes, more moving parts |\n| Compatibility | full | often PostgreSQL wire compatible, but not every feature |\n\n**When it fits**\n- Global applications needing low read latency near users and strong correctness.\n- Regulatory data residency by region (pin rows to locations).\n- Workloads that outgrew one primary but you do not want to hand-shard.\n\n**When it does not**\n- Most applications. A single well-tuned PostgreSQL or SQL Server with replicas handles a lot.\n- Latency-sensitive transactions that touch many keys.\n- Teams that cannot operate the extra complexity or pay the licence or cloud bill.\n\n**Design tips:** avoid monotonically increasing primary keys that create a hot range (use hashed or UUID keys, or hash-sharded indexes), keep related rows close in the key space, and keep transactions small.\n\n**Gotcha:** \"distributed\" does not remove the speed of light. A cross-continent quorum write costs at least that round trip.\n\n**Interview tip:** explain Raft per range plus a transaction layer, and say you would choose it for a concrete requirement such as multi-region writes, not for fashion.",
+      "level": "advanced",
+      "module": "Scaling & Replication",
+      "tags": [
+        "distributed-sql",
+        "newsql",
+        "cockroachdb"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-064",
+      "question": "How does consensus-based replication (Raft) work in plain words?",
+      "answer": "**Short answer:** Raft keeps several servers in agreement on an ordered log of commands. One server is the leader. It accepts writes, copies them to followers, and counts a write as committed once a majority has it. If the leader dies, the followers hold an election and a new leader with an up-to-date log takes over. No committed write is lost as long as a majority survives.\n\n**Parts**\n- Roles: leader, follower, candidate.\n- Term: a number that increases with each election. Stale leaders from older terms are ignored.\n- Log: ordered entries. Each follower copies the leader's log.\n- Majority (quorum): with 3 nodes, 2 must agree. With 5 nodes, 3 must agree, so 2 can fail.\n\n```mermaid\nsequenceDiagram\n    participant C as Client\n    participant L as Leader\n    participant F1 as Follower 1\n    participant F2 as Follower 2\n    C->>L: write x = 5\n    L->>F1: append entry\n    L->>F2: append entry\n    F1-->>L: ok\n    L-->>C: committed (majority: leader + F1)\n    F2-->>L: ok (later)\n```\n\nThe leader replies as soon as a majority has the entry. The slow follower catches up later.\n\n**Leader election:** a follower that stops hearing heartbeats waits a random timeout, becomes a candidate, asks for votes, and wins with a majority. Followers vote only for a candidate whose log is at least as up to date as their own, which protects committed entries.\n\n**Why odd numbers:** 4 nodes tolerate only 1 failure, the same as 3 nodes, and cost more. Use 3 or 5.\n\n**Where you meet it:** etcd (the Kubernetes datastore), Consul, CockroachDB, TiKV, and the replication layer of many NewSQL systems and message brokers (Kafka KRaft mode). Patroni uses etcd for leader election in PostgreSQL clusters.\n\n**Trade-offs**\n- Writes need a network round trip to a majority, so latency grows with distance.\n- Loss of majority stops writes. That is the CP choice.\n- One leader handles the writes for its group, so big systems run many groups.\n\n**Gotcha:** two nodes in a cluster give no fault tolerance for writes. If one dies, the other has no majority.\n\n**Interview tip:** be able to say \"leader, followers, majority commit, election with terms\" in one breath, and why quorums stop split brain.",
+      "level": "advanced",
+      "module": "Scaling & Replication",
+      "tags": [
+        "raft",
+        "consensus",
+        "replication"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-065",
+      "question": "What is change data capture (CDC), and how does the outbox pattern use it?",
+      "answer": "**Short answer:** CDC reads the database's change log and turns inserts, updates and deletes into a stream of events, without changing application code. The outbox pattern solves the \"dual write\" problem: the service writes its business data and an event row in the same transaction, and a CDC tool or relay publishes the outbox rows to a message broker.\n\n**The dual write problem:** writing to the database and then publishing to Kafka are two systems. If the app crashes between them, you either lose the event or publish one for a change that rolled back. No retry logic fully fixes this.\n\n**Outbox solution**\n\n```sql\nBEGIN;\nINSERT INTO orders (id, customer_id, total) VALUES (42, 7, 1000);\nINSERT INTO outbox (id, aggregate_id, type, payload)\nVALUES (gen_random_uuid(), 42, 'OrderCreated', '{\"orderId\":42}');\nCOMMIT;      -- both rows commit together, or neither does\n-- A relay (polling, or Debezium reading the WAL) publishes outbox rows to the broker\n```\n\n(`gen_random_uuid()` is built in from PostgreSQL 13.)\n\n```mermaid\nflowchart LR\n    A[\"Service\"] -- one transaction --> D[(\"Orders + outbox tables\")]\n    D -- WAL / log --> C[\"CDC (Debezium)\"]\n    C --> K[\"Kafka topic\"]\n    K --> S1[\"Consumer: Payments\"]\n    K --> S2[\"Consumer: Search index\"]\n```\n\nThe event is saved with the data, so it cannot be lost. The relay delivers it at least once.\n\n**Ways to do CDC**\n| Method | How | Notes |\n| --- | --- | --- |\n| Log-based | read WAL (PostgreSQL logical decoding) or SQL Server CDC | low impact, captures everything, needs setup |\n| Trigger-based | triggers copy changes | simple, adds write cost |\n| Polling | query by timestamp or id | misses deletes, adds load |\n\n**Rules and gotchas**\n- Delivery is at least once, so consumers must be idempotent (dedupe by event id).\n- Ordering is guaranteed per key if you partition the topic by aggregate id.\n- A PostgreSQL replication slot that nobody reads keeps WAL forever and can fill the disk. Monitor slot lag.\n- Schema changes need care. Consumers should tolerate new fields.\n- Clean the outbox table regularly.\n\n**Uses:** cache invalidation, search indexing, feeding a warehouse, syncing microservices.\n\n**Interview tip:** name the dual-write problem first. It shows you know why the pattern exists.",
+      "level": "advanced",
+      "module": "Scaling & Replication",
+      "tags": [
+        "cdc",
+        "outbox",
+        "event-driven"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-066",
+      "question": "What is event sourcing, and what are its storage trade-offs?",
+      "answer": "**Short answer:** Event sourcing stores every change as an immutable event (`OrderPlaced`, `ItemAdded`, `PaymentCaptured`) in an append-only log, and the current state is computed by replaying events. You get a full audit trail and the ability to rebuild views, at the price of more complexity.\n\n**How it works**\n- The event store has a table such as `events(stream_id, version, type, data, created_at)` with a unique key on `(stream_id, version)`. That key gives optimistic concurrency: two writers cannot both append version 5.\n- To load an aggregate, read its events and fold them into state. For long streams, save snapshots every N events.\n- Read models (projections) are built from the events into normal tables, search indexes or caches. This is often paired with CQRS.\n\n```sql\nCREATE TABLE events (\n  stream_id  TEXT    NOT NULL,\n  version    INTEGER NOT NULL,\n  type       TEXT    NOT NULL,\n  data       TEXT    NOT NULL,\n  created_at TEXT    NOT NULL,\n  PRIMARY KEY (stream_id, version)   -- append at version n+1 or fail\n);\n```\n\n| Benefit | Cost |\n| --- | --- |\n| Complete history and audit | Querying \"current state\" needs projections |\n| Rebuild or add read models any time | Eventual consistency between events and views |\n| Debug by replaying | Event schema versioning is hard (events live forever) |\n| Natural fit for domain events | Corrections need compensating events, not edits |\n| | GDPR deletion conflicts with immutability (use encryption keys per subject, crypto-shredding) |\n\n**When it fits:** domains where history is the business (ledgers, bookings, inventory movements), or with strong audit needs.\n\n**When it does not:** simple CRUD, reporting-first systems, small teams new to the idea. Audit needs alone can be met with an audit table or temporal tables (SQL Server system-versioned tables, PostgreSQL triggers).\n\n**Gotchas**\n- Changing the meaning of old events. Version them and write upcasters.\n- Projection lag surprises users. Show \"processing\" states.\n- Replays can take hours for big stores. Plan for parallel and incremental rebuilds.\n\n**Interview tip:** say you use it selectively for one bounded context where history matters, not for the whole system.",
+      "level": "advanced",
+      "module": "Data Modeling",
+      "tags": [
+        "event-sourcing",
+        "cqrs",
+        "storage"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-067",
+      "question": "What sharding strategies exist (hash, range, directory), and what are resharding pain and hot keys?",
+      "answer": "**Short answer:** Sharding assigns each row to a shard using a shard key. Range sharding keeps neighbours together, hash sharding spreads rows evenly, and directory (lookup) sharding keeps a map from key to shard. The hardest parts are choosing the key, moving data when you add shards (resharding) and handling hot keys.\n\n| Strategy | How | Strength | Weakness |\n| --- | --- | --- | --- |\n| Range | key ranges (A to F, dates) | range scans stay on one shard | hot spots (newest range gets all writes) |\n| Hash | hash(key) mod N or consistent hashing | even spread | range queries hit all shards |\n| Directory | lookup table: tenant to shard | flexible, move one tenant at a time | the directory is a critical component |\n\n**Resharding**\n- `hash(key) mod N` forces most rows to move when N changes. Use consistent hashing or a large fixed number of logical shards (for example 1,024) mapped to a smaller number of servers. Then adding a server means moving whole logical shards.\n- Moving live data needs dual writes or CDC, a backfill, verification, and a cut-over with a rollback plan.\n\n**Hot keys**\n- One tenant, one celebrity user or one popular product gets far more traffic than the rest, so its shard melts while others idle.\n- Mitigations: split big tenants onto their own shard, add a salt suffix to spread one key over several (and merge on read), cache reads, queue and batch writes, or move counters to a separate system.\n\n**Choosing a key**\n- It should appear in nearly all queries, so a query touches one shard.\n- High cardinality, spreads load, and rarely changes.\n- Often tenant id or customer id. Sharding by time puts all current writes on one shard.\n\n**What you lose**\n- Cross-shard joins, global unique constraints and transactions. Replace them with application-level joins, globally unique ids (UUID, ULID, snowflake) and sagas.\n- Simple reporting: send data to a warehouse.\n\n**Gotcha:** choosing a shard key you later need to change is the most expensive mistake. It means a full data migration.\n\n**Interview tip:** mention logical shards over physical servers, and the hot tenant mitigation. Those two details show experience.",
+      "level": "advanced",
+      "module": "Scaling & Replication",
+      "tags": [
+        "sharding",
+        "hot-keys",
+        "resharding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-068",
+      "question": "How do online schema change tools work?",
+      "answer": "**Short answer:** Online schema change tools alter a big table without long locks. The common method creates a shadow copy of the table with the new structure, copies rows in small batches, keeps the copy in sync with ongoing changes, then swaps the tables in a very short step. Some databases do parts of this natively.\n\n**The shadow table method**\n1. Create `orders_new` with the new schema.\n2. Install a capture of changes on the old table (triggers, or reading the binary log).\n3. Copy existing rows in chunks, throttled so load and replication lag stay low.\n4. Apply captured changes to the new table.\n5. Verify counts or checksums.\n6. Swap the names with a brief lock and drop the old table later.\n\n```mermaid\nflowchart LR\n    O[\"orders (live)\"] -- chunked copy --> N[\"orders_new\"]\n    O -- captured changes --> N\n    N -- rename swap --> L[\"orders (new schema)\"]\n```\n\nRows are copied while the live table keeps serving traffic. Only the final rename needs a short lock.\n\n**Tools and native options**\n| Database | Options |\n| --- | --- |\n| MySQL | gh-ost, pt-online-schema-change (the origin of this method) |\n| PostgreSQL | mostly native: `CREATE INDEX CONCURRENTLY`, adding nullable columns, `NOT VALID` constraints; `pg_repack` rebuilds tables and indexes online; pgroll and similar tools help expand and contract |\n| SQL Server | `ONLINE = ON` for many index operations (Enterprise and Azure SQL), schema-only metadata changes are fast; for big column type changes you often build a shadow table by hand |\n\n**Considerations**\n- Needs spare disk (a second copy) and extra write load.\n- Foreign keys, triggers and unusual primary keys complicate the swap.\n- Throttle on replica lag and CPU, and keep a way to pause or abort.\n- It does not replace backward-compatible, staged application changes (expand and contract).\n\n**Gotcha:** a trigger-based copy doubles write cost on a hot table. Test on a production-sized copy and pick a quiet time.\n\n**Interview tip:** describe the copy, sync, verify, swap sequence, and say PostgreSQL gets most of the way with built-in concurrent operations.",
+      "level": "advanced",
+      "module": "Operations & Migrations",
+      "tags": [
+        "schema-change",
+        "pt-osc",
+        "zero-downtime"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-069",
+      "question": "What are the main consistency models, and how do linearizability and serializability differ?",
+      "answer": "**Short answer:** Serializability is about transactions: the result equals some one-at-a-time order of whole transactions. Linearizability is about single objects: once a write completes, every later read sees it, as if there is one copy. They solve different problems. A system with both is called strictly serializable.\n\n| Model | Scope | Promise | Example |\n| --- | --- | --- | --- |\n| Linearizability | one object | real-time order: a read after a finished write sees it | a lock service, a leader election register |\n| Serializability | multi-object transactions | equivalent to some serial order, not necessarily the real-time one | database `SERIALIZABLE` |\n| Strict serializability | both | serial order that respects real time | Spanner, some CockroachDB modes |\n| Snapshot isolation | transactions | each sees a consistent snapshot, write skew possible | PostgreSQL repeatable read, SQL Server snapshot |\n| Causal consistency | related operations | effects follow causes in order | some document databases |\n| Read your writes | one client | you see your own writes | session guarantees on replicas |\n| Eventual consistency | replicas | they converge if writes stop | async replicas, DynamoDB default reads |\n\n**Why the difference matters**\n- A serializable database could, in theory, order two non-overlapping transactions in the opposite order of real time, as long as the final state matches some serial order. For most applications you never notice. With strict serializability you never see that either.\n- Linearizability alone says nothing about two different rows. You can read row A and row B at different logical times.\n- Replica reads are neither: they can be stale.\n\n**In practice**\n- On a single primary, `SERIALIZABLE` gives you serializability, and reads on the primary are up to date. Reads on replicas can be stale, which breaks the real-time part.\n- Many distributed databases offer weaker levels by default for speed. Read the documentation for the level each operation uses.\n- Write skew and the on-call doctors example show why snapshot isolation is not serializable.\n\n**Gotcha:** \"ACID\" databases are not all serializable by default. Defaults are usually read committed.\n\n**Interview tip:** a clean one-liner: \"linearizability is recency for one object, serializability is a safe order for many\".",
+      "level": "advanced",
+      "module": "Transactions & Concurrency",
+      "tags": [
+        "consistency",
+        "linearizability",
+        "serializability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-070",
+      "question": "How do OLTP and OLAP differ, and what are columnar storage, data warehouses and the lakehouse?",
+      "answer": "**Short answer:** OLTP systems handle many small, fast reads and writes on current data, such as placing an order. OLAP systems run big analytical queries that scan lots of rows and a few columns, such as monthly revenue by region. Columnar storage keeps each column together, which suits OLAP. A data warehouse collects data from many sources for analysis. A lakehouse puts warehouse-style tables on cheap open file storage.\n\n| | OLTP | OLAP |\n| --- | --- | --- |\n| Query | point lookups, short transactions | scans, aggregates, joins over millions of rows |\n| Storage | row-oriented | column-oriented |\n| Data | current, normalised | historical, often denormalised (star schema) |\n| Concurrency | thousands of small users | few heavy queries |\n| Examples | PostgreSQL, SQL Server | Snowflake, BigQuery, Synapse, ClickHouse, Redshift |\n\n**Why columns:** to sum `amount` over 100 million rows, a row store reads every column of every row. A column store reads only the `amount` file, compressed (similar values compress well) and processed in vectors. Writes of single rows are slower, so columnar systems batch inserts.\n\n**Pipeline**\n1. Extract changes from OLTP databases (CDC) or files.\n2. Load into a warehouse or lake, then transform (ELT) with SQL tools such as dbt.\n3. Model as a star schema: a fact table (orders) surrounded by dimensions (customer, product, date).\n4. Serve BI dashboards and data science.\n\n```mermaid\nflowchart LR\n    A[\"OLTP: PostgreSQL / SQL Server\"] -- CDC / batch --> B[\"Lake storage: Parquet files\"]\n    B --> C[\"Warehouse / lakehouse tables\"]\n    C --> D[\"BI dashboards\"]\n    C --> E[\"ML features\"]\n```\n\nOperational data flows out to analytics storage, so heavy reports never touch the production database.\n\n**Lakehouse idea:** data sits in open file formats (Parquet) on object storage, with a table layer (Delta Lake, Iceberg, Hudi) that adds transactions, schema and time travel. One copy of the data serves both BI and machine learning, instead of separate lake and warehouse copies.\n\n**Gotchas**\n- Running heavy reports on the OLTP primary hurts customers. Use a replica at least, a warehouse ideally.\n- SQL Server and PostgreSQL can do some analytics (columnstore indexes, partitioning), enough for modest volumes.\n\n**Interview tip:** explain row versus column with the \"sum one column over many rows\" example.",
+      "level": "advanced",
+      "module": "Storage Internals",
+      "tags": [
+        "olap",
+        "columnar",
+        "data-warehouse"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-071",
+      "question": "How would you design a schema for orders, payments and inventory end to end?",
+      "answer": "**Short answer:** Start from the business rules: a customer places an order with items, pays once or more, and stock must not go negative. Model each fact once, enforce rules with constraints, make payments idempotent, snapshot prices on the order, and index for the top queries. The DDL below ran in SQLite with foreign keys on, so the constraints work as shown.\n\n```mermaid\nerDiagram\n    customers ||--o{ orders : places\n    orders ||--|{ order_items : contains\n    products ||--o{ order_items : \"is in\"\n    products ||--|| inventory : \"stock of\"\n    orders ||--o{ payments : \"paid by\"\n```\n\nOne customer has many orders, an order has items, a product has one stock row, and an order can have several payment attempts.\n\n```sql\nCREATE TABLE customers (id INTEGER PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL);\nCREATE TABLE products  (id INTEGER PRIMARY KEY, sku TEXT NOT NULL UNIQUE, name TEXT NOT NULL,\n                        price_cents INTEGER NOT NULL CHECK (price_cents >= 0));\nCREATE TABLE inventory (product_id INTEGER PRIMARY KEY REFERENCES products(id),\n                        on_hand  INTEGER NOT NULL CHECK (on_hand >= 0),\n                        reserved INTEGER NOT NULL DEFAULT 0 CHECK (reserved >= 0 AND reserved <= on_hand));\nCREATE TABLE orders (\n  id INTEGER PRIMARY KEY,\n  customer_id INTEGER NOT NULL REFERENCES customers(id),\n  status TEXT NOT NULL CHECK (status IN ('pending','paid','shipped','cancelled')),\n  total_cents INTEGER NOT NULL CHECK (total_cents >= 0),\n  created_at TEXT NOT NULL);\nCREATE TABLE order_items (\n  order_id INTEGER NOT NULL REFERENCES orders(id),\n  product_id INTEGER NOT NULL REFERENCES products(id),\n  quantity INTEGER NOT NULL CHECK (quantity > 0),\n  unit_price_cents INTEGER NOT NULL,            -- price snapshot at purchase time\n  PRIMARY KEY (order_id, product_id));\nCREATE TABLE payments (\n  id INTEGER PRIMARY KEY,\n  order_id INTEGER NOT NULL REFERENCES orders(id),\n  amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),\n  status TEXT NOT NULL CHECK (status IN ('authorized','captured','refunded','failed')),\n  idempotency_key TEXT NOT NULL UNIQUE,         -- a retried charge cannot duplicate\n  created_at TEXT NOT NULL);\nCREATE INDEX ix_orders_customer_created ON orders (customer_id, created_at DESC);\nCREATE INDEX ix_payments_order ON payments (order_id);\nCREATE INDEX ix_items_product ON order_items (product_id);\n```\n\n**Reserving stock safely** is one atomic statement:\n\n```sql\nUPDATE inventory SET reserved = reserved + 2\nWHERE product_id = 1 AND on_hand - reserved >= 2;\n-- 1 row changed: reserved. 0 rows: not enough stock, tell the user.\n```\n\nTested in SQLite: reserving 2 of 10 changed one row, asking for 9 more changed zero rows, and a second payment with the same idempotency key failed with a unique constraint error.\n\n**Design choices to explain**\n- Money in integer cents, with a currency column added if you sell in several currencies.\n- Price copied onto `order_items`, because the product price changes later.\n- Foreign key columns indexed for joins and deletes. The composite primary key of `order_items` already covers `order_id`.\n- On PostgreSQL use `bigint GENERATED ... AS IDENTITY` and `timestamptz`. On SQL Server use `BIGINT IDENTITY` and `datetimeoffset`.\n- Status transitions are validated in code, and the table could carry a history table for audits.\n- Later growth: partition `orders` and `payments` by month, add an outbox table for events.\n\n**Gotcha:** in a multi-service system, inventory and payments often live in different services, so the single transaction becomes a saga with compensations.\n\n**Interview tip:** walk through one failure each: double click on pay (idempotency key), two buyers for the last item (conditional update), price change (snapshot).",
+      "level": "advanced",
+      "module": "Data Modeling",
+      "tags": [
+        "schema-design",
+        "orders",
+        "payments"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-072",
+      "question": "Walk through a deadlock scenario: how does it happen, how is it detected, and how do you fix it?",
+      "answer": "**Short answer:** Two transactions update the same two rows in opposite order. Each holds one lock and waits for the other, so neither can proceed. The database finds the cycle (PostgreSQL after `deadlock_timeout`, one second by default; SQL Server within a few seconds), kills one transaction as the victim, and the other continues. The fix is a consistent lock order plus retry.\n\n**The scenario:** a transfer between accounts 1 and 2, run twice in opposite directions at the same moment.\n\n```sql\n-- Session A: transfer 1 -> 2            -- Session B: transfer 2 -> 1\nBEGIN;                                    BEGIN;\nUPDATE accounts SET balance = balance - 10 WHERE id = 1;   -- A locks row 1\n                                          UPDATE accounts SET balance = balance - 5 WHERE id = 2;  -- B locks row 2\nUPDATE accounts SET balance = balance + 10 WHERE id = 2;   -- A waits for B\n                                          UPDATE accounts SET balance = balance + 5 WHERE id = 1;  -- B waits for A: deadlock\n-- PostgreSQL error: deadlock detected (SQLSTATE 40P01). One session is rolled back.\n-- SQL Server error 1205: chosen as the deadlock victim.\n```\n\n**What the logs show**\n- PostgreSQL logs both processes, the statements and the lock each waited for.\n- SQL Server's deadlock graph (from the `system_health` session) shows two processes, two resources, and the victim.\n\n**Fixes**\n\n```sql\n-- ✅ lock rows in a fixed order (lowest id first) in every transfer\nBEGIN;\nSELECT id FROM accounts WHERE id IN (1, 2) ORDER BY id FOR UPDATE;\nUPDATE accounts SET balance = balance - 10 WHERE id = 1;\nUPDATE accounts SET balance = balance + 10 WHERE id = 2;\nCOMMIT;\n```\n\n1. Consistent order across all code paths: sort ids before locking.\n2. Shorter transactions, fewer rows locked.\n3. Proper indexes, so statements do not lock extra rows or take table scans.\n4. Lower isolation or row versioning where correctness allows.\n5. Retry on the deadlock error, with a small random pause. Make the operation idempotent so a retry is safe.\n\n**Other common deadlock sources:** foreign key checks locking parent rows, a trigger touching another table, two batch jobs updating overlapping ranges, and SQL Server key lookups where one session reads through the non-clustered index while another updates through the clustered one.\n\n**Gotcha:** do not \"fix\" deadlocks by only raising the timeout. That just makes people wait longer.\n\n**Interview tip:** tell the transfer story in four sentences and finish with \"sort the ids, keep it short, retry\".",
+      "level": "advanced",
+      "module": "Transactions & Concurrency",
+      "tags": [
+        "deadlocks",
+        "locking",
+        "troubleshooting"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-073",
+      "question": "How do you find the top N rows per group and the second highest salary?",
+      "answer": "**Short answer:** For top N per group, rank rows inside each group with a window function and keep rank N or lower. For the second highest value, use a subquery on the maximum, or `DENSE_RANK`, or `DISTINCT` with `OFFSET`. Decide how you treat ties, and what to return when no second value exists.\n\nData: `employees(id, name, dept, salary)` with eng: Asha 200, Ben 300, Chen 300, Dev 100 and ops: Esha 150, Farid 120.\n\n```sql\n-- Top 2 salaries per department, ties included (DENSE_RANK)\nSELECT dept, name, salary\nFROM (\n  SELECT *, DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS r\n  FROM employees\n) AS ranked\nWHERE r <= 2\nORDER BY dept, salary DESC, name;\n-- prints: eng Ben 300, eng Chen 300, eng Asha 200, ops Esha 150, ops Farid 120\n```\n\nBen and Chen tie at 300 and both are rank 1, so Asha is rank 2. `ROW_NUMBER()` would drop one of the tied people and arbitrarily pick between them. `RANK()` would give Asha rank 3 and exclude her from the top 2.\n\n**Second highest salary**\n\n```sql\n-- Option 1: portable, returns NULL when there is no second value\nSELECT MAX(salary) AS second_highest\nFROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);\n-- prints: 200\n\n-- Option 2: distinct values, skip one (PostgreSQL / SQLite syntax)\nSELECT DISTINCT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 1;\n-- prints: 200\n-- wrap it as a scalar subquery to get NULL instead of no rows:\n-- SELECT (SELECT DISTINCT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 1) AS s;\n```\n\nIn SQL Server, replace `LIMIT 1 OFFSET 1` with `OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY`.\n\n| Need | Use |\n| --- | --- |\n| Exactly N rows per group, ties broken arbitrarily or by a rule | `ROW_NUMBER()` |\n| All tied rows, no gaps in ranks | `DENSE_RANK()` |\n| Competition style ranking | `RANK()` |\n| The Nth highest overall | `DENSE_RANK()` or `OFFSET` on `DISTINCT` |\n\n**Gotchas**\n- Filtering on a window function in `WHERE` is not allowed. Use a subquery or CTE.\n- With a tie for first place, \"second highest\" can mean 300 (second row) or 200 (second value). Ask the interviewer.\n- On big tables, an index on `(dept, salary DESC)` lets the database avoid a full sort.\n- PostgreSQL also offers `LATERAL` joins for top N per group, and SQL Server has `CROSS APPLY` with `TOP`. These can be faster when there are few groups and an index.\n\n**Interview tip:** state your tie rule before you write the query. It is the first thing a good interviewer is checking.",
+      "level": "advanced",
+      "module": "SQL Interview Problems",
+      "tags": [
+        "window-functions",
+        "top-n",
+        "interview-coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-074",
+      "question": "How do you find and delete duplicate rows?",
+      "answer": "**Short answer:** To find duplicates, group by the columns that should be unique and keep groups with a count above one. To delete them, keep one row per group (usually the lowest id) and remove the rest. Afterwards add a unique constraint so it cannot happen again.\n\nData: `users(id, email)` with (1, a@x.com), (2, b@x.com), (3, a@x.com), (4, a@x.com).\n\n```sql\n-- Find\nSELECT email, COUNT(*) AS n\nFROM users\nGROUP BY email\nHAVING COUNT(*) > 1;\n-- prints: a@x.com | 3\n\n-- Delete all but the lowest id per email\nDELETE FROM users\nWHERE id NOT IN (SELECT MIN(id) FROM users GROUP BY email);\n\nSELECT * FROM users;\n-- prints: 1 a@x.com\n--         2 b@x.com\n```\n\nThe subquery returns the id to keep for each email. Everything not in that list is a duplicate. `MIN(id)` is never NULL here, so the `NOT IN` NULL trap does not apply, but if the key column could be NULL, use `NOT EXISTS`.\n\n**Variant with a window function** (works in PostgreSQL and SQL Server for the select part):\n\n```sql\nSELECT id, email FROM (\n  SELECT id, email,\n         ROW_NUMBER() OVER (PARTITION BY email ORDER BY id) AS rn\n  FROM users\n) AS t\nWHERE rn > 1;           -- the rows to remove\n-- prints ids 3 and 4\n```\n\nIn SQL Server you can delete straight through a CTE: `WITH d AS (SELECT ROW_NUMBER() OVER (PARTITION BY email ORDER BY id) rn FROM users) DELETE FROM d WHERE rn > 1;`. This syntax is SQL Server specific.\n\n**Safe process for production**\n1. Back up or copy the rows first (`CREATE TABLE users_dupes AS ...`).\n2. Run the `SELECT` and check the count.\n3. Delete inside a transaction, in batches if there are millions of rows.\n4. Decide which row wins. Lowest id, newest `updated_at`, or the row with more filled columns. Merge data if needed.\n5. Add `UNIQUE (email)`, or a unique index on `lower(email)` if case should not matter.\n\n**Gotcha:** exact string duplicates miss `A@x.com` versus `a@x.com` and trailing spaces. Normalise before comparing. And the duplicates may already be referenced by foreign keys, so re-point those first.\n\n**Interview tip:** after the query, mention the unique constraint. It shows you fix the cause, not only the symptom.",
+      "level": "advanced",
+      "module": "SQL Interview Problems",
+      "tags": [
+        "duplicates",
+        "group-by",
+        "interview-coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-075",
+      "question": "How do you find consecutive days and solve gaps and islands problems?",
+      "answer": "**Short answer:** Gaps and islands asks for streaks of consecutive values, or for the breaks between them. The classic trick: number the rows in order, subtract that number from the date. Within one streak the result is the same constant, so you can group by it. For gaps, compare each row to the next with `LEAD`.\n\nData: `logins(user_id, day)`. User 1 logged in on Jan 1, 2, 3, 7 and 8. User 2 on Jan 1 and 3.\n\n```sql\n-- Islands: each streak of consecutive days (SQLite date arithmetic with julianday)\nWITH x AS (\n  SELECT user_id, day,\n         julianday(day) - ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY day) AS grp\n  FROM logins\n)\nSELECT user_id, MIN(day) AS start_day, MAX(day) AS end_day, COUNT(*) AS days\nFROM x\nGROUP BY user_id, grp\nORDER BY user_id, start_day;\n-- prints:\n-- 1 | 2024-01-01 | 2024-01-03 | 3\n-- 1 | 2024-01-07 | 2024-01-08 | 2\n-- 2 | 2024-01-01 | 2024-01-01 | 1\n-- 2 | 2024-01-03 | 2024-01-03 | 1\n```\n\nWhy it works: for days 1, 2, 3 with row numbers 1, 2, 3 the difference is 0, 0, 0. After the gap, day 7 has row number 4, so the difference is 3. A new constant means a new streak.\n\n**Users with a streak of at least 3 days:** add `HAVING COUNT(*) >= 3` to the grouped query. In this data only user 1 qualifies.\n\n**Gaps** with `LEAD`:\n\n```sql\nSELECT user_id, day, next_day FROM (\n  SELECT user_id, day,\n         LEAD(day) OVER (PARTITION BY user_id ORDER BY day) AS next_day\n  FROM logins\n) AS t\nWHERE julianday(next_day) - julianday(day) > 1;\n-- prints: 1 | 2024-01-03 | 2024-01-07\n--         2 | 2024-01-01 | 2024-01-03\n```\n\n**Dialect notes for the date subtraction**\n- PostgreSQL: `day - (ROW_NUMBER() OVER (...))::int` works when `day` is a `date`, because date minus integer gives a date.\n- SQL Server: `DATEADD(day, -ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY day), day)`.\n- Remove duplicates per day first (`SELECT DISTINCT user_id, day`), or the numbering breaks.\n\n**Real uses:** login streaks, uptime periods, missing invoice numbers, continuous employment spans, finding sessions in event logs.\n\n**Gotcha:** if there are several rows per day, use `DENSE_RANK` over the day, or deduplicate first.\n\n**Interview tip:** explain the \"date minus row number\" idea out loud with three numbers. Interviewers like that you can teach it.",
+      "level": "advanced",
+      "module": "SQL Interview Problems",
+      "tags": [
+        "gaps-and-islands",
+        "window-functions",
+        "interview-coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "databases-076",
+      "question": "How do you calculate a running total and a percentage of the total?",
+      "answer": "**Short answer:** Use `SUM(...) OVER (ORDER BY ...)` for a running total, add `PARTITION BY` to restart per group, and `SUM(...) OVER ()` with no order to get the grand total for percentages. Aggregate by day first if you want one row per day.\n\nData: `orders(id, customer_id, total, created_on)` with totals 100, 250, 80, 300, 50 on ids 1 to 5.\n\n```sql\nSELECT id, total,\n       ROUND(total * 100.0 / SUM(total) OVER (), 1)        AS pct_of_all,\n       SUM(total) OVER (PARTITION BY customer_id ORDER BY id) AS customer_running\nFROM orders ORDER BY id;\n-- id total pct  customer_running\n-- 1  100   12.8 100\n-- 2  250   32.1 350\n-- 3  80    10.3 80\n-- 4  300   38.5 380\n-- 5  50    6.4  50\n```\n\nOrders 1 and 2 belong to one customer, so the running total restarts for the next customer. The row with a NULL customer forms its own group.\n\n**Running total per day** (aggregate first, then window):\n\n```sql\nWITH d AS (\n  SELECT created_on, SUM(total) AS day_total FROM orders GROUP BY created_on\n)\nSELECT created_on, day_total,\n       SUM(day_total) OVER (ORDER BY created_on) AS running\nFROM d;\n-- 2024-01-01 | 100 | 100\n-- 2024-01-02 | 330 | 430\n-- 2024-01-04 | 300 | 730\n-- 2024-01-05 | 50  | 780\n```\n\n**Details that matter**\n- Without a unique sort key, rows with equal `ORDER BY` values are treated as peers in the default frame, so they share a running total. Add the id as a tie-breaker, or state `ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`. SQL Server's default frame without an explicit one is also `RANGE`, and `ROWS` is faster there because it avoids a spool to tempdb.\n- Use `100.0` or a cast, or integer division will truncate the percentage to zero in many databases.\n- Moving averages use a bounded frame: `AVG(x) OVER (ORDER BY d ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)` for seven rows.\n- Old code used self joins or correlated subqueries for running totals. They are quadratic on big data. Window functions are the better tool.\n\n**Gotcha:** window functions run after `WHERE` and `GROUP BY`, so the total in `SUM(total) OVER ()` only covers rows that survived your filter.\n\n**Interview tip:** say whether you want rows or ranges in the frame and why. That small detail separates people who memorised the syntax from people who understand it.",
+      "level": "advanced",
+      "module": "SQL Interview Problems",
+      "tags": [
+        "running-total",
+        "window-functions",
+        "interview-coding"
+      ],
+      "favorite": false
+    }
+  ]
+}

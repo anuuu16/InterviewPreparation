@@ -2,7 +2,7 @@
 
 [← Back to index](../README.md) · [⭐ Favorites](favorites.md)
 
-55 questions · 0 favorites
+55 questions · 0 favorites · [📚 Resources](#resources)
 
 ## Contents
 
@@ -2452,3 +2452,47 @@ Each arrow forward is gated by checks. Rolling back always leads to a state wher
 **Interview tip:** Say "expand, migrate, contract" and "I always have a rollback for each step". Add one real example of a migration you ran.
 
 _Module: Architecture & Design · Tags: migration, zero-downtime, deployment, blue-green_
+
+---
+
+## Resources
+
+Where to read more at the source. Official docs and references come first.
+
+**Official docs**
+
+- [Microservices architecture style (Azure Architecture Center)](https://learn.microsoft.com/azure/architecture/microservices/) — Design, decomposition, communication and operations guidance. _(intermediate)_
+- [OpenTelemetry documentation](https://opentelemetry.io/docs/) — Traces, metrics and logs: concepts, SDKs and the Collector. _(intermediate)_
+- [Apache Kafka documentation](https://kafka.apache.org/documentation/) — Topics, partitions, consumer groups and delivery guarantees. _(intermediate)_
+- [gRPC documentation](https://grpc.io/docs/) — Protocol Buffers, service definitions, streaming and deadlines. _(intermediate)_
+- [Pact documentation](https://docs.pact.io) — Consumer-driven contract testing between services. _(intermediate)_
+- [Istio documentation](https://istio.io/latest/docs/) — Service mesh: traffic management, mTLS and observability. _(intermediate)_
+
+**Reference**
+
+- [Microservices.io pattern language](https://microservices.io/patterns/index.html) — Chris Richardson's catalogue: Saga, Outbox, API gateway, CQRS and more, with trade-offs. _(intermediate)_
+- [Cloud design patterns (Azure Architecture Center)](https://learn.microsoft.com/azure/architecture/patterns/) — Retry, circuit breaker, bulkhead, saga and 40 more patterns. _(intermediate)_
+- [The Twelve-Factor App](https://12factor.net) — Principles for building stateless, portable, cloud-ready services. _(beginner)_
+
+**Tutorial**
+
+- [RabbitMQ tutorials](https://www.rabbitmq.com/tutorials) — Work queues, pub/sub, routing and RPC patterns step by step. _(beginner)_
+
+**Book**
+
+- [Site Reliability Engineering book (Google)](https://sre.google/sre-book/table-of-contents/) — Free book on SLOs, monitoring, incident response and reliability. _(intermediate)_
+- [Designing Data-Intensive Applications](https://dataintensive.net/) — The best single book on replication, partitioning, transactions and consistency. _(advanced)_
+- [Building Microservices (Sam Newman)](https://samnewman.io/books/building_microservices_2nd_edition/) — Practical guide to design, migration, testing and deployment. _(intermediate)_
+
+**Article**
+
+- [Microservices (Martin Fowler and James Lewis)](https://martinfowler.com/articles/microservices.html) — The article that defined the style: characteristics and trade-offs. _(beginner)_
+- [Saga pattern](https://microservices.io/patterns/data/saga.html) — How sagas keep data consistent across services. _(intermediate)_
+- [Transactional outbox](https://microservices.io/patterns/data/transactional-outbox.html) — Publish events reliably together with a database change. _(intermediate)_
+- [Circuit Breaker (Martin Fowler)](https://martinfowler.com/bliki/CircuitBreaker.html) — The pattern in plain words, with states and trade-offs. _(intermediate)_
+- [Strangler Fig Application](https://martinfowler.com/bliki/StranglerFigApplication.html) — Migrate a monolith piece by piece. _(intermediate)_
+- [Timeouts, retries and backoff with jitter (AWS Builders' Library)](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/) — Practical rules for safe retries from a large production system. _(advanced)_
+
+**Tool**
+
+- [Raft consensus visualisation](https://raft.github.io) — Interactive explanation of leader election and log replication. _(advanced)_

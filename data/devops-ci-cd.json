@@ -1,0 +1,856 @@
+{
+  "name": "DevOps & CI/CD",
+  "questions": [
+    {
+      "id": "devops-ci-cd-001",
+      "question": "What do CI, continuous delivery and continuous deployment mean?",
+      "answer": "**Short answer:** Continuous integration (CI) means every change is merged often and automatically built and tested. Continuous delivery means every passing change is always ready to release, and a human presses the button. Continuous deployment goes one step further: every passing change goes to production with no human step.\n\n**Why it exists.** Big, rare merges and manual releases hide bugs and make releases scary. Small, frequent, automated steps make problems visible while the change is still small and fresh in the author's head.\n\n| Practice | What is automated | Who releases |\n| --- | --- | --- |\n| Continuous integration | Build, unit tests, lint on every push or merge request | Nobody, it only gives feedback |\n| Continuous delivery | CI plus a deployable artifact, deploys to staging, release is one click | A human decides when |\n| Continuous deployment | Everything including the production deploy | The pipeline, after all checks pass |\n\n```mermaid\nflowchart LR\n    C[\"Commit\"] --> B[\"Build + test\"] --> A[\"Artifact\"] --> S[\"Staging\"] --> P{\"Approval?\"}\n    P -- \"manual: delivery\" --> R[\"Production\"]\n    P -- \"automatic: deployment\" --> R\n```\n\nRead it left to right. The only difference between delivery and deployment is the decision box.\n\n**Common mistakes**\n- Calling a nightly build \"CI\". CI means integrating at least daily, ideally many times a day.\n- Having a pipeline but a team that keeps long-lived branches. The tool is there, the practice is not.\n- Believing continuous deployment needs no safety. It needs more: good tests, feature flags, monitoring and fast rollback.\n\n**Interview tip:** Say which one your team does and why. \"We do continuous delivery to production behind an approval, because of our customer's release windows, but staging deploys are fully automatic\" is a strong, honest answer.",
+      "level": "basic",
+      "module": "CI/CD Pipelines",
+      "tags": [
+        "ci-cd",
+        "fundamentals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-002",
+      "question": "What is DevOps, and why is it not a job title?",
+      "answer": "**Short answer:** DevOps is a way of working where the people who build software also share responsibility for running it. It is about culture, shared ownership and fast feedback, supported by automation. It is not a team that \"does the pipelines for everyone\".\n\n**The problem it solves.** In the old model developers threw code over a wall to operations. Developers wanted change, operations wanted stability, so they fought. DevOps removes the wall: the same team writes, deploys, monitors and fixes the service.\n\n**Core ideas**\n- **Flow:** small changes, short feedback loops.\n- **Automation:** builds, tests, deploys and infrastructure are code.\n- **Shared ownership:** \"you build it, you run it\", including on-call.\n- **Measurement:** monitoring and metrics such as deploy frequency and failure rate.\n- **Learning:** blameless postmortems.\n\n**What goes wrong with the job title.** A \"DevOps engineer\" team can quickly become the new wall: every pipeline change is a ticket to them. A healthier model is a platform team that provides paved roads (templates, runners, clusters) and product teams that own their own services on top.\n\n| Anti-pattern | Better |\n| --- | --- |\n| Separate \"ops\" team deploys for developers | Developers deploy through self-service pipelines |\n| Blame after an outage | Blameless postmortem and fixes |\n| Manual server setup | Infrastructure as code |\n\n**Interview tip:** Interviewers listen for culture, not tools. Mention one real habit you introduced, such as a deploy-on-merge pipeline or a weekly look at failed deploys.",
+      "level": "basic",
+      "module": "DevOps Fundamentals",
+      "tags": [
+        "devops",
+        "culture"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-003",
+      "question": "How are containers different from virtual machines?",
+      "answer": "**Short answer:** A virtual machine includes a full guest operating system on top of a hypervisor. A container is just an isolated process that shares the host's kernel. Containers start in a second, use little memory and are easy to pack densely, but they isolate less strongly than VMs.\n\n**How to picture it.** A VM is a separate house with its own plumbing. A container is a flat in one building: separate rooms and doors, shared plumbing (the kernel).\n\n```mermaid\nflowchart TB\n    subgraph VM[\"Virtual machines\"]\n        H1[\"Hardware + hypervisor\"] --> G1[\"Guest OS 1\"] --> A1[\"App A\"]\n        H1 --> G2[\"Guest OS 2\"] --> A2[\"App B\"]\n    end\n    subgraph CT[\"Containers\"]\n        H2[\"Hardware + host OS kernel\"] --> R[\"Container runtime\"]\n        R --> C1[\"App A + libs\"]\n        R --> C2[\"App B + libs\"]\n    end\n```\n\n| | Virtual machine | Container |\n| --- | --- | --- |\n| Size | Gigabytes | Megabytes (often tens) |\n| Start time | Tens of seconds to minutes | Usually under a second or two |\n| Isolation | Strong, separate kernel | Weaker, shared kernel |\n| Runs | Any OS | Same kernel family as the host (Linux containers need a Linux kernel) |\n\n**Consequences.** A kernel bug can affect all containers on a host. For untrusted multi-tenant code, people add a sandbox such as gVisor or Kata Containers, or use VMs. On a Mac or Windows laptop, Docker Desktop quietly runs a small Linux VM, because Linux containers need a Linux kernel.\n\n**Interview tip:** Say \"a container is a process with a restricted view of the system\", and then name namespaces and cgroups if asked how. Also mention that Kubernetes nodes are usually VMs running containers, so the two work together.",
+      "level": "basic",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "containers",
+        "virtualization"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-004",
+      "question": "What is the difference between a Docker image and a container, and what are layers?",
+      "answer": "**Short answer:** An image is a read-only template: files plus metadata such as the start command. A container is a running instance of an image with a thin writable layer on top. One image can start many containers, like one class creating many objects.\n\n**Layers.** An image is a stack of layers. Most Dockerfile instructions (`RUN`, `COPY`, `ADD`) create a new layer that stores only the file changes. Layers are identified by a hash and shared. If ten images start from the same base, the base is stored and downloaded once.\n\n**The build cache.** Docker reuses a layer if the instruction and its inputs have not changed. The first instruction that changes invalidates the cache for itself and **every instruction after it**. This is why instruction order matters so much.\n\n```dockerfile\nFROM node:22-alpine\nWORKDIR /app\n# Changes rarely: cached on most builds\nCOPY package.json package-lock.json ./\nRUN npm ci\n# Changes on every commit: only these layers rebuild\nCOPY . .\nRUN npm run build\n```\n\nWhen you only edit a source file, Docker reuses the layers up to `npm ci` and skips the slow install.\n\n**Container writable layer.** Files a container writes go to its own layer and disappear when the container is removed. Persistent data must go into a volume.\n\n```bash\ndocker build -t orders-web:1.4.0 .   # make an image\ndocker run -d --name web1 orders-web:1.4.0   # start a container\ndocker run -d --name web2 orders-web:1.4.0   # a second container, same image\ndocker history orders-web:1.4.0      # list the layers and their sizes\n```\n\n**Gotcha:** `docker ps` shows containers, `docker images` shows images. Deleting a container does not delete its image.\n\n**Interview tip:** Tie layers to the two things interviewers care about: build speed (cache order) and image size (what each layer adds).",
+      "level": "basic",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "images",
+        "layers"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-005",
+      "question": "How do you write a good Dockerfile?",
+      "answer": "**Short answer:** Start from a small, pinned base image. Copy dependency files first so the cache works. Copy the source later. Run as a non-root user. Keep a `.dockerignore`. Use a multi-stage build so build tools do not ship in the final image.\n\n**Checklist**\n- **Pin the base image.** Use `node:22-alpine` or better a digest, not `node:latest`.\n- **Order for cache.** Rarely changing steps first (install dependencies), often changing steps last (copy source).\n- **Non-root.** Create and switch to a user so a compromised process has fewer rights.\n- **One process per container.** Logs go to stdout and stderr, not to files.\n- **Exec form for `CMD`/`ENTRYPOINT`.** `[\"node\",\"server.js\"]` makes your app PID 1 and lets it receive signals.\n- **`.dockerignore`.** Keeps `.git`, `node_modules`, local `.env` files and build output out of the build context. It makes builds faster and avoids leaking secrets.\n\n```dockerfile\nFROM node:22-alpine\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\nCOPY . .\n# the official node image already contains a non-root user named node\nUSER node\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]\n```\n\n```text\n# .dockerignore\n.git\nnode_modules\n.env\n*.log\ndist\n```\n\n**Common mistakes**\n- `COPY . .` before installing dependencies, so every code change reinstalls everything.\n- Running `apt-get update` and `apt-get install` in separate `RUN` lines, which gives stale package lists. Combine them and clean the list files in the same line.\n- Putting secrets in `ENV` or `ARG`. They stay in the image history.\n- `EXPOSE` thinking it publishes a port. It only documents it.\n\n**Interview tip:** Offer to review a Dockerfile live. Looking for the order of `COPY`, the base image, the user and the missing `.dockerignore` shows real experience.",
+      "level": "basic",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "dockerfile",
+        "best-practices"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-006",
+      "question": "What is a multi-stage Docker build and why use it?",
+      "answer": "**Short answer:** A multi-stage build uses several `FROM` lines in one Dockerfile. Early stages have compilers and tools and build the program. The last stage starts from a tiny image and copies in only the result. The final image is small and has a smaller attack surface.\n\n**Why.** A Go build image is about a gigabyte because it holds the compiler, tools and module cache. The running program only needs one static binary. Shipping the compiler is wasted size and extra things to patch.\n\n```dockerfile\n# Stage 1: build\nFROM golang:1.23 AS build\nWORKDIR /src\nCOPY go.mod go.sum ./\nRUN go mod download\nCOPY . .\n# static binary, no C library needed at run time\nRUN CGO_ENABLED=0 go build -o /out/orders ./cmd/orders\n\n# Stage 2: run\nFROM gcr.io/distroless/static-debian12:nonroot\nCOPY --from=build /out/orders /orders\nUSER nonroot:nonroot\nENTRYPOINT [\"/orders\"]\n```\n\nThe second stage has no shell and no package manager. Only files you copy with `COPY --from=build` arrive in it.\n\n**Variations**\n- Frontend: build with Node in stage one, copy the `dist` folder into an `nginx` image in stage two.\n- A named stage can be the target of a build: `docker build --target test .` runs only up to the test stage.\n- A separate `test` stage can run unit tests during the image build, if you want that.\n\n**Trade-offs**\n- Distroless and `scratch` images have no shell, so `docker exec` debugging is harder. Use ephemeral debug containers in Kubernetes, or keep a `debug` variant tag.\n- A static Go binary needs `CGO_ENABLED=0` and, for HTTPS to other services, CA certificates. Distroless static already includes them. With `scratch` you must copy them.\n\n**Interview tip:** Quote real numbers if you have them, for example \"our Go service went from 1.1 GB to 18 MB, and pull time in the cluster dropped noticeably\".",
+      "level": "basic",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "multi-stage",
+        "image-size"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-007",
+      "question": "How do Docker volumes, bind mounts and networking work?",
+      "answer": "**Short answer:** A container's filesystem is temporary. Use a **volume** for data that must survive, a **bind mount** to share a host folder (good for local development), and a user-defined **network** so containers can reach each other by name.\n\n**Storage options**\n\n| Option | What it is | Use it for |\n| --- | --- | --- |\n| Volume | Storage managed by Docker | Database files, data that must survive |\n| Bind mount | A host path mapped into the container | Live-reloading source code in development |\n| `tmpfs` mount | Memory only | Temporary secrets or scratch data |\n\n```bash\n# named volume: data survives container removal\ndocker run -d --name db -v pgdata:/var/lib/postgresql/data postgres:16\n\n# bind mount: edit code on the host, container sees it at once\ndocker run --rm -v \"$(pwd)\":/app -w /app node:22 node index.js\n```\n\n**Networking basics.** By default containers join a `bridge` network and get private IP addresses. Publishing a port with `-p 8080:3000` maps host port 8080 to container port 3000. On a user-defined network, Docker runs a small DNS so that a container can call another one by its name.\n\n```bash\ndocker network create shop\ndocker run -d --name db --network shop postgres:16\ndocker run -d --name api --network shop -p 8080:3000 orders-api:1.0.0\n# inside api, the database host is simply \"db\"\n```\n\n**Gotchas**\n- Inside a container `localhost` means that container itself. Use the service name for other containers.\n- Bind mounts on macOS and Windows can be slow, because files cross a VM boundary.\n- Writing to the container layer is slower and is lost on restart.\n\n**Interview tip:** In Kubernetes the same ideas become PersistentVolumes and Services, but a container is still stateless by default. Say that stateless containers are what makes scaling and rolling updates easy.",
+      "level": "basic",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "volumes",
+        "networking"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-008",
+      "question": "What is Docker Compose and how do you use it for local development?",
+      "answer": "**Short answer:** Docker Compose describes a multi-container application in one YAML file and starts it with one command. It is ideal for local development and simple integration tests: your API, database and cache come up together on a shared network.\n\n```yaml\n# compose.yaml\nservices:\n  api:\n    build: .\n    ports:\n      - \"8080:8080\"\n    environment:\n      DATABASE_URL: postgres://app:app@db:5432/orders?sslmode=disable\n    depends_on:\n      db:\n        condition: service_healthy\n  db:\n    image: postgres:16\n    environment:\n      POSTGRES_USER: app\n      POSTGRES_PASSWORD: app\n      POSTGRES_DB: orders\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U app -d orders\"]\n      interval: 5s\n      timeout: 3s\n      retries: 10\nvolumes:\n  pgdata:\n```\n\n```bash\ndocker compose up -d --build   # start everything\ndocker compose logs -f api     # follow one service\ndocker compose down -v         # stop and delete containers and volumes\n```\n\n**What the file shows.** The `api` service is built from the local Dockerfile. It reaches the database with the host name `db`, the service name. `depends_on` with a healthcheck waits until Postgres is really ready, not just started.\n\n**Good practice**\n- Use `compose.yaml` for local dev only. Production on Kubernetes is described by manifests or Helm charts.\n- Keep passwords here fake and local. Never commit real secrets.\n- Use `docker compose watch` or bind mounts for live reload.\n- Plain `depends_on` only orders start; without a health condition it does not wait for readiness.\n\n**Interview tip:** Mention that \"works on my machine\" problems are reduced when a new teammate runs one command and gets the full stack. It is also handy in CI to start service dependencies.",
+      "level": "basic",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "compose",
+        "local-development"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-009",
+      "question": "What are container registries and image tags, and why is `latest` dangerous?",
+      "answer": "**Short answer:** A registry stores and serves images (Docker Hub, GitLab Container Registry, Azure Container Registry). A tag is a movable label such as `1.4.0`. A digest is an immutable hash of the exact content. `latest` is dangerous because it is just a default tag that can point to anything, so you cannot tell what is running.\n\n**Parts of an image name**\n\n```text\nregistry.example.com/shop/orders-api:1.4.0\n|______registry______|_repo path_____|_tag_|\n\nregistry.example.com/shop/orders-api@sha256:3f1c...e9a0\n                                      |___ digest ___|\n```\n\n**Why `latest` hurts**\n- Two environments can pull different content under the same name.\n- Rollback is unclear: which image was \"latest\" yesterday?\n- Kubernetes with `:latest` defaults to always pulling, so a node restart can quietly bring in a new version.\n\n**Better rules**\n- Tag every image with something unique and traceable: a semantic version, the Git commit SHA, or both. GitLab gives you `$CI_COMMIT_SHORT_SHA`.\n- Treat release tags as immutable. Many registries can enforce this.\n- Deploy by digest when you need an exact guarantee. The tag is for humans, the digest is for machines.\n- Pin base images too, because `node:22` changes as new patch versions appear.\n\n```bash\ndocker build -t \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA\" .\ndocker push \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA\"\n# find the digest that the registry stored\ndocker inspect --format '{{index .RepoDigests 0}}' \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA\"\n```\n\n**Interview tip:** The key phrase is \"build once, promote the same image\". The same digest goes from staging to production, so what you tested is what you run.",
+      "level": "basic",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "registry",
+        "tags",
+        "digest"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-010",
+      "question": "What are the Git basics every engineer should know: commit, branch, merge, rebase and fast-forward?",
+      "answer": "**Short answer:** A commit is a snapshot with a message and a pointer to its parent. A branch is just a movable name that points to a commit. Merge joins two histories and keeps both. Rebase replays your commits on top of another base to make history linear.\n\n**Ideas**\n- Git stores snapshots, not diffs. Commits form a graph, and each commit has a hash.\n- `HEAD` is where you are now. A branch moves forward when you commit.\n- A **fast-forward** merge happens when the target branch has not moved. Git simply moves the pointer. No merge commit is created.\n- A **merge commit** is created when both branches have new commits. It has two parents.\n- **Rebase** rewrites your commits as new ones (new hashes) on top of the target.\n\n```mermaid\nflowchart LR\n    A[\"A\"] --> B[\"B\"] --> C[\"C: main\"]\n    B --> D[\"D\"] --> E[\"E: feature\"]\n```\n\nHere `main` and `feature` have diverged after B. A merge adds a commit with parents C and E. A rebase of `feature` onto `main` would recreate D and E after C.\n\n```bash\ngit switch -c feature/discount      # create and move to a branch\ngit commit -am \"Add discount rule\"\ngit fetch origin\ngit rebase origin/main              # replay my commits on the latest main\ngit switch main && git merge --ff-only feature/discount   # only fast-forward, fail otherwise\n```\n\n**Golden rule of rebase.** Never rebase commits that other people already pulled. Rebase rewrites history, so shared branches would diverge. Rebasing your own unpublished or personal branch is fine, and then you push with `git push --force-with-lease`.\n\n**Interview tip:** Explain the trade-off in one sentence: merge preserves the true history, rebase gives a clean readable one. Then say what your team does.",
+      "level": "basic",
+      "module": "Git & Workflow",
+      "tags": [
+        "git",
+        "merge",
+        "rebase"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-011",
+      "question": "What do git cherry-pick, stash, reset and revert do?",
+      "answer": "**Short answer:** `cherry-pick` copies one commit to another branch. `stash` shelves uncommitted work. `reset` moves a branch pointer back and can discard commits. `revert` adds a new commit that undoes an earlier one, so it is the safe choice for shared history.\n\n| Command | What it does | Rewrites history? | Use when |\n| --- | --- | --- | --- |\n| `git cherry-pick <sha>` | Applies one commit onto the current branch | No, creates a new commit | Backport a hotfix to a release branch |\n| `git stash` | Saves working changes and cleans the tree | No | You must switch branches quickly |\n| `git reset --soft <sha>` | Moves branch, keeps changes staged | Yes | Squash local commits |\n| `git reset --hard <sha>` | Moves branch and throws away changes | Yes | Drop local work you do not want |\n| `git revert <sha>` | New commit that reverses a commit | No | Undo something already pushed to main |\n\n```bash\ngit stash push -m \"wip discount\"   # shelve work\ngit switch hotfix/1.4\ngit cherry-pick 9fceb02            # bring the fix from main\ngit switch -\ngit stash pop                      # get the work back\n\ngit revert 9fceb02                 # safe undo on a shared branch\ngit reset --hard HEAD~1            # only for local, unpushed commits\n```\n\n**Gotchas**\n- `reset --hard` loses uncommitted work. Committed work is still reachable through `git reflog` for a while, which is your safety net.\n- To revert a merge commit you must choose the parent: `git revert -m 1 <merge-sha>`.\n- Cherry-picking the same fix to many branches creates duplicates. Prefer to fix once and merge forward when you can.\n\n**Interview tip:** The one-liner is \"reset for my private history, revert for shared history\". Mention `reflog` as the way to recover from a bad reset.",
+      "level": "basic",
+      "module": "Git & Workflow",
+      "tags": [
+        "git",
+        "undo",
+        "history"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-012",
+      "question": "What are the main branching strategies: trunk-based, GitHub flow and GitFlow?",
+      "answer": "**Short answer:** Trunk-based development means everyone merges small changes into one main branch very often, with short-lived branches. GitHub flow is similar: short feature branches and merge requests into a main that is always deployable. GitFlow uses long-lived `develop` and `release` branches and is slower but suits versioned, packaged software.\n\n| Strategy | Branches | Release | Fits |\n| --- | --- | --- | --- |\n| Trunk-based | `main` plus branches living hours to a day or two | From main, often with feature flags | Web services, continuous delivery |\n| GitHub flow | `main` plus short feature branches | Deploy after merge | Most SaaS teams |\n| GitFlow | `main`, `develop`, `feature/*`, `release/*`, `hotfix/*` | Cut a release branch, stabilise, merge back | Installed software, many supported versions |\n\n**Trade-offs**\n- Long-lived branches mean big painful merges and late integration bugs. That is the main cost of GitFlow.\n- Trunk-based needs strong automated tests and feature flags, because unfinished work reaches main hidden behind flags.\n- GitFlow gives clear structure and release stabilisation, but many teams use it only because of habit.\n\n**Rules of thumb**\n- Services you deploy many times a week: trunk-based or GitHub flow.\n- Software that customers install and you maintain in several versions, or avionics-like release cycles with certification: release branches are natural, but keep them short and cut from main.\n- Whatever you choose, keep branch lifetime short and write it down.\n\n**Interview tip:** Do not say \"GitFlow is bad\". Say it matches a release model where several versions live in the field, and that the DORA research links short-lived branches and frequent merges to better delivery performance.",
+      "level": "basic",
+      "module": "Git & Workflow",
+      "tags": [
+        "git",
+        "branching",
+        "trunk-based"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-013",
+      "question": "What makes a good pull request or merge request process?",
+      "answer": "**Short answer:** Small, focused changes with a clear description, automated checks that must pass, and a fast review by at least one other person. Reviews should check design, correctness and risk, while formatting and style are left to tools.\n\n**Author habits**\n- Keep the change small. Under a few hundred changed lines is much easier to review well.\n- Explain what and why in the description, and how you tested it. Link the ticket.\n- One purpose per merge request. Put refactors in a separate one.\n- Self-review the diff before asking others.\n\n**Reviewer habits**\n- Review soon. Waiting a day for a review is expensive for the author.\n- Ask questions instead of giving orders, and mark what is a blocker and what is a nitpick.\n- Check tests, error handling, security, naming and behaviour in production, not only syntax.\n\n**Automation (in GitLab)**\n- Required pipeline success before merge.\n- Protected target branch, no direct pushes.\n- Required approvals and a `CODEOWNERS` file so owners review their areas.\n- Merge when pipeline succeeds, with squash if you want one commit per change.\n- A merge request template with a checklist, for example \"tests added, docs updated, rollback plan\".\n\n```text\n# CODEOWNERS (GitLab syntax)\n/deploy/       @platform-team\n/services/billing/   @billing-team\n*.tf           @infra-reviewers\n```\n\n**Common mistakes**\n- Huge merge requests that people approve without reading.\n- Reviews used to argue about style, which a linter should settle.\n- One senior person as the only reviewer, which creates a bottleneck.\n\n**Interview tip:** Mention a measurable goal such as \"first review within four working hours\". It shows you manage the process, not just the code.",
+      "level": "basic",
+      "module": "Git & Workflow",
+      "tags": [
+        "code-review",
+        "merge-request",
+        "git"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-014",
+      "question": "What is semantic versioning and why keep a changelog?",
+      "answer": "**Short answer:** Semantic versioning (SemVer) uses three numbers, MAJOR.MINOR.PATCH. Increase MAJOR for breaking changes, MINOR for new backward-compatible features, PATCH for backward-compatible fixes. A changelog tells users what changed in each version.\n\n**Examples**\n- `1.4.2` to `1.4.3`: a bug fix.\n- `1.4.2` to `1.5.0`: a new endpoint, old clients still work.\n- `1.4.2` to `2.0.0`: a field was removed, old clients may break.\n- `2.0.0-rc.1`: a pre-release, sorted before `2.0.0`.\n\nSemVer is a promise about your **public API**. For a library the API is the code. For an HTTP service it is the contract, for example the OpenAPI file. For an internal service deployed alone, a version number matters less than a commit SHA, but it still helps for communication.\n\n**Automating it.** With conventional commits (`feat:`, `fix:`, `feat!:` or `BREAKING CHANGE:`), tools such as semantic-release or release-please decide the next version, create the Git tag and write the changelog from commit messages.\n\n```text\nfeat(orders): add discount codes        -> minor bump\nfix(orders): round totals correctly     -> patch bump\nfeat(api)!: remove v1 order endpoint    -> major bump\n```\n\n**Changelog good practice**\n- Written for humans, grouped by Added, Changed, Fixed, Removed.\n- Includes breaking changes and migration steps at the top.\n- Dates and links to the merge requests.\n\n**Gotcha:** Version `0.x` means anything may change. Do not use a version bump to mean \"marketing release\". And never reuse or move a published version tag.\n\n**Interview tip:** Link versions to rollback: a clear tag per release is what lets you say \"roll back to 1.4.2\" and mean one exact artifact.",
+      "level": "basic",
+      "module": "Release Strategies",
+      "tags": [
+        "versioning",
+        "semver",
+        "changelog"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-015",
+      "question": "How should configuration and secrets be handled (the twelve-factor approach)?",
+      "answer": "**Short answer:** Keep code the same in every environment and change only the configuration. Read configuration from environment variables or mounted files, never hard-code it, and never commit secrets. Secrets come from a secret store at deploy or run time.\n\n**The twelve-factor idea.** One build produces one artifact. Anything that differs between dev, staging and production (database URL, feature flags, API keys) is injected from outside. This is why you can promote the same image through environments.\n\n| Kind | Example | Where it lives |\n| --- | --- | --- |\n| Non-secret config | log level, service URL | Environment variable, ConfigMap, Helm values |\n| Secret | database password, API token | Secret store: Kubernetes Secret, Azure Key Vault, Vault |\n| Build-time constant | version, commit SHA | Build argument or label |\n\n```go\n// read config from the environment and fail fast when it is missing\ndsn := os.Getenv(\"DATABASE_URL\")\nif dsn == \"\" {\n    log.Fatal(\"DATABASE_URL is required\")\n}\n```\n\n**Common mistakes**\n- Committing a `.env` file or a key. Rotating a leaked key is mandatory, even after the commit is deleted, because Git history keeps it.\n- Baking secrets in an image with `ENV` or `COPY`. Anyone who can pull the image can read them.\n- Printing the full configuration at startup, which puts secrets into logs.\n- One giant config file with environment `if` branches in the code.\n\n**Good habits**\n- Validate config at startup and exit with a clear message.\n- Give each environment its own credentials with the least privileges.\n- Prefer short-lived credentials and rotate regularly.\n- Scan the repository for secrets (for example with gitleaks or GitLab secret detection) in the pipeline.\n\n**Interview tip:** Connect it to Kubernetes: \"ConfigMaps for settings, Secrets from a vault via external-secrets or CSI driver, same image everywhere\".",
+      "level": "basic",
+      "module": "DevOps Fundamentals",
+      "tags": [
+        "config",
+        "secrets",
+        "twelve-factor"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-016",
+      "question": "What are the typical stages of a CI/CD pipeline?",
+      "answer": "**Short answer:** A usual pipeline has these stages: build, test, scan, package, deploy, and verify. Each stage must pass before the next one runs, and the order is chosen so cheap, fast checks run first and fail early.\n\n```mermaid\nflowchart LR\n    L[\"Lint + unit tests\"] --> B[\"Build\"] --> S[\"Security scan\"] --> P[\"Package image\"] --> D1[\"Deploy staging\"] --> T[\"Smoke + e2e\"] --> D2[\"Deploy production\"] --> V[\"Verify + monitor\"]\n```\n\nRead left to right. Each box is a gate. A failure stops the line and tells the author quickly.\n\n| Stage | Purpose | Typical tools |\n| --- | --- | --- |\n| Lint and unit test | Fast feedback on code quality | golangci-lint, ESLint, go test, Jest |\n| Build | Compile, bundle | go build, npm run build |\n| Scan | Find vulnerabilities, secrets, licence issues | Trivy, gitleaks, SAST |\n| Package | Build and push the image, tag it | Docker, BuildKit, Kaniko |\n| Deploy | Roll the artifact to an environment | Helm, kubectl, Argo CD |\n| Verify | Smoke tests, health checks, metrics | curl, k6, Datadog monitors |\n\n**Design rules**\n- **Fail fast.** Put the cheapest checks first.\n- **Build once.** Later stages use the artifact from the build, never rebuild.\n- **Same process for all environments.** Only the config changes.\n- **Pipeline as code.** The definition lives in the repository and is reviewed like code.\n- **Idempotent deploys.** Running the same deploy twice gives the same result.\n\n**Common mistakes**\n- Everything in one long job, so you cannot see which part failed or rerun it.\n- Rebuilding the image per environment, which means production runs something never tested.\n- Ignoring the verify stage: a \"successful\" deploy that is broken is still a failed release.\n\n**Interview tip:** Describe the pipeline of your own service in one breath, including where the image is tagged and where a human approves.",
+      "level": "basic",
+      "module": "CI/CD Pipelines",
+      "tags": [
+        "pipeline",
+        "stages",
+        "ci-cd"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-017",
+      "question": "What types of tests run in a pipeline and where?",
+      "answer": "**Short answer:** Run many fast unit tests on every push, fewer integration tests against real dependencies, and a small number of end-to-end and smoke tests against a deployed environment. This is the test pyramid: more tests at the bottom where they are cheap and stable.\n\n| Test | What it checks | Speed | Where it runs |\n| --- | --- | --- | --- |\n| Unit | One function or class in isolation | Milliseconds | Every commit, on the runner |\n| Integration | Code with a real database, queue or HTTP service | Seconds | Every merge request, using service containers |\n| Contract | Consumer and provider agree on an API | Seconds | Merge request, before deploy |\n| End-to-end | A full user journey through the real system | Minutes | After deploy to staging |\n| Smoke | \"Is the deployed thing alive?\" a few key calls | Seconds | After every deploy, including production |\n| Performance and security | Load, vulnerabilities | Minutes | Nightly or before release |\n\n**Practical advice**\n- Run tests in the same container image everywhere to avoid \"passes locally, fails in CI\".\n- Keep end-to-end tests few, stable and on critical journeys only. Many of them are slow and flaky.\n- Smoke tests after production deploys are cheap and catch broken config quickly.\n- Publish test reports and coverage into the merge request so reviewers see them.\n\n```yaml\nunit-test:\n  stage: test\n  image: golang:1.23\n  script:\n    - go test ./... -race -coverprofile=coverage.out\n  artifacts:\n    when: always\n    paths: [coverage.out]\n```\n\n**Common mistakes**\n- The \"ice cream cone\": few unit tests and many slow UI tests.\n- Integration tests that share one database and depend on order.\n- Treating a green pipeline as proof of quality while the tests assert nothing.\n\n**Interview tip:** Say how you decide: \"behaviour at the edges is covered by integration tests with real Postgres, not mocks, because that is where our bugs were\".",
+      "level": "basic",
+      "module": "CI/CD Pipelines",
+      "tags": [
+        "testing",
+        "pipeline",
+        "test-pyramid"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-018",
+      "question": "[Tech Lead] How would you design a CI/CD pipeline for a team of 20 engineers?",
+      "answer": "**Short answer:** Design around four goals: fast feedback, reproducible results, secure by default and cheap to run. Fast checks run on every merge request, one immutable artifact is built once, then promoted through environments with the same deploy code, and production is gated by automated checks and monitoring.\n\n**Principles and what they mean in practice**\n- **Fast feedback.** A developer should know within about ten minutes if a change is broken. Run lint and unit tests first, in parallel.\n- **Reproducible.** Pinned tool versions, pinned base images, builds in containers, no hand-edited runners.\n- **Secure.** Protected branches, masked and scoped secrets, dependency and image scanning, least-privilege deploy credentials.\n- **Cheap.** Caching, auto-scaling runners, short artifact retention, no pipeline on drafts that only change docs.\n- **Self-service.** Teams own their pipeline using shared templates, so no ticket is needed to ship.\n\n```mermaid\nflowchart LR\n    MR[\"Merge request\"] --> Q[\"Lint + unit + scan\"]\n    Q --> I[\"Integration tests\"]\n    I --> M[\"Merge to main\"]\n    M --> B[\"Build + push image once\"]\n    B --> ST[\"Deploy staging + e2e\"]\n    ST --> AP{\"Approval\"}\n    AP --> PR[\"Deploy production, canary\"]\n    PR --> OB[\"Monitor, auto rollback\"]\n```\n\nThe top row protects main. The bottom row ships the same image from main.\n\n**Decisions to make explicitly**\n- Branching: trunk-based with short-lived branches and squash merges.\n- Merge request pipelines run checks, main pipelines build and deploy.\n- Deploy method: GitOps or pipeline-driven Helm, one way for all services.\n- Ownership: a platform group owns templates and runners, each team owns its service pipeline.\n- Metrics: pipeline duration, failure rate, deploy frequency.\n\n**Trade-offs.** More gates mean more safety and slower flow. Keep the gates automatic and cheap, and keep human approvals only where risk or regulation requires them.\n\n**Interview tip:** Start by asking constraints (release windows, compliance, monorepo or many repos, how many deploys per week). Interviewers like a lead who clarifies before drawing boxes.",
+      "level": "intermediate",
+      "module": "CI/CD Pipelines",
+      "tags": [
+        "tech-lead",
+        "pipeline",
+        "design"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-019",
+      "question": "[Tech Lead] How do you make a slow CI pipeline fast?",
+      "answer": "**Short answer:** Measure first to find the slowest jobs on the critical path. Then cache dependencies and Docker layers, run independent jobs in parallel, split big test suites across jobs, build only what changed, and give heavy jobs bigger runners. Waiting time in queues counts too.\n\n**Step 1: measure.** Look at job durations, queue time and the longest path through the pipeline. A pipeline of 12 minutes with a 9 minute test job needs test work, not runner work.\n\n**Levers, roughly in order of payoff**\n\n| Lever | What to do | Watch out for |\n| --- | --- | --- |\n| Caching | Dependency cache keyed on the lock file, Docker layer cache, build cache | Stale or poisoned caches |\n| Parallelism | Independent jobs in one stage, or `needs` to start early | Runner capacity |\n| Test splitting | Run one suite in N shards, balanced by past duration | Shards with uneven time |\n| Affected-only | In a monorepo run only the services whose paths changed | Missing shared-code dependencies |\n| Faster feedback order | Lint and unit tests before slow jobs, fail fast | Hiding slow jobs that fail late |\n| Right-sized runners | More CPU for compilers and tests, cheap runners for light jobs | Cost |\n| Smaller images and tools | Pre-built CI images with tools installed | Maintaining the CI image |\n| Remove waste | No full clone (`GIT_DEPTH`), skip pipelines for docs-only changes | Tools that need full history |\n\n```yaml\nunit-test:\n  stage: test\n  parallel: 4               # four copies of the job\n  script:\n    - go test ./... -run . -shuffle=on   # here you would split by package list using CI_NODE_INDEX\n  variables:\n    GIT_DEPTH: \"20\"         # shallow clone is faster\n```\n\nGitLab sets `CI_NODE_INDEX` and `CI_NODE_TOTAL` for parallel jobs. Your script picks its slice with them.\n\n**Gotchas**\n- Fixing the average, not the long tail. Developers feel the slowest runs.\n- Flaky tests with retries make the pipeline slow and hide problems.\n- A faster pipeline that skips checks is not an improvement.\n\n**Interview tip:** Give a number story: \"we cut the merge request pipeline from 22 to 9 minutes by caching modules, sharding tests and moving e2e to after merge\". Say what you measured.",
+      "level": "intermediate",
+      "module": "CI/CD Pipelines",
+      "tags": [
+        "tech-lead",
+        "performance",
+        "caching"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-020",
+      "question": "[Tech Lead] Which release strategy should you use: rolling, blue-green, canary, feature flags or dark launch?",
+      "answer": "**Short answer:** Match the strategy to the risk. Rolling update is the simple default. Blue-green gives instant switch and rollback at double the capacity. Canary exposes a small share of users first and watches metrics. Feature flags and dark launches separate deploying code from releasing a feature.\n\n| Strategy | How it works | Rollback | Cost | Use when |\n| --- | --- | --- | --- | --- |\n| Rolling | Replace instances gradually | Roll forward or undo the rollout | Low | Backward-compatible, low-risk changes |\n| Blue-green | Two full environments, switch traffic | Switch back, seconds | Double capacity briefly | Big changes, need instant rollback |\n| Canary | Send 1 to 5 percent of traffic to the new version, then widen | Send traffic back to stable | Needs good metrics and routing | High traffic, user-facing risk |\n| Feature flag | Code ships off, a flag turns it on per user or group | Turn flag off, no deploy | Flag management and cleanup | Gradual feature rollout, A/B tests |\n| Dark launch | New path runs in production but results are hidden or compared | Nothing visible to undo | Extra load | Validate a rewrite with real traffic |\n\n**How to choose**\n- If the change touches the database schema, the strategy alone is not enough. Use expand and contract migrations so old and new versions work together.\n- If you cannot measure health (error rate, latency) automatically, canary gives little. Fix monitoring first.\n- Combine them. A common pattern is a canary deploy of the code with new behaviour hidden behind a flag.\n\n**Rolling back**\n- Keep the previous image available and tagged.\n- Prefer redeploying the last known good version through the same pipeline over hand edits.\n- Decide the rollback trigger before release, for example \"error rate above 2 percent for 5 minutes\".\n\n**Interview tip:** Say \"deploy is not release\". Deploying puts code on servers. Releasing exposes it to users. Flags let you control the second without risk in the first.",
+      "level": "intermediate",
+      "module": "Release Strategies",
+      "tags": [
+        "tech-lead",
+        "release",
+        "canary"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-021",
+      "question": "[Tech Lead] How do you adopt trunk-based development and protect the main branch?",
+      "answer": "**Short answer:** Move in steps. Make main protected and always green, shorten branch life to a day or two, add feature flags for unfinished work, and make the automated tests trustworthy. Trunk-based development fails when people do not trust the tests.\n\n**Adoption plan**\n1. **Measure the starting point.** Average branch age, merge request size, time to merge, how often main is red.\n2. **Protect main.** No direct pushes, required pipeline, at least one approval, `CODEOWNERS` for risky areas, linear history if you like.\n3. **Shrink changes.** Teach slicing work: refactor first, then behaviour. Aim for merge requests under a day of work.\n4. **Add flags.** Unfinished features merge hidden behind a flag with an owner and an expiry date.\n5. **Speed up checks.** A merge request pipeline under ten minutes, or people will batch changes.\n6. **Make a broken main a top priority.** Revert first, investigate later.\n7. **Retire long-lived branches** and release branches only where truly needed.\n\n**Branch protection settings to consider (GitLab)**\n- Allowed to merge: maintainers or developers, not everyone.\n- Allowed to push: no one.\n- Require pipeline success and resolved discussions.\n- Squash on merge, so one clean commit per change.\n- Protected tags for releases.\n\n**Trade-offs**\n- Flags add code paths and cleanup debt. Track and delete them.\n- Strict review rules slow small fixes. Allow a quick path for tiny, safe changes.\n- Teams with weak tests need to improve tests first, or main will break often.\n\n**Interview tip:** Mention that you change habits through data and examples, for example showing that merge requests older than three days had most of the conflicts and incidents.",
+      "level": "intermediate",
+      "module": "Git & Workflow",
+      "tags": [
+        "tech-lead",
+        "trunk-based",
+        "branch-protection"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-022",
+      "question": "[Tech Lead] How do you manage environments and promote releases from dev to production?",
+      "answer": "**Short answer:** Build one artifact, then promote that same image through environments. Environment differences live in configuration, not in code. Each step has automated checks, and production has an approval or automatic gates. Everything is recorded for audit.\n\n**Typical environments**\n\n| Environment | Purpose | Deploy trigger |\n| --- | --- | --- |\n| Review app | One per merge request, for preview and testing | Automatic, deleted when MR closes |\n| Dev | Shared integration, latest main | Automatic on merge |\n| Staging | Production-like, runs e2e and load checks | Automatic after dev |\n| Production | Real users | Manual approval or automatic gates |\n\n**Principles**\n- **Same artifact.** Promote by image digest. Never rebuild for production.\n- **Config in Git.** Per-environment values files in a repository, with reviews and history.\n- **Production-like staging.** Same versions of Kubernetes, same ingress, similar data shapes, but fewer replicas. Staging that differs wildly gives false confidence.\n- **Approvals where they add value.** An approval step that nobody reads is theatre. Use it for risk, compliance or release windows.\n- **Environment isolation.** Separate namespaces, clusters or subscriptions, separate credentials and network rules.\n\n```yaml\ndeploy-production:\n  stage: deploy\n  environment:\n    name: production\n    url: https://shop.example.com\n  rules:\n    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH\n      when: manual           # a human clicks to release\n  resource_group: production # only one production deploy at a time\n  script:\n    - helm upgrade --install orders ./chart -f values/prod.yaml --set image.tag=\"$CI_COMMIT_SHA\"\n```\n\n**Gotchas**\n- Drift: someone hot-fixes staging by hand and nobody notices. GitOps or regular re-apply helps.\n- Shared staging that many teams block. Use ephemeral environments where possible.\n\n**Interview tip:** Say \"promote, do not rebuild\" and explain the audit story: one commit, one image digest, one pipeline run, one approver.",
+      "level": "intermediate",
+      "module": "Release Strategies",
+      "tags": [
+        "tech-lead",
+        "environments",
+        "promotion"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-023",
+      "question": "[Tech Lead] How do you manage secrets in CI/CD pipelines?",
+      "answer": "**Short answer:** Keep secrets out of the repository and the image. Give pipelines short-lived credentials from a secret manager or cloud identity federation (OIDC) instead of long-lived keys. Scope every secret to the minimum, mask it in logs and rotate it.\n\n**Options from weak to strong**\n\n| Approach | Risk | Notes |\n| --- | --- | --- |\n| Secret committed in repo | Very high | Treat as leaked, rotate |\n| CI/CD variable (masked, protected) | Medium | Easy; available to any job on protected refs, long-lived |\n| Variable scoped to an environment | Lower | Only deploy jobs for that environment see it |\n| Secret manager fetched at job time (Vault, Key Vault) | Low | Central rotation and audit |\n| OIDC federation to the cloud | Lowest | No stored secret, token valid minutes |\n\n**OIDC idea.** The pipeline gets a signed identity token (a JWT) from GitLab that says \"I am project X, branch main, environment production\". The cloud (Azure, AWS, GCP, Vault) trusts GitLab as an identity provider and exchanges the token for a short-lived credential that only that project and branch may obtain.\n\n```yaml\ndeploy:\n  stage: deploy\n  id_tokens:\n    CLOUD_ID_TOKEN:\n      aud: https://cloud.example.com   # the audience your cloud expects\n  script:\n    - ./exchange-token-and-deploy.sh   # uses $CLOUD_ID_TOKEN, no stored password\n```\n\n**Practices**\n- Mark variables **protected** (only protected branches and tags) and **masked**. Masking is best effort: values can still leak through encoding or logs.\n- Use different credentials per environment. A merge request pipeline must never see production secrets.\n- Do not echo secrets and avoid `set -x` around them.\n- Fork and merge request pipelines from untrusted sources must have no secrets.\n- Scan commits for secrets (pre-commit hook plus pipeline scan) and have a rotation runbook.\n- Kubernetes side: use external secret operators or a CSI driver, not plain secrets stored in Git.\n\n**Interview tip:** The memorable line is \"the best secret is the one that does not exist\". Short-lived federated credentials remove storage, rotation and leak risk together.",
+      "level": "intermediate",
+      "module": "Supply Chain & Security",
+      "tags": [
+        "tech-lead",
+        "secrets",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-024",
+      "question": "[Tech Lead] What is software supply-chain security and how do you apply it in a pipeline?",
+      "answer": "**Short answer:** Supply-chain security protects everything that goes into your software: dependencies, base images, build tools and the pipeline itself. Key controls are pinned dependencies, vulnerability scanning, an SBOM, signed images, protected branches and build provenance that proves where an artifact came from.\n\n**What can be attacked**\n- A malicious or typosquatted package, or a hijacked maintainer account.\n- A vulnerable or tampered base image.\n- A compromised CI runner or a leaked deploy token.\n- A tampered artifact between build and deploy.\n\n**Controls**\n\n| Control | What it gives |\n| --- | --- |\n| Dependency pinning with lock files and verified checksums (`go.sum`, `package-lock.json`) | Same inputs every build |\n| Automated updates (Renovate, Dependabot) with review | Patches without surprise |\n| Vulnerability scan of dependencies and images (Trivy, Grype) | Known CVEs found before deploy |\n| SBOM (software bill of materials), for example CycloneDX or SPDX | A list of what is inside, so you can answer \"are we affected by CVE-X?\" fast |\n| Image signing (cosign) and verification at admission | Only your pipeline's images run |\n| Protected branches, required reviews, protected variables | Hard to push malicious code or steal secrets |\n| Ephemeral, isolated runners | A compromised job cannot persist |\n| Build provenance (who built it, from which commit, with which steps) | Evidence for audits and incident response |\n\n**SLSA at concept level.** SLSA (Supply-chain Levels for Software Artifacts) is a framework with levels. Low levels require a scripted build and provenance. Higher levels require a hardened, isolated build platform and provenance that cannot be forged by the project itself. You do not need top level on day one.\n\n**Practical order of adoption.** Start with scanning, pinning and protected branches, then add SBOM and signing, then verify at the cluster.\n\n**Common mistakes**\n- Scanning and ignoring results. Set a policy: block on critical with a fix available, track the rest with owners and dates.\n- Trusting `latest` or unpinned CI templates from the internet.\n\n**Interview tip:** Mention a real attack class (for example a compromised dependency or CI tool) only in general terms and show how each control would have limited the damage.",
+      "level": "advanced",
+      "module": "Supply Chain & Security",
+      "tags": [
+        "tech-lead",
+        "supply-chain",
+        "sbom"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-025",
+      "question": "[Tech Lead] How do you measure delivery performance with DORA metrics?",
+      "answer": "**Short answer:** DORA defines four key metrics: deployment frequency, lead time for changes, change failure rate and time to restore service. Together they measure speed and stability. Use them to find bottlenecks in your process, not to rank people.\n\n| Metric | Question it answers | How to measure |\n| --- | --- | --- |\n| Deployment frequency | How often do we ship to production? | Count production deploys per service |\n| Lead time for changes | How long from commit to production? | Merge request first commit time to deploy time |\n| Change failure rate | What share of deploys cause a failure? | Deploys needing rollback, hotfix or incident divided by all deploys |\n| Time to restore service | How fast do we recover? | Incident start to recovery |\n\nNewer DORA reports also discuss reliability and rework as extra signals. The four above are the classic core.\n\n**What good looks like.** Elite teams deploy on demand, with lead time under a day, low failure rate and quick recovery. The important finding is that speed and stability go up together, not against each other.\n\n**Using them well**\n- Take data automatically from GitLab deployments and incident tools, not from spreadsheets.\n- Look at trends per team, not absolute numbers across teams.\n- When lead time is long, break it down: coding, waiting for review, pipeline time, waiting for release approval. The biggest wait is the target.\n- Pair with team-level context. High deploy frequency with high failure rate means quality gates are weak.\n\n**Gotchas (Goodhart's law)**\n- When a measure becomes a target it stops being a good measure. Counting deploys as a goal creates tiny meaningless deploys.\n- Never use them in individual performance reviews.\n- Define \"failure\" and \"deploy\" clearly once, so numbers stay comparable.\n\n**Interview tip:** Tell a story where a metric showed a bottleneck, for example review wait time, and what you changed (review rotation, smaller merge requests).",
+      "level": "intermediate",
+      "module": "Platform & Leadership",
+      "tags": [
+        "tech-lead",
+        "dora",
+        "metrics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-026",
+      "question": "[Tech Lead] How do you handle flaky tests?",
+      "answer": "**Short answer:** A flaky test passes and fails on the same code. Treat flakiness as a bug with an owner. Detect it automatically, quarantine it so it stops blocking everyone, then fix the root cause. Retrying silently hides the problem and wastes time.\n\n**Common causes**\n- Shared state between tests, order dependence, a shared database.\n- Time: real clocks, sleeps, timezones.\n- Concurrency and race conditions, in the test or the code.\n- Network and external services.\n- Resource limits on a busy runner, timeouts that are too tight.\n- Non-deterministic data such as random ids or map ordering.\n\n**Process**\n1. **Detect.** Track tests that fail then pass on retry in the same pipeline. Many CI tools and test reports show it. Run suspicious tests many times, for example `go test -count=50 -run TestX`.\n2. **Quarantine.** Move the test to a non-blocking job or tag it, open a ticket with an owner and a deadline.\n3. **Find the cause.** Use race detector (`go test -race`), run with shuffled order, check logs and timing.\n4. **Fix and restore.** Remove sleeps, use fake clocks, isolate data, wait for conditions not time.\n5. **Prevent.** Run new tests multiple times in CI before merging, ban real `sleep` in tests, make test data unique per test.\n\n```go\n// ❌ bad: sleeps and hopes the worker is done\ntime.Sleep(2 * time.Second)\n\n// ✅ good: wait for the condition with a timeout\nrequire.Eventually(t, func() bool { return worker.Done() }, 5*time.Second, 50*time.Millisecond)\n```\n\n**Culture.** A flaky test teaches people to ignore red pipelines. That is the real cost. Make a red main a team priority and share a flaky-test count in your weekly review.\n\n**Gotcha:** Automatic retries (`retry: 2` in GitLab) are fine for infrastructure failures, such as runner system failure, but not as the default fix for test flakiness.\n\n**Interview tip:** Say \"quarantine fast, fix properly, and count them\". It shows both pragmatism and discipline.",
+      "level": "intermediate",
+      "module": "CI/CD Pipelines",
+      "tags": [
+        "tech-lead",
+        "testing",
+        "flaky-tests"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-027",
+      "question": "[Tech Lead] How do you introduce infrastructure as code and review infrastructure changes?",
+      "answer": "**Short answer:** Start with new or low-risk resources, put the code in Git, use remote state with locking, and run `plan` automatically on merge requests so reviewers see exactly what will change. `apply` runs from the pipeline on main with an approval, never from laptops.\n\n**Adoption steps**\n1. Choose the tool (Terraform or OpenTofu, Bicep for Azure only) and the repo layout: modules, environments.\n2. Import existing resources gradually, or create new ones with code and leave old ones alone until touched.\n3. Set up remote state (for example Azure Storage with locking) and separate state per environment and per domain, to limit blast radius.\n4. Pipeline: format and validate, lint, security scan (tfsec or Checkov), plan on merge request, apply on main after approval.\n5. Remove console access for changes. Allow it for reading and emergencies, then import or revert.\n\n```yaml\nterraform-plan:\n  stage: plan\n  image:\n    name: hashicorp/terraform:1.9\n    entrypoint: [\"\"]\n  script:\n    - terraform init -input=false\n    - terraform validate\n    - terraform plan -input=false -out=plan.tfplan\n  artifacts:\n    paths: [plan.tfplan]\n  rules:\n    - if: $CI_PIPELINE_SOURCE == \"merge_request_event\"\n```\n\n**Review checklist for a plan**\n- Look for **destroy** and **replace**: they are the risky lines.\n- Check for changed networking, identity and access rules.\n- Check cost impact and naming and tags.\n- Confirm the change only touches what the description says.\n- Apply the exact saved plan, not a new one, so what was reviewed is what runs.\n\n**Gotchas**\n- A shared state file without locking leads to corrupted state.\n- Secrets end up in state. Encrypt it and restrict access.\n- Drift from manual changes. Schedule a plan job that reports drift.\n\n**Interview tip:** The review rule that impresses: \"the plan is the diff\". We review the plan output as carefully as the code.",
+      "level": "intermediate",
+      "module": "Infrastructure as Code",
+      "tags": [
+        "tech-lead",
+        "iac",
+        "terraform"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-028",
+      "question": "[Tech Lead] How do you control the cost of CI?",
+      "answer": "**Short answer:** Cost comes from runner time, storage and wasted pipelines. Measure per project, then reduce waste: auto-scale runners, cache well, skip pipelines that are not needed, shorten artifact retention and keep heavy jobs for where they matter.\n\n**Where the money goes**\n- **Compute minutes.** Long jobs, big runners, and idle runners that nobody uses.\n- **Wasted runs.** Pipelines on every push of a draft, duplicated branch and merge request pipelines, reruns for flaky tests.\n- **Storage.** Artifacts, caches, container registry images and logs kept forever.\n- **Network.** Pulling big base images and dependencies again and again.\n\n**Levers**\n\n| Lever | Action |\n| --- | --- |\n| Autoscaling | Runners scale to zero when idle (Kubernetes or cloud autoscaling executors), spot or preemptible nodes for non-critical jobs |\n| Cancel redundant | `interruptible: true` and auto-cancel older pipelines on the same branch |\n| Avoid duplicates | `workflow:rules` so you do not run both a branch and a merge request pipeline |\n| Path filters | Run a service's pipeline only if its files changed |\n| Caching and local mirrors | Dependency proxy or pull-through cache for images and packages |\n| Retention | `expire_in` on artifacts, registry cleanup policies, log retention |\n| Right-size | Small runners by default, large ones tagged for heavy jobs |\n| Nightly for heavy | Full e2e and security scans nightly, not on every commit |\n\n```yaml\ndefault:\n  interruptible: true      # a newer push may cancel this job\nbuild:\n  script: make build\n  artifacts:\n    paths: [bin/]\n    expire_in: 3 days      # do not keep build output forever\n```\n\n**Trade-off.** Cheapest is not best. A developer waiting 20 minutes costs more than a bigger runner. Compare runner cost with engineer time before cutting.\n\n**Interview tip:** Say you review CI spend monthly, show it per team, and found waste such as duplicated pipelines or huge artifacts. Concrete wins are persuasive.",
+      "level": "intermediate",
+      "module": "Platform & Leadership",
+      "tags": [
+        "tech-lead",
+        "cost",
+        "runners"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-029",
+      "question": "[Tech Lead] A bad deploy broke production. How do you handle the incident and what do you change afterwards?",
+      "answer": "**Short answer:** First stop the damage: roll back or turn off the feature, then communicate. Investigate after service is restored. Afterwards write a blameless postmortem and fix the process gaps that let the bad change through, not only the bug.\n\n**During the incident**\n1. **Detect.** Alerts on error rate, latency and saturation, or a deploy marker on the dashboard. Know that the deploy is the likely cause by looking at what changed recently.\n2. **Declare and assign.** One incident commander, one person communicating, others investigate.\n3. **Mitigate first.** Rollback to the last known good version, or turn off the flag. Do not debug live while users suffer.\n4. **Communicate.** Update stakeholders on a fixed cadence in a single channel.\n5. **Confirm recovery** with metrics, not feelings.\n\n**After the incident**\n- **Blameless postmortem** within a few days: timeline, impact, causes (several, not one), what went well, actions with owners and dates.\n- Ask \"why did our process let this reach production?\" not \"who did it?\".\n\n**Prevention ideas, matched to the cause**\n\n| Cause | Prevention |\n| --- | --- |\n| Test gap | Add the test and a contract or integration test |\n| Config error | Validate config in the pipeline, staging with the same config shape |\n| All traffic hit at once | Canary or progressive rollout with automatic rollback |\n| Slow detection | Alert on user-facing symptoms and add a post-deploy smoke test |\n| Slow rollback | One-click rollback job, rehearsed |\n| Risky migration | Expand and contract changes, separate migration from code release |\n\n**Gotchas**\n- Rolling back is not always possible: a database change may have been applied. This is why migrations must be backward compatible.\n- A postmortem with only \"be more careful\" actions is a failed postmortem.\n\n**Interview tip:** Use a real incident, name the metric that detected it, how long it took to restore, and one structural fix. Interviewers value learning over a perfect record.",
+      "level": "advanced",
+      "module": "Release Strategies",
+      "tags": [
+        "tech-lead",
+        "incident",
+        "postmortem"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-030",
+      "question": "[Tech Lead] How do you set standards and reusable pipelines across many repositories?",
+      "answer": "**Short answer:** Offer a golden path: shared, versioned pipeline templates that teams include in a few lines. They get security scanning, caching and deploy logic for free, can override what they need, and the platform team updates them centrally with versions and release notes.\n\n**How in GitLab**\n- A central project holds templates, used with `include:project` and a pinned `ref`. Or use CI/CD components (reusable, versioned units published in a catalog) where available on your GitLab version.\n- Teams add inputs and overrides, not copy-pasted YAML.\n- Versions are tags (`v2.3.0`). Teams upgrade on their own schedule, with Renovate-style update merge requests.\n\n```yaml\n# in a service repository\ninclude:\n  - project: platform/ci-templates\n    ref: v2.3.0                 # pin a tag, never a moving branch\n    file: /go-service.yml\n\nvariables:\n  SERVICE_NAME: orders\n```\n\n**What a golden path includes**\n- Build, test, scan, package and deploy jobs, with sensible defaults.\n- A Dockerfile and Helm chart starter, a service template repository.\n- Required security jobs that teams cannot remove (compliance pipelines or required configuration in GitLab Ultimate tiers, check your plan).\n- Documentation and a support channel.\n\n**Balance: paved road, not a cage**\n- Make the standard way the easiest way. Teams who need to deviate can, with a reason.\n- Treat the platform as a product: talk to users, version it, track adoption.\n- Avoid breaking everyone with one change. Use versions, canary adopters and clear changelogs.\n\n**Trade-offs**\n- One shared template means one place to fix a vulnerability. It also means one place to break everything. Pin versions and test templates in a sample repository.\n- Too many knobs make a template as complex as the YAML it replaced.\n\n**Interview tip:** Mention how you measure success: percent of services on the template, time to onboard a new service, and fewer tickets to the platform team.",
+      "level": "advanced",
+      "module": "Platform & Leadership",
+      "tags": [
+        "tech-lead",
+        "platform",
+        "templates"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-031",
+      "question": "What are the core concepts of GitLab CI/CD: pipelines, stages, jobs, runners and variables?",
+      "answer": "**Short answer:** You describe a pipeline in a `.gitlab-ci.yml` file in the repository. A pipeline has stages, stages contain jobs, and jobs run on runners, which are agents that execute your scripts. Variables supply configuration. Jobs in one stage run in parallel, and stages run in order.\n\n**Building blocks**\n- **Pipeline:** one run of the file, triggered by a push, a merge request, a schedule, an API call or a manual start.\n- **Stage:** an ordered group. Default order is `build`, `test`, `deploy`, or whatever you list under `stages:`.\n- **Job:** the unit of work: a name, a `script`, and options such as `image`, `rules`, `artifacts`.\n- **Runner:** a process (the GitLab Runner program) that picks up jobs. It runs them with an executor.\n- **Variables:** key-value pairs, defined in YAML or in project and group settings, plus many predefined ones such as `CI_COMMIT_SHA` and `CI_REGISTRY_IMAGE`.\n\n```yaml\nstages: [build, test, deploy]\n\nvariables:\n  GO_VERSION: \"1.23\"\n\nbuild:\n  stage: build\n  image: golang:${GO_VERSION}\n  script:\n    - go build -o bin/orders ./cmd/orders\n  artifacts:\n    paths: [bin/]\n\ntest:\n  stage: test\n  image: golang:${GO_VERSION}\n  script:\n    - go test ./...\n```\n\nHere `build` runs first and produces a binary as an artifact. `test` starts only after `build` succeeds.\n\n**Runners**\n\n| Kind | Scope | Notes |\n| --- | --- | --- |\n| Shared | Whole instance | Easy start, but a noisy neighbour risk |\n| Group | All projects in a group | Good for a team |\n| Project | One project | For special needs or secrets isolation |\n\n**Executors** decide how a job runs: `shell` runs on the runner machine, `docker` runs each job in a fresh container, `kubernetes` starts a pod per job. The docker and kubernetes executors give clean, reproducible environments and are the usual choice.\n\n**Variables.** Mark sensitive ones as **masked** (hidden in logs) and **protected** (only for protected branches and tags).\n\n**Interview tip:** Name the executor you use and why. \"Kubernetes executor on AKS, one pod per job, autoscaled\" tells the interviewer you operate runners, not just write YAML.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "pipeline",
+        "runners"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-032",
+      "question": "What is the difference between `rules` and `only/except`, and what are `workflow:rules` and merge request pipelines?",
+      "answer": "**Short answer:** `rules` is the modern, flexible way to decide if a job runs and how. `only` and `except` are older and are not recommended for new work. `workflow:rules` decides whether the **whole pipeline** is created. Merge request pipelines run for merge request events, branch pipelines run for pushes, and you must choose to avoid running both.\n\n**`rules` basics.** Rules are evaluated top to bottom. The first match wins. You can use `if` with variables, `changes` for file paths, `exists`, and set `when` (`on_success`, `manual`, `never`, `delayed`).\n\n```yaml\ntest:\n  script: go test ./...\n  rules:\n    - if: $CI_PIPELINE_SOURCE == \"merge_request_event\"\n    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH\n\ndeploy-prod:\n  script: ./deploy.sh\n  rules:\n    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH\n      when: manual\n    - when: never\n```\n\n**The duplicate pipeline problem.** If a branch has an open merge request, a push creates a branch pipeline and a merge request pipeline, so work runs twice. Fix it with `workflow:rules`:\n\n```yaml\nworkflow:\n  rules:\n    - if: $CI_PIPELINE_SOURCE == \"merge_request_event\"\n    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS\n      when: never                     # skip the branch pipeline, MR pipeline covers it\n    - if: $CI_COMMIT_BRANCH\n```\n\n**Merge request pipelines vs branch pipelines**\n\n| | Merge request pipeline | Branch pipeline |\n| --- | --- | --- |\n| Triggered by | Changes in an open merge request | Any push |\n| Sees | MR variables such as `CI_MERGE_REQUEST_IID` | Branch variables |\n| Use for | Checks before merging | Build and deploy from main |\n\n**Gotchas**\n- `rules:changes` in a branch pipeline compares with the previous commit, which can surprise you on new branches. In merge request pipelines it compares with the target branch.\n- If no rule matches, the job is not added. A job with `rules` but no final catch-all may disappear silently.\n- Do not mix `only/except` and `rules` in one job. GitLab rejects it.\n\n**Interview tip:** Say you put one `workflow:rules` block in your shared template so every project avoids duplicate pipelines.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "rules",
+        "merge-request-pipeline"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-033",
+      "question": "What are `needs` and DAG pipelines in GitLab CI?",
+      "answer": "**Short answer:** By default a job waits for the whole previous stage. With `needs` a job lists the specific jobs it depends on and starts as soon as they finish, even if other jobs in earlier stages are still running. The pipeline becomes a directed acyclic graph (DAG) and gets faster.\n\n```yaml\nstages: [build, test, package]\n\nbuild-api:\n  stage: build\n  script: make api\nbuild-web:\n  stage: build\n  script: make web          # slow job\n\ntest-api:\n  stage: test\n  needs: [build-api]        # starts without waiting for build-web\n  script: make test-api\n\npackage-api:\n  stage: package\n  needs: [test-api]\n  script: make package-api\n```\n\nIf `build-web` takes 10 minutes, the whole API chain still finishes without waiting for it.\n\n```mermaid\nflowchart LR\n    BA[\"build-api\"] --> TA[\"test-api\"] --> PA[\"package-api\"]\n    BW[\"build-web\"] --> TW[\"test-web\"]\n```\n\nRead it as two lanes that do not block each other.\n\n**Details**\n- `needs` also controls which artifacts a job downloads. By default it gets artifacts only from the jobs it needs. Use `needs: [{job: x, artifacts: false}]` to skip.\n- A job with `needs: []` starts immediately at pipeline start, regardless of stage.\n- Optional dependencies: `needs: [{job: lint, optional: true}]` works with jobs that may not exist because of rules.\n- The `stage` is still needed for ordering and for display.\n\n**Gotchas**\n- A need must be in an earlier stage (or the same stage in recent versions; check your GitLab version).\n- Circular needs are rejected.\n- Too many needs make the pipeline view hard to read. Use it where it saves real time, typically in monorepos with independent parts.\n\n**Interview tip:** Say that stages are good for a simple mental model and needs are for speed. Pair it with the example of independent services in one repository.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "needs",
+        "dag"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-034",
+      "question": "What is the difference between `cache` and `artifacts` in GitLab CI, and what mistakes are common?",
+      "answer": "**Short answer:** `artifacts` pass files **between jobs in the same pipeline** and are stored on GitLab so you can download them. `cache` speeds up **later pipelines** by keeping things like downloaded dependencies on the runner side. Cache is a best-effort speedup. Artifacts are a guaranteed handover.\n\n| | `artifacts` | `cache` |\n| --- | --- | --- |\n| Purpose | Output of a job: binaries, reports | Reused inputs: dependencies |\n| Scope | Next jobs in this pipeline, plus download | Later jobs and pipelines |\n| Reliable? | Yes | No, can be missing |\n| Stored | GitLab server or object storage | Runner local or shared object storage |\n| Expiry | `expire_in` | Key based, evicted |\n\n```yaml\nbuild:\n  stage: build\n  cache:\n    key:\n      files: [package-lock.json]    # new cache when the lockfile changes\n    paths: [.npm/]\n  script:\n    - npm ci --cache .npm --prefer-offline\n    - npm run build\n  artifacts:\n    paths: [dist/]\n    expire_in: 1 week\n```\n\n**Common mistakes**\n- Using cache to pass the build output to the next job. It can be missing or old. Use artifacts.\n- Caching `node_modules` itself instead of the package manager cache. `npm ci` deletes `node_modules` anyway. Cache `.npm` and let `npm ci` rebuild from it.\n- A global cache key, such as `key: default`, so branches overwrite each other's cache. Key it on the lock file.\n- Not setting `expire_in`, so storage grows without limit.\n- Caching paths outside the project directory. GitLab caches only paths inside the project workspace.\n- Putting secrets or `.env` files into artifacts. Artifacts can be downloaded by project members.\n- Cache poisoning: caches shared between untrusted merge requests and protected pipelines. Use separate cache keys for protected branches.\n\n**Tip for tests:** `artifacts:when: always` keeps test reports even if the job failed. Use `artifacts:reports:junit` so GitLab shows failures in the merge request.\n\n**Interview tip:** The one-line memory aid is \"artifacts are for handover, cache is for speed\".",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "cache",
+        "artifacts"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-035",
+      "question": "How do `extends`, `include`, YAML anchors and templates keep GitLab CI files DRY?",
+      "answer": "**Short answer:** `extends` makes a job inherit from a hidden template job (a name starting with a dot). `include` pulls in YAML from other files, projects or URLs. YAML anchors copy a block inside one file. Use `extends` and `include` for sharing, and anchors for small local repeats.\n\n```yaml\ninclude:\n  - project: platform/ci-templates\n    ref: v2.3.0\n    file: /security.yml\n  - local: /ci/deploy.yml\n\n.go-base:                       # hidden job, a template\n  image: golang:1.23\n  before_script:\n    - go version\n  cache:\n    key:\n      files: [go.sum]\n    paths: [.cache/go-mod/]\n\nunit-test:\n  extends: .go-base\n  script:\n    - go test ./...\n\nlint:\n  extends: .go-base\n  script:\n    - golangci-lint run\n```\n\n**Differences**\n\n| Feature | Scope | Merge behaviour |\n| --- | --- | --- |\n| `extends` | Across files after `include` | Deep merges hashes; arrays such as `script` are replaced, not merged |\n| `include` | Brings other files in | Included files are merged first, your file overrides them |\n| YAML anchors `&` and `*` | Same file only | Pure YAML copy; `<<:` merges maps |\n| `!reference [.job, script]` | Reuse a single key | Good for sharing script fragments |\n\n**Gotchas**\n- With `extends`, defining `script` in the child **replaces** the parent's `script`. To combine, use `!reference`.\n- Anchors do not work across `include` files.\n- `include:remote` from a URL is a supply-chain risk. Prefer `project` with a pinned tag.\n- Use the pipeline editor \"Full configuration\" view (or `glab ci lint`) to see the merged result when debugging.\n\n**Interview tip:** Mention pinning included templates to tags and giving them a changelog, so a template change never silently breaks 50 projects.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "extends",
+        "include"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-036",
+      "question": "How do environments, review apps and manual approval jobs work in GitLab?",
+      "answer": "**Short answer:** The `environment` keyword links a job to a named place such as `staging` or `production`, so GitLab records deployments, shows the current version and enables rollback. Review apps are temporary environments for merge requests. A `when: manual` job gives you a gated step with a button.\n\n```yaml\ndeploy-review:\n  stage: deploy\n  script:\n    - helm upgrade --install \"orders-$CI_MERGE_REQUEST_IID\" ./chart --namespace review --set image.tag=\"$CI_COMMIT_SHORT_SHA\"\n  environment:\n    name: review/$CI_MERGE_REQUEST_IID\n    url: https://orders-$CI_MERGE_REQUEST_IID.review.example.com\n    on_stop: stop-review\n    auto_stop_in: 3 days\n  rules:\n    - if: $CI_PIPELINE_SOURCE == \"merge_request_event\"\n\nstop-review:\n  stage: deploy\n  script:\n    - helm uninstall \"orders-$CI_MERGE_REQUEST_IID\" --namespace review\n  environment:\n    name: review/$CI_MERGE_REQUEST_IID\n    action: stop\n  rules:\n    - if: $CI_PIPELINE_SOURCE == \"merge_request_event\"\n      when: manual\n```\n\n**What you get**\n- The Environments page lists each deployment, commit and time. You can redeploy an earlier deployment to roll back.\n- Review apps give testers and product owners a live link per merge request. `on_stop` and `auto_stop_in` clean them up and save cost.\n- **Manual jobs** (`when: manual`) wait for a click. With protected environments, only chosen users or groups can run them, and you can require approvals (this is a paid-tier feature on some plans, check yours).\n\n**Protected environments.** Mark `production` as protected in settings and list who may deploy. Combined with protected branches this makes a real approval gate.\n\n**Related keyword: `resource_group`.** It makes jobs in the same group run one at a time, so two deployments never hit production together.\n\n**Gotchas**\n- A manual job that is `allow_failure: true` by default does not block the pipeline status. Set `allow_failure: false` if the pipeline should wait.\n- Review apps need wildcard DNS and enough cluster resources, or they pile up.\n\n**Interview tip:** Tell how review apps changed your workflow, for example designers approving UI changes before merge.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "environments",
+        "review-apps"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-037",
+      "question": "How do you use `services` for integration tests in GitLab CI?",
+      "answer": "**Short answer:** `services` starts extra containers next to your job container, such as Postgres or Redis, on the same network. Your tests reach them by host name, which defaults to the image name or an `alias` you choose. They live only for that job.\n\n```yaml\nintegration-test:\n  stage: test\n  image: golang:1.23\n  services:\n    - name: postgres:16\n      alias: db\n  variables:\n    POSTGRES_USER: app\n    POSTGRES_PASSWORD: app\n    POSTGRES_DB: orders\n    DATABASE_URL: \"postgres://app:app@db:5432/orders?sslmode=disable\"\n  script:\n    - go test ./internal/store/... -tags=integration\n```\n\nThe test container reaches the database at host `db`. The password here is a throwaway for a job-local container, not a real secret.\n\n**Points to know**\n- Services start before the script, but the service may still be starting. Make tests wait for readiness with a retry or use `pg_isready` first.\n- On the Kubernetes executor, services run as extra containers in the same pod, so they share `localhost`. Host aliases behave a bit differently from the Docker executor, so test it on your runners.\n- Pin versions (`postgres:16`), not `latest`.\n- For heavier dependencies (Kafka, many services) consider Testcontainers, or an ephemeral environment.\n\n**Why real dependencies.** Tests against a real database catch SQL errors, migrations, constraints and driver differences that mocks never see.\n\n**Gotchas**\n- Environment variables for the service image must be set in job `variables`, which are also visible to the job. That is fine for test credentials.\n- Parallel jobs each get their own service container, so there is no shared state.\n- A service that crashes is easy to miss. Check job logs for the service containers.\n\n**Interview tip:** Say \"mock at the edges, real database in the middle\". It signals a pragmatic test strategy.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "services",
+        "integration-testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-038",
+      "question": "How do you build Docker images in GitLab CI: Docker-in-Docker, Kaniko or BuildKit, and what are the security trade-offs?",
+      "answer": "**Short answer:** Docker-in-Docker (DinD) is the most compatible but needs a privileged container, which is a security risk. Kaniko builds images without a Docker daemon and without privileged mode, but has some limits. Rootless BuildKit is a modern alternative with good caching. Choose by your security model and runner setup.\n\n| Option | How it works | Pros | Cons |\n| --- | --- | --- | --- |\n| Docker-in-Docker | `docker:dind` service runs a daemon in a privileged container | Full Docker features, simple | Privileged runner, slower cache, escape risk |\n| Mounting the host Docker socket | Job talks to the host daemon | Fast, shares cache | Job controls the host, very risky on shared runners |\n| Kaniko | Executes Dockerfile in user space and pushes image | No daemon, no privilege | Slower for some builds, limited features; note the upstream Google project was archived in 2025 and forks exist, check current status before standardising |\n| BuildKit (rootless) | Modern builder, standalone or via `buildctl` | Parallel stages, strong cache, cache export to registry | Needs some setup and kernel features |\n\n```yaml\nbuild-image:\n  stage: package\n  image:\n    name: gcr.io/kaniko-project/executor:debug\n    entrypoint: [\"\"]\n  script:\n    - mkdir -p /kaniko/.docker\n    - echo \"{\\\"auths\\\":{\\\"$CI_REGISTRY\\\":{\\\"auth\\\":\\\"$(printf '%s:%s' \"$CI_REGISTRY_USER\" \"$CI_REGISTRY_PASSWORD\" | base64 | tr -d '\\n')\\\"}}}\" > /kaniko/.docker/config.json\n    - /kaniko/executor --context \"$CI_PROJECT_DIR\" --dockerfile Dockerfile --destination \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA\" --cache=true\n```\n\nThe job logs in with GitLab's built-in registry credentials, builds from the Dockerfile and pushes the image tagged with the commit.\n\n**How to decide**\n- Shared runners used by many teams: avoid privileged DinD, prefer a daemonless builder.\n- A dedicated, ephemeral Kubernetes runner per job: DinD risk is smaller because the pod is thrown away, but still avoid privileged if you can.\n- Need `docker compose` or `docker run` inside the job (for tests): DinD is the pragmatic answer, isolated on separate runners.\n\n**Gotchas**\n- With DinD the layer cache dies with each job. Use `--cache-from` with a registry image, or BuildKit cache export.\n- Never bake CI tokens into the image or pass them as plain `--build-arg`. Use BuildKit secrets.\n\n**Interview tip:** Say that the real answer depends on trust: who can run code on this runner. Untrusted code plus privileged mode is the risky combination.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "docker",
+        "kaniko",
+        "buildkit"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-039",
+      "question": "How do you use the GitLab Container Registry and clean it up?",
+      "answer": "**Short answer:** Each project has a built-in registry, with `$CI_REGISTRY_IMAGE` as the base name. Jobs log in with `$CI_REGISTRY_USER` and `$CI_REGISTRY_PASSWORD` (a short-lived job token). Without cleanup the registry grows forever, so set cleanup policies that keep recent and release tags and delete the rest.\n\n```yaml\npublish:\n  stage: package\n  image: docker:27\n  services: [docker:27-dind]\n  script:\n    - echo \"$CI_REGISTRY_PASSWORD\" | docker login \"$CI_REGISTRY\" -u \"$CI_REGISTRY_USER\" --password-stdin\n    - docker build -t \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA\" .\n    - docker push \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA\"\n```\n\n**Cleanup policies** are configured in the project settings (Packages and registries, cleanup policies). You choose:\n- how often it runs,\n- how many tags to keep per image,\n- delete tags older than a number of days,\n- a regex for tags to always keep (for example `^v\\d+\\.\\d+\\.\\d+$`),\n- a regex for tags to remove (for example `.*-snapshot`).\n\n**Good tagging for easy cleanup**\n- Commit SHA tags for every pipeline: cleaned after a few weeks.\n- Release tags (`v1.4.0`): kept long term, ideally immutable.\n- Branch tags such as `main` or `review-123`: short retention.\n\n**Related**\n- The **dependency proxy** caches images pulled from Docker Hub, avoiding rate limits and speeding pulls.\n- Garbage collection is needed on self-managed instances to reclaim disk space after tag deletion.\n- Registry on AKS: pulling private images needs an image pull secret, or an Azure Container Registry integration, depending on where images live.\n\n**Gotchas**\n- Deleting a tag does not free the layers still used by other tags.\n- Never delete the image that production currently runs. A rule \"keep last N\" is not enough if production is running an old version. Keep release tags.\n- Untagged leftovers from `latest` retagging need cleanup too.\n\n**Interview tip:** Mention cost and security: old images carry old vulnerabilities, so cleanup is also hygiene.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "registry",
+        "cleanup"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-040",
+      "question": "What are child pipelines and multi-project pipelines in GitLab?",
+      "answer": "**Short answer:** A child pipeline is a pipeline started by a job in the same project, defined by its own YAML file. A multi-project (downstream) pipeline is started in another project. Both use the `trigger` keyword and help split large configurations or coordinate several repositories.\n\n```yaml\n# parent .gitlab-ci.yml\nstages: [build, deploy]\n\napi-pipeline:\n  stage: build\n  trigger:\n    include: services/api/.gitlab-ci.yml   # child pipeline in same project\n    strategy: depend                        # parent waits for child result\n  rules:\n    - changes: [\"services/api/**/*\"]\n\ndeploy-platform:\n  stage: deploy\n  trigger:\n    project: platform/deployments          # another project\n    branch: main\n    strategy: depend\n  variables:\n    APP_VERSION: $CI_COMMIT_SHORT_SHA\n```\n\n**Uses**\n- **Monorepos:** one child pipeline per service, started only when its paths change.\n- **Dynamic pipelines:** a job generates a YAML file as an artifact and the child runs it. Good when the jobs depend on what the repository contains.\n- **Cross-repo flows:** an application repository triggers the deployment repository with the new version.\n\n**Details**\n- Without `strategy: depend`, the trigger job succeeds as soon as the child starts, and the parent does not wait.\n- Variables pass to children via `variables:`. Pass only what is needed.\n- A child has its own jobs and stages, and in the UI appears nested.\n- Downstream pipelines in other projects run with the permissions of the triggering user or a trigger token. Check access rules.\n\n**Gotchas**\n- Children do not share artifacts by default. Pass them with `needs:pipeline` or fetch via the API.\n- Deep nesting becomes hard to debug. Keep it to one or two levels.\n- Each pipeline uses runner capacity. A parent that triggers 30 children can swamp shared runners.\n\n**Interview tip:** Contrast with `include`: include merges config into one pipeline, trigger creates separate pipelines with separate statuses. Choose trigger when you want independence.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "trigger",
+        "child-pipelines"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-041",
+      "question": "How do scheduled pipelines and rollbacks work in GitLab CI?",
+      "answer": "**Short answer:** Scheduled pipelines run a pipeline on a cron schedule, for example nightly scans or cleanup. Rollbacks in GitLab are normally a redeploy of a previous known-good version, either from the Environments page or by running a rollback job with the old image tag.\n\n**Scheduled pipelines**\n- Set in CI/CD, Schedules, with a cron expression, a branch and variables.\n- Inside the file detect them with `$CI_PIPELINE_SOURCE == \"schedule\"`.\n- Typical jobs: dependency and image scans, full e2e suite, drift detection for Terraform, cleaning review environments.\n\n```yaml\nnightly-scan:\n  stage: test\n  script:\n    - trivy image --exit-code 1 --severity CRITICAL \"$CI_REGISTRY_IMAGE:main\"\n  rules:\n    - if: $CI_PIPELINE_SOURCE == \"schedule\"\n```\n\n**Rollback options**\n\n| Option | How | Notes |\n| --- | --- | --- |\n| Re-run an earlier deploy job | Environments page, \"Re-deploy to environment\" or retry the old deploy job | Uses the exact old pipeline's config and image |\n| Dedicated rollback job | Manual job with a `VERSION` variable that deploys that tag | Clear and auditable |\n| `git revert` and pipeline | Revert the commit on main, pipeline redeploys | Keeps Git as the source of truth, slower |\n| Helm rollback | `helm rollback orders 12` | Quick, but Git state may no longer match the cluster |\n| Feature flag off | No deploy at all | Fastest for flagged features |\n\n```yaml\nrollback-production:\n  stage: deploy\n  environment: production\n  when: manual\n  variables:\n    VERSION: \"\"                 # set when starting the job\n  script:\n    - test -n \"$VERSION\"\n    - helm upgrade --install orders ./chart -f values/prod.yaml --set image.tag=\"$VERSION\"\n```\n\n**Gotchas**\n- A rerun of an old deploy job uses variables as they were, but CI/CD variables in settings are current. Check that the old version still works with today's config.\n- Rolling back code does not roll back the database.\n- Schedules run as their owner. If that person leaves, the schedule stops working. Use a service account.\n\n**Interview tip:** Practise the rollback. A rollback you never tested is a hope, not a plan.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "schedules",
+        "rollback"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-042",
+      "question": "How do you deploy to Kubernetes from a GitLab pipeline?",
+      "answer": "**Short answer:** There are two models. Push: the pipeline runs `helm` or `kubectl` against the cluster with credentials. Pull (GitOps): the pipeline updates a Git repository with the new version and an in-cluster agent such as Argo CD, Flux or the GitLab agent applies it. Pull is safer and gives drift correction.\n\n| Model | How | Pros | Cons |\n| --- | --- | --- | --- |\n| Push with `helm upgrade` | Runner has cluster access | Simple, immediate feedback in the job | Cluster credentials live in CI, no drift repair |\n| Push via GitLab agent for Kubernetes | Agent in cluster opens an outbound connection, the job uses it | No inbound cluster exposure, scoped access | Setup |\n| GitOps with Argo CD or Flux | Pipeline commits a new image tag to a config repo, controller syncs | Git is the audit trail, drift fixed, no CI credentials in cluster | Two-step, feedback is indirect |\n\n```yaml\ndeploy-staging:\n  stage: deploy\n  image: alpine/helm:3.15.4\n  environment:\n    name: staging\n  script:\n    - helm upgrade --install orders ./chart\n        --namespace orders --create-namespace\n        -f values/staging.yaml\n        --set image.repository=\"$CI_REGISTRY_IMAGE\"\n        --set image.tag=\"$CI_COMMIT_SHORT_SHA\"\n        --atomic --timeout 5m\n```\n\n`--atomic` makes Helm roll back automatically if the release does not become ready in time.\n\n**Key practices**\n- Give the pipeline a service account with rights only in its namespace.\n- Wait for rollout success in the job (`helm --wait` or `kubectl rollout status`) so a failed deploy fails the pipeline.\n- Keep chart and values versioned. Deploy by image tag or digest.\n- Run smoke tests after the deploy, then promote.\n\n**Gotchas**\n- A kubeconfig stored as a CI variable with admin rights is a high-value secret. Prefer the agent or OIDC.\n- `helm upgrade` from many pipelines at once can collide. Use `resource_group`.\n\n**Interview tip:** Explain the trade-off honestly. Push is easier to start with. Pull gives auditability and drift control, which matters as clusters and teams grow.",
+      "level": "intermediate",
+      "module": "GitLab CI",
+      "tags": [
+        "gitlab-ci",
+        "kubernetes",
+        "helm",
+        "gitops"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-043",
+      "question": "How do you build pipelines for a monorepo in GitLab CI?",
+      "answer": "**Short answer:** Run only the jobs for what changed. Use `rules:changes` paths per service, child pipelines to keep each service separate, and make sure shared code changes trigger all dependents. Keep a safety net such as a full build on main or nightly.\n\n```yaml\n.api-rules:\n  rules:\n    - changes:\n        paths:\n          - services/api/**/*\n          - libs/common/**/*          # shared code also triggers api\n        compare_to: refs/heads/main   # compare with main, works on branches\n\napi-test:\n  extends: .api-rules\n  script:\n    - cd services/api && go test ./...\n\nweb-test:\n  rules:\n    - changes:\n        paths: [services/web/**/*, libs/ui/**/*]\n        compare_to: refs/heads/main\n  script:\n    - cd services/web && npm ci && npm test\n```\n\n**Approaches**\n\n| Approach | How | Good for |\n| --- | --- | --- |\n| `rules:changes` per job | Path filters in one file | Small to medium repos |\n| Parent and child pipelines | Parent triggers one child per changed service | Many services, separate YAML per team |\n| Build tool aware | Nx, Turborepo, Bazel compute affected targets from the dependency graph | Large polyglot repos, best accuracy |\n| Dynamic child pipeline | A script computes the change set and writes the YAML | Complex rules |\n\n**Gotchas**\n- The shared library trap: a change in `libs/common` must trigger services that use it. Missing paths cause unpublished breakage.\n- `changes` without `compare_to` on branch pipelines can look at only the last commit, so earlier commits in the branch are missed. Use merge request pipelines or `compare_to`.\n- Merging queues: two merge requests passing separately can break together. Use merge trains or a full run on main.\n- Cache and artifacts become large. Key caches per service.\n\n**Interview tip:** Mention a safety net: \"affected-only on merge requests, but everything on main and nightly, so a missed dependency shows up within a day\".",
+      "level": "intermediate",
+      "module": "CI/CD Pipelines",
+      "tags": [
+        "gitlab-ci",
+        "monorepo",
+        "rules"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-044",
+      "question": "How do you optimise Docker images for size and security, and how does Trivy fit in?",
+      "answer": "**Short answer:** Use a minimal base (alpine, distroless or scratch for static binaries), multi-stage builds, fewer and cleaner layers, and no build tools in the final image. Scan images with a scanner such as Trivy in the pipeline, and rebuild regularly to pick up patched bases.\n\n**Size levers**\n- Smaller base: `debian-slim` is bigger than `alpine`, which is bigger than `distroless`, which is bigger than `scratch`.\n- Multi-stage build: compile in one stage, copy the binary to another.\n- Clean package caches in the same `RUN` that installs: `apt-get install ... && rm -rf /var/lib/apt/lists/*`.\n- Use `.dockerignore`.\n- Install only production dependencies (`npm ci --omit=dev`).\n\n**Security levers**\n- Fewer packages mean fewer vulnerabilities and fewer tools for attackers.\n- Non-root user, read-only filesystem at runtime.\n- No secrets in layers.\n- Pin base image versions and rebuild often.\n\n**Alpine caveat.** Alpine uses musl instead of glibc. Some native modules and some DNS or locale behaviour differ. Test, and consider distroless or debian-slim if you hit strange bugs.\n\n**Scanning with Trivy in a pipeline**\n\n```yaml\nimage-scan:\n  stage: scan\n  image:\n    name: aquasec/trivy:0.56.2\n    entrypoint: [\"\"]\n  script:\n    - trivy image --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA\"\n```\n\nThe job fails if there are high or critical findings that have a fix available (`--ignore-unfixed` skips ones with no patch yet).\n\n```bash\ndocker images orders-api            # compare sizes before and after\ndocker history orders-api:1.4.0     # which layer is large?\n```\n\n**Gotchas**\n- Scanner results change daily as new CVEs appear. A build that passed last week may fail today. Use a policy and an exception file with expiry dates (`.trivyignore`).\n- Many findings live in the OS packages of the base. Updating the base image often fixes them.\n- Do not chase zero findings. Prioritise reachable, exploitable ones.\n\n**Interview tip:** Pair scanning with a process: who triages, what blocks a release, and how fast critical patches go out.",
+      "level": "intermediate",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "image-size",
+        "trivy",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-045",
+      "question": "How does Docker networking work: bridge, host and none, and DNS between containers?",
+      "answer": "**Short answer:** The default `bridge` network gives each container a private IP behind NAT. `host` mode shares the host's network stack with no isolation. `none` gives no network. User-defined bridge networks add automatic DNS by container or service name, which is what Compose uses.\n\n| Mode | What it does | Use when |\n| --- | --- | --- |\n| `bridge` (default) | Private network, ports published with `-p` | Most apps |\n| User-defined bridge | Same, plus DNS by name and better isolation | Multi-container apps, Compose |\n| `host` | Container uses the host's interfaces directly (Linux) | Very high network performance, special tools |\n| `none` | Only loopback | Maximum isolation, batch jobs |\n| `overlay` | Multi-host network (Swarm) | Rare today, Kubernetes has its own networking |\n\n```bash\ndocker network create shop\ndocker run -d --name cache --network shop redis:7\ndocker run --rm --network shop alpine ping -c 1 cache   # resolved by name\n```\n\n**How DNS works.** On a user-defined network Docker runs an embedded DNS server at 127.0.0.11 inside each container. It resolves other container names and network aliases on that network. On the default bridge there is no name resolution (only legacy links), so use your own network.\n\n**In Compose.** Each project gets its own network. Services reach each other by service name, even if the container name differs. Only containers on the same network can talk. You can place services on several networks to separate, for example, a frontend and a database tier.\n\n**Gotchas**\n- `localhost` inside a container is the container. To reach the host from a container on Docker Desktop use `host.docker.internal`.\n- Published ports (`-p 5432:5432`) open the service on the host. Do not publish a database port to the world. Bind to localhost: `-p 127.0.0.1:5432:5432`.\n- Containers keep DNS answers from their start. If a dependency changes IP, the application may need to re-resolve names.\n- Host mode does not work the same on Docker Desktop for Mac and Windows.\n\n**Interview tip:** Relate it to Kubernetes: pods get their own IPs, and Services plus CoreDNS provide the name resolution Compose gives you locally.",
+      "level": "intermediate",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "networking",
+        "dns"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-046",
+      "question": "How do health checks, signals and PID 1 work in containers?",
+      "answer": "**Short answer:** The process started by `CMD` or `ENTRYPOINT` becomes PID 1 in the container. Docker and Kubernetes stop containers by sending `SIGTERM`, then `SIGKILL` after a grace period. PID 1 must handle `SIGTERM` and must reap zombie child processes, or shutdowns are slow and unclean.\n\n**The shell form trap.** `CMD node server.js` runs `/bin/sh -c \"node server.js\"`, so the shell is PID 1. Many shells do not pass signals to the child, and your app never sees `SIGTERM`. Use the exec form `CMD [\"node\",\"server.js\"]`.\n\n```dockerfile\n# ❌ bad: shell is PID 1, signals may not reach the app\nCMD node server.js\n\n# ✅ good: the app is PID 1 and gets SIGTERM\nCMD [\"node\", \"server.js\"]\n```\n\n**Why PID 1 is special.** On Linux, PID 1 gets no default signal handlers: if your app has not installed a `SIGTERM` handler, the signal is ignored. PID 1 also has to reap orphaned children (zombies). Programs not written for that can leak zombies.\n\n**Fixes**\n- Handle `SIGTERM` in the app: stop accepting new work, finish in-flight requests, close connections, exit. In Go use `signal.NotifyContext` and `server.Shutdown`. In Node listen for `SIGTERM` and call `server.close()`.\n- Use a tiny init such as `tini` (`docker run --init` or `ENTRYPOINT [\"/sbin/tini\",\"--\"]`) when your process spawns children.\n- In Kubernetes set `terminationGracePeriodSeconds` longer than your drain time, and use a `preStop` hook or readiness change to stop traffic first.\n\n**Health checks**\n\n```dockerfile\nHEALTHCHECK --interval=30s --timeout=3s --retries=3 \\\n  CMD wget -qO- http://localhost:8080/healthz || exit 1\n```\n\nDocker marks the container `healthy` or `unhealthy`. Compose uses it for `depends_on` conditions. Kubernetes ignores `HEALTHCHECK` and uses its own liveness, readiness and startup probes.\n\n**Interview tip:** A classic incident story: \"deploys took 30 seconds per pod because the app ignored SIGTERM and Kubernetes had to SIGKILL after the grace period\". Mention it, and the fix.",
+      "level": "intermediate",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "signals",
+        "graceful-shutdown"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-047",
+      "question": "How do you set resource limits for containers?",
+      "answer": "**Short answer:** Limits are enforced by Linux cgroups. A memory limit kills the container when it uses more (an OOM kill). A CPU limit throttles it rather than killing it. Set both deliberately, and make the runtime aware of the limit, otherwise the application may size itself on the host's resources.\n\n```bash\ndocker run -d --name api \\\n  --memory 512m --memory-swap 512m \\\n  --cpus 1.5 \\\n  orders-api:1.4.0\n```\n\n**Behaviour**\n\n| Resource | When the limit is hit | Symptom |\n| --- | --- | --- |\n| Memory | Kernel kills a process, container exits with code 137 | `OOMKilled` status |\n| CPU | Process is throttled (paused for slices of time) | High latency, but no crash |\n| PIDs (`--pids-limit`) | `fork` fails | Cannot start processes |\n\n**Make runtimes limit-aware**\n- Go: before Go 1.25 the runtime sets `GOMAXPROCS` from the host CPU count, not the container limit. Libraries such as `automaxprocs` fix this. Go 1.25 added container-aware defaults. For memory use `GOMEMLIMIT` set to about 80 to 90 percent of the limit.\n- Node: set `--max-old-space-size` below the container limit. Newer Node versions read container limits, but check your version.\n- Java: modern JVMs are container aware by default.\n\n**In Kubernetes.** The same ideas become `requests` (for scheduling) and `limits` (for enforcement). Setting a CPU limit equal to the request is debated, because throttling hurts latency. See the Kubernetes topic for requests and limits.\n\n**Gotchas**\n- Exit code 137 is `128 + 9` (SIGKILL), the usual sign of OOM.\n- No limit at all means one runaway container can starve the host.\n- A limit too close to normal usage causes kills during traffic spikes.\n\n**Interview tip:** Describe how you picked numbers: measure real usage under load, set the memory limit with headroom, and watch throttling metrics in Datadog.",
+      "level": "intermediate",
+      "module": "Docker & Containers",
+      "tags": [
+        "docker",
+        "resources",
+        "cgroups"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-048",
+      "question": "Which Git workflows work in practice: squash or merge commit, rebase, conventional commits and hooks?",
+      "answer": "**Short answer:** A common healthy setup: short branches, rebase on main before merging, squash merge so main has one clean commit per change, and conventional commit messages so releases and changelogs can be automated. Hooks catch mistakes before they leave the laptop.\n\n**Merge styles**\n\n| Style | History on main | Pros | Cons |\n| --- | --- | --- | --- |\n| Merge commit | Branch shape preserved, a merge commit per change | Full history, easy to revert a whole merge | Noisy graph |\n| Squash merge | One commit per merge request | Clean, easy to revert and bisect | Loses the small steps, long branches become one big commit |\n| Rebase and fast-forward | Linear, every commit kept | Clean and detailed | Rewrites hashes, needs discipline on good commit messages |\n\n**Conventional commits.** A message format: `type(scope): summary`. Types include `feat`, `fix`, `docs`, `refactor`, `test`, `chore`. A `!` or a `BREAKING CHANGE:` footer marks a breaking change. It makes history searchable and drives semantic versioning.\n\n```text\nfix(payments): retry the provider call on timeout\n\nThe provider returns 504 under load. Retry up to 3 times with backoff.\nRefs: SHOP-412\n```\n\n**Hooks.** Scripts that Git runs at moments such as `pre-commit` and `commit-msg`. Use them to run linters, formatters, secret scanners and the commit message check. Hooks live in `.git/hooks` and are not shared by Git, so use a tool like `pre-commit`, Husky or lefthook to install them for the team, and repeat the same checks in CI because hooks can be skipped with `--no-verify`.\n\n**Useful commands**\n```bash\ngit pull --rebase                    # keep local commits on top of remote\ngit commit --fixup <sha>             # mark a fix for an earlier commit\ngit rebase -i --autosquash origin/main\ngit push --force-with-lease          # safer than --force after a rebase\n```\n\n**Gotchas**\n- Never rebase a shared branch.\n- Squash merges make `git branch --merged` unreliable, because the original commits are not in main.\n\n**Interview tip:** Pick one and defend it: \"squash plus conventional commits, because the merge request title becomes the changelog line\".",
+      "level": "intermediate",
+      "module": "Git & Workflow",
+      "tags": [
+        "git",
+        "workflow",
+        "conventional-commits"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-049",
+      "question": "How does `git bisect` help find a bug, and when do you use it?",
+      "answer": "**Short answer:** `git bisect` does a binary search through commit history to find the commit that introduced a bug. You mark one commit as good and one as bad, and Git checks out the middle commit again and again. With about N commits it needs only about log2 N steps, and can be fully automated with a test script.\n\n**Manual use**\n\n```bash\ngit bisect start\ngit bisect bad                 # current commit has the bug\ngit bisect good v1.4.0         # this older tag was fine\n# Git checks out a middle commit. Test it, then answer:\ngit bisect good                # or: git bisect bad\n# ... repeat until Git prints \"<sha> is the first bad commit\"\ngit bisect reset               # return to your branch\n```\n\n**Automated use.** Give Git a command that exits 0 for good and non-zero for bad (125 means \"skip this commit, it cannot be tested\").\n\n```bash\ngit bisect start HEAD v1.4.0\ngit bisect run go test ./internal/orders -run TestDiscountRounding\ngit bisect reset\n```\n\nWith 1,000 commits between good and bad, this needs only about 10 test runs.\n\n**When it works well**\n- You have a reliable failing test or script.\n- History is clean: small commits that build. Squash merges help, because each commit on main is a whole change.\n- A regression: it worked before and now does not.\n\n**Gotchas**\n- A flaky test sends bisect to the wrong commit. Make the check deterministic, or run it several times in the script.\n- Commits that do not compile need `exit 125` to skip.\n- Large merge commits can hide the culprit. Use `--first-parent` to follow main only, if your team uses merge commits.\n- Build tools, dependencies and databases changing between commits can add noise.\n\n**Interview tip:** This is a nice answer to \"how do you debug a regression\" and shows you value small, buildable commits.",
+      "level": "intermediate",
+      "module": "Git & Workflow",
+      "tags": [
+        "git",
+        "bisect",
+        "debugging"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-050",
+      "question": "What are the basics of Terraform: providers, state, plan, apply and modules?",
+      "answer": "**Short answer:** Terraform lets you describe infrastructure in declarative files. Providers talk to cloud APIs. `terraform plan` shows what would change, `apply` makes it so. **State** records what Terraform manages. Modules package reusable configuration. Remote state with locking is required for teams.\n\n```text\nterraform {\n  required_version = \">= 1.6\"\n  required_providers {\n    azurerm = {\n      source  = \"hashicorp/azurerm\"\n      version = \"~> 3.100\"\n    }\n  }\n  backend \"azurerm\" {\n    resource_group_name  = \"tfstate-rg\"\n    storage_account_name = \"shoptfstate\"\n    container_name       = \"tfstate\"\n    key                  = \"prod/network.tfstate\"\n  }\n}\n\nprovider \"azurerm\" {\n  features {}\n}\n\nvariable \"location\" {\n  type    = string\n  default = \"westeurope\"\n}\n\nresource \"azurerm_resource_group\" \"app\" {\n  name     = \"shop-prod-rg\"\n  location = var.location\n}\n\nmodule \"aks\" {\n  source              = \"./modules/aks\"\n  resource_group_name = azurerm_resource_group.app.name\n  node_count          = 3\n}\n```\n\n**Workflow**\n\n```bash\nterraform init      # download providers and configure the backend\nterraform fmt -check\nterraform validate\nterraform plan -out=tf.plan\nterraform apply tf.plan\n```\n\n**Key concepts**\n- **Declarative:** you describe the end state, Terraform computes the steps.\n- **State:** a file that maps your code to real resources and their attributes. Lose it and Terraform no longer knows what it owns.\n- **Remote backend with locking:** stored in cloud storage, locked during writes so two applies do not collide.\n- **Modules:** reuse and abstraction, with inputs and outputs. Version them.\n- **Dependency graph:** Terraform orders resources by references.\n- **Destroy and replace:** some changes force a resource to be replaced. Read the plan.\n\n**Gotchas**\n- State holds secrets in clear text. Restrict and encrypt it.\n- Never edit state by hand. Use `terraform state` commands and `import`.\n- Pin provider versions, and commit the lock file `.terraform.lock.hcl`.\n- Licence: Terraform moved to a source-available licence in 2023 and the community fork OpenTofu exists. Most syntax is the same.\n\n**Interview tip:** If asked \"what is the plan for?\", say it is the review step: humans approve the diff before anything changes.",
+      "level": "intermediate",
+      "module": "Infrastructure as Code",
+      "tags": [
+        "terraform",
+        "iac",
+        "state"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-051",
+      "question": "What are Bicep and ARM templates, and how do configuration management, provisioning and orchestration differ?",
+      "answer": "**Short answer:** ARM templates are Azure's native JSON for declaring resources. Bicep is a friendlier language that compiles to ARM. Separately, provisioning creates infrastructure, configuration management sets up software on machines, and orchestration coordinates running workloads.\n\n**Azure IaC options**\n\n| Tool | Notes |\n| --- | --- |\n| ARM template | JSON, verbose, Azure only |\n| Bicep | Concise, typed, modules, compiles to ARM, Azure only, no state file because Azure Resource Manager tracks deployments |\n| Terraform or OpenTofu | Multi-cloud, state file, large provider ecosystem |\n| Pulumi | Real programming languages |\n\n```text\nparam location string = resourceGroup().location\nparam storageName string\n\nresource storage 'Microsoft.Storage/storageAccounts@2023-01-01' = {\n  name: storageName\n  location: location\n  sku: { name: 'Standard_LRS' }\n  kind: 'StorageV2'\n}\n```\n\nYou deploy it with `az deployment group create --resource-group shop-rg --template-file main.bicep`, and `what-if` previews changes, like a plan.\n\n**Three different jobs**\n\n| Job | Question | Examples |\n| --- | --- | --- |\n| Provisioning | Which cloud resources exist? | Terraform, Bicep, CloudFormation |\n| Configuration management | What is installed and configured on this machine? | Ansible, Chef, Puppet |\n| Orchestration | Where and how do my workloads run, scale and heal? | Kubernetes, Nomad |\n\nIn a container world the middle one shrinks: you rebuild an immutable image rather than patch a running server. Ansible still helps for VMs, network gear and bootstrap tasks.\n\n**Immutable vs mutable.** Immutable infrastructure replaces servers instead of changing them. It avoids configuration drift and makes rollbacks easy.\n\n**Interview tip:** If your team uses AKS, say how it fits: IaC creates the cluster and network, Helm or GitOps deploys apps, and nobody logs into nodes to change things.",
+      "level": "intermediate",
+      "module": "Infrastructure as Code",
+      "tags": [
+        "iac",
+        "bicep",
+        "arm",
+        "ansible"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-052",
+      "question": "What are artifact repositories and package registries, and why use them?",
+      "answer": "**Short answer:** An artifact repository stores the outputs of builds (binaries, images, packages) and can proxy public registries such as npm or Go modules. It gives you one trusted place to publish and consume, stable builds even when the public registry is down, and a place to scan and control what enters your company.\n\n**What it stores**\n- Container images (GitLab registry, Azure Container Registry, Harbor).\n- Language packages: npm, Go modules, Maven, NuGet, PyPI.\n- Generic files: release binaries, Helm charts, SBOMs.\n\n**Why**\n- **Reproducibility.** Published versions are immutable, so builds can be repeated.\n- **Availability.** A proxy or cache keeps working when the public registry is slow or down. Remember the left-pad incident where a removed npm package broke many builds.\n- **Security.** Block known bad packages, scan, and require approvals. Use private scopes and registry settings to avoid **dependency confusion**, where a public package with your internal name is installed by mistake.\n- **Speed.** Local proxies are faster than the internet.\n- **Governance.** Access control and audit logs.\n\n**Typical set-up**\n- Group registry or Artifactory/Nexus as a virtual repository: your private packages plus a cache of the public ones.\n- CI publishes with a short-lived token (`$CI_JOB_TOKEN` in GitLab).\n- Lock files and checksums stay in the repository. Go has `GOPROXY` and `GONOSUMDB` style settings, npm has `.npmrc` scopes.\n\n```bash\n# npm: send the @shop scope to the private registry only\necho \"@shop:registry=https://gitlab.example.com/api/v4/packages/npm/\" >> .npmrc\n```\n\n**Gotchas**\n- Retention: delete old snapshots, keep release versions forever.\n- Avoid overwriting a published version. Publish a new one.\n- Rotating or revoking registry tokens breaks builds. Use job tokens or OIDC where possible.\n\n**Interview tip:** Mention dependency confusion by name. It shows security awareness beyond scanning.",
+      "level": "intermediate",
+      "module": "Supply Chain & Security",
+      "tags": [
+        "artifacts",
+        "registry",
+        "dependencies"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-053",
+      "question": "How do containers really work: namespaces, cgroups and overlay filesystems?",
+      "answer": "**Short answer:** A container is a normal Linux process with three kernel features applied. Namespaces limit what it can see (processes, network, mounts, hostname, users). Cgroups limit what it can use (CPU, memory, I/O, process count). A union filesystem such as overlayfs gives it a layered root filesystem built from the image.\n\n**The three parts**\n- **Namespaces** give a private view. The PID namespace makes the process think it is PID 1. The network namespace gives its own interfaces and routing table. The mount namespace gives its own filesystem tree. Others: UTS (hostname), IPC, user, and cgroup.\n- **Control groups (cgroups)** are an accounting and limiting tree. Writing a memory limit into the cgroup makes the kernel kill the process group when it goes over (the OOM killer). A CPU quota throttles.\n- **Overlay filesystem** stacks read-only image layers (`lowerdir`) with one writable layer (`upperdir`) and shows a merged view. A write to a lower-layer file first copies it up (copy-on-write).\n\n```mermaid\nflowchart TB\n    P[\"Process\"] --> NS[\"Namespaces: what it can see\"]\n    P --> CG[\"Cgroups: what it can use\"]\n    P --> FS[\"Overlay root fs: image layers + writable layer\"]\n    NS --> K[\"Shared Linux kernel\"]\n    CG --> K\n    FS --> K\n```\n\nAll containers on a host share one kernel. The isolation comes from these three features, not from a separate OS.\n\nYou can see it yourself:\n\n```bash\n# run a shell in new PID and mount namespaces (needs root)\nsudo unshare --pid --fork --mount-proc bash -c 'ps aux'   # shows only its own processes\n\n# where a container's limits live (cgroup v2)\ncat /sys/fs/cgroup/<container-cgroup>/memory.max\n\n# the image layers of a container\ndocker inspect --format '{{json .GraphDriver.Data}}' web1\n```\n\n**Extra isolation layers.** Capabilities split root's powers into pieces and containers drop most. Seccomp filters which system calls are allowed. AppArmor or SELinux add mandatory access control.\n\n**Consequences for engineers**\n- A kernel exploit can break out of every container. Sandboxes (gVisor, Kata) add a stronger boundary.\n- `top` inside a container may show host numbers unless the tool reads the cgroup.\n- Linux containers on Mac or Windows run inside a hidden Linux VM.\n\n**Interview tip:** The crisp sentence is \"a container is a process with namespaces, cgroups and a layered filesystem; there is no container object in the kernel\".",
+      "level": "advanced",
+      "module": "Container Internals",
+      "tags": [
+        "containers",
+        "namespaces",
+        "cgroups"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-054",
+      "question": "What are containerd, runc and the CRI, and why did Kubernetes drop dockershim?",
+      "answer": "**Short answer:** Docker is a stack: the `docker` CLI talks to the Docker daemon, which uses containerd, which uses runc to create the container. Kubernetes talks to runtimes through the Container Runtime Interface (CRI). Docker did not implement CRI, so Kubernetes had a built-in adapter called dockershim. It was removed in Kubernetes 1.24, so nodes use containerd or CRI-O directly.\n\n```mermaid\nflowchart LR\n    CLI[\"docker CLI\"] --> D[\"dockerd\"] --> C[\"containerd\"] --> R[\"runc\"] --> P[\"Container process\"]\n    K[\"kubelet\"] -- \"CRI\" --> C2[\"containerd\"] --> R2[\"runc\"] --> P2[\"Container process\"]\n```\n\nThe top row is Docker on a laptop. The bottom row is a Kubernetes node. Both end at containerd and runc.\n\n| Component | Job |\n| --- | --- |\n| runc | Low-level runtime: creates the namespaces and cgroups and starts the process, following the OCI runtime spec |\n| containerd | Manages image pulls, storage, container lifecycle, and offers a gRPC API |\n| CRI-O | Another CRI runtime built for Kubernetes |\n| dockerd | Adds the Docker API, build, networks and volumes on top of containerd |\n| OCI | Open standards for image format and runtime, so tools interoperate |\n\n**Why dockershim was dropped.** It was extra code inside the kubelet, only to translate CRI calls to the Docker API. Docker itself already used containerd underneath, so Kubernetes could skip the middle layer. The change was announced in 1.20 and the code removed in 1.24.\n\n**What it means in practice**\n- Images built with Docker still run. The image format is OCI compatible.\n- `docker ps` on a node no longer shows Kubernetes containers. Use `crictl ps` or `nerdctl`.\n- Things that depended on the Docker socket on nodes (some monitoring or build tools) break. Docker-in-Docker through the host socket in pods no longer works on such nodes.\n- AKS uses containerd on its node pools for current versions.\n\n**Alternative runtimes.** `runsc` (gVisor) and Kata Containers plug in below containerd through a RuntimeClass for stronger isolation.\n\n**Interview tip:** Answer calmly: \"Kubernetes did not drop Docker images, it dropped the Docker daemon as a runtime\". Interviewers often test for that misconception.",
+      "level": "advanced",
+      "module": "Container Internals",
+      "tags": [
+        "containerd",
+        "runc",
+        "cri",
+        "kubernetes"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-055",
+      "question": "What is BuildKit, and how do cache mounts, secrets and reproducible builds work?",
+      "answer": "**Short answer:** BuildKit is Docker's modern build engine, the default builder since Docker 23. It builds independent stages in parallel, skips unused stages, and supports cache mounts, secret mounts and cache export. These make builds faster and safer than the classic builder.\n\n**Useful features**\n- **Parallel stages.** Stages without dependencies build at the same time.\n- **Cache mounts.** A directory that persists between builds but never lands in the image. Great for package manager caches.\n- **Secret mounts.** A file available only during one `RUN`, never stored in a layer.\n- **Cache export and import.** Share build cache across CI jobs through a registry.\n- **SSH forwarding** for private repositories.\n\n```dockerfile\n# syntax=docker/dockerfile:1\nFROM golang:1.23 AS build\nWORKDIR /src\nCOPY go.mod go.sum ./\n# reuse downloaded modules and compiled objects across builds\nRUN --mount=type=cache,target=/go/pkg/mod \\\n    go mod download\nCOPY . .\nRUN --mount=type=cache,target=/go/pkg/mod \\\n    --mount=type=cache,target=/root/.cache/go-build \\\n    CGO_ENABLED=0 go build -o /out/orders ./cmd/orders\n\nFROM node:22-alpine AS web\nWORKDIR /web\nCOPY package.json package-lock.json ./\n# private registry credentials, not stored in any layer\nRUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm ci\n```\n\n```bash\ndocker build --secret id=npmrc,src=$HOME/.npmrc .\ndocker buildx build --cache-to type=registry,ref=registry.example.com/shop/cache:orders,mode=max \\\n                    --cache-from type=registry,ref=registry.example.com/shop/cache:orders .\n```\n\n**Reproducible builds.** The same source should give the same image bits. Helpers:\n- Pin base images by digest and dependency versions through lock files.\n- Avoid `apt-get install` without versions, or use a snapshot repository.\n- Do not embed timestamps. Set `SOURCE_DATE_EPOCH` and use BuildKit's options to normalise timestamps (`--output ...,rewrite-timestamp=true`, available in newer BuildKit versions, check yours).\n- Build in a clean, hermetic environment.\n\nPerfect bit-for-bit reproducibility is hard for general images. Many teams aim for \"reproducible enough\": the same inputs, the same versions, verified provenance.\n\n**Gotchas**\n- A cache mount is not available at run time and is not shared across machines by default.\n- `--secret` is safe; `ARG` and `ENV` secrets are not.\n\n**Interview tip:** Say how much time cache mounts saved in your pipeline. Pair it with cache export, which matters most on ephemeral CI runners.",
+      "level": "advanced",
+      "module": "Container Internals",
+      "tags": [
+        "buildkit",
+        "docker",
+        "cache",
+        "reproducible-builds"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-056",
+      "question": "Why does deleting a file in a later Docker layer not make the image smaller?",
+      "answer": "**Short answer:** Layers are only added, never changed. Deleting a file in a later layer adds a \"whiteout\" marker that hides the file, but the original bytes stay in the earlier layer, which is still part of the image. To keep data out of the image, never write it, or delete it in the same layer that created it.\n\n**Why it happens.** Each `RUN`, `COPY` or `ADD` stores a diff. A later `rm` only records \"this path is gone\". The union filesystem hides it, yet every layer is pulled and stored.\n\n```dockerfile\n# ❌ bad: the 500 MB archive stays in layer 2\nFROM debian:12-slim\nCOPY bigdata.tar.gz /tmp/\nRUN tar -xzf /tmp/bigdata.tar.gz -C /opt\nRUN rm /tmp/bigdata.tar.gz\n\n# ✅ good: download, use and delete in one layer\nFROM debian:12-slim\nRUN apt-get update \\\n && apt-get install -y --no-install-recommends curl ca-certificates \\\n && curl -fsSL https://example.com/bigdata.tar.gz | tar -xz -C /opt \\\n && apt-get purge -y curl \\\n && rm -rf /var/lib/apt/lists/*\n```\n\n**Better fixes**\n- **Multi-stage builds.** Do the messy work in an early stage and copy only the result.\n- **Cache mounts and bind mounts** during `RUN` that never become part of a layer.\n- `COPY --from=build` of exactly the files you need.\n- `--squash` exists in some builders, but it loses layer sharing. Multi-stage is cleaner.\n\n**Security angle.** This is also why a secret copied into an image and then deleted is still leaked. Anyone can pull the image and extract the earlier layer. Tools like `docker history` and `dive` show it.\n\n```bash\ndocker save orders-api:1.4.0 -o image.tar   # layers are separate tar files inside\ndive orders-api:1.4.0                       # explore what each layer added\n```\n\n**Also remember:** changing file permissions with `chmod` or `chown` in a later `RUN` copies the whole file into the new layer, doubling its size. Use `COPY --chmod=0755` or `COPY --chown`.\n\n**Interview tip:** A great closing line: \"every layer is permanent history; to hide something you must never put it there\".",
+      "level": "advanced",
+      "module": "Container Internals",
+      "tags": [
+        "docker",
+        "layers",
+        "image-size"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-057",
+      "question": "How do you harden container security: rootless, seccomp, capabilities and read-only filesystems?",
+      "answer": "**Short answer:** Apply least privilege in layers: run as a non-root user, drop all Linux capabilities and add back only what is needed, use the default seccomp profile, make the root filesystem read-only, block privilege escalation, and never bake secrets into images. Add network policies and keep images and hosts patched.\n\n**Controls**\n\n| Control | What it does |\n| --- | --- |\n| Non-root user | Limits damage if the app is compromised |\n| Rootless runtime | The container engine itself runs without root on the host |\n| Drop capabilities | Removes root powers like `NET_RAW` or `SYS_ADMIN` |\n| Seccomp profile | Blocks dangerous system calls (default runtime profile blocks many) |\n| Read-only root filesystem | Malware cannot write tools; mount `tmpfs` for temp files |\n| `no-new-privileges` | Stops setuid tricks |\n| No `--privileged`, no host namespaces, no Docker socket | Keeps the host out of reach |\n| Image hygiene | Minimal base, scanned, no secrets in layers |\n\n```yaml\napiVersion: v1\nkind: Pod\nmetadata:\n  name: orders-api\nspec:\n  securityContext:\n    runAsNonRoot: true\n    runAsUser: 10001\n    seccompProfile:\n      type: RuntimeDefault\n  containers:\n    - name: api\n      image: registry.example.com/shop/orders-api:1.4.0\n      securityContext:\n        allowPrivilegeEscalation: false\n        readOnlyRootFilesystem: true\n        capabilities:\n          drop: [\"ALL\"]\n      volumeMounts:\n        - name: tmp\n          mountPath: /tmp\n  volumes:\n    - name: tmp\n      emptyDir: {}\n```\n\nThe pod runs as a fixed non-root user, cannot gain privileges, has no capabilities, and can write only to `/tmp`.\n\n**Enforce, do not hope.** Kubernetes Pod Security Standards (baseline and restricted levels) enforced by Pod Security Admission, or policy engines such as Kyverno or OPA Gatekeeper, reject pods that do not meet the rules.\n\n**Gotchas**\n- Binding to ports below 1024 as non-root needs a capability or a higher port. Prefer port 8080.\n- A read-only filesystem breaks apps that write to unexpected places. Find them in testing.\n- Non-root plus a volume can fail on file ownership. Set `fsGroup`.\n\n**Interview tip:** Mention that most real incidents come from basics: exposed dashboards, stolen tokens, privileged pods. Hardening is mostly consistent defaults, enforced by policy.",
+      "level": "advanced",
+      "module": "Supply Chain & Security",
+      "tags": [
+        "container-security",
+        "hardening",
+        "kubernetes"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-058",
+      "question": "How do you sign and verify container images with cosign, Sigstore and admission policies?",
+      "answer": "**Short answer:** Signing proves an image came from your pipeline and was not changed. You sign the image digest in CI with cosign, store the signature in the registry, and add an admission policy in the cluster that refuses unsigned or wrongly signed images. Keyless signing uses short-lived certificates tied to your CI identity instead of a long-lived private key.\n\n**Flow**\n\n```mermaid\nsequenceDiagram\n    participant CI as GitLab job\n    participant ID as Identity provider\n    participant R as Registry\n    participant K as Cluster admission\n    CI->>R: Push image, get digest\n    CI->>ID: Present OIDC token\n    ID-->>CI: Short-lived signing certificate\n    CI->>R: Store signature for the digest\n    K->>R: Pod create: fetch signature\n    K->>K: Verify identity and issuer\n    K-->>CI: Allow only if valid\n```\n\nRead it top to bottom. The pipeline signs once; the cluster checks every time a pod starts.\n\n**Signing in a pipeline (keyless idea)**\n\n```yaml\nsign-image:\n  stage: package\n  image: cgr.dev/chainguard/cosign:latest   # pin a version in real use\n  id_tokens:\n    SIGSTORE_ID_TOKEN:\n      aud: sigstore\n  script:\n    - cosign sign --yes \"$CI_REGISTRY_IMAGE@$IMAGE_DIGEST\"\n```\n\nAlways sign the **digest**, not a tag, because tags move.\n\n**Admission policy (Kyverno example)**\n\n```yaml\napiVersion: kyverno.io/v1\nkind: ClusterPolicy\nmetadata:\n  name: require-signed-images\nspec:\n  validationFailureAction: Enforce\n  rules:\n    - name: verify-shop-images\n      match:\n        any:\n          - resources:\n              kinds: [\"Pod\"]\n      verifyImages:\n        - imageReferences: [\"registry.example.com/shop/*\"]\n          attestors:\n            - entries:\n                - keyless:\n                    issuer: \"https://gitlab.com\"\n                    subject: \"https://gitlab.com/shop/*\"\n```\n\nOther options: Sigstore policy-controller, Ratify on AKS with Azure Policy, or Notation (Notary v2) with Azure Container Registry.\n\n**Beyond signatures.** Attach attestations: an SBOM, a vulnerability scan result, build provenance. The policy can require them too.\n\n**Gotchas**\n- Keyless signing records entries in a public transparency log (Rekor). Private organisations may run their own instance or use key-based signing with a key in a vault.\n- Verify the identity (who signed), not only that \"something\" signed.\n- Roll out in audit mode first, then enforce.\n\n**Interview tip:** Say the goal in one line: \"only images built by our main pipeline can run in production, and the cluster checks that itself\".",
+      "level": "advanced",
+      "module": "Supply Chain & Security",
+      "tags": [
+        "cosign",
+        "sigstore",
+        "signing",
+        "admission"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-059",
+      "question": "How do you manage Terraform state, drift and blast radius at scale?",
+      "answer": "**Short answer:** Keep state remote, locked, encrypted and split into many small states by environment and by domain, so one mistake touches little. Detect drift with scheduled plans. Limit blast radius with separate credentials per environment, `prevent_destroy` on critical resources, and reviewed plans.\n\n**State practices**\n- **Remote backend with locking** (Azure Blob with lease locking, S3 with locking, Terraform Cloud).\n- **Encrypt at rest**, restrict read access: state can contain secrets.\n- **Split states.** Network, cluster, databases and each application are separate states. A bad apply in the app layer cannot destroy the network.\n- **Share data** between states with outputs and data sources, or remote state references, kept minimal.\n- **Per-environment credentials.** The pipeline for staging cannot touch production.\n\n**Drift** is when real infrastructure differs from the code, often by a manual console change.\n\n```bash\n# exit code 2 means there are changes (drift or new code)\nterraform plan -detailed-exitcode -input=false\n```\n\nRun this on a schedule in GitLab. When the exit code is 2, open an issue or alert. Then either apply to fix the drift or update the code to adopt the change.\n\n**Limiting blast radius**\n\n```text\nresource \"azurerm_postgresql_flexible_server\" \"orders\" {\n  name                = \"shop-orders-db\"\n  resource_group_name = azurerm_resource_group.app.name\n  location            = azurerm_resource_group.app.location\n  version             = \"16\"\n\n  lifecycle {\n    prevent_destroy = true   # plan fails if it would delete this\n  }\n}\n```\n\nMore controls:\n- Cloud resource locks on critical resources.\n- Required approvals for plans that include destroy.\n- `-target` only in emergencies; it skips the graph and can leave the state inconsistent.\n- Apply from one place (the pipeline), and use `terraform state` commands rarely, with a peer.\n\n**Refactoring safely.** Use `moved` blocks to rename resources or change module paths without recreating them. Use `import` blocks to adopt existing resources into code.\n\n**Gotchas**\n- A lost or corrupted state is a serious incident: enable versioning on the state storage.\n- Two people running apply at once without locks can corrupt state.\n- Big monolithic states are slow and risky.\n\n**Interview tip:** The key trade-off: more states means safer and faster plans, but more wiring between them. Split by rate of change and by team ownership.",
+      "level": "advanced",
+      "module": "Infrastructure as Code",
+      "tags": [
+        "terraform",
+        "state",
+        "drift"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-060",
+      "question": "What is GitOps, how does pull-based deployment differ from push, and how do Argo CD and Flux compare?",
+      "answer": "**Short answer:** GitOps means the desired state of the system lives in Git, and software continuously makes reality match it. In a pull model an agent inside the cluster watches Git and applies changes. In a push model the CI pipeline pushes changes with credentials. Pull needs no cluster credentials in CI and repairs drift.\n\n**Four principles**\n1. Desired state is declarative.\n2. It is versioned and immutable in Git.\n3. It is pulled automatically by agents.\n4. It is continuously reconciled: if someone changes the cluster by hand, the agent puts it back.\n\n```mermaid\nflowchart LR\n    DEV[\"Developer\"] --> APP[\"App repo + CI\"]\n    APP --> IMG[\"Registry: new image\"]\n    APP --> CFG[\"Config repo: bump image tag\"]\n    CFG --> AGENT[\"Argo CD / Flux in cluster\"]\n    AGENT --> K8S[\"Cluster state\"]\n```\n\nCI builds the image and commits the new tag. The in-cluster agent notices and applies it.\n\n| | Push (pipeline deploys) | Pull (GitOps agent) |\n| --- | --- | --- |\n| Credentials | CI needs cluster access | Agent inside cluster, CI needs Git write only |\n| Drift | Not noticed until next deploy | Detected and optionally healed |\n| Audit | Pipeline logs | Git history |\n| Feedback to developer | Immediate in the job | Indirect, needs notifications or status checks |\n| Many clusters | Pipeline fan-out | Each cluster pulls its own config |\n\n**Argo CD vs Flux**\n\n| | Argo CD | Flux |\n| --- | --- | --- |\n| Style | Application-centric, rich web UI | Toolkit of controllers, CLI and Git first |\n| Multi-tenancy | Projects and RBAC | Kubernetes RBAC and namespaces |\n| Strengths | Visual diff and sync, ApplicationSets for many clusters | Lightweight, strong Helm and Kustomize controllers, image automation |\n| Fits | Teams that want visibility | Platform teams that prefer pure Kubernetes-native parts |\n\nBoth are CNCF graduated projects.\n\n**Practical advice**\n- Separate the app repo from the config repo, so deploys do not trigger builds and access can differ.\n- Use one folder or overlay per environment. Promotion is a pull request that changes a tag.\n- Manage secrets with sealed or external secrets, never plain in Git.\n- Define sync policy: automatic for dev, manual or gated for production.\n\n**Gotchas**\n- Auto-heal fights with hand-made emergency fixes. Teach people to commit instead.\n- Two sources of truth (Helm values in CI and in Git) cause confusion. Pick one.\n\n**Interview tip:** Say you would start with push for simplicity and move to GitOps when the number of clusters or audit needs grows. That shows judgement, not fashion.",
+      "level": "advanced",
+      "module": "Release Strategies",
+      "tags": [
+        "gitops",
+        "argocd",
+        "flux"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-061",
+      "question": "What is progressive delivery with automated analysis and rollback?",
+      "answer": "**Short answer:** Progressive delivery rolls a release out in steps, such as 5 percent, 25 percent, then 100 percent, and checks real metrics at each step. If error rate or latency crosses a threshold, the system pauses and rolls back automatically. It replaces \"deploy and watch the dashboard\" with a rule.\n\n**Building blocks**\n- A traffic-splitting mechanism: service mesh, ingress controller, or a rollout controller (Argo Rollouts, Flagger).\n- A metrics source: Prometheus, Datadog and similar.\n- Analysis rules: success conditions with thresholds and failure limits.\n- Automatic abort and rollback.\n\n```yaml\napiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: orders-api\nspec:\n  replicas: 5\n  selector:\n    matchLabels:\n      app: orders-api\n  strategy:\n    canary:\n      steps:\n        - setWeight: 10\n        - pause: {duration: 5m}\n        - analysis:\n            templates:\n              - templateName: error-rate\n        - setWeight: 50\n        - pause: {duration: 10m}\n  template:\n    metadata:\n      labels:\n        app: orders-api\n    spec:\n      containers:\n        - name: api\n          image: registry.example.com/shop/orders-api:1.5.0\n---\napiVersion: argoproj.io/v1alpha1\nkind: AnalysisTemplate\nmetadata:\n  name: error-rate\nspec:\n  metrics:\n    - name: http-5xx-ratio\n      interval: 1m\n      count: 5\n      failureLimit: 1\n      successCondition: result[0] < 0.02\n      provider:\n        prometheus:\n          address: http://prometheus.monitoring:9090\n          query: |\n            sum(rate(http_requests_total{app=\"orders-api\",code=~\"5..\"}[2m]))\n            / sum(rate(http_requests_total{app=\"orders-api\"}[2m]))\n```\n\nThe rollout sends 10 percent of traffic to the new version, waits, checks the 5xx ratio, and only then moves on. A failed check aborts and returns traffic to the stable version. Datadog can be the metric provider too.\n\n**What to analyse**\n- The golden signals: error rate, latency, saturation, plus one business metric (orders per minute).\n- Compare canary against baseline, not against a fixed number, when traffic varies by time of day.\n- Give each step enough time and traffic for a meaningful sample.\n\n**Gotchas**\n- Low traffic services cannot get statistically useful canary results. Use synthetic traffic or longer steps.\n- Bad metrics give false rollbacks or false passes. Test the analysis by deploying a known-bad version in staging.\n- Database changes are not rolled back. Keep schema changes backward compatible.\n- Sticky sessions and caches can hide problems or leak across versions.\n\n**Interview tip:** Mention that automation also needs a human override: a way to pause, promote or abort, with an audit trail.",
+      "level": "advanced",
+      "module": "Release Strategies",
+      "tags": [
+        "progressive-delivery",
+        "canary",
+        "argo-rollouts"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-062",
+      "question": "How do release trains, continuous deployment and regulated environments fit together?",
+      "answer": "**Short answer:** A release train ships on a fixed schedule, and whatever is ready rides the train. Continuous deployment ships each change as soon as it passes. In regulated environments (avionics, finance, healthcare) you still automate, but add approvals, traceability and evidence. Automation can strengthen compliance because it records everything.\n\n| Model | When it ships | Fits |\n| --- | --- | --- |\n| Continuous deployment | Every merged change | SaaS with strong tests and monitoring |\n| Continuous delivery | Always ready, human decides when | Most business systems |\n| Release train | Fixed cadence, e.g. every 2 weeks | Many teams to coordinate, customer release windows, certified software |\n\n**What regulators and auditors need**\n- **Traceability:** requirement or ticket to commit to build to test result to release.\n- **Approvals:** who approved what, when, with separation of duties (the author cannot be the only approver).\n- **Evidence:** test reports, scan reports, SBOM, build logs retained for a defined period.\n- **Controlled change:** only reviewed code from protected branches reaches production.\n- **Reproducibility:** you can rebuild or at least retrieve the exact artifact of any shipped version.\n\n**How a pipeline helps**\n- Protected branches and required approvals enforce review.\n- Environments with protected deploy jobs and approval rules give an audit trail.\n- Tags and release notes generated from merge requests.\n- Artifacts, reports and SBOMs stored with the release.\n- Change records linked automatically from the pipeline to ticketing tools.\n\n**Balance**\n- Keep the pipeline the same for all changes. Treat compliance as a built-in gate, not a separate manual process.\n- Heavy approvals for every small change defeat the purpose. Classify changes: standard (pre-approved, low risk, automated), normal (review needed), emergency (fast path, reviewed afterwards).\n- For software shipped to devices or aircraft, the deployment step may be an offline delivery, but build, test and evidence collection can still be fully automated.\n\n**Gotchas**\n- A release train can become a bottleneck if branches live long. Cut from main, stabilise briefly, and keep hotfix rules clear.\n- Feature flags help ship code before it is released, but flagged paths must still be tested and documented for auditors.\n\n**Interview tip:** Say that \"regulated\" and \"fast\" are not opposites: automation produces better evidence than manual checklists.",
+      "level": "advanced",
+      "module": "Release Strategies",
+      "tags": [
+        "release-train",
+        "compliance",
+        "audit"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-063",
+      "question": "How do you run database migrations safely in a CI/CD pipeline?",
+      "answer": "**Short answer:** Make every migration backward compatible with the previous app version, using the expand and contract pattern. Run migrations as a separate, controlled step before or after the app deploy, test them on production-like data, and never rely on rollback of data changes. Old and new app versions must both work with the schema during a rolling update.\n\n**Why it is hard.** During a rolling or canary deploy, old and new code run at the same time against one database. A migration that renames a column breaks the old code instantly.\n\n**Expand and contract**\n1. **Expand:** add the new column or table (nullable or with a default). Old code ignores it.\n2. **Deploy new code** that writes both old and new, and reads the new with fallback.\n3. **Backfill** existing rows in batches.\n4. **Switch** reads to the new column.\n5. **Contract:** in a later release remove the old column.\n\n```text\n-- release 1 (expand): safe for old code\nALTER TABLE orders ADD COLUMN currency text;\n\n-- release 3 (contract): only after no code reads the old column\nALTER TABLE orders DROP COLUMN legacy_currency;\n```\n\n**Pipeline design**\n- Keep migrations versioned in the repository, using a tool such as golang-migrate, Flyway, Liquibase or Atlas.\n- Run them as a Kubernetes Job or a pre-deploy pipeline job with its own credentials, not inside every app pod at startup, where many replicas race.\n- Take a lock or use a migration tool that locks, so only one runs.\n- Test: apply migrations to a copy of the schema in CI, and test the new schema with the old app version.\n- Watch long locks: `ALTER TABLE` on a big table can block writes. Use online techniques (`CREATE INDEX CONCURRENTLY` in PostgreSQL, add constraints as `NOT VALID` then validate).\n\n**Rollback.** Prefer roll forward with a fix. A down migration that drops data is dangerous. Back up or snapshot before risky changes.\n\n**Gotchas**\n- Combining a destructive migration and the code release in one deploy removes your rollback path.\n- Backfills in one giant transaction lock tables. Use batches.\n- Different environments with different data sizes hide performance problems.\n\n**Interview tip:** Say it simply: \"never make the database change and the code that needs it break each other; each release must work with the schema before and after\".",
+      "level": "advanced",
+      "module": "Release Strategies",
+      "tags": [
+        "database",
+        "migrations",
+        "expand-contract"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-064",
+      "question": "What is platform engineering and an internal developer platform?",
+      "answer": "**Short answer:** Platform engineering builds an internal developer platform (IDP): self-service tools and paved roads that let product teams create, deploy and run services without being infrastructure experts. The platform is treated as a product with users, a roadmap and metrics, so it reduces cognitive load instead of adding tickets.\n\n**Why it appeared.** Doing \"you build it, you run it\" with Kubernetes, pipelines, cloud, security and observability asks too much from every team. Without help each team builds its own pipeline and standards drift.\n\n**What an IDP offers**\n- **Service templates (scaffolding):** new service with repo, pipeline, Dockerfile, Helm chart, dashboards and alerts in minutes.\n- **Self-service infrastructure:** request a database or namespace through a pull request or portal, backed by Terraform or Crossplane.\n- **Golden paths:** one recommended way for common cases, well supported.\n- **Guardrails:** policies for security and cost built in, not enforced by tickets.\n- **Developer portal / catalogue:** who owns which service, docs, status (for example Backstage).\n- **Observability by default:** Datadog agent, standard dashboards, SLO templates.\n\n**Team model**\n- The platform team serves product teams as customers. They interview users, publish a roadmap and measure adoption.\n- Product teams stay responsible for their own service. The platform makes it easy, not mandatory by force.\n\n**Measuring success**\n- Time to first deploy for a new service or developer.\n- Percentage of services on the golden path.\n- Lead time and change failure rate (DORA) across teams.\n- Developer satisfaction and the number of support tickets.\n\n**Pitfalls**\n- Building a platform nobody asked for. Start with the most painful problem.\n- Forcing teams onto it with no escape hatch. Allow deviations with a reason.\n- Becoming an ops team in disguise with a ticket queue.\n- Too much abstraction hides what teams need to understand when things break.\n\n**Trade-off.** A platform costs a team's worth of people. It pays off when many teams repeat the same work. For a small organisation, good templates and shared CI includes may be enough.\n\n**Interview tip:** Tie it to your experience: shared pipeline templates and a service starter repo are the first steps of a platform, even before any portal.",
+      "level": "advanced",
+      "module": "Platform & Leadership",
+      "tags": [
+        "platform-engineering",
+        "idp",
+        "golden-path"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "devops-ci-cd-065",
+      "question": "How would you design CI for a polyglot monorepo with Go, Node and React end to end?",
+      "answer": "**Short answer:** Detect what changed, build only affected parts with language-specific cached jobs, run fast checks in parallel, produce one image per deployable service tagged by commit, and deploy only the changed services through the same promotion flow. Keep a full build on main as a safety net.\n\n**Repo layout (example)**\n\n```text\nservices/orders-api/   Go\nservices/notifier/     Node\napps/web/              React\nlibs/proto/            shared contracts\n.gitlab/ci/            per-service pipeline files\n```\n\n```mermaid\nflowchart TB\n    MR[\"Merge request or push\"] --> DET[\"Detect changes\"]\n    DET --> G[\"Go pipeline\"]\n    DET --> N[\"Node pipeline\"]\n    DET --> W[\"React pipeline\"]\n    G --> IMG[\"Build images by digest\"]\n    N --> IMG\n    W --> IMG\n    IMG --> SC[\"Scan + sign + SBOM\"]\n    SC --> ST[\"Deploy changed services to staging\"]\n    ST --> E2E[\"Smoke + e2e\"]\n    E2E --> PR[\"Promote to production\"]\n```\n\nRead it top to bottom. Detection fans out to per-language lanes, which join for packaging and deployment.\n\n```yaml\ninclude:\n  - local: .gitlab/ci/go.yml\n  - local: .gitlab/ci/node.yml\n  - local: .gitlab/ci/web.yml\n\nworkflow:\n  rules:\n    - if: $CI_PIPELINE_SOURCE == \"merge_request_event\"\n    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH\n\norders-api-pipeline:\n  trigger:\n    include: .gitlab/ci/orders-api.yml\n    strategy: depend\n  rules:\n    - changes:\n        paths: [services/orders-api/**/*, libs/proto/**/*]\n        compare_to: refs/heads/main\n    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH\n```\n\nOn main every service pipeline runs, on merge requests only changed ones.\n\n**Design decisions**\n- **Cache per language:** Go module and build cache keyed on `go.sum`, npm cache keyed on the lock file.\n- **Shared contracts:** a change in `libs/proto` regenerates code and triggers every consumer.\n- **Versioning:** one commit SHA for the repo, one image per service, tagged with the SHA. Services do not need independent semver unless you publish libraries.\n- **Deployment:** a Helm chart per service, or one umbrella chart. Promote by image digest.\n- **Contract tests** between services so independent deploys stay safe.\n- **Tooling:** at large scale a build graph tool (Nx, Turborepo, Bazel) beats hand-written path filters.\n\n**Trade-offs**\n\n| Monorepo | Many repos |\n| --- | --- |\n| Atomic cross-service changes, shared tooling | Clear ownership, simple per-repo pipelines |\n| Needs affected-only logic and good caching | Needs template sharing and version coordination |\n| Repo size and permissions grow | Cross-repo changes need several merge requests |\n\n**Gotchas**\n- Missed dependency paths cause stale deployments of a service that should have rebuilt.\n- One broken shared job blocks everyone. Version templates and test them.\n- Merge queues or merge trains prevent two safe merge requests from breaking main together.\n\n**Interview tip:** Start by asking about team size and release independence. Say that the pipeline serves the repo layout, and your key metric is the time a typical single-service change needs from commit to production.",
+      "level": "advanced",
+      "module": "CI/CD Pipelines",
+      "tags": [
+        "monorepo",
+        "design",
+        "gitlab-ci"
+      ],
+      "favorite": false
+    }
+  ]
+}

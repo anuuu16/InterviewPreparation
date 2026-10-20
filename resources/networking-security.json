@@ -1,0 +1,146 @@
+[
+  {
+    "title": "MDN: HTTP",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP",
+    "type": "official-docs",
+    "description": "The best reference for HTTP: methods, headers, caching, CORS, cookies.",
+    "level": "beginner",
+    "module": "HTTP & Web"
+  },
+  {
+    "title": "MDN: CORS",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS",
+    "type": "official-docs",
+    "description": "How cross-origin requests and preflights work.",
+    "level": "intermediate",
+    "module": "HTTP & Web"
+  },
+  {
+    "title": "MDN: Web security",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/Security",
+    "type": "official-docs",
+    "description": "Same-origin policy, CSP, secure contexts and more.",
+    "level": "intermediate",
+    "module": "Web Application Security"
+  },
+  {
+    "title": "OWASP Top 10",
+    "url": "https://owasp.org/www-project-top-ten/",
+    "type": "reference",
+    "description": "The standard list of critical web application security risks.",
+    "level": "beginner",
+    "module": "Web Application Security"
+  },
+  {
+    "title": "OWASP Cheat Sheet Series",
+    "url": "https://cheatsheetseries.owasp.org/",
+    "type": "reference",
+    "description": "Concise defensive guidance for each vulnerability class.",
+    "level": "intermediate",
+    "module": "Web Application Security"
+  },
+  {
+    "title": "OWASP API Security Top 10",
+    "url": "https://owasp.org/API-Security/",
+    "type": "reference",
+    "description": "The main API-specific risks: object-level authorisation, mass assignment, SSRF.",
+    "level": "intermediate",
+    "module": "API & Infrastructure Security"
+  },
+  {
+    "title": "OWASP ASVS",
+    "url": "https://owasp.org/www-project-application-security-verification-standard/",
+    "type": "reference",
+    "description": "A checklist standard for verifying application security.",
+    "level": "advanced",
+    "module": "Secure Design & Threat Modeling"
+  },
+  {
+    "title": "OAuth 2.0 Simplified",
+    "url": "https://www.oauth.com",
+    "type": "tutorial",
+    "description": "Clear explanations of OAuth 2.0 flows and pitfalls.",
+    "level": "intermediate",
+    "module": "Authentication & Authorization"
+  },
+  {
+    "title": "How OpenID Connect works",
+    "url": "https://openid.net/developers/how-connect-works/",
+    "type": "official-docs",
+    "description": "Identity layer on top of OAuth 2.0: ID tokens and flows.",
+    "level": "intermediate",
+    "module": "Authentication & Authorization"
+  },
+  {
+    "title": "JSON Web Token introduction",
+    "url": "https://jwt.io/introduction",
+    "type": "tutorial",
+    "description": "JWT structure, signing and common use.",
+    "level": "beginner",
+    "module": "Authentication & Authorization"
+  },
+  {
+    "title": "RFC 9110: HTTP Semantics",
+    "url": "https://www.rfc-editor.org/rfc/rfc9110",
+    "type": "reference",
+    "description": "The standard definition of HTTP methods, status codes and caching.",
+    "level": "advanced",
+    "module": "HTTP & Web"
+  },
+  {
+    "title": "RFC 8446: TLS 1.3",
+    "url": "https://www.rfc-editor.org/rfc/rfc8446",
+    "type": "reference",
+    "description": "The TLS 1.3 specification.",
+    "level": "advanced",
+    "module": "TLS & Cryptography"
+  },
+  {
+    "title": "The Illustrated TLS 1.3 Connection",
+    "url": "https://tls13.xargs.org",
+    "type": "tool",
+    "description": "Every byte of a TLS 1.3 handshake explained.",
+    "level": "intermediate",
+    "module": "TLS & Cryptography"
+  },
+  {
+    "title": "How DNS works",
+    "url": "https://howdns.works",
+    "type": "tutorial",
+    "description": "A short illustrated story of DNS resolution.",
+    "level": "beginner",
+    "module": "DNS & Delivery"
+  },
+  {
+    "title": "Cloudflare Learning Center",
+    "url": "https://www.cloudflare.com/learning/",
+    "type": "tutorial",
+    "description": "Plain explanations of networking, DNS, CDNs, DDoS and TLS.",
+    "level": "beginner",
+    "module": "Network Fundamentals"
+  },
+  {
+    "title": "Let's Encrypt documentation",
+    "url": "https://letsencrypt.org/docs/",
+    "type": "official-docs",
+    "description": "How free automated certificates and ACME work.",
+    "level": "intermediate",
+    "module": "TLS & Cryptography"
+  },
+  {
+    "title": "Mozilla Web Security guidelines",
+    "url": "https://infosec.mozilla.org/guidelines/web_security",
+    "type": "reference",
+    "description": "Recommended headers, cookies and TLS settings.",
+    "level": "intermediate",
+    "module": "Web Application Security"
+  },
+  {
+    "title": "Security Headers",
+    "url": "https://securityheaders.com",
+    "type": "tool",
+    "description": "Scan a site's HTTP security headers.",
+    "level": "beginner",
+    "module": "Web Application Security"
+  }
+]

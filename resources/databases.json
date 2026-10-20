@@ -1,0 +1,138 @@
+[
+  {
+    "title": "PostgreSQL documentation",
+    "url": "https://www.postgresql.org/docs/current/",
+    "type": "official-docs",
+    "description": "The official, thorough manual for PostgreSQL.",
+    "level": "beginner",
+    "module": "PostgreSQL"
+  },
+  {
+    "title": "PostgreSQL tutorial",
+    "url": "https://www.postgresql.org/docs/current/tutorial.html",
+    "type": "tutorial",
+    "description": "Official introduction: SQL, joins, aggregates, transactions.",
+    "level": "beginner",
+    "module": "SQL Fundamentals"
+  },
+  {
+    "title": "Using EXPLAIN (PostgreSQL)",
+    "url": "https://www.postgresql.org/docs/current/using-explain.html",
+    "type": "official-docs",
+    "description": "How to read query plans and costs.",
+    "level": "intermediate",
+    "module": "Indexing & Query Performance"
+  },
+  {
+    "title": "Indexes (PostgreSQL)",
+    "url": "https://www.postgresql.org/docs/current/indexes.html",
+    "type": "official-docs",
+    "description": "Index types, multicolumn, partial and expression indexes.",
+    "level": "intermediate",
+    "module": "Indexing & Query Performance"
+  },
+  {
+    "title": "Concurrency control and MVCC (PostgreSQL)",
+    "url": "https://www.postgresql.org/docs/current/mvcc.html",
+    "type": "official-docs",
+    "description": "Isolation levels, locks and how MVCC works.",
+    "level": "intermediate",
+    "module": "Transactions & Concurrency"
+  },
+  {
+    "title": "Use The Index, Luke",
+    "url": "https://use-the-index-luke.com",
+    "type": "book",
+    "description": "Free guide to SQL indexing and performance for developers.",
+    "level": "intermediate",
+    "module": "Indexing & Query Performance"
+  },
+  {
+    "title": "SQL Server documentation",
+    "url": "https://learn.microsoft.com/sql/sql-server/",
+    "type": "official-docs",
+    "description": "Official docs for SQL Server: engine, security, performance.",
+    "level": "beginner",
+    "module": "SQL Server"
+  },
+  {
+    "title": "Transact-SQL reference",
+    "url": "https://learn.microsoft.com/sql/t-sql/",
+    "type": "reference",
+    "description": "T-SQL statements, functions and data types.",
+    "level": "intermediate",
+    "module": "SQL Server"
+  },
+  {
+    "title": "SQLite documentation",
+    "url": "https://www.sqlite.org/docs.html",
+    "type": "official-docs",
+    "description": "A small SQL engine that is perfect for trying standard SQL.",
+    "level": "beginner",
+    "module": "SQL Fundamentals"
+  },
+  {
+    "title": "SQLBolt",
+    "url": "https://sqlbolt.com",
+    "type": "tutorial",
+    "description": "Interactive lessons: select, joins, aggregates, subqueries.",
+    "level": "beginner",
+    "module": "SQL Fundamentals"
+  },
+  {
+    "title": "Mode SQL Tutorial",
+    "url": "https://mode.com/sql-tutorial/",
+    "type": "tutorial",
+    "description": "From basic queries to window functions, with real datasets.",
+    "level": "beginner",
+    "module": "SQL Interview Problems"
+  },
+  {
+    "title": "Redis documentation",
+    "url": "https://redis.io/docs/",
+    "type": "official-docs",
+    "description": "Data types, persistence, caching patterns and clustering.",
+    "level": "intermediate",
+    "module": "NoSQL & Caching"
+  },
+  {
+    "title": "MongoDB manual",
+    "url": "https://www.mongodb.com/docs/manual/",
+    "type": "official-docs",
+    "description": "Documents, indexes, aggregation and replication.",
+    "level": "intermediate",
+    "module": "NoSQL & Caching"
+  },
+  {
+    "title": "PgBouncer",
+    "url": "https://www.pgbouncer.org",
+    "type": "official-docs",
+    "description": "Connection pooling for PostgreSQL.",
+    "level": "intermediate",
+    "module": "Scaling & Replication"
+  },
+  {
+    "title": "Designing Data-Intensive Applications",
+    "url": "https://dataintensive.net/",
+    "type": "book",
+    "description": "Storage engines, replication, partitioning and transactions in depth.",
+    "level": "advanced",
+    "module": "Storage Internals"
+  },
+  {
+    "title": "Jepsen",
+    "url": "https://jepsen.io",
+    "type": "article",
+    "description": "Independent analyses of database consistency claims.",
+    "level": "advanced",
+    "module": "Scaling & Replication"
+  },
+  {
+    "title": "Evolutionary database design (Martin Fowler)",
+    "url": "https://martinfowler.com/articles/evodb.html",
+    "type": "article",
+    "description": "How to change schemas continuously and safely.",
+    "level": "intermediate",
+    "module": "Operations & Migrations"
+  }
+]

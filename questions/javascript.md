@@ -2,7 +2,7 @@
 
 [← Back to index](../README.md) · [⭐ Favorites](favorites.md)
 
-66 questions · 1 favorites
+66 questions · 1 favorites · [📚 Resources](#resources)
 
 ## Contents
 
@@ -2624,3 +2624,48 @@ module.exports = {
 **Interview tip:** The mature answer is "micro-frontends solve an organisation problem, not a technical one". Use them when many teams need to ship independently, and avoid them for a small team.
 
 _Module: Modules & Tooling · Tags: micro-frontends, module-federation, architecture_
+
+---
+
+## Resources
+
+Where to read more at the source. Official docs and references come first.
+
+**Official docs**
+
+- [MDN JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) — The most trusted reference for the language, with compatibility tables. _(beginner)_
+- [npm documentation](https://docs.npmjs.com) — package.json, scripts, versions, workspaces and publishing. _(beginner)_
+- [web.dev](https://web.dev) — Google's guides on performance, Core Web Vitals, accessibility and security. _(intermediate)_
+
+**Reference**
+
+- [ECMAScript Language Specification](https://tc39.es/ecma262/) — The definitive rules of the language. Hard to read but final. _(advanced)_
+- [OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/) — Practical security guidance: XSS, CSRF, authentication, dependencies. _(intermediate)_
+
+**Tutorial**
+
+- [MDN JavaScript Guide](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide) — Step-by-step guide from basics to advanced features. _(beginner)_
+- [The Modern JavaScript Tutorial](https://javascript.info) — Clear, example-driven tutorial covering the language, the browser and more. _(beginner)_
+- [Using promises (MDN)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises) — Chaining, error handling and common mistakes. _(beginner)_
+- [JavaScript modules (MDN)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules) — import and export, dynamic import and how browsers load modules. _(intermediate)_
+
+**Book**
+
+- [You Don't Know JS Yet](https://github.com/getify/You-Dont-Know-JS) — Free book series that goes deep on scope, closures, this and types. _(intermediate)_
+
+**Article**
+
+- [The event loop (MDN)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Event_loop) — The call stack, task queue and microtasks explained. _(intermediate)_
+- [V8 blog](https://v8.dev/blog) — How the V8 engine works and gets faster: JIT, GC, new features. _(advanced)_
+
+**Video**
+
+- [Jake Archibald: In The Loop](https://www.youtube.com/watch?v=cCOL7MC4Pl0) — A famous talk that makes tasks, microtasks and rendering click. _(intermediate)_
+
+**Tool**
+
+- [Can I use](https://caniuse.com) — Browser support tables for web features. _(beginner)_
+
+**Repository**
+
+- [TC39 proposals](https://github.com/tc39/proposals) — Every proposed language feature and its stage: what is coming next. _(advanced)_

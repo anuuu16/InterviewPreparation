@@ -2,7 +2,7 @@
 
 [← Back to index](../README.md) · [⭐ Favorites](favorites.md)
 
-65 questions · 0 favorites
+65 questions · 0 favorites · [📚 Resources](#resources)
 
 ## Contents
 
@@ -2949,3 +2949,41 @@ What a durable, distributed version adds:
 **Interview tip:** the follow-up is always "what if the worker crashes mid-job?". Answer with lease expiry, retry and an idempotent handler.
 
 _Module: Architecture & NestJS · Tags: system-design, queues, concurrency, coding_
+
+---
+
+## Resources
+
+Where to read more at the source. Official docs and references come first.
+
+**Official docs**
+
+- [Node.js API documentation](https://nodejs.org/docs/latest/api/) — Complete reference for every core module. _(beginner)_
+- [The Node.js event loop, timers and process.nextTick](https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick) — The phases of the event loop explained by the Node team. _(intermediate)_
+- [Don't block the event loop](https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop) — How to keep a server responsive: partitioning and offloading work. _(intermediate)_
+- [Node.js diagnostics guides](https://nodejs.org/en/learn/diagnostics/user-journey) — Profiling, memory leaks, flame graphs and live debugging. _(intermediate)_
+- [Node.js security best practices](https://nodejs.org/en/learn/getting-started/security-best-practices) — Threat model and practical hardening steps. _(intermediate)_
+- [Node.js test runner](https://nodejs.org/api/test.html) — The built-in node:test module: tests, mocks and coverage. _(intermediate)_
+- [NestJS documentation](https://docs.nestjs.com) — Modules, providers, guards, pipes, interceptors and testing. _(intermediate)_
+- [Express documentation](https://expressjs.com) — Routing, middleware and error handling. _(beginner)_
+- [Fastify documentation](https://fastify.dev/docs/latest/) — Fast framework with schemas, plugins and hooks. _(intermediate)_
+- [BullMQ documentation](https://docs.bullmq.io) — Redis-backed queues: jobs, retries, rate limits and flows. _(intermediate)_
+- [Pino logger](https://getpino.io) — Fast structured JSON logging for Node. _(intermediate)_
+
+**Reference**
+
+- [Node.js release schedule](https://nodejs.org/en/about/previous-releases) — Which versions are Current, Active LTS or end of life. _(intermediate)_
+- [libuv design overview](https://docs.libuv.org/en/v1.x/design.html) — How the event loop and thread pool work underneath Node. _(advanced)_
+- [OWASP Node.js Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html) — Focused checklist for securing Node apps. _(intermediate)_
+
+**Tutorial**
+
+- [Learn Node.js](https://nodejs.org/en/learn) — Official guides: getting started, asynchronous work, diagnostics, TypeScript. _(beginner)_
+
+**Article**
+
+- [V8 blog](https://v8.dev/blog) — How the engine behind Node works: GC, JIT and new features. _(advanced)_
+
+**Repository**
+
+- [Node.js best practices (community)](https://github.com/goldbergyoni/nodebestpractices) — A very large, well-organised checklist for structure, errors, security and production. _(intermediate)_

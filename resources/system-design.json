@@ -1,0 +1,106 @@
+[
+  {
+    "title": "System Design Primer",
+    "url": "https://github.com/donnemartin/system-design-primer",
+    "type": "repo",
+    "description": "The most popular free guide: building blocks, trade-offs and worked designs.",
+    "level": "beginner",
+    "module": "Approach & Estimation"
+  },
+  {
+    "title": "ByteByteGo",
+    "url": "https://bytebytego.com",
+    "type": "tutorial",
+    "description": "Illustrated system-design explanations and a newsletter.",
+    "level": "beginner",
+    "module": "Case Studies"
+  },
+  {
+    "title": "High Scalability",
+    "url": "https://highscalability.com",
+    "type": "article",
+    "description": "Architecture write-ups of real large-scale systems.",
+    "level": "intermediate",
+    "module": "Scaling Building Blocks"
+  },
+  {
+    "title": "Designing Data-Intensive Applications",
+    "url": "https://dataintensive.net/",
+    "type": "book",
+    "description": "The deepest single book on replication, partitioning, consistency and streams.",
+    "level": "advanced",
+    "module": "Data & Storage"
+  },
+  {
+    "title": "Latency numbers every programmer should know",
+    "url": "https://gist.github.com/jboner/2841832",
+    "type": "reference",
+    "description": "Orders of magnitude for memory, disk and network operations.",
+    "level": "beginner",
+    "module": "Approach & Estimation"
+  },
+  {
+    "title": "AWS Builders' Library",
+    "url": "https://aws.amazon.com/builders-library/",
+    "type": "article",
+    "description": "How Amazon builds reliable systems: timeouts, retries, shuffle sharding.",
+    "level": "advanced",
+    "module": "Reliability & Resilience"
+  },
+  {
+    "title": "Site Reliability Engineering book (Google)",
+    "url": "https://sre.google/sre-book/table-of-contents/",
+    "type": "book",
+    "description": "SLOs, load balancing, cascading failures and incident response.",
+    "level": "intermediate",
+    "module": "Reliability & Resilience"
+  },
+  {
+    "title": "Azure Architecture Center",
+    "url": "https://learn.microsoft.com/azure/architecture/",
+    "type": "reference",
+    "description": "Reference architectures and cloud design patterns.",
+    "level": "intermediate",
+    "module": "Scaling Building Blocks"
+  },
+  {
+    "title": "Cloudflare Learning Center",
+    "url": "https://www.cloudflare.com/learning/",
+    "type": "tutorial",
+    "description": "Plain explanations of CDNs, DNS, DDoS, load balancing and more.",
+    "level": "beginner",
+    "module": "Messaging & Streaming"
+  },
+  {
+    "title": "Martin Kleppmann's blog",
+    "url": "https://martin.kleppmann.com",
+    "type": "article",
+    "description": "Essays on distributed systems, consistency and data.",
+    "level": "advanced",
+    "module": "Data & Storage"
+  },
+  {
+    "title": "Raft consensus visualisation",
+    "url": "https://raft.github.io",
+    "type": "tool",
+    "description": "Interactive explanation of leader election and replication.",
+    "level": "advanced",
+    "module": "Reliability & Resilience"
+  },
+  {
+    "title": "Netflix Technology Blog",
+    "url": "https://netflixtechblog.com",
+    "type": "article",
+    "description": "Real streaming and resilience architecture stories.",
+    "level": "intermediate",
+    "module": "Case Studies"
+  },
+  {
+    "title": "Martin Fowler: Software architecture guide",
+    "url": "https://martinfowler.com/architecture/",
+    "type": "article",
+    "description": "Concepts and trade-offs in software architecture.",
+    "level": "intermediate",
+    "module": "Design Leadership"
+  }
+]

@@ -1,0 +1,145 @@
+[
+  {
+    "title": "Azure documentation",
+    "url": "https://learn.microsoft.com/azure/",
+    "type": "official-docs",
+    "description": "The official docs for every Azure service, with quickstarts and tutorials.",
+    "level": "beginner"
+  },
+  {
+    "title": "Azure Fundamentals (AZ-900) certification",
+    "url": "https://learn.microsoft.com/credentials/certifications/azure-fundamentals/",
+    "type": "course",
+    "description": "Exam outline and free learning paths for cloud basics on Azure.",
+    "level": "beginner",
+    "module": "Cloud Fundamentals"
+  },
+  {
+    "title": "Azure Data Fundamentals (DP-900) certification",
+    "url": "https://learn.microsoft.com/credentials/certifications/azure-data-fundamentals/",
+    "type": "course",
+    "description": "Exam outline and learning paths for core data concepts on Azure.",
+    "level": "beginner",
+    "module": "Storage & Data"
+  },
+  {
+    "title": "Azure Architecture Center",
+    "url": "https://learn.microsoft.com/azure/architecture/",
+    "type": "reference",
+    "description": "Reference architectures, design patterns and guidance.",
+    "level": "intermediate",
+    "module": "Architecture & Resilience"
+  },
+  {
+    "title": "Azure Well-Architected Framework",
+    "url": "https://learn.microsoft.com/azure/well-architected/",
+    "type": "reference",
+    "description": "Five pillars with checklists: reliability, security, cost, operations, performance.",
+    "level": "intermediate",
+    "module": "Architecture & Resilience"
+  },
+  {
+    "title": "Cloud Adoption Framework",
+    "url": "https://learn.microsoft.com/azure/cloud-adoption-framework/",
+    "type": "reference",
+    "description": "Strategy, landing zones, migration and governance guidance.",
+    "level": "intermediate",
+    "module": "Cost & Governance"
+  },
+  {
+    "title": "Azure pricing calculator",
+    "url": "https://azure.microsoft.com/pricing/calculator/",
+    "type": "tool",
+    "description": "Estimate monthly cost for a design before building it.",
+    "level": "beginner",
+    "module": "Cost & Governance"
+  },
+  {
+    "title": "Azure Kubernetes Service (AKS)",
+    "url": "https://learn.microsoft.com/azure/aks/",
+    "type": "official-docs",
+    "description": "Node pools, networking, identity, upgrades and operations.",
+    "level": "intermediate",
+    "module": "Compute & Containers"
+  },
+  {
+    "title": "Azure CLI reference",
+    "url": "https://learn.microsoft.com/cli/azure/",
+    "type": "reference",
+    "description": "Every az command with examples.",
+    "level": "beginner",
+    "module": "Infrastructure as Code & DevOps"
+  },
+  {
+    "title": "Bicep documentation",
+    "url": "https://learn.microsoft.com/azure/azure-resource-manager/bicep/",
+    "type": "official-docs",
+    "description": "Declarative infrastructure as code for Azure.",
+    "level": "intermediate",
+    "module": "Infrastructure as Code & DevOps"
+  },
+  {
+    "title": "Microsoft Entra documentation",
+    "url": "https://learn.microsoft.com/entra/identity/",
+    "type": "official-docs",
+    "description": "Identity: users, apps, managed identities, conditional access.",
+    "level": "intermediate",
+    "module": "Identity & Security"
+  },
+  {
+    "title": "Azure Key Vault",
+    "url": "https://learn.microsoft.com/azure/key-vault/",
+    "type": "official-docs",
+    "description": "Secrets, keys and certificates with access control.",
+    "level": "intermediate",
+    "module": "Identity & Security"
+  },
+  {
+    "title": "Azure Virtual Network",
+    "url": "https://learn.microsoft.com/azure/virtual-network/",
+    "type": "official-docs",
+    "description": "VNets, subnets, NSGs, peering and private endpoints.",
+    "level": "intermediate",
+    "module": "Networking"
+  },
+  {
+    "title": "Azure Service Bus",
+    "url": "https://learn.microsoft.com/azure/service-bus-messaging/",
+    "type": "official-docs",
+    "description": "Queues, topics, dead-lettering and sessions.",
+    "level": "intermediate",
+    "module": "Messaging & Integration"
+  },
+  {
+    "title": "Azure Monitor",
+    "url": "https://learn.microsoft.com/azure/azure-monitor/",
+    "type": "official-docs",
+    "description": "Metrics, logs, alerts and Application Insights.",
+    "level": "intermediate",
+    "module": "Monitoring & Operations"
+  },
+  {
+    "title": "Azure Cosmos DB",
+    "url": "https://learn.microsoft.com/azure/cosmos-db/",
+    "type": "official-docs",
+    "description": "Partitioning, consistency levels and request units.",
+    "level": "intermediate",
+    "module": "Storage & Data"
+  },
+  {
+    "title": "Azure SQL",
+    "url": "https://learn.microsoft.com/azure/azure-sql/",
+    "type": "official-docs",
+    "description": "Azure SQL Database and Managed Instance: HA, backups, scaling.",
+    "level": "intermediate",
+    "module": "Storage & Data"
+  },
+  {
+    "title": "Azure and AWS services comparison",
+    "url": "https://learn.microsoft.com/azure/architecture/aws-professional/services",
+    "type": "reference",
+    "description": "Equivalent services across Azure and AWS.",
+    "level": "intermediate",
+    "module": "Cloud Fundamentals"
+  }
+]

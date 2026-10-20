@@ -2,7 +2,7 @@
 
 [← Back to index](../README.md) · [⭐ Favorites](favorites.md)
 
-57 questions · 0 favorites
+57 questions · 0 favorites · [📚 Resources](#resources)
 
 ## Contents
 
@@ -2771,3 +2771,46 @@ After the CRD is applied, `kubectl get orderreports` works like any built-in typ
 **Interview tip:** Say "the CRD is the data, the operator is the behaviour", and mention you would use an existing operator before writing one.
 
 _Module: Internals · Tags: crd, operators, extensibility_
+
+---
+
+## Resources
+
+Where to read more at the source. Official docs and references come first.
+
+**Official docs**
+
+- [Kubernetes documentation](https://kubernetes.io/docs/home/) — The official docs: concepts, tasks, tutorials and reference. _(beginner)_
+- [Kubernetes concepts](https://kubernetes.io/docs/concepts/) — What each object is and how it works: Pods, Services, Deployments, storage. _(beginner)_
+- [Debug applications](https://kubernetes.io/docs/tasks/debug/debug-application/) — How to debug Pods, Services and failing deployments step by step. _(intermediate)_
+- [Configure liveness, readiness and startup probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) — Probe types, timings and common mistakes. _(beginner)_
+- [Resource management for Pods and containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — Requests, limits, QoS classes and how the kernel enforces them. _(intermediate)_
+- [Production best practices](https://kubernetes.io/docs/setup/best-practices/) — Checklists for running clusters in production. _(intermediate)_
+- [Security overview](https://kubernetes.io/docs/concepts/security/) — RBAC, Pod Security Standards, network policies, secrets and supply chain. _(intermediate)_
+- [Gateway API](https://gateway-api.sigs.k8s.io) — The successor to Ingress: routes, gateways and policies. _(intermediate)_
+- [Helm documentation](https://helm.sh/docs/) — Charts, values, templates and releases. _(intermediate)_
+- [Argo CD documentation](https://argo-cd.readthedocs.io/en/stable/) — GitOps continuous delivery to Kubernetes. _(intermediate)_
+- [Azure Kubernetes Service (AKS) documentation](https://learn.microsoft.com/azure/aks/) — Node pools, identity, networking, upgrades and operations on AKS. _(intermediate)_
+
+**Reference**
+
+- [kubectl quick reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/) — The commands you need every day, in one page. _(beginner)_
+- [Kubernetes API reference](https://kubernetes.io/docs/reference/kubernetes-api/) — Every field of every resource. _(intermediate)_
+
+**Tutorial**
+
+- [Learn Kubernetes Basics](https://kubernetes.io/docs/tutorials/kubernetes-basics/) — Interactive tutorial: create, expose, scale and update an app. _(beginner)_
+- [Horizontal Pod Autoscaler walkthrough](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/) — Set up and watch HPA scale a Deployment. _(intermediate)_
+- [Kubebuilder Book](https://book.kubebuilder.io) — Build operators and controllers with controller-runtime. _(advanced)_
+
+**Article**
+
+- [Kubernetes blog](https://kubernetes.io/blog/) — Release notes, deprecations and design explanations. _(intermediate)_
+
+**Tool**
+
+- [Datadog: Kubernetes monitoring](https://docs.datadoghq.com/containers/kubernetes/) — Install the agent, collect metrics, logs and traces from a cluster. _(intermediate)_
+
+**Repository**
+
+- [Kubernetes the Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way) — Bootstrap a cluster by hand to understand every component. _(advanced)_

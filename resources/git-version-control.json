@@ -1,0 +1,121 @@
+[
+  {
+    "title": "Pro Git",
+    "url": "https://git-scm.com/book/en/v2",
+    "type": "book",
+    "description": "The official free book: from basics to internals.",
+    "level": "beginner",
+    "module": "Git Fundamentals"
+  },
+  {
+    "title": "Git reference documentation",
+    "url": "https://git-scm.com/docs",
+    "type": "official-docs",
+    "description": "Manual pages for every Git command.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Learn Git Branching",
+    "url": "https://learngitbranching.js.org",
+    "type": "tutorial",
+    "description": "Interactive visual tutorial for branching, merging and rebasing.",
+    "level": "beginner",
+    "module": "Branching & Merging"
+  },
+  {
+    "title": "Oh Shit, Git!?!",
+    "url": "https://ohshitgit.com",
+    "type": "tutorial",
+    "description": "How to get out of common Git mistakes in plain English.",
+    "level": "beginner",
+    "module": "Undo & Recovery"
+  },
+  {
+    "title": "Atlassian Git tutorials",
+    "url": "https://www.atlassian.com/git/tutorials",
+    "type": "tutorial",
+    "description": "Clear tutorials on workflows, rebasing, hooks and more.",
+    "level": "beginner",
+    "module": "Workflows & Strategy"
+  },
+  {
+    "title": "Git internals (Pro Git)",
+    "url": "https://git-scm.com/book/en/v2/Git-Internals-Plumbing-and-Porcelain",
+    "type": "official-docs",
+    "description": "Objects, refs and the plumbing commands under Git.",
+    "level": "advanced",
+    "module": "Git Internals"
+  },
+  {
+    "title": "Think Like (a) Git",
+    "url": "https://think-like-a-git.net",
+    "type": "tutorial",
+    "description": "A mental model of Git as a graph of commits.",
+    "level": "intermediate",
+    "module": "Git Fundamentals"
+  },
+  {
+    "title": "Trunk Based Development",
+    "url": "https://trunkbaseddevelopment.com",
+    "type": "reference",
+    "description": "Short-lived branches, feature flags and release approaches.",
+    "level": "intermediate",
+    "module": "Workflows & Strategy"
+  },
+  {
+    "title": "A successful Git branching model",
+    "url": "https://nvie.com/posts/a-successful-git-branching-model/",
+    "type": "article",
+    "description": "The original GitFlow article, with its trade-offs.",
+    "level": "intermediate",
+    "module": "Workflows & Strategy"
+  },
+  {
+    "title": "GitHub flow",
+    "url": "https://docs.github.com/get-started/using-github/github-flow",
+    "type": "official-docs",
+    "description": "A lightweight branch-and-pull-request workflow.",
+    "level": "beginner",
+    "module": "Workflows & Strategy"
+  },
+  {
+    "title": "Conventional Commits",
+    "url": "https://www.conventionalcommits.org",
+    "type": "reference",
+    "description": "A specification for readable commit messages and automated changelogs.",
+    "level": "beginner",
+    "module": "Team Practice & Leadership"
+  },
+  {
+    "title": "Semantic Versioning",
+    "url": "https://semver.org",
+    "type": "reference",
+    "description": "Version numbers and what they promise.",
+    "level": "beginner",
+    "module": "Team Practice & Leadership"
+  },
+  {
+    "title": "git filter-repo",
+    "url": "https://github.com/newren/git-filter-repo",
+    "type": "repo",
+    "description": "The recommended tool for rewriting history at scale.",
+    "level": "advanced",
+    "module": "Rewriting History"
+  },
+  {
+    "title": "Git LFS",
+    "url": "https://git-lfs.com",
+    "type": "official-docs",
+    "description": "Store large files outside the main repository history.",
+    "level": "intermediate",
+    "module": "Repository Management"
+  },
+  {
+    "title": "GitLab Git documentation",
+    "url": "https://docs.gitlab.com/topics/git/",
+    "type": "official-docs",
+    "description": "Git guides inside GitLab: branches, merge requests, undoing changes.",
+    "level": "beginner",
+    "module": "Remotes & Collaboration"
+  }
+]

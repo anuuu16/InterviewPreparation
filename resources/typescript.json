@@ -1,0 +1,102 @@
+[
+  {
+    "title": "TypeScript documentation",
+    "url": "https://www.typescriptlang.org/docs/",
+    "type": "official-docs",
+    "description": "Handbook, reference and release notes from the TypeScript team.",
+    "level": "beginner"
+  },
+  {
+    "title": "The TypeScript Handbook",
+    "url": "https://www.typescriptlang.org/docs/handbook/intro.html",
+    "type": "official-docs",
+    "description": "The core guide to the type system, from everyday types to generics.",
+    "level": "beginner",
+    "module": "Type Basics"
+  },
+  {
+    "title": "TSConfig reference",
+    "url": "https://www.typescriptlang.org/tsconfig/",
+    "type": "reference",
+    "description": "Every compiler option explained, with defaults and examples.",
+    "level": "intermediate",
+    "module": "Configuration & Strictness"
+  },
+  {
+    "title": "TypeScript Playground",
+    "url": "https://www.typescriptlang.org/play",
+    "type": "tool",
+    "description": "Try types in the browser and see the emitted JavaScript and errors.",
+    "level": "beginner",
+    "module": "Type Basics"
+  },
+  {
+    "title": "TypeScript release notes",
+    "url": "https://www.typescriptlang.org/docs/handbook/release-notes/overview.html",
+    "type": "reference",
+    "description": "What each version added, with examples.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Migrating from JavaScript",
+    "url": "https://www.typescriptlang.org/docs/handbook/migrating-from-javascript.html",
+    "type": "official-docs",
+    "description": "A step-by-step approach to adopting TypeScript in a JS codebase.",
+    "level": "intermediate",
+    "module": "Migration & Leadership"
+  },
+  {
+    "title": "TypeScript performance wiki",
+    "url": "https://github.com/microsoft/TypeScript/wiki/Performance",
+    "type": "reference",
+    "description": "Diagnosing slow type checking and keeping builds fast.",
+    "level": "advanced",
+    "module": "Compiler Internals & Performance"
+  },
+  {
+    "title": "Type Challenges",
+    "url": "https://github.com/type-challenges/type-challenges",
+    "type": "repo",
+    "description": "A collection of type-level exercises from easy to extreme.",
+    "level": "advanced",
+    "module": "Type Challenges"
+  },
+  {
+    "title": "Effective TypeScript",
+    "url": "https://effectivetypescript.com/",
+    "type": "book",
+    "description": "62 specific ways to improve your TypeScript, with a companion blog.",
+    "level": "intermediate"
+  },
+  {
+    "title": "TypeScript Deep Dive",
+    "url": "https://basarat.gitbook.io/typescript/",
+    "type": "book",
+    "description": "Free book with practical explanations of language features.",
+    "level": "intermediate"
+  },
+  {
+    "title": "typescript-eslint",
+    "url": "https://typescript-eslint.io/",
+    "type": "official-docs",
+    "description": "Linting rules and configs for TypeScript projects.",
+    "level": "intermediate",
+    "module": "Configuration & Strictness"
+  },
+  {
+    "title": "Zod",
+    "url": "https://zod.dev",
+    "type": "official-docs",
+    "description": "Runtime validation with TypeScript type inference.",
+    "level": "intermediate",
+    "module": "Frameworks & Libraries"
+  },
+  {
+    "title": "DefinitelyTyped",
+    "url": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "type": "repo",
+    "description": "Type definitions for JavaScript libraries.",
+    "level": "intermediate",
+    "module": "Modules & Tooling"
+  }
+]

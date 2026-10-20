@@ -1,0 +1,787 @@
+{
+  "name": "Leadership & Behavioral",
+  "questions": [
+    {
+      "id": "leadership-behavioral-001",
+      "question": "How do behavioural interviews work, and what are interviewers actually scoring?",
+      "answer": "**Short answer:** A behavioural interview asks about things you did in the past, because past behaviour is the best predictor of future behaviour. The interviewer scores evidence, not charm. They look for a clear situation, your own actions, a real result and what you learned.\n\n#### What is being scored\n\nMost companies use a rubric with a few competencies, for example ownership, communication, conflict handling, influence, mentoring and judgement. Each interviewer writes notes, then a group compares them. A good story gives them quotes to write down.\n\n| They ask | They are really testing |\n| --- | --- |\n| \"Tell me about a time you disagreed...\" | Can you disagree with respect and still commit? |\n| \"Tell me about a failure...\" | Honesty, learning, accountability |\n| \"How did you handle a weak performer?\" | Care plus standards, and fairness |\n| \"Tell me about a hard decision...\" | Judgement, trade-offs, communication |\n\n**Example answer (framework, not your story):** \"In [project] I noticed [problem]. I owned [specific action]. The result was [metric]. Next time I would [lesson].\"\n\n**Common mistakes**\n- Answering with \"we\" for everything. They cannot score what you did.\n- Talking in general (\"I usually...\") instead of one real event.\n- Telling a story with no result.\n- Choosing stories where you were a passive observer.\n\n**Interview tip:** For leadership roles, expect the interviewer to probe: \"What was your exact role?\" and \"What would you do differently?\" Prepare for those two follow-ups in every story. Also expect the question \"Who disagreed with you?\" because it shows how you handled other people.",
+      "level": "basic",
+      "module": "Interview Approach",
+      "tags": [
+        "behavioural",
+        "interview-basics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-002",
+      "question": "What is the STAR method, and how do CAR and SOAR compare?",
+      "answer": "**Short answer:** STAR means Situation, Task, Action, Result. It is a way to keep a story short, in order and focused on what you did. CAR and SOAR are lighter or richer versions of the same idea.\n\n#### The shapes\n\n| Method | Steps | Best when |\n| --- | --- | --- |\n| STAR | Situation, Task, Action, Result | The standard. Safe for any behavioural question |\n| CAR | Context, Action, Result | You have little time, or the context is simple |\n| SOAR | Situation, Obstacle, Action, Result | The story is about overcoming a hard obstacle |\n\nA useful time split is about 15 percent setting the scene, 60 percent actions and 25 percent result and learning. Most weak answers spend too long on the situation.\n\n**Example answer (template to fill with your own story):**\n- Situation: \"Our [service] had [problem] before [event].\"\n- Task: \"As tech lead I was responsible for [goal].\"\n- Action: \"I did three things. First [action]. Second [action]. Third [action]. I involved [people] because [reason].\"\n- Result: \"[Metric] improved from [before] to [after]. The team [outcome]. I learned [lesson].\"\n\n**Common mistakes**\n- Skipping the result, or saying only \"it went well\".\n- Listing tasks with no reasons. Explain why you chose each action.\n- Hiding the hard part, for example the disagreement.\n\n**Interview tip:** Add a short \"reflection\" line after the result. For a lead it is often the strongest sentence: \"What I would do differently is...\" Keep each story under about two to three minutes. Expect the follow-up \"What did you personally do versus the team?\"",
+      "level": "basic",
+      "module": "Interview Approach",
+      "tags": [
+        "star",
+        "storytelling"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-003",
+      "question": "How do you prepare a story bank for behavioural interviews?",
+      "answer": "**Short answer:** Write eight to ten real stories from your career, each rich enough to answer several questions. Map each story to competencies, so you are never starting from zero in the room.\n\n#### Build the bank\n\nFor each story write: situation in two lines, your actions, the result with a number, and what you learned. Practise each aloud until it takes about two minutes.\n\n| Story slot | Typical competencies it covers |\n| --- | --- |\n| A project you led end to end | Ownership, planning, delivery |\n| A conflict between people | Conflict, empathy, communication |\n| A technical decision that went wrong | Failure, learning, humility |\n| A time you influenced without authority | Influence, stakeholder management |\n| A time you mentored someone | Coaching, growth |\n| A production incident you led | Calm under pressure, process |\n| A time you handled ambiguity | Judgement, initiative |\n| A time you improved a process | Impact, continuous improvement |\n| A hard people situation (performance, burnout) | Care, fairness |\n| A time you said no | Prioritisation, courage |\n\n**Example answer (how one story is reused):** The incident story can answer \"tell me about pressure\", \"tell me about a failure\" and \"tell me about leading others\". Only the emphasis changes.\n\n**Common mistakes**\n- Preparing stories only from the last month.\n- Using one story for every question.\n- Memorising word for word. Memorise the bullets, not the sentences.\n\n**Interview tip:** Keep the bank as a one-page table. Before each interview read the company's values and pick which stories fit. Include at least two stories where things went badly, because interviewers trust people who can talk about that.",
+      "level": "basic",
+      "module": "Interview Approach",
+      "tags": [
+        "story-bank",
+        "preparation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-004",
+      "question": "How do you answer \"Tell me about yourself\" as a tech lead?",
+      "answer": "**Short answer:** Use present, past, future. Start with who you are now, show the path that got you here in a few highlights, and finish with why this role is the next step. Aim for about ninety seconds.\n\n#### The formula\n\n| Part | Content | Time |\n| --- | --- | --- |\n| Present | Your role, team size, what you own, one headline result | 30 seconds |\n| Past | Two or three steps that built your leadership and technical depth | 30 seconds |\n| Future | What you want next and why this company fits | 20 seconds |\n\n**Example answer (template; replace every placeholder with your own facts):** \"I am a technical lead on [platform], leading [N] engineers. We [headline result, for example reduced release time by X percent]. Before that I was a software engineer working on [area], where I learned [skill]. Over time I moved towards [mentoring, design ownership, delivery]. Now I am looking for [kind of scope], and your team's work on [specific thing] is exactly that.\"\n\n**Common mistakes**\n- Reading the CV in order from school.\n- Spending three minutes on one old job.\n- Ending without linking to the role.\n- Only technology, no people or outcome.\n\n**Interview tip:** The introduction sets the agenda. Mention two themes you want to be asked about, such as \"building a team\" and \"improving delivery\", and interviewers often follow those. Keep it honest and short, and stop speaking when done.",
+      "level": "basic",
+      "module": "Interview Approach",
+      "tags": [
+        "introduction",
+        "pitch"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-005",
+      "question": "How do you answer questions about why this role, why this company and why you are leaving?",
+      "answer": "**Short answer:** Give a positive pull, not a complaint. Say what you want to grow into, why this company and problem fit that, and why now. Never trash your current employer.\n\n#### Three separate answers\n\n| Question | Strong angle |\n| --- | --- |\n| Why this role? | It matches the scope you want next, for example more ownership or people growth |\n| Why this company? | Specific: product, scale, engineering culture, a problem you want to solve. Shows research |\n| Why leaving? | Looking for growth or a new challenge, framed as moving towards something |\n\n**Example answer (template):** \"I have enjoyed [current work] and learned [lesson]. I am ready for [bigger scope, such as a larger team or more cross-team influence]. Your company's work on [specific product or challenge] is interesting to me because [reason]. So it is a step forward, not an escape.\"\n\n**Common mistakes**\n- Complaining about your manager, pay or team.\n- Generic praise: \"great culture, big company\".\n- Saying you want to leave only for money.\n- Not having researched the product at all.\n\n**Interview tip:** Read the job description and the company's engineering blog or talks before the interview, and name one real thing. If there was a gap or a short stay, explain it briefly and calmly. Expect a follow-up: \"What would make you leave this job in two years?\" A good answer talks about lack of learning or impact, not about people.",
+      "level": "basic",
+      "module": "Interview Approach",
+      "tags": [
+        "motivation",
+        "career"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-006",
+      "question": "How do you answer questions about your strengths and weaknesses?",
+      "answer": "**Short answer:** Pick strengths that matter for the role and prove each with a short example. Pick a real weakness that is not fatal for the role, and show what you are doing about it.\n\n#### Strengths\n\nChoose two or three. Say the strength, then a one-line proof. For a tech lead good ones are clear written communication, making decisions with incomplete data, and growing other people.\n\n#### Weaknesses\n\nA weakness answer has three parts: the weakness, the impact it once had, and the habit you built to manage it.\n\n**Example answer (template):** \"My weakness is that I tend to take on hard tasks myself instead of delegating. In [project] it made me a bottleneck. Now I decide up front who can own a task, I pair for the first part, and I check in only at agreed points. Last quarter [metric or result] improved because of that.\"\n\n**Common mistakes**\n- \"I work too hard\" or \"I am a perfectionist\". These sound evasive.\n- A weakness that disqualifies you, such as \"I do not like working with people\".\n- A weakness with no action taken.\n- Listing five strengths with no evidence.\n\n**Interview tip:** Pick weaknesses that are common for people at your stage, such as delegation, saying no, or giving direct feedback early. Then you can speak with real detail. Expect the follow-up \"How would your team describe that?\" so be ready with a real quote or a moment.",
+      "level": "basic",
+      "module": "Interview Approach",
+      "tags": [
+        "strengths",
+        "weaknesses",
+        "self-awareness"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-007",
+      "question": "What is the difference between a tech lead, an engineering manager, a staff engineer and an architect?",
+      "answer": "**Short answer:** They are different jobs with overlap. A tech lead guides the technical direction of one team. An engineering manager owns the people and delivery of a team. A staff engineer solves hard technical problems across teams. An architect designs systems and standards, often across a large area.\n\n#### Comparison\n\n| Role | Main focus | Typical output | Still writes code? |\n| --- | --- | --- | --- |\n| Tech lead | Technical direction and delivery of one team | Designs, reviews, unblocking, plans | Yes, often |\n| Engineering manager | People, hiring, performance, delivery | Team health, hiring, priorities | Rarely |\n| Staff engineer | Cross-team technical problems | Strategy, hard prototypes, influence | Yes |\n| Architect | System-wide structure and standards | Reference designs, decision records | Sometimes |\n\nTitles vary between companies. Always ask how they define it. In some companies the tech lead is also the line manager.\n\n**Example answer (template):** \"In my current role I am a tech lead. I own the design quality and delivery for [team]. I also do [mentoring or part of people management, say honestly]. I want to move towards [management or staff path] because [reason based on what energises you].\"\n\n**Common mistakes**\n- Treating tech lead as just \"the best coder\".\n- Not knowing how the company defines the roles.\n- Wanting a manager role without liking people problems.\n\n**Interview tip:** Say which path you lean to and why, with evidence from your last year, for example \"I enjoy coaching more than architecture reviews\". Interviewers for lead roles listen for honest self-awareness. A follow-up is \"What part of management would you miss least?\"",
+      "level": "basic",
+      "module": "Strategy & Career",
+      "tags": [
+        "roles",
+        "career"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-008",
+      "question": "What is the difference between leadership and management?",
+      "answer": "**Short answer:** Management is about making a system work: plans, process, people, budgets. Leadership is about creating direction and helping others to move there. A tech lead needs both, and the mix changes with the situation.\n\n#### Compare\n\n| | Management | Leadership |\n| --- | --- | --- |\n| Focus | Process, delivery, resources | Direction, motivation, growth |\n| Question it asks | \"How do we get this done?\" | \"Where are we going and why?\" |\n| Authority | Often formal | Often earned by trust |\n| Example | Sprint planning, hiring plan | Explaining the technical vision |\n\nYou can lead without a title, for example by raising a quality standard that others adopt. You can manage without leading, for example by only tracking tickets.\n\n**Example answer (template):** \"To me management gives the team stability and leadership gives it direction. In [project] I did both. I set up [process] so delivery was predictable, and I wrote a short vision for [area] so people understood why the work mattered. The team's [metric] improved.\"\n\n**Common mistakes**\n- A cliché like \"managers manage, leaders lead\", with no example.\n- Making management sound boring and leadership glamorous. Teams need both.\n- Using the word leadership but describing only task assignment.\n\n**Interview tip:** Give one example where you needed more leadership and one where you needed more management. That shows judgement. The follow-up is often \"Which comes more naturally to you?\" so have an honest answer ready.",
+      "level": "basic",
+      "module": "Strategy & Career",
+      "tags": [
+        "leadership",
+        "management"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-009",
+      "question": "What makes a good tech lead?",
+      "answer": "**Short answer:** A good tech lead combines enough technical depth to make sound decisions, clear communication, ownership of outcomes, and a habit of enabling others rather than doing everything alone. The team's success is the measure, not personal output.\n\n#### Four pillars\n\n| Pillar | What it looks like |\n| --- | --- |\n| Technical depth | Good design judgement, knows trade-offs, reviews well |\n| Communication | Explains the why, writes clearly, tells people bad news early |\n| Ownership | Cares about outcomes, quality and on-call, not just tasks |\n| Enabling others | Delegates, mentors, makes the team better when you are away |\n\nA simple test: if you go on holiday for two weeks, does the team still deliver and decide well? If yes, you are building a good team.\n\n**Example answer (template):** \"I see the role as multiplying the team. In [project] I stopped being the one who answered every design question. I created [design review habit or doc template], paired with [engineer], and within [period] they led the next design. Delivery got faster by [metric].\"\n\n**Common mistakes**\n- Being the hero who fixes everything.\n- Only technical talk, no interest in people.\n- Avoiding decisions so everyone stays happy.\n- Making decisions without explaining them.\n\n**Interview tip:** Use a story to prove each pillar rather than listing them. Expect \"How do you decide when to code and when to lead?\" which is the main tension of the role.",
+      "level": "basic",
+      "module": "Leading Technical Work",
+      "tags": [
+        "tech-lead",
+        "leadership"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-010",
+      "question": "How do you talk about impact with metrics when you do not have numbers?",
+      "answer": "**Short answer:** Use honest, approximate evidence. Compare before and after, use ranges, or use proxies such as time saved, incidents reduced, people helped and feedback received. Never invent exact numbers.\n\n#### Where to find a number\n\n- Time: build time, release frequency, hours of manual work removed.\n- Quality: incident count, bug reports, on-call pages.\n- People: onboarding time for new joiners, number of engineers who grew into a bigger role.\n- Money or risk: cost saved, an audit finding closed.\n- Opinion: what customers, partners or your manager said.\n\n**Example answer (template with honest estimates):** \"I did not have a dashboard for this, but roughly [N] engineers lost about [X] hours a week to [problem]. After [change] the problem stopped. I checked with the team and they confirmed it. About [Y] hours a week were saved.\"\n\n**Common mistakes**\n- Inventing a precise number such as 37.4 percent.\n- Saying \"improved a lot\" with no scale.\n- Claiming a team result as only your own.\n\n**Interview tip:** Say \"approximately\" and say how you measured it. Interviewers prefer an honest estimate over a perfect fake. If you truly had no data, say so and describe how you would measure it now. That is also a good sign of leadership maturity.",
+      "level": "basic",
+      "module": "Interview Approach",
+      "tags": [
+        "impact",
+        "metrics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-011",
+      "question": "How should you answer when you do not know something?",
+      "answer": "**Short answer:** Say clearly that you do not know, then show how you would find out. Honesty plus a sensible method scores much better than guessing with confidence.\n\n#### A simple pattern\n\n1. Be direct: \"I have not worked with that directly.\"\n2. Connect to what you know: \"The closest thing I have done is...\"\n3. Reason aloud: \"My first guess would be... and I would check by...\"\n4. Show how you learn: who you would ask, what you would read, what you would try.\n\n**Example answer (template):** \"I have not run [technology] in production. In a similar case with [related thing] I started by [step], then asked [expert], and wrote down what we learned. For this I would start with a small experiment and set a clear exit point.\"\n\n**Common mistakes**\n- Bluffing. An expert in the room will notice.\n- Freezing or saying only \"I don't know\".\n- Over-apologising.\n- Changing the topic to something you do know.\n\n**Interview tip:** A tech lead is expected to say \"I do not know, who does?\" Often. It shows psychological safety, because your team learns it is fine to say it too. A follow-up is \"How do you handle it when your team asks something you cannot answer?\" Mention pulling in the right person and sharing the learning.",
+      "level": "basic",
+      "module": "Interview Approach",
+      "tags": [
+        "honesty",
+        "problem-solving"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-012",
+      "question": "How do you talk honestly about a failure?",
+      "answer": "**Short answer:** Pick a real failure with real stakes. Own your part without blaming others, explain the impact, and focus most of the answer on what you changed afterwards.\n\n#### Structure\n\n| Step | What to say |\n| --- | --- |\n| What happened | Facts, short, no excuses |\n| Your part | The decision or gap that was yours |\n| Impact | Who or what was affected, honestly |\n| Recovery | What you did to fix it |\n| Change | Habits or process now different, with proof |\n\n**Example answer (template):** \"In [project] I decided [choice] without [missing step]. As a result [impact]. I told [people] early, we fixed it by [action], and it took [time]. Since then I always [new habit], and in [later project] that caught [issue] before it reached users.\"\n\n**Common mistakes**\n- A fake failure such as \"I cared too much\".\n- Blaming a teammate, the product manager or the tools.\n- Skipping the lesson.\n- Choosing a failure so big it raises doubts, with no recovery.\n\n**Interview tip:** Choose a failure that is at least a year old, so you can show a lasting change. Do not make it sound heroic. The follow-up is often \"How did you tell your manager?\" so be ready to show you raised it early.",
+      "level": "basic",
+      "module": "Interview Approach",
+      "tags": [
+        "failure",
+        "learning"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-013",
+      "question": "How do you answer \"Tell me about a time you disagreed with your manager\"?",
+      "answer": "**Short answer:** Show that you disagree openly and respectfully, with evidence, in private, and that you commit to the final decision. The story should show judgement, not a victory over the manager.\n\n#### What a strong story contains\n\n- A real difference of view on something important.\n- Preparation: facts, options, risks, not only opinion.\n- A private conversation first, with curiosity about their reasons.\n- The outcome: either your view changed things, or you disagreed and committed and made it work.\n- What you learned about the manager's context.\n\n**Example answer (template):** \"My manager wanted [decision, for example a faster release]. I was concerned about [risk]. I booked time, brought [data], and asked what drove the date. They explained [constraint]. We agreed on [compromise]. Even where I did not get my way, I committed and set up [safeguard]. The result was [outcome].\"\n\n**Common mistakes**\n- Saying you have never disagreed. That sounds like a weak or dishonest leader.\n- A story where the manager was simply wrong and you were right.\n- Going over their head without talking first.\n- Ending with resentment.\n\n**Interview tip:** Interviewers listen to how you describe the manager: with respect or contempt. Follow-up: \"What if your manager still said no on a safety or ethics issue?\" Answer that you would escalate through the proper channel.",
+      "level": "basic",
+      "module": "Conflict & Communication",
+      "tags": [
+        "conflict",
+        "managing-up"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-014",
+      "question": "What do teamwork and collaboration look like for a tech lead?",
+      "answer": "**Short answer:** As a lead you make it easy for others to work well together. You share context, clarify who decides what, protect focus time, and make credit and blame fair. Collaboration is a skill you design into the team, not a mood.\n\n#### Habits that show it\n\n| Habit | Why it works |\n| --- | --- |\n| Share the why, not only the task | People make better small decisions |\n| Clear owners for each area | Fewer dropped balls |\n| Short design reviews and open docs | Ideas come from everyone |\n| Credit others publicly, take blame privately | Trust grows |\n| Pair or swap work to spread knowledge | No single points of failure |\n\n**Example answer (template):** \"In [project], two teams depended on each other and blamed each other for delays. I proposed a weekly twenty-minute sync, a shared board with named owners, and an agreed definition of done for the interface. After [period] handoff delays dropped from [X] to [Y].\"\n\n**Common mistakes**\n- Saying \"I am a team player\" with no example.\n- Talking only about your own team and never other teams.\n- Taking credit for team results.\n\n**Interview tip:** Prepare one story about collaborating across a team boundary, because that is where leads are tested. The follow-up is \"How do you handle someone who does not collaborate?\" Mention a private, specific conversation first.",
+      "level": "basic",
+      "module": "Conflict & Communication",
+      "tags": [
+        "teamwork",
+        "collaboration"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-015",
+      "question": "What do ownership and accountability mean in practice?",
+      "answer": "**Short answer:** Ownership means treating the outcome as yours, from design to production, without waiting to be told. Accountability means you answer for results, including the failures, and you fix the system, not just the symptom.\n\n#### What it looks like\n\n- You follow a feature until users benefit, not until merge.\n- You raise risks early, even when it is uncomfortable.\n- When something breaks you say \"I own the fix\" and then you do it.\n- You do not blame others in public. You ask what in the system allowed the problem.\n- You close the loop: a promised action gets done or you say clearly it will not.\n\n| Low ownership | High ownership |\n| --- | --- |\n| \"That is the other team's service\" | \"I will find the right owner and track it\" |\n| Waits for a ticket | Spots the gap and proposes a fix |\n| Hides a missed date | Tells stakeholders early with a new plan |\n\n**Example answer (template):** \"A [feature] I led went live with [problem]. I told [stakeholder] the same day, led the fix, and then asked why [test or review] had not caught it. We added [change]. The next [releases] had no repeat.\"\n\n**Common mistakes**\n- Mixing ownership with doing everything yourself.\n- Blaming a process or a person.\n- Claiming ownership only of the good outcomes.\n\n**Interview tip:** Use the phrase \"I owned the outcome, not just my task.\" A follow-up is \"Tell me about something that was not your job that you took on.\" Have that story ready.",
+      "level": "basic",
+      "module": "Leading Technical Work",
+      "tags": [
+        "ownership",
+        "accountability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-016",
+      "question": "How do written, verbal and asynchronous communication differ, and how do you choose?",
+      "answer": "**Short answer:** Choose the channel by the type of message. Use writing for decisions and anything people need later. Use conversation for emotion, conflict and fast back-and-forth. Use async updates to protect focus time, with a clear deadline for replies.\n\n#### Choosing\n\n| Situation | Best channel | Why |\n| --- | --- | --- |\n| Design decision | Short written doc, then a meeting if needed | Gives a record and time to think |\n| Giving hard feedback | Face to face or a call | Tone matters |\n| Status update | Async message or dashboard | Saves meeting time |\n| Urgent incident | Voice or video plus a written timeline | Speed plus record |\n| Disagreement in a thread | Move to a call, then write the outcome | Avoids misreading tone |\n\n**Example answer (template):** \"On a distributed team I introduced a short decision doc with context, options and a decision deadline. Meetings dropped from [N] to [M] a week and decisions were easier to find later. For sensitive topics I stayed with one-to-one calls.\"\n\n**Common mistakes**\n- Long chat threads for complex decisions.\n- Meetings with no agenda or output.\n- Writing in a way that assumes everyone has the same context.\n- Long messages with the main point at the bottom.\n\n**Interview tip:** Say you put the conclusion first: \"what I need from you and by when\". Follow-up: \"How do you communicate with non-technical stakeholders?\" Answer: outcomes, risk and options in plain words, and no jargon.",
+      "level": "basic",
+      "module": "Conflict & Communication",
+      "tags": [
+        "communication",
+        "async"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-017",
+      "question": "[Tech Lead] How do you lead and influence a team without formal authority?",
+      "answer": "**Short answer:** Without a title you lead through trust, clarity and evidence. You earn credibility by delivering and helping, you explain the why behind your proposals, and you make it easy for others to say yes.\n\n#### What works\n\n| Lever | How to use it |\n| --- | --- |\n| Credibility | Deliver, review well, help others first |\n| Evidence | Bring data, a small prototype or a clear risk |\n| Relationships | Understand what each person cares about before you ask |\n| Shared goals | Link your proposal to the team's or the company's goal |\n| Small wins | Pilot an idea with volunteers, then show results |\n\n**Example answer (template):** \"I wanted [team] to adopt [practice, for example contract tests], but I did not manage them. I first asked what hurt them most. I ran a two-week pilot on [service], showed that [metric] improved, and offered to pair. Within [period] [N] teams adopted it by choice.\"\n\n**Common mistakes**\n- Asking people to change with no benefit for them.\n- Escalating to a manager too early.\n- Pushing the same argument three times without listening.\n- Claiming authority you do not have.\n\n**Interview tip:** Say that influence is built before you need it. Follow-ups: \"What did you do when someone still refused?\" Answer: understand the real objection, adjust, or accept a smaller scope, and escalate only about outcomes, not people.",
+      "level": "intermediate",
+      "module": "Leading Technical Work",
+      "tags": [
+        "tech-lead",
+        "influence"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-018",
+      "question": "[Tech Lead] How do you run technical design discussions and make decisions when people disagree?",
+      "answer": "**Short answer:** Write the problem and options down first, give everyone a fair hearing, set a decision date and a clear decider, then decide and record why. After the decision, everyone commits, even those who disagreed. This is often called disagree and commit.\n\n#### A simple process\n\n```mermaid\nflowchart LR\n    A[\"Write the problem and constraints\"] --> B[\"Share options and trade-offs\"]\n    B --> C[\"Review with comments\"]\n    C --> D{\"Consensus?\"}\n    D -- yes --> F[\"Record decision\"]\n    D -- no --> E[\"Decider chooses by deadline\"]\n    E --> F\n    F --> G[\"Everyone commits and revisit date set\"]\n```\n\nRead the flow from left to right. If there is no agreement, a named decider chooses by the deadline.\n\n**Example answer (template):** \"We had two options for [problem]. I wrote a one-page doc with the constraints and trade-offs, asked for comments for three days, and held a thirty-minute meeting only for the open points. Two engineers preferred option B. I chose A because [reason], wrote it in a decision record, and set a review date. We agreed to measure [signal]. The team committed, and at the review we kept A.\"\n\n**Common mistakes**\n- Endless debate with no decider.\n- Choosing alone and not explaining.\n- Letting the loudest voice win.\n- Not recording the decision, so it is reopened every month.\n\n**Interview tip:** Mention that disagreement is useful. Make sure quiet people are heard by asking for written input first. Follow-up: \"What if you were wrong?\" Say you set a review point and a cheap way to reverse.",
+      "level": "intermediate",
+      "module": "Leading Technical Work",
+      "tags": [
+        "tech-lead",
+        "decisions",
+        "design-review"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-019",
+      "question": "[Tech Lead] How do you mentor and grow engineers?",
+      "answer": "**Short answer:** Start by learning what each person wants and where they are now. Mix coaching, where you ask questions so they find the answer, with directing, where you tell them what to do, depending on their experience. Give stretch work, regular feedback and a written growth plan.\n\n#### Coaching versus directing\n\n| Situation | Style | Example |\n| --- | --- | --- |\n| New or inexperienced with the task | Directing | \"Use this pattern, here is why\" |\n| Some experience | Coaching | \"What options do you see? What are the risks?\" |\n| Experienced, high skill | Delegating | \"You own it. Tell me if you want input\" |\n\nA good growth plan has one or two goals for the next quarter, the work that will prove them, who will help, and the level expectations they are growing towards.\n\n**Example answer (template):** \"[Engineer] wanted to move from [level] to [level]. We agreed on two goals: lead a design and improve production debugging. I gave them [project] with a check-in every week for the first month, then every two weeks. They presented the design to [audience]. Six months later they were [outcome].\"\n\n**Common mistakes**\n- Mentoring only when asked.\n- Always giving answers, so people never learn.\n- A plan with no real work attached.\n- Treating all engineers the same.\n\n**Interview tip:** Say that the best sign of mentoring is the engineer doing something you used to do. Follow-up: \"How do you handle someone who is not ready for promotion but expects it?\" Explain the gap with clear examples and a plan.",
+      "level": "intermediate",
+      "module": "People & Mentoring",
+      "tags": [
+        "tech-lead",
+        "mentoring",
+        "coaching"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-020",
+      "question": "[Tech Lead] How do you give effective feedback, including hard feedback?",
+      "answer": "**Short answer:** Give feedback early, privately and about specific behaviour. A common model is SBI: Situation, Behaviour, Impact. Describe what happened, what you saw, and the effect it had, then ask for their view.\n\n#### SBI in one line each\n\n| Part | Example |\n| --- | --- |\n| Situation | \"In yesterday's design review...\" |\n| Behaviour | \"...you interrupted [colleague] three times...\" |\n| Impact | \"...and they stopped sharing their ideas. We lost their view.\" |\n\nThen ask: \"How did you see it?\" and agree on a next step.\n\n#### Handling an underperformer\n\n1. Check expectations are clear and the person has the support they need.\n2. Give specific, documented feedback early and often.\n3. Look for the cause: skill, will, workload or personal issues.\n4. Agree a short plan with clear measures and dates.\n5. Involve your manager and HR early if there is no improvement.\n\n**Example answer (template):** \"[Engineer] often delivered late without warning. I used SBI in a private talk, we found they were blocked by [cause], and we agreed on a weekly check-in and smaller tasks. After [period] on-time delivery rose from [X] to [Y].\"\n\n**Common mistakes**\n- Saving feedback for the annual review.\n- Vague words such as \"be more proactive\".\n- The \"feedback sandwich\" that hides the message.\n- Giving hard feedback in public.\n\n**Interview tip:** Also mention praising specifically. Follow-up: \"How do you receive feedback yourself?\" Give a real example where you changed something after hearing it.",
+      "level": "intermediate",
+      "module": "People & Mentoring",
+      "tags": [
+        "tech-lead",
+        "feedback",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-021",
+      "question": "[Tech Lead] How do you delegate well and avoid being the bottleneck or the hero?",
+      "answer": "**Short answer:** Delegate outcomes, not only tasks. Match the work to the person's growth, give clear context and boundaries, and check in at agreed points. A hero who fixes everything becomes a bottleneck and leaves the team weak.\n\n#### Signs you are a bottleneck\n\n- Work waits for your review or your answer.\n- Only you can fix some part of the system.\n- You are in every meeting and every design.\n- Others stop making decisions.\n\n#### How to delegate\n\n| Step | Detail |\n| --- | --- |\n| Pick the right work | Something that stretches, with a safety net |\n| Explain the goal and limits | What good looks like, deadline, what they can decide |\n| Agree on check-ins | Short and planned, not constant |\n| Accept a different way | Judge the result, not the method |\n| Give credit publicly | Builds confidence |\n\n**Example answer (template):** \"I was the only person who knew [component]. I paired with [engineer] to fix two issues, then handed them the next one with a one-page brief. I reviewed their design but did not rewrite it. By [date] they were the owner and I was no longer on the escalation path.\"\n\n**Common mistakes**\n- Delegating only boring work.\n- Taking the task back at the first problem.\n- Delegating without authority to decide.\n- Being unavailable after delegating.\n\n**Interview tip:** Say you aim to make yourself less needed. Follow-up: \"What do you do when the delegate does it worse than you would?\" Answer: coach, accept good enough, and check whether the standard really matters.",
+      "level": "intermediate",
+      "module": "People & Mentoring",
+      "tags": [
+        "tech-lead",
+        "delegation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-022",
+      "question": "[Tech Lead] How do you build a code review culture and set standards?",
+      "answer": "**Short answer:** Make reviews fast, kind and focused on what matters. Write a short checklist, automate style with tools, review the design and risk by humans, and lead by example by accepting feedback on your own code.\n\n#### Principles\n\n| Principle | Practice |\n| --- | --- |\n| Small changes | Easier and faster to review |\n| Automate the boring | Linters, formatters, tests in the pipeline |\n| Humans review design and risk | Naming, error handling, edge cases, security |\n| Speed | An agreed target, for example a first response within one working day |\n| Tone | Comments about code, not people; ask questions |\n| Learning | Reviews are teaching in both directions |\n\n**Example answer (template):** \"Reviews were slow, averaging [X] days. We agreed a first response within [time], capped change size at about [N] lines where possible, moved style to the linter, and I reviewed with questions rather than commands. Average review time fell to [Y] and the team said reviews felt more useful.\"\n\n**Common mistakes**\n- Nitpicking style that a tool could check.\n- Review as gatekeeping by one person.\n- Blocking on personal preference.\n- Never reviewing the lead's own code.\n\n**Interview tip:** Mention that you separate must-fix from suggestions, for example with a label such as \"nit\" or \"optional\". Follow-up: \"How do you handle a senior who ignores review feedback?\" Answer: talk privately, agree the standard together, and point to the written guideline.",
+      "level": "intermediate",
+      "module": "Quality & Reliability",
+      "tags": [
+        "tech-lead",
+        "code-review",
+        "standards"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-023",
+      "question": "[Tech Lead] How do you onboard new engineers?",
+      "answer": "**Short answer:** Plan the first weeks in advance. Give a buddy, a working environment on day one, a small real task in the first week, and clear expectations at thirty, sixty and ninety days. Measure time to first useful contribution.\n\n#### A simple plan\n\n| Phase | Goal | Example activities |\n| --- | --- | --- |\n| Before day one | Remove friction | Accounts, laptop, access, welcome message |\n| Week one | Feel welcome and ship something small | Buddy, set up environment, a tiny fix to production |\n| Month one | Understand the system and the team | Architecture walkthrough, shadow on-call, first feature |\n| Month three | Own something | A feature or a service area, feedback conversation |\n\nGood onboarding depends on documentation that is kept current. New joiners are the best testers of your docs, so ask them to fix what was wrong.\n\n**Example answer (template):** \"Our new joiners took about [X] weeks to first merge. I wrote a setup script and a checklist, assigned a buddy, and prepared a list of starter tasks. Time to first merge fell to [Y] days and new joiners rated onboarding [score or comment].\"\n\n**Common mistakes**\n- Leaving a new joiner alone with a thick wiki.\n- Starting with a very large task.\n- No clear expectations.\n- Docs that nobody maintains.\n\n**Interview tip:** Say you ask new people to improve the onboarding guide. Follow-up: \"How do you onboard someone remote?\" Mention more scheduled contact, an explicit buddy, and written context.",
+      "level": "intermediate",
+      "module": "People & Mentoring",
+      "tags": [
+        "tech-lead",
+        "onboarding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-024",
+      "question": "[Tech Lead] How do you manage technical debt and negotiate time for it with product?",
+      "answer": "**Short answer:** Treat technical debt as a business risk and cost, not a developer preference. Make it visible, link each item to impact such as slower delivery, incidents or risk, and agree a steady share of capacity for it with product.\n\n#### Steps\n\n1. List the debt and rate each item by impact and effort.\n2. Translate into business language: \"this adds two days to every release\" or \"this has caused three incidents\".\n3. Propose a standing allowance, for example a portion of each sprint, plus larger items scheduled like features.\n4. Tie debt work to roadmap items: \"While we build X, we fix Y.\"\n5. Report what the investment returned.\n\n| Debt type | Approach |\n| --- | --- |\n| Slows every change | Schedule early, high return |\n| Causes incidents | Treat as reliability work |\n| Annoying but harmless | Leave, or fix when you touch it |\n\n**Example answer (template):** \"Our build took [X] minutes and blocked [N] engineers. I showed product the cost, about [Y] engineer hours per week. We agreed one item per sprint for debt. After [period] the build was [Z] minutes and feature throughput rose by [metric].\"\n\n**Common mistakes**\n- Asking for a \"refactoring sprint\" with no business case.\n- Hiding debt work inside feature estimates without telling anyone.\n- Paying debt that nobody feels.\n- Never saying no to new debt that is deliberate and short term.\n\n**Interview tip:** Mention that some debt is a good choice if you track it and pay it. Follow-up: \"How do you decide what to fix first?\" Answer: impact times frequency, divided by effort.",
+      "level": "intermediate",
+      "module": "Delivery & Planning",
+      "tags": [
+        "tech-lead",
+        "technical-debt",
+        "product"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-025",
+      "question": "[Tech Lead] How do you estimate and plan work, and handle unrealistic deadlines and scope creep?",
+      "answer": "**Short answer:** Estimate as a team, use ranges rather than single numbers, state your assumptions and risks, and revisit often. When a deadline looks unrealistic, show options: reduce scope, move the date, or add resources with their cost. Do not silently promise.\n\n#### Practical habits\n\n| Practice | Why |\n| --- | --- |\n| Break work into small pieces | Errors shrink and progress is visible |\n| Give a range and confidence | \"Three to five weeks, medium confidence\" is honest |\n| List assumptions and unknowns | Surprises are named early |\n| Slice for early value | Something shippable after each slice |\n| Keep a change log of scope | Scope creep becomes visible |\n\n#### Pushing back on a deadline\n\nBring a trade-off table: the date as asked with the reduced scope, the full scope with a later date, or the same scope with more people, which may not help because of onboarding cost.\n\n**Example answer (template):** \"Product asked for [feature] in [N] weeks. My team estimate was [M]. I showed three options. We chose to ship [core part] by the date and [rest] two weeks later. Each new request after that went through a quick trade-off: what do we drop?\"\n\n**Common mistakes**\n- Agreeing to a date and hoping.\n- Padding every estimate in secret.\n- Treating an estimate as a promise.\n- Letting scope change without changing date.\n\n**Interview tip:** Say you communicate risk as early as you see it. Follow-up: \"What if the date is fixed by a customer or regulator?\" Then scope and quality gates become the variables, and you escalate risk clearly.",
+      "level": "intermediate",
+      "module": "Delivery & Planning",
+      "tags": [
+        "tech-lead",
+        "estimation",
+        "planning"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-026",
+      "question": "[Tech Lead] How do you say no and prioritise? What frameworks do you use?",
+      "answer": "**Short answer:** Say no to requests, not to people. Explain what you are protecting, show the trade-off, and offer an alternative or a later date. Use a simple framework to make the reasoning visible.\n\n#### Frameworks\n\n| Framework | How it works | Best for |\n| --- | --- | --- |\n| Impact versus effort | Plot items on two axes, do high impact and low effort first | Quick team triage |\n| RICE | Score Reach times Impact times Confidence, divided by Effort | Comparing many product items |\n| MoSCoW | Must, Should, Could, Will not | Fixing scope for a release |\n\nRICE stands for Reach, Impact, Confidence and Effort. The scores are estimates, so use them to start a conversation, not to end one.\n\n**Example answer (template):** \"Three teams asked for urgent work in the same sprint. I listed each with impact and effort, shared it with [stakeholders], and said: we can do A and B, C would delay A by [time]. If C is more important, tell me what moves. They chose C and we agreed a new date. Nobody was surprised.\"\n\n**Common mistakes**\n- A flat \"no\" with no reason.\n- Saying yes to everything and then failing quietly.\n- Using scores as if they were facts.\n- Prioritising by who shouts loudest.\n\n**Interview tip:** Say that \"yes, and here is what it displaces\" is often better than no. Follow-up: \"What if your boss's boss asks?\" Show the same trade-off calmly and let them decide with full information.",
+      "level": "intermediate",
+      "module": "Delivery & Planning",
+      "tags": [
+        "tech-lead",
+        "prioritisation",
+        "frameworks"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-027",
+      "question": "[Tech Lead] How do you manage stakeholders and communicate bad news early?",
+      "answer": "**Short answer:** Know who your stakeholders are, what each cares about and how often they want updates. When there is bad news, tell them early, with the facts, the impact, your plan and what you need from them. Early bad news is a cost; late bad news is a betrayal.\n\n#### Map and rhythm\n\n| Stakeholder | Cares about | Update style |\n| --- | --- | --- |\n| Product manager | Scope, date, user value | Weekly, short, risks highlighted |\n| Senior leadership | Risk, cost, outcomes | Brief summary, exceptions only |\n| Partners or customers | Reliability, commitments | Clear dates, honest status |\n\n#### Bad news format\n\nState the problem. State the impact. State the options and your recommendation. State what you need.\n\n**Example answer (template):** \"In week [N] we found that [integration] would take [X] longer. Same day I wrote to [stakeholder]: the issue, the new estimate range, three options, my recommendation, and a decision needed by [date]. They chose [option]. Later they told me they valued the early warning.\"\n\n**Common mistakes**\n- Waiting until you are sure, which means too late.\n- Hiding problems in jargon.\n- Bringing problems with no options.\n- Surprising a stakeholder in a public meeting.\n\n**Interview tip:** Say you \"never let a stakeholder learn about a problem from someone else\". Follow-up: \"Tell me about a time bad news went badly.\" Be honest about what you changed.",
+      "level": "intermediate",
+      "module": "Conflict & Communication",
+      "tags": [
+        "tech-lead",
+        "stakeholders",
+        "communication"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-028",
+      "question": "[Tech Lead] How do you lead through a production incident and run a blameless postmortem?",
+      "answer": "**Short answer:** In an incident, stay calm, give clear roles, restore service first and investigate after. Afterwards run a blameless postmortem: describe what happened and why the system allowed it, and agree actions with owners. The goal is learning, not blame.\n\n#### Incident flow\n\n```mermaid\nflowchart LR\n    A[\"Detect and declare\"] --> B[\"Assign roles\"]\n    B --> C[\"Mitigate and restore\"]\n    C --> D[\"Communicate updates\"]\n    D --> E[\"Resolve\"]\n    E --> F[\"Blameless postmortem\"]\n    F --> G[\"Actions with owners\"]\n```\n\nRead left to right. Communication runs alongside mitigation, not after it.\n\n#### Roles\n\nAn incident commander coordinates and decides. A technical lead investigates. A communicator updates stakeholders. In a small team one person may hold two roles, but say who does what.\n\n**Example answer (template):** \"During [incident] I took the commander role so others could debug. We rolled back first, which restored service in [time]. I sent updates every [N] minutes. In the postmortem we found [cause] and, importantly, that [gap in alerting or review] let it through. We made [N] actions with owners, and the same class of failure did not come back.\"\n\n**Common mistakes**\n- Everyone debugging, nobody communicating.\n- Searching for who to blame.\n- A postmortem with no follow-up actions.\n- Fixing the root cause before service is restored when a rollback is possible.\n\n**Interview tip:** Say \"blameless does not mean without accountability\": people own actions, but the system is judged. Follow-up: \"How do you handle a repeated incident caused by one person?\" Treat it as a coaching and process topic.",
+      "level": "intermediate",
+      "module": "Quality & Reliability",
+      "tags": [
+        "tech-lead",
+        "incidents",
+        "postmortem"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-029",
+      "question": "[Tech Lead] How do you balance hands-on coding with leading?",
+      "answer": "**Short answer:** Keep enough coding to stay credible and informed, but do not put yourself on the critical path. Take work that is exploratory, small or risky to others, and make time for design, reviews, one-to-ones and unblocking.\n\n#### How to split time\n\n| Activity | Guideline |\n| --- | --- |\n| Design, review and unblocking | Protect first, others depend on it |\n| Coding | Choose work that does not block the team if you are interrupted |\n| People time | Regular one-to-ones in the calendar |\n| Focus time | Blocks of two hours on a few days |\n\nThe split changes with team size. A lead of three or four engineers may code half the time. A lead of eight or more usually codes much less.\n\n**Example answer (template):** \"I used to take the hardest ticket and then block reviews. Now I take spikes, tooling and small fixes, I keep review slots twice a day, and I pair rather than own the critical feature. Review wait time dropped from [X] to [Y].\"\n\n**Common mistakes**\n- Coding all day and ignoring the team.\n- Stopping coding entirely and losing context.\n- Owning the critical path then being unavailable.\n- No time blocks, so everything is interrupted.\n\n**Interview tip:** Be honest about what you chose and why. Follow-up: \"What do you do when you must choose between a feature and a one-to-one?\" Answer: the people time, as it rarely recovers if skipped.",
+      "level": "intermediate",
+      "module": "Leading Technical Work",
+      "tags": [
+        "tech-lead",
+        "time-management"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-030",
+      "question": "[Tech Lead] How do you build a culture of quality, testing and ownership?",
+      "answer": "**Short answer:** Culture is what you reward and tolerate. Make quality easy with automated tests and pipelines, make it visible with a few shared measures, and make it normal by acting on it yourself. Teams own what they build, including running it.\n\n#### Practical levers\n\n| Lever | Example |\n| --- | --- |\n| Definition of done | Includes tests, alerts and docs |\n| Fast pipeline | If tests are slow nobody runs them |\n| Test pyramid | Many unit tests, fewer integration tests, few end-to-end |\n| You build it, you run it | Team handles on-call and learns from incidents |\n| Visible measures | Escaped defects, flaky tests, change failure rate |\n| Celebrate prevention | Praise the bug caught in review |\n\n**Example answer (template):** \"We had frequent regressions in [area]. I proposed a definition of done with tests and a dashboard, fixed the flaky tests first because they destroyed trust, and added a short post-release review. Escaped defects fell from [X] to [Y] in [period], and engineers began suggesting tests in reviews.\"\n\n**Common mistakes**\n- Mandating a coverage number and gaming it.\n- Blaming QA or testers.\n- Letting flaky tests stay red.\n- Quality talk with no time in the plan.\n\n**Interview tip:** Say you lead by doing: you write tests, and fix a broken pipeline yourself. Follow-up: \"How do you keep speed and quality together?\" Small changes and good automation make both possible.",
+      "level": "intermediate",
+      "module": "Quality & Reliability",
+      "tags": [
+        "tech-lead",
+        "quality",
+        "culture"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-031",
+      "question": "[Tech Lead] How do you work with product and design, and with remote or cross-time-zone teams?",
+      "answer": "**Short answer:** Work as partners on the same problem. Involve engineers early, agree on outcomes, and be clear on constraints. For distributed teams, rely on written decisions, overlap hours, and handovers that leave nothing implicit.\n\n#### With product and design\n\n- Bring engineering insight at the idea stage, not after the spec is final.\n- Ask about the user problem and the success measure, not only the feature.\n- Offer options that trade effort for value.\n- Review designs together for feasibility early.\n\n#### With remote and cross-time-zone teams\n\n| Practice | Why |\n| --- | --- |\n| Written decisions and docs | Nobody depends on a missed meeting |\n| A small daily overlap window | Time for real-time questions |\n| Rotating meeting times | Fairness over time zones |\n| Clear handover notes | Work continues without waiting |\n| Video for sensitive talks | Reduces misreading |\n\n**Example answer (template):** \"Our team spanned [N] time zones. I set a two-hour overlap, moved status to a shared board, and required a short written handover at the end of each day. Questions that used to take two days now took one, and the team told me they felt included.\"\n\n**Common mistakes**\n- Receiving specs and only then raising issues.\n- All the important talk in the hallway of one site.\n- Expecting instant answers across time zones.\n- Treating remote people as second class.\n\n**Interview tip:** Say that trust grows from reliable, visible follow-through. Follow-up: \"How do you handle a product manager who changes priorities weekly?\" Answer: make the cost of change visible and agree a stable window.",
+      "level": "intermediate",
+      "module": "Conflict & Communication",
+      "tags": [
+        "tech-lead",
+        "product",
+        "distributed-teams"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-032",
+      "question": "How do you handle a conflict between two engineers on your team?",
+      "answer": "**Short answer:** Talk to each person privately first to understand their view, then bring them together to focus on the shared goal and the specific issue. Separate the facts from the feelings, agree a way forward, and follow up.\n\n#### Steps\n\n```mermaid\nflowchart TD\n    A[\"Notice tension early\"] --> B[\"Listen to each person alone\"]\n    B --> C[\"Find facts versus feelings\"]\n    C --> D[\"Joint conversation on shared goal\"]\n    D --> E[\"Agree actions and owners\"]\n    E --> F[\"Follow up after two weeks\"]\n```\n\nFollow the arrows from top to bottom. Do not skip the private talks.\n\n**Example answer (template):** \"Two engineers disagreed about [design] and stopped talking in reviews. I met each alone. One felt unheard, the other felt blocked. I brought them together, asked each to state the other's concern fairly, and we agreed to decide using [criteria]. I checked in two weeks later. Reviews returned to normal and [result] shipped.\"\n\n**Common mistakes**\n- Waiting for it to go away.\n- Taking sides before hearing both.\n- Resolving it in front of the whole team.\n- Forcing a fake agreement with no follow-up.\n\n**Interview tip:** Say that most conflicts are about unclear roles, goals or respect, so you check those first. Follow-up: \"What if one person refuses to talk?\" Answer: set clear behaviour expectations and involve your manager if needed.",
+      "level": "intermediate",
+      "module": "Conflict & Communication",
+      "tags": [
+        "conflict",
+        "people"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-033",
+      "question": "How do you handle conflict with a stakeholder or product manager?",
+      "answer": "**Short answer:** Start by understanding their goal and pressure. Then bring your concern as a shared problem with options, not as an argument. Agree on the decision owner and the evidence that would change either view.\n\n#### Approach\n\n| Step | Action |\n| --- | --- |\n| Understand | \"What are you trying to achieve and by when?\" |\n| Share your constraint | Risk, effort, dependency, in plain words |\n| Offer options | Reduce scope, phase delivery, accept the risk with a safeguard |\n| Decide | Who decides, when, based on what |\n| Commit | Everyone supports the decision |\n\n**Example answer (template):** \"The product manager wanted [feature] for [event]. I believed the quality risk was high. Instead of saying no, I proposed shipping [smaller scope] behind a flag with monitoring and the rest two weeks later. They agreed. We hit the date and had no incident, and the relationship was stronger afterwards.\"\n\n**Common mistakes**\n- Arguing technical details they do not care about.\n- Treating the product manager as the enemy.\n- Saying yes and then missing quietly.\n- Escalating without talking first.\n\n**Interview tip:** Show that you see the other side's incentives. Follow-up: \"What if you still disagree after the decision?\" Say you commit, record your concern, and watch the agreed risk signal.",
+      "level": "intermediate",
+      "module": "Conflict & Communication",
+      "tags": [
+        "conflict",
+        "stakeholders"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-034",
+      "question": "Tell me about a time you changed your mind.",
+      "answer": "**Short answer:** Choose a story where new evidence or someone else's argument changed your view on something that mattered. It shows humility and good judgement. Say clearly what you believed, what changed it, and what you did.\n\n#### What a strong story shows\n\n- You held a real, reasoned position first.\n- You listened to a junior person or a different discipline.\n- You changed without ego and said so openly.\n- The result was better than your original plan.\n\n**Example answer (template):** \"I wanted to build [solution] in-house. [Engineer] argued for [alternative] and showed me a quick test with [data]. I had assumed [wrong assumption]. I said in the team meeting that I had changed my mind and why. We took the alternative, which saved [time or cost], and I now ask for a quick test before big build decisions.\"\n\n**Common mistakes**\n- A fake story where you were nearly right anyway.\n- A trivial subject, such as a tool preference.\n- Blaming others for your first view.\n- Saying you never change your mind.\n\n**Interview tip:** Highlight that you changed your mind publicly, because teams copy that behaviour. Follow-up: \"How do you decide when to hold your position?\" Answer: when the evidence is strong, or when the risk is safety or security critical.",
+      "level": "intermediate",
+      "module": "Conflict & Communication",
+      "tags": [
+        "humility",
+        "decisions"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-035",
+      "question": "Tell me about a time you made a wrong technical decision. What did you learn?",
+      "answer": "**Short answer:** Pick a real decision with an honest cost. Explain why it looked right at the time, how you noticed it was wrong, how you fixed it, and which part of your decision process you changed.\n\n#### Structure\n\n| Part | Content |\n| --- | --- |\n| Context | What you knew then |\n| Decision | What and why, including who agreed |\n| Signal | How the wrongness appeared |\n| Recovery | How you limited damage and fixed it |\n| Change | New habit, such as spikes, ADRs or review points |\n\n**Example answer (template):** \"We picked [technology] for [service] because of [reason]. After [months] we saw [problem, such as complexity or cost]. I raised it with the team, we ran a short evaluation of [alternative], and migrated [service] over [period]. Since then I require a small proof of concept, a written decision record with exit criteria, and an early review at [milestone].\"\n\n**Common mistakes**\n- Blaming the technology or the vendor.\n- A decision that was not really yours.\n- No change in your behaviour afterwards.\n- Making it sound like bad luck.\n\n**Interview tip:** Use hindsight carefully: say what you could not have known and what you could have. Follow-up: \"How do you make decisions that are cheap to reverse?\" Prefer small steps, feature flags and clear boundaries.",
+      "level": "intermediate",
+      "module": "Leading Technical Work",
+      "tags": [
+        "failure",
+        "decisions"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-036",
+      "question": "Tell me about a time you improved a process or team velocity. How did you measure it?",
+      "answer": "**Short answer:** Find the real bottleneck with data, change one thing at a time, and measure before and after. Use team-level delivery measures such as the DORA metrics and cycle time, and avoid using them to rank individuals.\n\n#### Useful measures\n\n| Measure | Meaning |\n| --- | --- |\n| Lead time for changes | Time from commit to production |\n| Deployment frequency | How often you release |\n| Change failure rate | Share of releases that cause a problem |\n| Time to restore service | How fast you recover |\n| Cycle time | Time from work started to done |\n\nThese are the four DORA metrics plus cycle time. Use them as questions, not targets.\n\n**Example answer (template):** \"Our cycle time was [X] days. I mapped the flow and found that pull requests waited [Y] days for review. We introduced a review rota, smaller changes and a working agreement. Cycle time fell to [Z] days and release frequency rose from [A] to [B] with no rise in failure rate.\"\n\n**Common mistakes**\n- Changing five things and not knowing which worked.\n- Measuring story points as speed.\n- Pushing speed with no quality guard.\n- Telling the team to go faster.\n\n**Interview tip:** Always pair a speed measure with a quality measure. Follow-up: \"How would you know if people were gaming it?\" Look for a rise in rework or hidden queues.",
+      "level": "intermediate",
+      "module": "Delivery & Planning",
+      "tags": [
+        "process",
+        "dora",
+        "metrics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-037",
+      "question": "Tell me about a time you led a migration or rewrite. How did you manage risk?",
+      "answer": "**Short answer:** Avoid a big-bang rewrite. Migrate in small, reversible steps, run old and new in parallel, define success and rollback criteria, and keep delivering value to users during the work.\n\n#### Risk controls\n\n| Risk | Control |\n| --- | --- |\n| Unknown behaviour of the old system | Characterisation tests, shadow traffic |\n| Big switch failure | Gradual traffic shift, feature flags |\n| Data loss or drift | Dual writes with reconciliation, backups |\n| Team burnout | Milestones, visible progress, parallel feature work |\n| Scope growth | Written scope, a freeze on new features in the old part |\n\nA common pattern is the strangler approach: build the new piece around the old one and route more and more traffic to it until the old one can be removed.\n\n**Example answer (template):** \"We moved [system] from [old] to [new]. I split it into [N] slices, each with a rollback plan. We shadowed [percent] of traffic for [period], compared results, then shifted traffic in steps. We finished with [downtime or incident count], and removed the old system in [month].\"\n\n**Common mistakes**\n- A rewrite that stops all features for a year.\n- No rollback plan.\n- Migrating without agreed success criteria.\n- Not telling stakeholders about the temporary cost.\n\n**Interview tip:** Say how you decided not to rewrite parts. Follow-up: \"How did you decide when it was done?\" Answer: old traffic at zero, data verified, and the old system switched off.",
+      "level": "intermediate",
+      "module": "Leading Technical Work",
+      "tags": [
+        "migration",
+        "risk"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-038",
+      "question": "Tell me about a time you handled ambiguity.",
+      "answer": "**Short answer:** Show that you can create clarity from an unclear problem: ask questions, name assumptions, run a small experiment, make a decision with the information you have, and adjust as you learn.\n\n#### Method\n\n1. Write down what you know, what you assume and what you do not know.\n2. Talk to the people who feel the problem.\n3. Pick the riskiest assumption and test it cheaply.\n4. Decide on a first step that is easy to reverse.\n5. Share a short plan and update it.\n\n**Example answer (template):** \"We were asked to support [new requirement] with no specification. I interviewed [people], wrote a one-page problem statement and three assumptions, built a thin prototype in [time], and showed it to [users]. Two assumptions were wrong. We changed course early and delivered [outcome] with less waste.\"\n\n**Common mistakes**\n- Waiting for a perfect specification.\n- Guessing silently and building the wrong thing.\n- Analysis with no decision.\n- Making the team feel lost.\n\n**Interview tip:** Mention that you give the team a clear next step even when the whole path is unclear. Follow-up: \"What if stakeholders gave conflicting answers?\" Document the conflict and ask them to resolve it, with options.",
+      "level": "intermediate",
+      "module": "Leading Technical Work",
+      "tags": [
+        "ambiguity",
+        "judgement"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-039",
+      "question": "Tell me about a time you took initiative beyond your role.",
+      "answer": "**Short answer:** Pick a problem nobody owned, show how you noticed it, how you made the case, and the result. Stress that you stayed accountable for your normal work and brought others along.\n\n#### What a strong story contains\n\n- You saw a real pain, for example flaky builds, missing runbooks or slow releases.\n- You checked it mattered with a number or feedback.\n- You asked for support rather than working in secret.\n- You handed over ownership at the end so it lasted.\n\n**Example answer (template):** \"Nobody owned [problem], and each team lost [time] a week. I wrote a half-page proposal, got agreement from [manager] to spend [limited time], built [solution], and presented it. [N] teams adopted it. I then handed it to [owner] with documentation.\"\n\n**Common mistakes**\n- Work that ignored your actual responsibilities.\n- Claiming a grand result for a small tool.\n- Acting without telling anyone.\n- No hand-over, so it died when you moved on.\n\n**Interview tip:** Link the initiative to the company's goals. Follow-up: \"What was the cost of doing this?\" Answer honestly with what you delayed and how you managed it.",
+      "level": "intermediate",
+      "module": "Leading Technical Work",
+      "tags": [
+        "initiative",
+        "ownership"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-040",
+      "question": "How do you handle a team member's burnout or low morale?",
+      "answer": "**Short answer:** Notice early, talk privately and with care, listen before offering solutions, and look at the causes in workload and environment. Then change something concrete: scope, pace, support or time off. Follow up regularly.\n\n#### Warning signs\n\n- Withdrawal, irritability, or a sudden drop in quality.\n- Long hours and no breaks.\n- Cynicism about work they used to enjoy.\n\n#### What a lead can do\n\n| Cause | Action |\n| --- | --- |\n| Overload | Reduce scope, move deadlines, share on-call |\n| Unclear purpose | Reconnect work to the outcome |\n| Lack of control | Give decisions back |\n| Conflict | Address it |\n| Personal issues | Offer flexibility and point to company support |\n\n**Example answer (template):** \"I noticed [engineer] was quiet and working late. In a one-to-one I asked how they were. They felt overwhelmed by [cause]. We removed [task], rotated on-call, and agreed a lighter month. I checked in weekly. They recovered, and I changed our planning so we did not over-commit again.\"\n\n**Common mistakes**\n- Saying \"just take a break\" with no change.\n- Asking about private matters too deeply.\n- Ignoring the team-wide cause.\n- Sharing private details with others.\n\n**Interview tip:** You are not a therapist: know when to bring in HR or company support. Follow-up: \"What if the whole team is burned out?\" Reduce commitments and speak to your manager about the system.",
+      "level": "intermediate",
+      "module": "People & Mentoring",
+      "tags": [
+        "burnout",
+        "morale",
+        "wellbeing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-041",
+      "question": "How do you manage up and keep your manager informed?",
+      "answer": "**Short answer:** Make your manager's job easier. Share progress, risks and decisions on a steady rhythm, with no surprises. Bring problems with options, and ask for the support or decision you need.\n\n#### Practical habits\n\n| Habit | Detail |\n| --- | --- |\n| Regular update | A short weekly note: done, next, risks, asks |\n| One-to-one | You set the agenda, including career and feedback |\n| No surprises | Bad news early, in private |\n| Understand their goals | Know what their manager asks them |\n| Ask for decisions | State the decision, the options and your recommendation |\n\n**Example answer (template):** \"I send my manager a five-line note every Friday. When a dependency slipped, I wrote the same day with the impact, two options and a recommendation. They could brief their own leaders before anyone asked, and they gave me more trust and autonomy.\"\n\n**Common mistakes**\n- Only talking when things go wrong.\n- Overloading them with detail.\n- Assuming they know your problems.\n- Complaining without a proposal.\n\n**Interview tip:** Say that the aim is autonomy through trust. Follow-up: \"What do you do when your manager is unavailable or unhelpful?\" Build a rhythm anyway, put things in writing, and find another mentor.",
+      "level": "intermediate",
+      "module": "Conflict & Communication",
+      "tags": [
+        "managing-up",
+        "communication"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-042",
+      "question": "How do you work with a difficult senior or peer?",
+      "answer": "**Short answer:** Assume good intent, find what drives them, and address specific behaviours privately. Build trust through small wins and respect. Escalate only after you tried a direct, honest conversation.\n\n#### Approach\n\n| Step | Action |\n| --- | --- |\n| Observe | Describe specific behaviour, not labels like \"arrogant\" |\n| Understand | What are they worried about? |\n| Talk | Use SBI in private: situation, behaviour, impact |\n| Adapt | Adjust how you communicate to what works with them |\n| Escalate | If harm continues, involve your manager with facts |\n\n**Example answer (template):** \"A senior engineer often dismissed ideas in design reviews. I asked for coffee, said what I noticed and how it affected the discussion. They told me they were worried about [risk]. We agreed they would write concerns before the meeting. Reviews became more productive and they later sponsored one of my proposals.\"\n\n**Common mistakes**\n- Gossiping about them.\n- Describing them as the problem rather than the behaviour.\n- Avoiding them completely.\n- Escalating before talking.\n\n**Interview tip:** Show empathy without being a pushover. Follow-up: \"What if they are rude to junior people?\" That needs a direct response and, if repeated, escalation, because it harms the team.",
+      "level": "intermediate",
+      "module": "Conflict & Communication",
+      "tags": [
+        "difficult-people",
+        "collaboration"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-043",
+      "question": "How do you hire: what do you look for, how do you structure a loop and avoid bias?",
+      "answer": "**Short answer:** Define what you need first, test it with structured, consistent interviews, score against a rubric, and decide as a group using evidence. Structure reduces bias and gives a fairer result.\n\n#### A hiring loop\n\n| Stage | Purpose |\n| --- | --- |\n| Role definition | Skills, level and traits you need |\n| Screen | Basic fit and motivation |\n| Technical exercise | Realistic problem solving, not trivia |\n| Design or system round | Judgement and trade-offs |\n| Behavioural round | Collaboration, ownership, learning |\n| Debrief | Independent written feedback first, then discussion |\n\n#### What to look for\n\nCuriosity, communication, reasoning about trade-offs, and the ability to learn. Match the bar to the level.\n\n#### Reducing bias\n\nUse the same questions for all candidates, score each competency separately, write notes before the debrief, and avoid \"culture fit\" as a reason. Prefer \"culture add\".\n\n**Example answer (template):** \"We moved from free-form chats to a rubric with four competencies. Interviewers wrote scores before the debrief. Offer acceptance rose and new hires ramped in [time].\"\n\n**Common mistakes**\n- Trick questions.\n- Hiring clones of yourself.\n- Letting the first impression decide.\n- Long, slow processes that lose good candidates.\n\n**Interview tip:** Mention candidate experience: respect their time and give feedback. Follow-up: \"Have you made a bad hire?\" Be honest and talk about what you changed.",
+      "level": "intermediate",
+      "module": "Hiring & Culture",
+      "tags": [
+        "hiring",
+        "interviewing",
+        "bias"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-044",
+      "question": "How do you handle underperformance, performance improvement plans and firing, respectfully?",
+      "answer": "**Short answer:** Address problems early with clear expectations and support. If there is no improvement, use a documented plan with measurable goals and dates, involving your manager and HR. Treat the person with dignity throughout, including at the end.\n\n#### Stages\n\n| Stage | What happens |\n| --- | --- |\n| Informal | Clear, specific feedback and support |\n| Formal plan | Written goals, timeline, regular check-ins, resources |\n| Decision | If goals are not met, follow company process |\n| Exit | Respectful, private, clear, with support where possible |\n\nA plan should never be a surprise. The person should have heard the concerns several times before.\n\n**Example answer (template):** \"[Engineer] struggled with [area] for a quarter. We spoke early, I paired them with [mentor], and set weekly goals. Progress stalled, so with HR we set a formal plan with measures. They improved in [area] and stayed, or moved on with my support in a way that kept their dignity.\" Use the outcome that is true for you.\n\n**Common mistakes**\n- Avoiding the issue until it is too late.\n- A plan designed to fail.\n- Telling the rest of the team the details.\n- Forgetting the team that carries the extra load.\n\n**Interview tip:** Speak with care, not coldness. Follow-up: \"How did the team react?\" Explain that you were transparent without sharing private information. Never share legal advice; follow the company process.",
+      "level": "intermediate",
+      "module": "Hiring & Culture",
+      "tags": [
+        "performance",
+        "pip",
+        "people"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-045",
+      "question": "How do you handle a missed deadline and recover trust?",
+      "answer": "**Short answer:** Tell stakeholders as soon as you know, take responsibility, explain the cause without excuses, give a new realistic plan, and then deliver on it. Trust returns through reliable follow-through.\n\n#### Recovery steps\n\n1. Communicate early with facts and impact.\n2. Offer options: partial delivery, new date, extra help.\n3. Find the real cause, such as estimation, dependency or scope change.\n4. Change something concrete in the process.\n5. Update regularly until delivery.\n\n**Example answer (template):** \"We were going to miss [date] by [N] weeks because [cause]. I told [stakeholder] the same day, proposed delivering [core part] first, and gave weekly updates. We delivered the core on the new date. I added [a change such as earlier integration tests], and the next two releases were on time.\"\n\n**Common mistakes**\n- Hoping to catch up and staying quiet.\n- Blaming another team.\n- Promising a new date without evidence.\n- No process change.\n\n**Interview tip:** Highlight that recovery is about predictability, not heroics. Follow-up: \"Did the team work overtime?\" Say honestly whether you avoided it and how.",
+      "level": "intermediate",
+      "module": "Delivery & Planning",
+      "tags": [
+        "deadlines",
+        "trust"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-046",
+      "question": "How do you lead a team through reorganisation or change?",
+      "answer": "**Short answer:** People need honesty, a reason, and a sense of control. Share what you know when you can, say what you do not know, listen to concerns, and focus the team on what they can influence. Keep delivery steady.\n\n#### Practical steps\n\n| Step | Why |\n| --- | --- |\n| Explain the why and what changes | Reduces rumours |\n| Say what is not yet decided | Honesty builds trust |\n| One-to-ones for each person | Different concerns |\n| Keep routines | Stability helps |\n| Involve people in how to implement | Gives control |\n| Watch for attrition risks | Talk to key people early |\n\n**Example answer (template):** \"When [teams merged], I held a Q and A the same day, told people what I knew, and listed the open questions. I met everyone individually in the first week. We agreed on working rules for the combined team. Delivery stayed on track and nobody left in the first [months].\"\n\n**Common mistakes**\n- Silence while you wait for perfect information.\n- Pretending to like a decision you do not.\n- Overpromising about job security.\n- Ignoring those who quietly disengage.\n\n**Interview tip:** Be loyal to the decision while honest about the impact. Follow-up: \"What if you disagree with the reorg?\" Raise it through the right channel, then support the outcome constructively.",
+      "level": "intermediate",
+      "module": "People & Mentoring",
+      "tags": [
+        "change",
+        "reorganisation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-047",
+      "question": "How do you set team goals or OKRs and measure engineering effectiveness without gaming metrics?",
+      "answer": "**Short answer:** Set a few goals tied to outcomes, make them ambitious but clear, and use measures as signals, not targets for individuals. When a measure becomes a target it is easy to game, so pair measures and check the story behind the numbers.\n\n#### OKR basics\n\nAn objective says where you want to go. Key results say how you will know. Keep three to five objectives at most.\n\n| Do | Avoid |\n| --- | --- |\n| Outcome measures such as reduced incident time | Output measures such as lines of code |\n| Team level measures | Ranking individuals |\n| Paired measures: speed with quality | A single number alone |\n| Review and discuss regularly | Set and forget |\n\n**Example answer (template):** \"Our objective was a more reliable release process. Key results: change failure rate from [X] to [Y] and restore time under [Z] minutes. We reviewed them monthly. When we saw deployments rising but rework too, we adjusted rather than celebrating the first number.\"\n\n**Common mistakes**\n- Counting pull requests or commits.\n- Too many goals.\n- Using metrics for performance reviews.\n- Goals the team had no say in.\n\n**Interview tip:** Mention a time you dropped a metric because it caused bad behaviour. Follow-up: \"How do you measure a platform team?\" Use developer experience surveys and reliability outcomes of its users.",
+      "level": "intermediate",
+      "module": "Delivery & Planning",
+      "tags": [
+        "okr",
+        "metrics",
+        "goals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-048",
+      "question": "How do you share knowledge with docs, RFCs and brown bags?",
+      "answer": "**Short answer:** Write things down where people will look, keep them short and current, and give people a reason to share. Use RFCs for decisions, runbooks for operations and short talks for learning.\n\n#### Tools\n\n| Tool | Use |\n| --- | --- |\n| RFC or design doc | Propose and discuss a significant change before building |\n| Decision record | Keep why a decision was made |\n| Runbook | Steps to handle a known problem |\n| Brown bag talk | A short informal session to teach |\n| Pairing and rotation | Spread knowledge of risky areas |\n\n**Example answer (template):** \"Only two people understood [system]. We ran three short brown bags, wrote a runbook with the on-call engineer, and rotated the first line of support. After [period], any engineer could handle the most common issues and the number of escalations to the two experts fell by [X].\"\n\n**Common mistakes**\n- Long docs nobody reads.\n- Docs owned by nobody.\n- Hero knowledge held by one person.\n- Mandating documentation with no time for it.\n\n**Interview tip:** Say that you make sharing part of the normal work and credit it in reviews. Follow-up: \"How do you keep docs fresh?\" Tie them to code changes and review them in the definition of done.",
+      "level": "intermediate",
+      "module": "Hiring & Culture",
+      "tags": [
+        "knowledge-sharing",
+        "documentation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-049",
+      "question": "How do you work with offshore or distributed teams?",
+      "answer": "**Short answer:** Build trust through clear goals, clear ownership and regular contact. Treat partners as part of the team, share context rather than only tasks, and make quality expectations explicit and testable.\n\n#### Practices\n\n| Area | Practice |\n| --- | --- |\n| Context | Share the why, users and architecture, not only tickets |\n| Interfaces | Clear contracts and automated tests |\n| Communication | Overlap hours, shared channels, video calls |\n| Quality | Shared definition of done, joint reviews |\n| Relationship | Visit or meet if possible; recognise contributions |\n\n**Example answer (template):** \"We worked with a partner team in [location]. At first we sent detailed tickets and received poor results. I changed to sharing the goal and constraints, a weekly planning call, and shared review on pull requests. Rework fell from [X] to [Y], and they proposed improvements of their own.\"\n\n**Common mistakes**\n- Treating them as a ticket factory.\n- Vague acceptance criteria.\n- Finding problems only at final delivery.\n- Cultural assumptions about directness.\n\n**Interview tip:** Mention that you adapt feedback style to cultural differences, being clear and respectful. Follow-up: \"How do you handle quality issues?\" Early reviews, automated checks and a joint retrospective.",
+      "level": "intermediate",
+      "module": "Conflict & Communication",
+      "tags": [
+        "distributed-teams",
+        "collaboration"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-050",
+      "question": "How do you handle customer-facing issues, escalations and on-call?",
+      "answer": "**Short answer:** Put the customer's problem first: acknowledge it, own it, communicate often and fix it. Make on-call fair and sustainable with clear runbooks, alerts that matter and a rota that shares the load.\n\n#### Escalation basics\n\n| Step | Action |\n| --- | --- |\n| Acknowledge | Respond quickly, even if you have no answer yet |\n| Assess | Impact, scope, workaround |\n| Communicate | One owner talks to the customer, with regular updates |\n| Fix and follow up | Root cause and prevention |\n| Learn | Feed it into the backlog and runbooks |\n\n#### Sustainable on-call\n\nReduce noisy alerts, write runbooks, rotate fairly, give time off after hard nights, and treat repeated pages as bugs.\n\n**Example answer (template):** \"A customer reported [issue] during [event]. I took ownership, gave the customer updates every [N] hours, applied a workaround in [time], and fixed the cause in [days]. We added [alert or test]. The customer later said the communication mattered as much as the fix.\"\n\n**Common mistakes**\n- Defensive replies to the customer.\n- Many people talking to the customer with mixed messages.\n- Alert fatigue.\n- Burning out the same few people.\n\n**Interview tip:** Mention that in a regulated or safety-related environment you also record the issue formally. Follow-up: \"How do you decide when to escalate internally?\" When impact is high, the fix is unclear, or the deadline for the customer is close.",
+      "level": "intermediate",
+      "module": "Quality & Reliability",
+      "tags": [
+        "on-call",
+        "escalation",
+        "customers"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-051",
+      "question": "How do you set a technical vision and strategy for a team, and write it down?",
+      "answer": "**Short answer:** A technical strategy answers three things: where we are, where we need to be and how we get there. Write it as a short document that is tied to business goals, names the trade-offs and what you will not do, and revisit it regularly.\n\n#### A simple structure\n\n| Section | Content |\n| --- | --- |\n| Context | Business goals, users, current pain, constraints |\n| Diagnosis | The key challenges, honestly stated |\n| Guiding principles | Rules that help decisions, for example \"prefer boring technology\" |\n| Coherent actions | A few initiatives, ordered, with owners |\n| Non-goals | What you will not do and why |\n| Measures | How you will know it works |\n\nKeep it to a few pages. Share a draft early with engineers and product, because a strategy nobody helped to shape will not be followed.\n\n**Example answer (template):** \"Our platform had [problem]. I drafted a four-page strategy: three principles, four initiatives over [period], and a list of non-goals. I reviewed it with the team and product, adjusted it, and used it to say no to [idea]. After [period], [metric] improved and decisions needed less debate.\"\n\n**Common mistakes**\n- A list of technologies instead of a strategy.\n- Vision with no action.\n- Written once and forgotten.\n- Written alone and announced.\n\n**Interview tip:** Say that a good strategy makes some decisions easier by closing options. Follow-up: \"How do you keep it alive?\" Review quarterly and refer to it in planning and design reviews.",
+      "level": "advanced",
+      "module": "Strategy & Career",
+      "tags": [
+        "strategy",
+        "vision"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-052",
+      "question": "How do you decide between building and buying, and lead architecture decisions at scale with ADRs?",
+      "answer": "**Short answer:** Build what is a core differentiator for your business, and buy or adopt what is a commodity, unless fit, cost, risk or control argue otherwise. Record important decisions in short architecture decision records, so people understand the why later.\n\n#### Decision factors\n\n| Factor | Question |\n| --- | --- |\n| Differentiation | Does this make our product special? |\n| Total cost | Build, run, maintain, license, integrate, and exit cost |\n| Time to value | How soon do we need it? |\n| Risk | Vendor lock-in, security, compliance, support |\n| Team skills | Can we run it well? |\n| Fit | Does it meet our needs without heavy customisation? |\n\n#### Architecture decision records\n\nAn ADR is a one-page note: context, options considered, decision, consequences and a status such as proposed or accepted. Store it next to the code. At scale, agree who must review decisions that cross team boundaries.\n\n**Example answer (template):** \"We needed [capability]. Building was possible but not our core. I compared three options in an ADR with cost and exit paths, ran a two-week trial of the preferred one, and we adopted it with an abstraction at the boundary. We saved about [time] and could replace it later.\"\n\n**Common mistakes**\n- Building because it is fun.\n- Buying without considering exit.\n- Ignoring running costs.\n- Decisions made in chat and forgotten.\n\n**Interview tip:** Mention reversibility: spend more care on one-way doors. Follow-up: \"How do you stop architecture review from becoming a bottleneck?\" Define which decisions need review and give teams guidelines for the rest.",
+      "level": "advanced",
+      "module": "Leading Technical Work",
+      "tags": [
+        "architecture",
+        "build-vs-buy",
+        "adr"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-053",
+      "question": "How do you lead a team through a high-stakes launch in a safety-critical or regulated environment?",
+      "answer": "**Short answer:** Combine disciplined change control with clear risk thinking. Know what must be proven before release, keep an audit trail, plan rollout and rollback, and build a culture where people can raise safety concerns without fear. Speed comes from clear process, not from skipping it.\n\n#### Key elements in general terms\n\n| Element | What it means |\n| --- | --- |\n| Change control | Every change is reviewed, traceable and approved |\n| Audit trail | You can show who changed what, why and when |\n| Risk assessment | List what can go wrong, how likely, how severe, how you reduce it |\n| Verification | Tests and evidence linked to requirements |\n| Staged rollout | Small group first, monitoring, clear go and no-go criteria |\n| Safety culture | Reporting is rewarded, near misses are discussed |\n\nThe exact standards depend on your industry and customer. Do not claim a specific standard unless you have worked with it.\n\n**Example answer (template):** \"Before launching [system] we built a checklist of go and no-go criteria with our quality and safety colleagues. Every change in the release was traceable to a requirement and a test. We rolled out to [small group], watched [measures] for [period], and kept a rollback tested. The launch had [result]. In the review we noted [lesson].\"\n\n**Common mistakes**\n- Treating compliance as paperwork at the end.\n- Hiding doubts to keep a date.\n- No tested rollback.\n- Heroic last-night changes.\n\n**Interview tip:** Say that you make it easy to do the right thing by automating evidence collection. Follow-up: \"What if the date and a safety concern conflict?\" Safety wins, and you communicate early with options.",
+      "level": "advanced",
+      "module": "Quality & Reliability",
+      "tags": [
+        "safety",
+        "compliance",
+        "launch"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-054",
+      "question": "How do you manage a multi-team initiative and its dependencies?",
+      "answer": "**Short answer:** Make the shared goal, the owner of each piece and the dependencies visible. Agree interfaces early, plan integration points, meet at a steady rhythm, and escalate blockers quickly with options.\n\n#### Practical toolkit\n\n| Tool | Use |\n| --- | --- |\n| One-page brief | Goal, scope, owners, date, success measure |\n| Dependency map | Who needs what from whom and when |\n| Interface contracts | Agreed early and tested automatically |\n| Integration milestones | Real end-to-end checks, not only status reports |\n| Risk log | Reviewed every week |\n| Single point of coordination | One named person |\n\n**Example answer (template):** \"[N] teams had to deliver parts of [feature]. I created a dependency map, got each team to commit to dates for their interface, and set an early integration test. In week [N] we found a mismatch and fixed it cheaply. We launched on the planned date.\"\n\n**Common mistakes**\n- Assuming teams will align on their own.\n- Integrating only at the end.\n- Status reports that hide risk.\n- Escalating as blame.\n\n**Interview tip:** Emphasise early integration and honest status. Follow-up: \"What if another team will not prioritise your need?\" Understand their goals, find mutual value, then escalate with a clear request.",
+      "level": "advanced",
+      "module": "Delivery & Planning",
+      "tags": [
+        "dependencies",
+        "cross-team",
+        "programme"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-055",
+      "question": "How do you negotiate scope, timeline and budget?",
+      "answer": "**Short answer:** Treat scope, time, cost and quality as linked. Understand what really matters to the other side, bring options with clear trade-offs, and be honest about risk. Aim for an agreement both sides can keep.\n\n#### The levers\n\n| Lever | Change means |\n| --- | --- |\n| Scope | Deliver less, or in phases |\n| Time | Later date |\n| Cost | More people or tooling, with ramp-up cost |\n| Quality | Usually the one lever you should not secretly pull |\n\n#### Approach\n\n1. Ask for the underlying need and the hard constraints.\n2. Prepare two or three packages, each with a recommendation.\n3. State risks and confidence in plain words.\n4. Agree what you will review and when.\n\n**Example answer (template):** \"A stakeholder wanted [everything] by [date] with [N] people. I offered three packages: core by the date, full scope two months later, or full scope by the date with [N+2] people and a higher risk. I recommended the first. They chose it and we agreed a checkpoint in [week].\"\n\n**Common mistakes**\n- Negotiating positions instead of needs.\n- Giving a number without assumptions.\n- Quietly cutting quality.\n- Winning an argument and losing a partner.\n\n**Interview tip:** Say that a good deal is one you can deliver. Follow-up: \"When did you walk away from a deal?\" Describe the point where the risk was unacceptable and how you explained it.",
+      "level": "advanced",
+      "module": "Delivery & Planning",
+      "tags": [
+        "negotiation",
+        "scope",
+        "budget"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-056",
+      "question": "How do you handle a failing project: when to escalate, pivot or kill it?",
+      "answer": "**Short answer:** Define early what success and failure look like, check against them honestly, and decide when signals are clear. Escalate when the problem is beyond your authority, pivot when the goal is valid but the approach is wrong, and stop when the value no longer justifies the cost.\n\n#### Decision flow\n\n```mermaid\nflowchart TD\n    A[\"Project at risk\"] --> B{\"Is the goal still valuable?\"}\n    B -- no --> C[\"Stop and redeploy people\"]\n    B -- yes --> D{\"Can we fix it within our authority?\"}\n    D -- yes --> E[\"Replan, reduce scope, pivot approach\"]\n    D -- no --> F[\"Escalate with options\"]\n```\n\nRead from top to bottom. Each answer leads to a clear action.\n\n#### Signals\n\nRepeated slips with no learning, a growing list of unknowns, a team that has lost belief, or a cost that now exceeds the benefit. Watch for the sunk cost trap: past spending is not a reason to continue.\n\n**Example answer (template):** \"After [period], [project] had missed [N] milestones. I compared the remaining cost to the value and brought three options to leadership: reduce to [core], switch to [alternative], or stop. We chose [option], moved the team to [work], and I wrote down lessons for future projects.\"\n\n**Common mistakes**\n- Hoping for a miracle.\n- Escalating without a recommendation.\n- Hiding problems from stakeholders.\n- Blaming the team when stopping.\n\n**Interview tip:** Show courage and care for the team in the same answer. Follow-up: \"How did the team feel about stopping?\" Give credit for what was learned and move people to meaningful work.",
+      "level": "advanced",
+      "module": "Strategy & Career",
+      "tags": [
+        "project-management",
+        "judgement"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-057",
+      "question": "How do you build psychological safety and handle conflicts of values on a team?",
+      "answer": "**Short answer:** Psychological safety means people believe they can speak up, ask questions or admit mistakes without being punished. A lead builds it by modelling vulnerability, responding well to bad news and setting fair norms. When values clash, name the shared principle, listen, and set clear behaviour boundaries.\n\n#### Building safety\n\n| Behaviour | Effect |\n| --- | --- |\n| Admit your own mistakes | Others feel it is safe |\n| Thank people for bad news | More bad news comes early |\n| Ask for dissent, quietest first | Better decisions |\n| Blameless reviews | Learning rather than hiding |\n| Credit publicly | Trust |\n\n#### Conflict of values\n\nExamples are speed versus quality, or honesty versus loyalty. Ask what each person is protecting. Anchor on team principles and company values, and decide what is a matter of preference and what is a standard of behaviour. Respectful disagreement is welcome. Disrespect is not.\n\n**Example answer (template):** \"Two engineers disagreed on shipping with known minor defects. One valued speed, one valued craft. We discussed what each protected, agreed on a definition of acceptable risk, and set a rule for when defects block a release. Both felt heard, and release arguments dropped.\"\n\n**Common mistakes**\n- Treating safety as being nice with no standards.\n- Punishing the messenger.\n- Ignoring a person who dominates meetings.\n- Avoiding hard values conversations.\n\n**Interview tip:** Give one concrete moment when you reacted well to bad news. Follow-up: \"How do you know the team feels safe?\" Watch participation, listen to retros, and use anonymous surveys.",
+      "level": "advanced",
+      "module": "Hiring & Culture",
+      "tags": [
+        "psychological-safety",
+        "culture",
+        "values"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-058",
+      "question": "How do you scale yourself: from tech lead to manager or staff path, and have career conversations?",
+      "answer": "**Short answer:** Scaling yourself means increasing impact through other people, systems and clear decisions, not through longer hours. Choose management or staff by what energises you, test it with real responsibilities, and have honest career conversations with your manager and your team.\n\n#### Two paths\n\n| | Management track | Staff / principal track |\n| --- | --- | --- |\n| Impact through | People, team health, hiring, delivery | Technical strategy, cross-team solutions |\n| Daily work | One-to-ones, planning, coaching | Design, prototypes, reviews, writing |\n| Good fit if | You enjoy growing people | You enjoy deep technical problems |\n| Trial | Run hiring or performance cycle | Lead a cross-team technical project |\n\nMany people move between the two. It is not a one-way door.\n\n#### Career conversations\n\nAsk engineers what they want, what energises them and where they are stuck. Agree one or two actions. Do the same with your own manager: say clearly what you want and what evidence you will build.\n\n**Example answer (template):** \"I realised I spent most of my time on people and planning, and enjoyed it. I asked my manager to let me lead [hiring or reviews] for a quarter. It confirmed my interest and I created a plan for the skills I lacked, such as [budget, performance management].\"\n\n**Common mistakes**\n- Choosing management for status.\n- Staying a hero.\n- Waiting to be noticed.\n- Avoiding career talks with the team.\n\n**Interview tip:** Be honest and specific about your direction. Follow-up: \"What will you miss from hands-on work?\" Say how you will stay technical enough.",
+      "level": "advanced",
+      "module": "Strategy & Career",
+      "tags": [
+        "career",
+        "growth",
+        "management"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-059",
+      "question": "How do you lead in an AI-assisted engineering world: policy, review and upskilling?",
+      "answer": "**Short answer:** Use AI tools to speed up work while keeping humans accountable for the result. Set clear policy on data and security, keep code review rigorous, check quality with tests, and help the team learn to use the tools well.\n\n#### Areas to lead\n\n| Area | Practice |\n| --- | --- |\n| Policy | What data may be shared with tools, approved tools, licence and security rules |\n| Review | AI-written code gets the same review and tests as any other code |\n| Quality | Strong tests and small changes catch plausible but wrong output |\n| Learning | Share prompts that work, pair on usage, discuss failures |\n| Juniors | Make sure they still learn fundamentals and debugging |\n| Measurement | Look at outcomes such as cycle time and defects, not tool usage counts |\n\n**Example answer (template):** \"We piloted [tool] with a small group for [period]. We set a rule that nothing confidential goes into unapproved tools, that authors must understand and test all generated code, and that reviews stay unchanged. We tracked cycle time and defects. Cycle time improved by [X] and defects stayed flat, so we expanded.\"\n\n**Common mistakes**\n- Banning the tools completely or allowing all use without rules.\n- Accepting generated code without review.\n- Measuring success by lines produced.\n- Ignoring the learning needs of junior engineers.\n\n**Interview tip:** Say that the engineer remains responsible for what they commit. Follow-up: \"How do you handle a team member who relies on it too much?\" Coach on understanding and testing, and ask them to explain the code.",
+      "level": "advanced",
+      "module": "Quality & Reliability",
+      "tags": [
+        "ai",
+        "policy",
+        "upskilling"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-060",
+      "question": "What questions should you ask the interviewer?",
+      "answer": "**Short answer:** Ask questions that show you think like a lead: about the team's goals, how decisions are made, what success looks like, and the challenges. They also help you decide whether you want the job.\n\n#### Good questions\n\n| Topic | Example question |\n| --- | --- |\n| Expectations | \"What would success look like in the first ninety days and the first year?\" |\n| Team | \"How is the team structured, and what are its biggest strengths and gaps?\" |\n| Decisions | \"How are technical decisions made and recorded?\" |\n| Quality | \"How do you handle incidents and technical debt?\" |\n| People | \"How do you support growth and promotion?\" |\n| Challenges | \"What is the hardest problem the team faces now?\" |\n| Manager | \"How would you describe your management style?\" |\n\n**Example answer (template):** Close with: \"Based on what we discussed, what concerns do you have about my fit, so I can address them now?\"\n\n**Common mistakes**\n- No questions at all.\n- Asking only about pay and holidays in a first round.\n- Questions answered on the website.\n- Not listening to the answers.\n\n**Interview tip:** Take brief notes and refer to the answers later. Ask different questions for different interviewers: the manager, a peer, a product partner. Follow-up: you may be asked \"What did you learn about us?\" so keep your notes.",
+      "level": "advanced",
+      "module": "Interview Approach",
+      "tags": [
+        "interview-questions",
+        "preparation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-061",
+      "question": "What is your plan for the first ninety days as a new tech lead?",
+      "answer": "**Short answer:** Listen and learn in the first month, make small visible improvements in the second, and set direction and priorities in the third. Build relationships first, and avoid big changes before you understand the context.\n\n#### The plan\n\n| Period | Focus | Example actions |\n| --- | --- | --- |\n| Days 1 to 30 | Learn | Meet every engineer and key stakeholder, read the architecture and incidents, shadow on-call, ask what to keep and what to change |\n| Days 31 to 60 | Contribute | Fix one visible pain, set up one-to-ones, agree working norms, deliver a small piece |\n| Days 61 to 90 | Lead | Share observations and a draft plan, agree priorities with manager and product, set measures |\n\n**Example answer (template):** \"In the first month I will ask everyone three questions: what works well, what slows you down and what one thing would you change. By day sixty I will fix one agreed pain, such as [flaky tests]. By day ninety I will share a short plan with measures and review it with the team and my manager.\"\n\n**Common mistakes**\n- Announcing a new process in week one.\n- Criticising the past team.\n- Neglecting relationships outside the team.\n- No agreed expectations with your manager.\n\n**Interview tip:** Agree on what success looks like at ninety days with your manager at the start. Follow-up: \"What if you discover a serious problem early?\" Verify, tell your manager promptly and propose a plan.",
+      "level": "advanced",
+      "module": "Strategy & Career",
+      "tags": [
+        "first-90-days",
+        "onboarding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-062",
+      "question": "What are the general principles of compensation and level negotiation?",
+      "answer": "**Short answer:** Prepare, be honest, and negotiate the whole package and the level, not just one number. Know your priorities, understand the range for the role, and keep the conversation respectful and collaborative.\n\n#### Principles\n\n| Principle | Detail |\n| --- | --- |\n| Research | Understand typical ranges for role, level and location |\n| Level matters | Level affects future pay, scope and growth |\n| Whole package | Salary, bonus, equity, benefits, flexibility, learning budget |\n| Timing | Negotiate after you have an offer, not before |\n| Evidence | Link your ask to scope, results and market data |\n| Alternatives | Having other options gives you confidence |\n| Tone | Enthusiastic, factual and calm |\n\n**Example answer (template):** \"I am excited about the role. Based on the scope we discussed and my experience with [specific results], I was expecting a package closer to [your researched range]. Is there flexibility? I would also like to confirm the level, as I believe the responsibilities match [level].\"\n\n**Common mistakes**\n- Lying about other offers.\n- Accepting immediately out of relief.\n- Negotiating by email only when a call would build rapport.\n- Ignoring the level, only the number.\n\n**Interview tip:** Do not give your current salary if the law or your preference allows; talk about expectations. Follow-up: \"What is your expected salary?\" Answer with a researched range and flexibility, not a single number.",
+      "level": "advanced",
+      "module": "Strategy & Career",
+      "tags": [
+        "negotiation",
+        "compensation",
+        "level"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "leadership-behavioral-063",
+      "question": "What are ten rapid-fire mock interview questions, with hints for a strong answer?",
+      "answer": "**Short answer:** Use this pack to practise out loud. Give each answer in about sixty to ninety seconds, with one real example. The hints show what a strong answer must contain.\n\n#### The ten questions\n\n| No | Question | Strong answer hint |\n| --- | --- | --- |\n| 1 | Tell me about yourself. | Present, past, future in ninety seconds, linked to the role |\n| 2 | Tell me about a time you led without authority. | Credibility, evidence, small pilot, result |\n| 3 | Describe a conflict in your team. | Private talks first, shared goal, follow-up |\n| 4 | What is your biggest failure? | Own it, impact, recovery, changed habit |\n| 5 | How do you handle an underperformer? | Early specific feedback, support, plan, dignity |\n| 6 | How do you say no to a stakeholder? | Explain trade-off, offer options, let them decide |\n| 7 | How do you prioritise? | Impact, effort, a framework, communicate the why |\n| 8 | Tell me about a tough technical decision. | Options, trade-offs, decision record, review |\n| 9 | How do you stay technical as a lead? | Chosen coding, reviews, learning, not on the critical path |\n| 10 | Why should we hire you? | Two or three strengths with proof, fit with their needs |\n\n**Example answer (template for question 10):** \"You need someone who can [need from the job description]. In [project] I did [action] and achieved [result]. I enjoy growing engineers: [example]. I would bring that to your team.\"\n\n**Common mistakes**\n- Speaking for more than two minutes.\n- Answers that start generic and never reach an example.\n- Never mentioning the result.\n- Practising only in your head.\n\n**Interview tip:** Record yourself or practise with a friend, and listen for \"we\" versus \"I\". Follow-up: choose your weakest two answers and rewrite them with a clear result.",
+      "level": "advanced",
+      "module": "Interview Approach",
+      "tags": [
+        "mock-interview",
+        "practice"
+      ],
+      "favorite": false
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+[
+  {
+    "title": "Tech Interview Handbook: Behavioral interviews",
+    "url": "https://www.techinterviewhandbook.org/behavioral-interview/",
+    "type": "tutorial",
+    "description": "How behavioural rounds work, with question lists and sample answers.",
+    "level": "beginner",
+    "module": "Interview Approach"
+  },
+  {
+    "title": "Amazon Leadership Principles",
+    "url": "https://www.amazon.jobs/en/principles",
+    "type": "reference",
+    "description": "A widely used framework for behavioural questions and stories.",
+    "level": "beginner",
+    "module": "Interview Approach"
+  },
+  {
+    "title": "StaffEng",
+    "url": "https://staffeng.com",
+    "type": "reference",
+    "description": "Stories and guides on staff-plus engineering roles and what they involve.",
+    "level": "intermediate",
+    "module": "Strategy & Career"
+  },
+  {
+    "title": "An Elegant Puzzle (Will Larson)",
+    "url": "https://lethain.com/elegant-puzzle/",
+    "type": "book",
+    "description": "Systems of engineering management: teams, growth, process.",
+    "level": "intermediate",
+    "module": "Leading Technical Work"
+  },
+  {
+    "title": "Will Larson: Irrational Exuberance",
+    "url": "https://lethain.com",
+    "type": "article",
+    "description": "Essays on engineering leadership, strategy and organisation.",
+    "level": "intermediate",
+    "module": "Strategy & Career"
+  },
+  {
+    "title": "re:Work: Understanding team effectiveness",
+    "url": "https://rework.withgoogle.com/en/guides/understanding-team-effectiveness",
+    "type": "article",
+    "description": "Google's research on psychological safety and effective teams.",
+    "level": "intermediate",
+    "module": "Conflict & Communication"
+  },
+  {
+    "title": "re:Work: What makes a great manager",
+    "url": "https://rework.withgoogle.com/en/guides/managers-identify-what-makes-a-great-manager",
+    "type": "article",
+    "description": "Google's findings on the behaviours of effective managers.",
+    "level": "intermediate",
+    "module": "People & Mentoring"
+  },
+  {
+    "title": "Postmortem culture (Google SRE)",
+    "url": "https://sre.google/sre-book/postmortem-culture/",
+    "type": "reference",
+    "description": "How to run blameless postmortems and learn from failure.",
+    "level": "intermediate",
+    "module": "Quality & Reliability"
+  },
+  {
+    "title": "Architecture Decision Records",
+    "url": "https://adr.github.io/",
+    "type": "reference",
+    "description": "Why and how to record architecture decisions.",
+    "level": "intermediate",
+    "module": "Leading Technical Work"
+  },
+  {
+    "title": "Team Topologies",
+    "url": "https://teamtopologies.com/",
+    "type": "reference",
+    "description": "Team types and interaction modes for fast flow.",
+    "level": "intermediate",
+    "module": "Strategy & Career"
+  },
+  {
+    "title": "Radical Candor",
+    "url": "https://www.radicalcandor.com/",
+    "type": "article",
+    "description": "A framework for direct, caring feedback.",
+    "level": "intermediate",
+    "module": "People & Mentoring"
+  },
+  {
+    "title": "Brag documents (Julia Evans)",
+    "url": "https://jvns.ca/blog/brag-documents/",
+    "type": "article",
+    "description": "Keep a record of your work to use in reviews, promotions and interviews.",
+    "level": "beginner",
+    "module": "Interview Approach"
+  },
+  {
+    "title": "DORA research and metrics",
+    "url": "https://dora.dev/",
+    "type": "reference",
+    "description": "Measure delivery performance without gaming it.",
+    "level": "intermediate",
+    "module": "Delivery & Planning"
+  }
+]

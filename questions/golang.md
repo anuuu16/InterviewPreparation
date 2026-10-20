@@ -2,7 +2,7 @@
 
 [← Back to index](../README.md) · [⭐ Favorites](favorites.md)
 
-126 questions · 0 favorites
+126 questions · 0 favorites · [📚 Resources](#resources)
 
 ## Contents
 
@@ -6624,3 +6624,40 @@ func (r *MyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 **When to write an operator:** you manage stateful or complex software (databases, message brokers, fleet configuration) and want automation like upgrades, backups, scaling encoded in code. Do not write one if a Helm chart or a simple Deployment is enough.
 
 _Module: Design & Patterns · Tags: kubernetes, operators, client-go_
+
+---
+
+## Resources
+
+Where to read more at the source. Official docs and references come first.
+
+**Official docs**
+
+- [Go documentation](https://go.dev/doc/) — Official starting point: tutorials, guides, the FAQ and release notes. _(beginner)_
+- [Diagnostics](https://go.dev/doc/diagnostics) — Profiling, tracing, debugging and runtime statistics: which tool answers which question. _(intermediate)_
+- [A Guide to the Go Garbage Collector](https://go.dev/doc/gc-guide) — How the GC works and how GOGC and GOMEMLIMIT tune it. _(advanced)_
+
+**Reference**
+
+- [Effective Go](https://go.dev/doc/effective_go) — The classic guide to writing idiomatic Go: naming, interfaces, concurrency, errors. _(intermediate)_
+- [The Go Programming Language Specification](https://go.dev/ref/spec) — The exact rules of the language. Use it to settle arguments about slices, method sets or conversions. _(advanced)_
+- [The Go Memory Model](https://go.dev/ref/mem) — What one goroutine is guaranteed to see of another's writes (happens-before). _(advanced)_
+- [Standard library reference (pkg.go.dev)](https://pkg.go.dev/std) — Searchable docs for every standard package with runnable examples. _(intermediate)_
+- [Go Modules Reference](https://go.dev/ref/mod) — go.mod, versions, replace, workspaces and private modules in detail. _(intermediate)_
+- [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments) — The checklist Go reviewers use: naming, errors, interfaces, concurrency. _(intermediate)_
+- [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md) — A widely used team style guide with reasons for each rule. _(intermediate)_
+
+**Tutorial**
+
+- [A Tour of Go](https://go.dev/tour/) — Interactive, in-browser walkthrough of the language basics. The best first hour with Go. _(beginner)_
+- [Go by Example](https://gobyexample.com) — Short annotated programs for each feature: goroutines, channels, JSON, testing. _(beginner)_
+- [Tutorial: Getting started with fuzzing](https://go.dev/doc/tutorial/fuzz) — Write your first fuzz test with the built-in fuzzer. _(intermediate)_
+
+**Article**
+
+- [The Go Blog](https://go.dev/blog/) — Articles by the Go team: design decisions, new features, patterns. _(intermediate)_
+- [Go Concurrency Patterns: Pipelines and cancellation](https://go.dev/blog/pipelines) — Pipelines, fan-out/fan-in and stopping goroutines cleanly. _(intermediate)_
+- [Working with Errors in Go 1.13](https://go.dev/blog/go1.13-errors) — How wrapping with %w, errors.Is and errors.As work and why they exist. _(intermediate)_
+- [An Introduction to Generics](https://go.dev/blog/intro-generics) — What generics are, constraints, and when to use them. _(intermediate)_
+- [Profiling Go Programs](https://go.dev/blog/pprof) — A worked pprof session: find and fix a CPU hot spot. _(intermediate)_
+- [Structured logging with slog](https://go.dev/blog/slog) — The standard structured logger introduced in Go 1.21. _(intermediate)_
