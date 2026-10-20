@@ -1,0 +1,261 @@
+{
+  "name": "SDLC & Agile",
+  "questions": [
+    {
+      "id": "sdlc-agile-001",
+      "question": "What is the software development life cycle (SDLC), and what are its phases?",
+      "answer": "**Short answer:** The SDLC is the set of steps a team follows to take software from an idea to a running, maintained product. The usual phases are requirements, design, implementation, testing, deployment and maintenance. Process models such as waterfall and agile differ in how they order and repeat these phases, not in whether they exist.\n\n| Phase | Question it answers | Typical output |\n| --- | --- | --- |\n| Requirements | What should we build and why? | user stories, acceptance criteria |\n| Design | How will it work? | architecture, data model, API contracts |\n| Implementation | Build it | code, code reviews |\n| Testing | Does it work and is it safe? | automated tests, bug reports |\n| Deployment | Put it in front of users | release, rollout, monitoring |\n| Maintenance | Keep it healthy | fixes, upgrades, support |\n\nIn a modern team these phases overlap. A developer might refine a requirement, write a test and deploy to production in a single day.\n\n**Remember:** a model is a way to manage uncertainty. The less you know up front, the shorter the feedback loop you want.\n\n**Interview tip:** say that the phases never go away. What changes is how big each batch is and how fast you learn from users.",
+      "level": "basic",
+      "module": "SDLC Models",
+      "tags": [
+        "sdlc",
+        "process"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-002",
+      "question": "What is the waterfall model, and when does it still make sense?",
+      "answer": "**Short answer:** Waterfall is a sequential model. You finish requirements, then design, then build, then test, then release, and each phase ends with sign-off before the next starts. It gives clear plans, documents and contracts, but it learns from real users very late, so change is expensive.\n\n**Strengths**\n- Easy to understand, plan and track. Fixed scope, cost and date can go into a contract.\n- Good documentation and traceability.\n- Fits work where requirements are stable and well understood.\n\n**Weaknesses**\n- Feedback arrives at the end, when changes are most costly.\n- Requirements are guessed up front and often wrong or outdated.\n- Testing is squeezed into the end, so quality problems are found late.\n- Hard to react to market change.\n\n**Where it still fits**\n- Safety-critical or regulated work such as avionics, medical devices and automotive, where certification demands documented requirements and traceability. Even there, teams often work in iterations inside the plan.\n- Fixed-price construction-like projects, hardware with long lead times, and migrations with a clear target.\n\n**Gotcha:** \"waterfall\" is often used as a insult. In practice many companies use a hybrid: a stable plan and compliance documents at the top, with agile delivery in the teams.\n\n**Interview tip:** show balance. Say waterfall fits stable, high-risk-of-failure-to-certify work, and that you have used iterative delivery within regulated constraints.",
+      "level": "basic",
+      "module": "SDLC Models",
+      "tags": [
+        "waterfall",
+        "sdlc"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-003",
+      "question": "What is Agile, and what do the Agile values and principles say?",
+      "answer": "**Short answer:** Agile is a way of building software in small steps, getting feedback often, and adapting to change. The Agile Manifesto (2001) states four values: individuals and interactions over processes and tools, working software over comprehensive documentation, customer collaboration over contract negotiation, and responding to change over following a plan. The items on the right still matter, the items on the left matter more.\n\n**Principles in everyday terms**\n- Deliver working software early and often, in weeks, not months.\n- Welcome changing requirements, even late.\n- Business people and developers work together daily.\n- Build around motivated people and trust them.\n- Face-to-face conversation is the best way to share information.\n- Working software is the main measure of progress.\n- Keep a sustainable pace.\n- Technical excellence and simple design improve agility.\n- The team regularly reflects and adjusts (the retrospective).\n\n**Agile is not**\n- No planning or no documentation.\n- A specific framework. Scrum, Kanban and XP are ways to practise it.\n- A reason to skip design or testing.\n\n**Gotcha:** \"doing Agile\" with daily stand-ups and sprints but with long approval chains and no real feedback from users is often called cargo cult agile.\n\n**Interview tip:** explain Agile by its outcome: shorter feedback loops. Then give one example from your team where a short loop saved rework.",
+      "level": "basic",
+      "module": "Agile & Scrum",
+      "tags": [
+        "agile",
+        "manifesto"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-004",
+      "question": "What is Scrum? Explain the roles, events and artifacts.",
+      "answer": "**Short answer:** Scrum is an agile framework that works in fixed-length iterations called sprints, usually one to four weeks. A small team delivers a usable increment each sprint, and inspects and adapts after each one. It has three accountabilities, five events and three artifacts.\n\n| Part | Items |\n| --- | --- |\n| Accountabilities | Product Owner (what and why, owns the backlog), Scrum Master (helps the team use Scrum and removes blockers), Developers (build the increment) |\n| Events | Sprint, Sprint Planning, Daily Scrum, Sprint Review, Sprint Retrospective |\n| Artifacts | Product Backlog, Sprint Backlog, Increment |\n\n```mermaid\nflowchart LR\n    B[\"Product backlog\"] --> P[\"Sprint planning\"]\n    P --> S[\"Sprint: build and test\"]\n    S --> I[\"Increment\"]\n    I --> R[\"Sprint review\"]\n    R --> T[\"Retrospective\"]\n    T --> B\n```\n\nRead it as a loop. Each sprint takes the highest-value backlog items, delivers an increment, then reviews the product and the way of working.\n\n**Quick meaning of each event**\n- Planning: choose a sprint goal and the work for it.\n- Daily Scrum: 15 minutes for the developers to plan the next day.\n- Review: show the increment to stakeholders and gather feedback.\n- Retrospective: the team improves how it works.\n\n**Gotcha:** the Scrum Master is not a project manager. The Product Owner decides priority, and the team decides how to build.\n\n**Interview tip:** the Scrum Guide has evolved, so say the names you use. Mention that the sprint goal gives focus, not a list of tasks.",
+      "level": "basic",
+      "module": "Agile & Scrum",
+      "tags": [
+        "scrum",
+        "agile"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-005",
+      "question": "What are user stories, acceptance criteria and the Definition of Done?",
+      "answer": "**Short answer:** A user story describes a need from the user's point of view: \"As a customer, I want to see my order status, so that I know when it will arrive.\" Acceptance criteria are the checks that say this story works. The Definition of Done is the team-wide quality bar that every item must meet before it counts as finished.\n\n**Good stories (INVEST)**\n- Independent, Negotiable, Valuable, Estimable, Small, Testable.\n\n**Acceptance criteria** often use Given, When, Then:\n\n```text\nGiven an order that was shipped yesterday\nWhen the customer opens the order page\nThen they see \"Shipped\" and the tracking link\n```\n\n**Definition of Done example**\n- Code reviewed and merged.\n- Automated tests pass in the pipeline.\n- No new critical security findings.\n- Deployed to staging, and observable (logs, metrics, alerts).\n- Documentation or runbook updated.\n\n| Item | Scope |\n| --- | --- |\n| Acceptance criteria | one story |\n| Definition of Done | every story, same for the whole team |\n\n**Gotchas**\n- Stories that are tasks in disguise (\"create table orders\") have no user value.\n- A weak Definition of Done leads to \"done but not deployed\", which hides work in progress.\n\n**Interview tip:** say that stories are a conversation starter, and the written criteria capture what the conversation agreed.",
+      "level": "basic",
+      "module": "Agile & Scrum",
+      "tags": [
+        "user-stories",
+        "backlog",
+        "definition-of-done"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-006",
+      "question": "What is Kanban, and how does it differ from Scrum?",
+      "answer": "**Short answer:** Kanban is a way to visualise work on a board and limit how much is in progress at once. Work flows continuously, with no fixed sprints. The key rule is work-in-progress (WIP) limits, which expose bottlenecks and push the team to finish before starting.\n\n**Core practices**\n- Visualise the workflow as columns (To do, In progress, Review, Done).\n- Limit WIP per column.\n- Manage flow: measure how long work takes (cycle time) and how much finishes per week (throughput).\n- Make policies explicit and improve continuously.\n\n| | Scrum | Kanban |\n| --- | --- | --- |\n| Cadence | fixed sprints | continuous flow |\n| Roles | defined | none required |\n| Planning | per sprint | when capacity frees up |\n| Change mid-iteration | discouraged | allowed any time |\n| Key metric | velocity, sprint goal | cycle time, throughput |\n| Fits | product development with planning rhythm | support, operations, mixed or interrupt-driven work |\n\nTeams often combine them, a practice called Scrumban.\n\n**Gotcha:** a Kanban board without WIP limits is just a to-do list. The limits are the point.\n\n**Interview tip:** for a platform or on-call team with unpredictable requests, say you would use Kanban with a WIP limit and an expedite lane.",
+      "level": "basic",
+      "module": "Kanban & Lean",
+      "tags": [
+        "kanban",
+        "wip-limits",
+        "lean"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-007",
+      "question": "What is the difference between waterfall and Agile? When would you choose each?",
+      "answer": "**Short answer:** Waterfall plans everything up front and delivers at the end. Agile delivers in small slices and plans as it learns. Choose waterfall when requirements are fixed and change is costly or regulated. Choose Agile when requirements are uncertain and fast feedback has value. Many real projects use a mix.\n\n| | Waterfall | Agile |\n| --- | --- | --- |\n| Plan | fixed, detailed, up front | adaptive, rolling |\n| Delivery | one big release | frequent small releases |\n| Change | costly, needs formal change control | expected and welcome |\n| Customer involvement | at the start and end | throughout |\n| Risk | found late | found early |\n| Documentation | heavy | lighter, just enough |\n| Progress measure | phase completion | working software |\n\n**Decision hints**\n- Unknown or evolving requirements, a product with users: Agile.\n- Fixed contract, regulation, certification evidence, hardware dependencies: more plan-driven, possibly with iterative delivery inside.\n- Hybrid: a roadmap and compliance documents at the program level, sprints in the teams.\n\n**Gotcha:** switching process labels does not fix problems such as unclear goals, slow decisions or no testing.\n\n**Interview tip:** answer with the type of uncertainty. \"Where requirements and risks are unknown I want short loops. Where the cost of a mistake is high I want more up-front analysis and evidence.\"",
+      "level": "basic",
+      "module": "SDLC Models",
+      "tags": [
+        "waterfall",
+        "agile",
+        "comparison"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-008",
+      "question": "What are the main XP and engineering practices behind agile delivery (TDD, CI/CD, pair programming, refactoring)?",
+      "answer": "**Short answer:** Extreme Programming (XP) names engineering habits that make frequent change safe: test-driven development, continuous integration, refactoring, pair programming, simple design and small releases. Without these habits, short iterations pile up technical debt and slow down.\n\n| Practice | What it is | Why it helps |\n| --- | --- | --- |\n| TDD | write a failing test, make it pass, then clean up (red, green, refactor) | design feedback, safety net |\n| Continuous integration | merge to the main branch often, with a build and tests on every change | small, early conflict resolution |\n| Continuous delivery | the main branch is always releasable, deployment is routine | low-risk releases |\n| Refactoring | improve structure without changing behaviour, in small steps | keeps change cheap |\n| Pair or mob programming | two or more people on one task | knowledge sharing, fewer defects |\n| Code review | peers read changes before merge | quality and learning |\n| Small batches and feature flags | ship small, hide unfinished work behind flags | lower risk, faster feedback |\n\n**How they connect:** short iterations need frequent releases. Frequent releases need automated tests and pipelines. Automated tests need code that is easy to test, which refactoring and simple design provide.\n\n**Gotchas**\n- A long-lived branch is the opposite of continuous integration.\n- Coverage numbers are not the goal. Fast, reliable tests that catch regressions are.\n\n**Interview tip:** connect practices to outcomes the business sees: lead time, change failure rate, time to restore.",
+      "level": "basic",
+      "module": "Engineering Practices",
+      "tags": [
+        "xp",
+        "tdd",
+        "ci-cd"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-009",
+      "question": "What is technical debt, and how do you manage it?",
+      "answer": "**Short answer:** Technical debt is the extra future cost created by choosing a quick or messy solution now. Like financial debt it has interest: every later change takes longer. Some debt is a smart, deliberate choice. Unmanaged debt slows a team down until delivery nearly stops.\n\n**Kinds**\n- Deliberate: \"we ship the simple version now and fix it next month\".\n- Accidental: we learned a better design later.\n- Bit rot: libraries, frameworks and the environment moved on.\n\n**Managing it**\n- Make it visible: keep a debt list in the backlog, with the cost of leaving it (slower features, incidents).\n- Pay a steady amount: for example reserve 10 to 20 percent of capacity, or fix debt in the area you are already changing (the boy scout rule).\n- Prioritise by pain: debt in code that changes often matters most. Ignore stable code nobody touches.\n- Prevent it: code review, tests, Definition of Done, architecture decisions written down.\n- Replace big rewrites with incremental change, for example the strangler pattern.\n\n**Gotcha:** \"we have no time for cleanup\" is how teams end up with a rewrite. Show the business the cost in lead time and incident counts, not in code smells.\n\n**Interview tip:** say debt is a tool when taken on purpose with a plan to repay it, and harmful when hidden.",
+      "level": "basic",
+      "module": "Engineering Practices",
+      "tags": [
+        "technical-debt",
+        "refactoring"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-010",
+      "question": "What is the difference between Scrum, Kanban, XP and Lean, and how do they relate?",
+      "answer": "**Short answer:** They are different layers. Agile is the mindset. Scrum is a framework for planning and inspecting work. Kanban is a flow method with WIP limits. XP is a set of engineering practices. Lean is a philosophy of removing waste and delivering value fast, which influenced both Kanban and Agile.\n\n| Name | Focus | Answers |\n| --- | --- | --- |\n| Agile | values and principles | why short feedback loops |\n| Scrum | team rhythm and roles | how we plan and inspect each sprint |\n| Kanban | flow and WIP | how work moves and where it stalls |\n| XP | engineering | how we build with quality |\n| Lean | waste and value stream | what slows value down |\n\n**Lean's seven kinds of waste in software:** partially done work, extra features, relearning, handoffs, task switching, delays and defects.\n\nA common good setup: Scrum or Kanban for the process, XP practices for the code, and Lean thinking to improve the flow.\n\n**Interview tip:** say you pick practices that solve a problem you have, and drop the ones that do not.",
+      "level": "basic",
+      "module": "Kanban & Lean",
+      "tags": [
+        "scrum",
+        "kanban",
+        "xp",
+        "lean"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-011",
+      "question": "How do you estimate work in agile: story points, velocity and why estimates are hard?",
+      "answer": "**Short answer:** Many agile teams estimate in story points, a relative measure of size that combines effort, complexity and uncertainty. Velocity is the number of points a team finishes per sprint, used only to forecast that team's own future capacity. Estimates are hard because software has unknowns, so good teams keep them rough and re-plan often.\n\n**How it works**\n- Pick a reference story and size others against it (planning poker with a Fibonacci scale: 1, 2, 3, 5, 8, 13).\n- Big stories get split instead of estimated in detail.\n- Velocity is the average of recent sprints. It forecasts, for example, \"about 30 points a sprint, so about six sprints for this 180 point backlog\".\n\n**Alternatives**\n- No estimates: split work into similar small pieces and count items per week (flow metrics, throughput).\n- Probabilistic forecasts: use historical cycle times to give ranges (\"85 percent chance in 6 to 8 weeks\").\n- T-shirt sizes for early, rough planning.\n\n**Pitfalls**\n- Comparing velocity across teams. Points mean different things in different teams.\n- Using velocity as a target. People inflate points.\n- Treating an estimate as a promise. It is a forecast with a range.\n- Ignoring unplanned work such as bugs and support.\n\n**Interview tip:** show you can give a range with confidence, say what would change it, and push to reduce uncertainty with a small spike.",
+      "level": "intermediate",
+      "module": "Planning & Estimation",
+      "tags": [
+        "estimation",
+        "story-points",
+        "velocity"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-012",
+      "question": "How do you run a good retrospective and sprint review?",
+      "answer": "**Short answer:** The sprint review shows the increment to stakeholders to get feedback on the product. The retrospective is for the team to improve how it works. A good retrospective ends with one or two concrete experiments with owners, not a long list of complaints.\n\n**Sprint review**\n- Demonstrate working software, not slides.\n- Invite the people who use or pay for it.\n- Collect feedback and update the product backlog on the spot.\n\n**Retrospective**\n- Safe space: focus on the process, not on people. Use the Prime Directive idea: everyone did the best they could with what they knew.\n- Gather data: a timeline of the sprint, metrics (cycle time, escaped bugs), mood.\n- Pick one or two issues, find root causes (five whys) and decide small experiments (\"try pairing on risky tickets\", \"limit WIP to 3\").\n- Assign owners and check the results at the next retrospective.\n- Vary the format (start, stop, continue; sailboat; 4Ls) so it stays fresh.\n\n**Signs of a broken retro**\n- Same issues every sprint with no action.\n- Manager dominates, or people stay silent.\n- Actions that depend on other departments only.\n\n**Interview tip:** mention that you track retro actions like backlog items. Improvement that nobody follows up is not improvement.",
+      "level": "intermediate",
+      "module": "Agile & Scrum",
+      "tags": [
+        "retrospective",
+        "sprint-review",
+        "feedback"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-013",
+      "question": "How do you split a large feature into small deliverable slices?",
+      "answer": "**Short answer:** Split by user value, not by technical layer. A vertical slice goes through UI, API and database and delivers something a user can try. A horizontal slice (only the database, then only the API) delivers nothing usable until the end and hides risk. Small slices give faster feedback and earlier releases.\n\n**Splitting techniques**\n- By workflow step: first \"create an order\", then \"pay\", then \"track\".\n- By rule or variation: card payment first, then wallet, then bank transfer.\n- By data: one currency, then many.\n- By happy path first, then errors and edge cases.\n- By quality: a basic version first, then performance and polish.\n- Spike: a short time-boxed investigation to remove an unknown.\n\n**Example:** \"Checkout\" becomes (1) guest checkout with one card type and a confirmation page, (2) saved addresses, (3) coupons, (4) refunds. Each slice can go live behind a feature flag.\n\n| Horizontal slicing | Vertical slicing |\n| --- | --- |\n| Database, then API, then UI | one thin path through all layers |\n| Nothing to show until late | demo every sprint |\n| Integration surprises at the end | integration from day one |\n\n**Gotcha:** very thin slices still need a Definition of Done. A slice that is not tested and deployable is not a real slice.\n\n**Interview tip:** use the MVP idea carefully. The minimum viable product is the smallest thing that teaches you something, not the smallest thing you can build.",
+      "level": "intermediate",
+      "module": "Planning & Estimation",
+      "tags": [
+        "story-splitting",
+        "mvp",
+        "vertical-slices"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-014",
+      "question": "What are DORA metrics, and how do they measure delivery performance?",
+      "answer": "**Short answer:** DORA metrics are four measures of software delivery: deployment frequency, lead time for changes, change failure rate and time to restore service. They come from long-running research on high-performing teams. They show both speed and stability, so you cannot \"win\" by going fast and breaking things.\n\n| Metric | Question | Direction |\n| --- | --- | --- |\n| Deployment frequency | How often do we release to production? | higher is better |\n| Lead time for changes | How long from commit to production? | lower is better |\n| Change failure rate | What share of releases cause an incident or rollback? | lower is better |\n| Time to restore | How fast do we recover from a failure? | lower is better |\n\n(Recent versions of the research also discuss a rework rate. Check the current report for details.)\n\n**How to use them**\n- Measure the system, not people. Never use them for individual performance reviews.\n- Collect from tools you already have: Git, CI/CD and incident tracking.\n- Compare with your own past, not with other teams.\n- Use them to find constraints: slow review, flaky tests, manual approvals, big batches.\n\n**Gotchas**\n- Gaming: splitting deployments to raise frequency without value.\n- Averages hide long tails. Look at the median and the 90th percentile.\n\n**Interview tip:** connect them to practices: small batches, trunk-based development, automated tests and fast rollbacks improve all four.",
+      "level": "intermediate",
+      "module": "Engineering Practices",
+      "tags": [
+        "dora",
+        "metrics",
+        "delivery"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-015",
+      "question": "[Tech Lead] How do you choose between waterfall, Agile and a hybrid for a project?",
+      "answer": "**Short answer:** I decide from the type of uncertainty and the cost of change. If requirements are clear and a mistake is costly or must be certified, I use more up-front planning with checkpoints. If we are discovering what users need, I use short iterations. Most real programs end up hybrid, and I say clearly where each part applies.\n\n**Questions I ask**\n- How stable are the requirements, and who can change them?\n- Is there a fixed date, budget or contract?\n- Are there regulations that require documents and evidence?\n- Can we release often, or does hardware, approval or an installation limit releases?\n- How experienced is the team with the domain and the technology?\n\n**A hybrid that works**\n- Program level: a roadmap, milestones, risks, compliance documents and stage gates.\n- Team level: sprints or Kanban, working software at each review, with the documents produced as part of the work and kept in version control.\n- Integration: regular cross-team integration builds so that integration risk shows up early.\n\n**Communicating with stakeholders:** replace \"percent complete\" with working software, burn-up charts and risk lists. Give ranges, not single dates, and review them every sprint.\n\n**Gotcha:** a hybrid that takes the paperwork of waterfall and the uncertainty of agile gives the worst of both. Keep the rules explicit.\n\n**Interview tip:** give a concrete example from regulated or long-lead work where you kept iterations inside a plan.",
+      "level": "intermediate",
+      "module": "Leadership & Delivery",
+      "tags": [
+        "tech-lead",
+        "process",
+        "decision"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-016",
+      "question": "[Tech Lead] How do you help a team improve its process without imposing a framework?",
+      "answer": "**Short answer:** I start from a real problem the team feels, measure it, try one small change and review the result. Frameworks are tools. People adopt practices they understand and chose, and reject ones handed down.\n\n**Steps**\n1. Listen: one-to-ones and a retrospective to find the biggest pain (slow reviews, unclear requirements, flaky tests, many interruptions).\n2. Measure: cycle time, review wait time, escaped bugs, deployment frequency. Even a simple board and a spreadsheet will do.\n3. Pick one experiment with a clear hypothesis: \"limiting WIP to 3 will cut cycle time\".\n4. Run it for a few weeks, then look at the numbers and the team's view.\n5. Keep, change or drop it. Write the working agreement down (for example in the repository).\n\n**Typical high-value changes**\n- Smaller pull requests and a review time target.\n- A clear Definition of Ready and Definition of Done.\n- Trunk-based development with feature flags.\n- A single owner for each priority question (a product owner).\n- Protected time for focus and for debt.\n\n**Leading behaviours:** model the habit yourself, explain the why, make it easy (templates, automation), and celebrate the improvement.\n\n**Gotchas**\n- Changing five things at once means you cannot tell what worked.\n- Metrics that become targets get gamed.\n\n**Interview tip:** share a story with a number: \"review wait fell from two days to four hours after we agreed on a 24 hour target and smaller PRs\".",
+      "level": "intermediate",
+      "module": "Leadership & Delivery",
+      "tags": [
+        "tech-lead",
+        "team-practices",
+        "improvement"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-017",
+      "question": "[Tech Lead] How do you manage scope, deadlines and quality when stakeholders push for more?",
+      "answer": "**Short answer:** I make the trade-offs visible. Time, scope and quality are linked. If the date is fixed and scope grows, something must give. I keep quality steady and negotiate scope, using a prioritised backlog and early demos, so the stakeholders choose with facts.\n\n**Practical approach**\n- Agree the goal and what \"done\" means, then rank the work: must have, should have, could have, will not have now.\n- Slice into small releases so the most valuable parts ship first.\n- Show a forecast range based on real throughput. Update it every sprint.\n- When new work arrives, ask what moves out, or what date moves.\n- Protect quality with the Definition of Done. Cutting tests moves cost to the future, in bugs and incidents.\n- Raise risks early with options: reduce scope, add time, add a person (with the cost of onboarding), or accept the risk.\n- Record decisions and their reasons.\n\n**What to avoid**\n- Silent overtime. It hides the real capacity and burns people.\n- Adding people late to a late project.\n- Saying yes to everything and surprising people at the end.\n\n**Language that helps:** \"We can do A and B by the date, or A, B and C two weeks later. Which do you prefer?\"\n\n**Interview tip:** show that you bring options and data, not just a refusal.",
+      "level": "intermediate",
+      "module": "Leadership & Delivery",
+      "tags": [
+        "tech-lead",
+        "scope",
+        "stakeholders"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-018",
+      "question": "What are the risks of Agile at scale, and how do frameworks such as SAFe, LeSS and the Spotify model address them?",
+      "answer": "**Short answer:** When many teams build one product, the problems are dependencies, alignment and shared architecture. Scaling frameworks add coordination structures. Be careful: more process can bring back the slowness that agile tried to remove. The strongest scaling tools are often architectural (loosely coupled services, clear ownership) and simple routines.\n\n| Approach | Idea | Watch for |\n| --- | --- | --- |\n| SAFe | Program increments (about 10 weeks), release trains, planning events with many teams, roles at several levels | heavy, can feel like waterfall in agile clothes |\n| LeSS | Scrum rules with several teams sharing one backlog and one product owner, minimal extra roles | needs a strong culture and few layers |\n| Nexus, Scrum of Scrums | a small coordination layer over Scrum teams | needs real authority to resolve dependencies |\n| Spotify style (squads, tribes, guilds) | autonomous cross-functional squads, alignment through culture | a description of one company at one time, not a recipe |\n\n**What matters regardless**\n- Team structure follows the architecture (Conway's law). Prefer teams that own a service or product end to end.\n- Reduce cross-team dependencies instead of managing them.\n- Shared goals and a visible roadmap.\n- Regular integration of all teams' work.\n- Platform teams that treat internal developers as customers.\n\n**Gotcha:** adopting a framework to fix an organisational problem like unclear ownership.\n\n**Interview tip:** say you would first try to reduce dependencies and align on goals, and add coordination events only where they are needed.",
+      "level": "advanced",
+      "module": "Leadership & Delivery",
+      "tags": [
+        "scaling-agile",
+        "safe",
+        "less"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-019",
+      "question": "What is Conway's law, and how do team structure and architecture affect each other?",
+      "answer": "**Short answer:** Conway's law says that organisations produce designs that copy their communication structure. If you have separate front end, back end and database teams, you tend to get a layered system with handoffs. The \"inverse Conway manoeuvre\" means you shape the teams to get the architecture you want.\n\n**What it means in practice**\n- Three teams building a compiler tend to produce a three-pass compiler.\n- Microservices work best when each service has a clear owner team that can build, deploy and run it. Many services owned by one team are just a distributed monolith.\n- Cross-team changes slow down. Every handoff adds waiting time.\n\n**Team Topologies** (a popular model) names four team types:\n- Stream-aligned teams that deliver a flow of work for a business area.\n- Platform teams that give other teams self-service tools.\n- Enabling teams that help others adopt new skills.\n- Complicated-subsystem teams for deep specialist areas.\n\nIt also names three interaction modes: collaboration, X-as-a-service and facilitating.\n\n**Using it as a tech lead**\n- Draw the dependency map. Where do teams constantly wait for each other? That boundary may be wrong.\n- Align service boundaries with business domains and ownership.\n- Keep team cognitive load manageable. A team should not own more than it can understand.\n\n**Gotcha:** changing the org chart without changing the code, or the reverse, keeps the friction.\n\n**Interview tip:** give an example: \"we moved reporting into the same team as orders and the weekly cross-team tickets disappeared\".",
+      "level": "advanced",
+      "module": "Leadership & Delivery",
+      "tags": [
+        "conways-law",
+        "team-topologies",
+        "architecture"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "sdlc-agile-020",
+      "question": "How do feature flags, trunk-based development and progressive delivery support agile releases?",
+      "answer": "**Short answer:** Trunk-based development means everyone merges small changes to the main branch at least daily. Feature flags let unfinished or risky code be deployed but switched off. Progressive delivery (canary, percentage rollout, blue-green) releases to a few users first and watches the metrics. Together they separate deploying code from releasing a feature, which makes releases small and low risk.\n\n**How they fit**\n1. Commit small changes to trunk with tests passing.\n2. Hide new behaviour behind a flag, default off.\n3. Deploy often. Nothing changes for users yet.\n4. Turn the flag on for staff, then 1 percent, 10 percent, 100 percent, watching error rate and latency.\n5. If something breaks, switch the flag off. That is faster than a rollback.\n6. Remove the flag and dead code once the feature is fully on.\n\n| Technique | Purpose |\n| --- | --- |\n| Feature flag | decouple release from deployment |\n| Canary release | send a small share of traffic to the new version |\n| Blue-green | two environments, switch traffic between them |\n| Dark launch | run new code in production without showing results |\n\n**Risks**\n- Flags that never get removed become permanent complexity and test combinations.\n- Database changes must be backward compatible (expand and contract) so old and new code can both run.\n- Needs good observability, so you notice a bad rollout quickly.\n\n**Interview tip:** tell the story of turning a flag off to end an incident in a minute, and the cleanup rule that every flag has an owner and an expiry date.",
+      "level": "advanced",
+      "module": "Engineering Practices",
+      "tags": [
+        "feature-flags",
+        "trunk-based",
+        "progressive-delivery"
+      ],
+      "favorite": false
+    }
+  ]
+}

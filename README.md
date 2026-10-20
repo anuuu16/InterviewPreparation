@@ -21,6 +21,7 @@ Interview questions and answers, organised by language/topic. Read them right he
 | [Networking & Security](questions/networking-security.md) | 73 | 20 | 39 | 14 | 0 |
 | [Node.js](questions/nodejs.md) | 65 | 17 | 28 | 20 | 0 |
 | [React](questions/react.md) | 57 | 15 | 28 | 14 | 0 |
+| [SDLC & Agile](questions/sdlc-agile.md) | 20 | 10 | 7 | 3 | 0 |
 | [System Design](questions/system-design.md) | 67 | 17 | 29 | 21 | 0 |
 | [TypeScript](questions/typescript.md) | 58 | 20 | 35 | 3 | 0 |
 
@@ -56,6 +57,8 @@ The screen stays simple. Topics on the left, the question list in the middle, th
 - **Voices:** pick any voice your browser offers (grouped by language, with samples), or install the optional local **Piper** voice (below). The app uses Piper when it is installed and falls back to the browser voice automatically.
 - **Notes and feedback:** the **Notes** button on a question saves a private note, or *feedback for the author* ("needs more detail", "code issue", "incorrect"…), about the question or the whole topic. Feedback is stored in `feedback/` and the next agent run fixes it (see [AGENTS.md](AGENTS.md), section 14).
 - **Code problems:** a separate section with popular problems (sorting, binary search, two sum…): a guide (how it is asked, real-life uses, how to choose), every approach from simple to optimal with an explanation, and tested code in many languages. Your language choice is remembered.
+- **Show only what you are preparing:** *View options* (the layout icon in the sidebar) lets you untick whole topics or single modules, for example to prepare only for Go and React. Hidden items disappear everywhere but nothing is deleted. You can also move the question list to the right or hide the list or the topics menu on wide screens.
+- **Progress (off by default):** turn on *Track my reading progress* in View options to get read marks, per-topic bars, an Unread/Read filter and a Continue button. Tracking is smart: a question counts only after real reading time (or listening to the end) and scrolling to the bottom, never from quick click-through. An optional counter shows how many times you re-read each question, so you can pick a quick read or a favourite later. Progress lives only in this browser and can be cleared per module, per topic or entirely.
 - **Manage:** star favorites; add, edit, delete questions (live Markdown preview); create topics. Every change is written to `data/*.json` and the Markdown on GitHub is regenerated.
 - **Keys:** `Space` play/pause, `←` `→` previous/next, `F` favorite, `/` search.
 

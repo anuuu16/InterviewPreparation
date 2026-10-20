@@ -2,13 +2,14 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import * as api from './api';
 import AudioSettings from './AudioSettings';
 import Editor, { type EditorResult } from './Editor';
-import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, ListIcon, MenuIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon } from './Icons';
+import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, LayoutIcon, ListIcon, MenuIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon } from './Icons';
 import Inline from './Inline';
 import Markdown from './Markdown';
 import Notes from './Notes';
 import { warmMermaid } from './Mermaid';
 import PlayerBar from './PlayerBar';
 import ProgressDialog from './ProgressDialog';
+import ViewDialog, { DEFAULT_HIDDEN, DEFAULT_LAYOUT, moduleKey, type Hidden, type Layout } from './ViewDialog';
 import { useProgress } from './progress';
 import { useReadTracker } from './useReadTracker';
 import { FurtherReading, ResourcesDialog } from './Resources';
@@ -42,7 +43,7 @@ function useDark(pref: ThemePref) {
 }
 
 export default function App() {
-  const [topics, setTopics] = useState<Topic[]>([]);
+  const [allTopics, setTopics] = useState<Topic[]>([]);
   const [loadError, setLoadError] = useState('');
   const [view, setView] = useLocal<View>('ip.view', { kind: 'all' });
   const [level, setLevel] = useState<Level | ''>('');
@@ -58,6 +59,10 @@ export default function App() {
   const [codeLang, setCodeLang] = useLocal<string>('ip.codeLang', 'javascript');
   const [audioOpen, setAudioOpen] = useState(false);
   const [progressOpen, setProgressOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [layout, setLayout] = useLocal<Layout>('ip.layout', DEFAULT_LAYOUT);
+  const [hidden, setHidden] = useLocal<Hidden>('ip.hidden', DEFAULT_HIDDEN);
+  const [tracking, setTracking] = useLocal<boolean>('ip.tracking', false); // progress is opt-in, off by default
   const [readFilter, setReadFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [toast, setToast] = useState<{ id: string; text: string } | null>(null);
   const progress = useProgress();
@@ -71,6 +76,18 @@ export default function App() {
   const dark = useDark(themePref);
   const readerRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // hidden topics and modules are removed here, so every list, count and filter below only sees what the reader chose
+  const topics = useMemo<Topic[]>(
+    () => allTopics
+      .filter((t) => !hidden.topics.includes(t.slug))
+      .map((t) => ({ ...t, questions: t.questions.filter((q) => !hidden.modules.includes(moduleKey(t.slug, q.module ?? 'Other'))) }))
+      .filter((t) => t.questions.length > 0 || !allTopics.find((a) => a.slug === t.slug)?.questions.length),
+    [allTopics, hidden],
+  );
+  useEffect(() => {
+    if (view.kind === 'topic' && allTopics.length && !topics.some((t) => t.slug === view.slug)) setView({ kind: 'all' });
+  }, [topics]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reload = useCallback(() => api.getAll().then(setTopics).catch((e: Error) => setLoadError(e.message)), []);
   useEffect(() => { void reload(); }, [reload]);
@@ -98,7 +115,7 @@ export default function App() {
       (view.kind !== 'favorites' || q.favorite) &&
       (!level || q.level === level) &&
       (!moduleFilter || (q.module ?? 'Other') === moduleFilter) &&
-      (readFilter === 'all' || (readFilter === 'read') === readSnapshot.has(q.id)) &&
+      (!tracking || readFilter === 'all' || (readFilter === 'read') === readSnapshot.has(q.id)) &&
       (!needle || `${q.question} ${q.answer} ${q.tags.join(' ')} ${topic.name}`.toLowerCase().includes(needle)));
     // numbers match the Markdown pages inside a topic; elsewhere they are just list positions
     const numbered = view.kind === 'topic' ? out : out.map((it, i) => ({ ...it, number: i + 1 }));
@@ -106,7 +123,7 @@ export default function App() {
     // module view: modules in order of first appearance (so fundamentals come first), questions keep their level order inside
     const order = [...new Set(numbered.map((it) => it.q.module ?? 'Other'))];
     return order.flatMap((m) => numbered.filter((it) => (it.q.module ?? 'Other') === m));
-  }, [topics, view, level, search, groupBy, moduleFilter, readFilter, readSnapshot]);
+  }, [topics, view, level, search, groupBy, moduleFilter, readFilter, readSnapshot, tracking]);
 
   // modules available in the current scope (ignoring the module filter itself) for the filter dropdown
   const modules = useMemo(() => {
@@ -141,7 +158,7 @@ export default function App() {
     speakOptions,
     onDone: (i) => {
       const it = items[i];
-      if (it && progress.state.autoTrack && settings.style !== 'brief' && progress.markRead(it.q.id, 'audio')) setToast({ id: it.q.id, text: 'Marked as read' });
+      if (it && tracking && progress.state.autoTrack && settings.style !== 'brief' && progress.markRead(it.q.id, 'audio')) setToast({ id: it.q.id, text: 'Marked as read' });
     },
   });
   // changing the reading style mid-playback restarts the current question in the new style
@@ -234,7 +251,7 @@ export default function App() {
   const problemId = problemObj ? (problemVariant ? `problem:${problemObj.slug}/${problemVariant.slug}` : `problem:${problemObj.slug}`) : null;
   const problemWords = problemObj ? (problemVariant ? problemVariant.notes : problemObj.overview).split(/\s+/).length : 0;
   const dialogOpen = editor !== null || audioOpen || progressOpen || resourcesOpen;
-  const trackId = dialogOpen ? null : inQuestions ? selected?.q.id ?? null : problemId;
+  const trackId = !tracking || dialogOpen ? null : inQuestions ? selected?.q.id ?? null : problemId;
   useReadTracker({
     id: trackId,
     words: inQuestions ? selWords : problemWords,
@@ -290,7 +307,7 @@ export default function App() {
   const isView = (v: View) => v.kind === view.kind && (v.kind !== 'topic' || (view.kind === 'topic' && v.slug === view.slug));
   const nextTheme = () => setThemePref(themePref === 'system' ? (dark ? 'light' : 'dark') : themePref === 'dark' ? 'light' : 'dark');
   const openNotes = selected ? feedback.filter((f) => f.topic === selected.topic.slug && (f.question === selected.q.id || f.question === null) && f.status === 'open').length : 0;
-  const activeFilters = (level ? 1 : 0) + (moduleFilter ? 1 : 0) + (groupBy === 'module' ? 1 : 0) + (readFilter !== 'all' ? 1 : 0);
+  const activeFilters = (level ? 1 : 0) + (moduleFilter ? 1 : 0) + (groupBy === 'module' ? 1 : 0) + (tracking && readFilter !== 'all' ? 1 : 0);
   const openQuestion = (id: string) => {
     const t = topics.find((x) => x.questions.some((q) => q.id === id));
     if (!t) return;
@@ -300,6 +317,9 @@ export default function App() {
     setSearch('');
     setSelectedId(id);
   };
+  const showSide = layout.sidebar || view.kind === 'problems';
+  const showList = layout.list !== 'hidden' || view.kind === 'problems';
+  const panesColumns = [showSide ? '250px' : '', ...(layout.list === 'right' ? ['minmax(0, 1fr)', showList ? '360px' : ''] : [showList ? '360px' : '', 'minmax(0, 1fr)'])].filter(Boolean).join(' ');
   const playingId = player.status === 'playing' ? items[player.index]?.q.id : undefined;
 
   return (
@@ -310,11 +330,12 @@ export default function App() {
         <button className="icon-btn" onClick={() => setDrawer('list')} aria-label="Questions"><ListIcon /></button>
       </header>
 
-      <div className="panes">
+      <div className={'panes' + (layout.list === 'right' ? ' l-right' : layout.list === 'hidden' ? ' l-hidden' : '') + (!layout.sidebar && view.kind !== 'problems' ? ' no-side' : '')} style={{ '--cols': panesColumns } as React.CSSProperties}>
         {drawer && <div className="backdrop" onClick={() => setDrawer('')} />}
 
         <nav className={'sidebar' + (drawer === 'topics' ? ' open' : '')} aria-label="Topics">
           <div className="brand"><HeadphonesIcon /> Interview Prep</div>
+          <div className="sidebar-scroll">
           <div className="nav-group">
             <button className={'nav' + (isView({ kind: 'all' }) ? ' active' : '')} onClick={() => go({ kind: 'all' })}>All questions</button>
             <button className={'nav' + (isView({ kind: 'favorites' }) ? ' active' : '')} onClick={() => go({ kind: 'favorites' })}>
@@ -332,15 +353,17 @@ export default function App() {
           <div className="nav-group">
             {topics.map((t) => (
               <button key={t.slug} className={'nav has-bar' + (isView({ kind: 'topic', slug: t.slug }) ? ' active' : '')} onClick={() => go({ kind: 'topic', slug: t.slug })}>
-                <span className="nav-line"><span>{t.name}</span><span className="count">{progress.readCount(t.questions.map((q) => q.id))}/{t.questions.length}</span></span>
-                <span className="nav-bar"><i style={{ width: t.questions.length ? `${(progress.readCount(t.questions.map((q) => q.id)) / t.questions.length) * 100}%` : 0 }} /></span>
+                <span className="nav-line"><span>{t.name}</span><span className="count">{tracking ? `${progress.readCount(t.questions.map((q) => q.id))}/${t.questions.length}` : t.questions.length}</span></span>
+                {tracking && <span className="nav-bar"><i style={{ width: t.questions.length ? `${(progress.readCount(t.questions.map((q) => q.id)) / t.questions.length) * 100}%` : 0 }} /></span>}
               </button>
             ))}
+          </div>
           </div>
           <div className="sidebar-foot">
             <button className="btn" onClick={newTopic}><PlusIcon /> New topic</button>
             <span className="foot-icons">
-              <button className="icon-btn" onClick={() => setProgressOpen(true)} aria-label="My progress" title="My progress"><ProgressIcon /></button>
+              <button className="icon-btn" onClick={() => setViewOpen(true)} aria-label="View options" title="Layout and what to show"><LayoutIcon /></button>
+              {tracking && <button className="icon-btn" onClick={() => setProgressOpen(true)} aria-label="My progress" title="My progress"><ProgressIcon /></button>}
               <button className="icon-btn" onClick={() => setAudioOpen(true)} aria-label="Audio settings" title="Audio settings"><SettingsIcon /></button>
               <button className="icon-btn" onClick={nextTheme} aria-label="Toggle theme" title={`Theme: ${themePref}`}>{dark ? <SunIcon /> : <MoonIcon />}</button>
             </span>
@@ -358,6 +381,7 @@ export default function App() {
             dark={dark}
             drawer={drawer === 'list'}
             readerRef={problemsReaderRef}
+            tracking={tracking}
             isRead={progress.isRead}
             onToggleRead={toggleRead}
             onSelect={(slug, part) => { setProblemSel({ slug, part }); setDrawer(''); }}
@@ -379,7 +403,7 @@ export default function App() {
                 <button className="icon-btn mobile-only" onClick={() => setDrawer('')} aria-label="Close"><CloseIcon /></button>
               </span>
             </div>
-            {view.kind === 'topic' && (() => {
+            {tracking && view.kind === 'topic' && (() => {
               const t = topics.find((x) => x.slug === view.slug);
               if (!t) return null;
               const done = progress.readCount(t.questions.map((q) => q.id));
@@ -413,10 +437,10 @@ export default function App() {
                 </select>
               )}
             </div>
-            <div className="segmented" role="group" aria-label="Show">
+            {tracking && <div className="segmented" role="group" aria-label="Show">
               <span>Show</span>
               {(['all', 'unread', 'read'] as const).map((f) => <button key={f} className={readFilter === f ? 'active' : ''} onClick={() => setReadFilter(f)}>{f === 'all' ? 'All' : f === 'unread' ? 'Unread' : 'Read'}</button>)}
-            </div>
+            </div>}
             <div className="chips" role="group" aria-label="Level">
               {(['', ...LEVELS] as const).map((l) => (
                 <button key={l || 'all'} className={'chip' + (level === l ? ' active' : '')} onClick={() => setLevel(l)}>{l || 'All'}</button>
@@ -442,7 +466,7 @@ export default function App() {
                     </span>
                   </span>
                   {it.q.favorite && <span className="qstar"><StarIcon filled /></span>}
-                  {progress.isRead(it.q.id) && <span className="qdone" aria-label="Read"><CheckIcon /></span>}
+                  {tracking && progress.isRead(it.q.id) && <span className="qdone" aria-label="Read"><CheckIcon />{progress.state.counts && progress.timesRead(it.q.id) > 1 && <span className="qtimes">{progress.timesRead(it.q.id)}×</span>}</span>}
                 </button>
                 <button className="qplay" onClick={() => { player.play(i); setDrawer(''); }} aria-label={`Play question ${it.number}`} title="Play from this question"><PlayIcon /></button>
               </li>
@@ -462,15 +486,19 @@ export default function App() {
                 <span className="muted">#{selected.number}</span>
               </div>
               <h1><Inline text={selected.q.question} /></h1>
+              {tracking && progress.state.counts && progress.timesRead(selected.q.id) >= 3 && (
+                <p className="revisit">You have read this {progress.timesRead(selected.q.id)} times. A quick read of the short answer may be enough{selected.q.favorite ? '.' : ', or star it as a favorite to find it later.'}</p>
+              )}
               <div className="actions">
                 <button className="btn primary" onClick={() => player.play(selIndex)}><PlayIcon /> Listen</button>
                 <button className={'btn' + (selected.q.favorite ? ' fav' : '')} onClick={() => toggleFav(selected)} aria-pressed={selected.q.favorite}>
                   <StarIcon filled={selected.q.favorite} /> {selected.q.favorite ? 'Favorite' : 'Favorite'}
                 </button>
-                <button className={'btn' + (progress.isRead(selected.q.id) ? ' done' : '')} onClick={() => toggleRead(selected.q.id, !progress.isRead(selected.q.id))} aria-pressed={progress.isRead(selected.q.id)}>
+                {tracking && <button className={'btn' + (progress.isRead(selected.q.id) ? ' done' : '')} onClick={() => toggleRead(selected.q.id, !progress.isRead(selected.q.id))} aria-pressed={progress.isRead(selected.q.id)}>
                   <CheckIcon /> {progress.isRead(selected.q.id) ? 'Read' : 'Mark as read'}
-                </button>
+                </button>}
                 <button className="btn" onClick={() => setEditor({ topicSlug: selected.topic.slug, question: selected.q })}><EditIcon /> Edit</button>
+                <button className="btn desktop-only" onClick={() => setViewOpen(true)} title="Layout and what to show"><LayoutIcon /> Layout</button>
                 <button className={'btn' + (notesOpen ? ' on' : '')} onClick={() => setNotesOpen(!notesOpen)} aria-expanded={notesOpen}>
                   <NoteIcon /> Notes{openNotes > 0 && <span className="btn-count">{openNotes}</span>}
                 </button>
@@ -544,12 +572,16 @@ export default function App() {
         />
       )}
 
-      {progressOpen && (
+      {tracking && progressOpen && (
         <ProgressDialog
           topics={topics}
           read={progress.state.read}
           autoTrack={progress.state.autoTrack}
           onAutoTrack={progress.setAutoTrack}
+          counts={!!progress.state.counts}
+          onCounts={progress.setCounts}
+          onResetCounts={progress.resetCounts}
+          onClearModule={(t, m) => progress.clear(t.questions.filter((q) => (q.module ?? 'Other') === m).map((q) => q.id))}
           onContinue={continueTopic}
           onClearTopic={(t) => progress.clear(t.questions.map((q) => q.id))}
           onClearAll={() => progress.clear()}
@@ -564,11 +596,13 @@ export default function App() {
         </div>
       )}
 
+      {viewOpen && <ViewDialog topics={allTopics} layout={layout} hidden={hidden} onLayout={setLayout} onHidden={setHidden} tracking={tracking} onTracking={setTracking} onClose={() => setViewOpen(false)} />}
+
       {audioOpen && (
         <AudioSettings settings={settings} piper={piper} engine={speakOptions().engine} onSettings={setSettings} onBeforeSample={player.pause} onClose={() => setAudioOpen(false)} />
       )}
 
-      {editor && <Editor topics={topics} topicSlug={editor.topicSlug} question={editor.question} dark={dark} onSave={save} onDelete={editor.question ? () => { const it = items.find((x) => x.q.id === editor.question?.id); setEditor(null); if (it) void remove(it); } : undefined} onClose={() => setEditor(null)} />}
+      {editor && <Editor topics={allTopics} topicSlug={editor.topicSlug} question={editor.question} dark={dark} onSave={save} onDelete={editor.question ? () => { const it = items.find((x) => x.q.id === editor.question?.id); setEditor(null); if (it) void remove(it); } : undefined} onClose={() => setEditor(null)} />}
     </div>
   );
 }

@@ -10,11 +10,14 @@ export interface ReadEntry {
   at: number | null; // when it was marked read; null = the user explicitly marked it unread
   source: ReadSource;
   locked?: boolean; // the user un-marked it: automatic tracking must not mark it again
+  count?: number; // times read (only grows while "count my reads" is on)
+  last?: number; // when it was last read
 }
 
 export interface ProgressState {
   version: 1;
   autoTrack: boolean;
+  counts?: boolean; // optional: count how many times each question is read (off by default)
   read: Record<string, ReadEntry>; // key: question id, or "problem:<slug>[/<approach>]"
 }
 
@@ -87,9 +90,15 @@ export class ProgressStore {
   /** Mark as read. Automatic sources never override an explicit "unread" from the user. Returns whether anything changed. */
   markRead(id: string, source: ReadSource): boolean {
     const cur = this.state.read[id];
-    if (cur?.at) return false;
+    if (cur?.at) {
+      // already read: when counting is on, a real re-read (not a manual click) adds one
+      if (this.state.counts && source !== 'manual') {
+        this.set({ ...this.state, read: { ...this.state.read, [id]: { ...cur, count: (cur.count ?? 1) + 1, last: Date.now() } } });
+      }
+      return false;
+    }
     if (cur?.locked && source !== 'manual') return false;
-    this.set({ ...this.state, read: { ...this.state.read, [id]: { at: Date.now(), source } } });
+    this.set({ ...this.state, read: { ...this.state.read, [id]: { at: Date.now(), source, count: 1, last: Date.now() } } });
     return true;
   }
 
@@ -103,6 +112,17 @@ export class ProgressStore {
     if (!ids) return this.set({ ...this.state, read: {} });
     const read = { ...this.state.read };
     ids.forEach((id) => delete read[id]);
+    this.set({ ...this.state, read });
+  }
+
+  setCounts(counts: boolean) {
+    this.set({ ...this.state, counts });
+  }
+
+  /** Forget only the "times read" numbers, keep what is marked as read. */
+  resetCounts() {
+    const read = { ...this.state.read };
+    Object.keys(read).forEach((id) => { read[id] = { ...read[id], count: read[id].at ? 1 : undefined }; });
     this.set({ ...this.state, read });
   }
 
@@ -124,6 +144,9 @@ export function useProgress() {
       unmark: progressStore.unmark.bind(progressStore),
       clear: progressStore.clear.bind(progressStore),
       setAutoTrack: progressStore.setAutoTrack.bind(progressStore),
+      setCounts: progressStore.setCounts.bind(progressStore),
+      resetCounts: progressStore.resetCounts.bind(progressStore),
+      timesRead: (id: string) => state.read[id]?.count ?? (state.read[id]?.at ? 1 : 0),
     }),
     [state],
   );

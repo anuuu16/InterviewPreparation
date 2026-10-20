@@ -15,6 +15,7 @@ interface Props {
   dark: boolean;
   drawer: boolean; // list open on small screens
   readerRef: RefObject<HTMLElement>; // the scrolling reader (read tracking needs it)
+  tracking: boolean;
   isRead: (id: string) => boolean;
   onToggleRead: (id: string, read: boolean) => void;
   onSelect: (slug: string, part: string) => void;
@@ -38,7 +39,7 @@ function Complexity({ v }: { v: Variant }) {
 }
 
 /** The code library: a guide per problem, then each approach with code in the reader's language. */
-export default function Problems({ problems, resources, topics, slug, part, language, dark, drawer, readerRef: reader, isRead, onToggleRead, onSelect, onLanguage, onOpenQuestion, onCloseDrawer }: Props) {
+export default function Problems({ problems, resources, topics, slug, part, language, dark, drawer, readerRef: reader, tracking, isRead, onToggleRead, onSelect, onLanguage, onOpenQuestion, onCloseDrawer }: Props) {
   const problem = problems.find((p) => p.slug === slug) ?? problems[0];
   const variant = problem?.variants.find((v) => v.slug === part);
   useEffect(() => { reader.current?.scrollTo({ top: 0 }); }, [problem?.slug, part]);
@@ -93,7 +94,7 @@ export default function Problems({ problems, resources, topics, slug, part, lang
             {(() => {
               const id = variant ? `problem:${problem.slug}/${variant.slug}` : `problem:${problem.slug}`;
               const read = isRead(id);
-              return <div className="actions"><button className={'btn' + (read ? ' done' : '')} onClick={() => onToggleRead(id, !read)} aria-pressed={read}><CheckIcon /> {read ? 'Read' : 'Mark as read'}</button></div>;
+              return !tracking ? null : <div className="actions"><button className={'btn' + (read ? ' done' : '')} onClick={() => onToggleRead(id, !read)} aria-pressed={read}><CheckIcon /> {read ? 'Read' : 'Mark as read'}</button></div>;
             })()}
 
             {!variant && (

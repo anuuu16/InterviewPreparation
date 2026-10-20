@@ -8,6 +8,10 @@ interface Props {
   read: Record<string, ReadEntry>;
   autoTrack: boolean;
   onAutoTrack: (on: boolean) => void;
+  counts: boolean;
+  onCounts: (on: boolean) => void;
+  onResetCounts: () => void;
+  onClearModule: (topic: Topic, module: string) => void;
   onContinue: (topic: Topic) => void;
   onClearTopic: (topic: Topic) => void;
   onClearAll: () => void;
@@ -21,7 +25,7 @@ function Bar({ value, total }: { value: number; total: number }) {
 }
 
 /** Overview of reading progress with per-topic bars, and the controls to pause or clear tracking. */
-export default function ProgressDialog({ topics, read, autoTrack, onAutoTrack, onContinue, onClearTopic, onClearAll, onClose }: Props) {
+export default function ProgressDialog({ topics, read, autoTrack, onAutoTrack, counts, onCounts, onResetCounts, onClearModule, onContinue, onClearTopic, onClearAll, onClose }: Props) {
   const total = topics.reduce((n, t) => n + t.questions.length, 0);
   const done = topics.reduce((n, t) => n + t.questions.filter((q) => isRead(read, q.id)).length, 0);
 
@@ -55,7 +59,11 @@ export default function ProgressDialog({ topics, read, autoTrack, onAutoTrack, o
                 </summary>
                 <ul className="pt-modules">
                   {[...mods].map(([m, v]) => (
-                    <li key={m}><span>{m}</span><span className="muted">{v.done} / {v.total}</span><Bar value={v.done} total={v.total} /></li>
+                    <li key={m}>
+                      <span>{m} <span className="muted">{v.done} / {v.total}</span></span>
+                      {v.done > 0 ? <button className="link-btn" onClick={() => window.confirm(`Clear your progress for ${m}?`) && onClearModule(t, m)}>Clear</button> : <span />}
+                      <Bar value={v.done} total={v.total} />
+                    </li>
                   ))}
                 </ul>
                 <div className="pt-actions">
@@ -76,6 +84,14 @@ export default function ProgressDialog({ topics, read, autoTrack, onAutoTrack, o
               </span>
             </span>
           </label>
+          <label className="check progress-auto">
+            <input type="checkbox" checked={counts} onChange={(e) => onCounts(e.target.checked)} />
+            <span>
+              Count how many times I read each question
+              <span className="hint">Off by default. When on, reading a question again adds one, so you can see what you know well and switch to a quick read or a favorite.</span>
+            </span>
+          </label>
+          {counts && <button className="btn small" onClick={() => window.confirm('Reset the read counts? Questions stay marked as read.') && onResetCounts()}>Reset read counts</button>}
           <p className="hint">Progress is saved only in this browser. Clearing site data removes it.</p>
           <button className="btn danger" onClick={() => window.confirm('Clear ALL your reading progress in this browser?') && onClearAll()}>Clear all progress</button>
         </div>
