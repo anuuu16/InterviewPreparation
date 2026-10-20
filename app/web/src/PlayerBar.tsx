@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { PlayerSettings } from './tts';
 import type { Status } from './usePlayer';
-import { speechSupported, useVoices } from './speech';
+import { speechSupported, useVoices, type PiperState } from './speech';
 import VoicePicker from './VoicePicker';
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon, SettingsIcon, StopIcon } from './Icons';
 
@@ -12,6 +12,8 @@ interface Props {
   now: { text: string; part?: 'question' | 'answer' } | null;
   countdown: number | null;
   settings: PlayerSettings;
+  piper: PiperState;
+  engine: 'piper' | 'browser'; // engine actually in use
   onSettings: (s: PlayerSettings) => void;
   onPlay: () => void;
   onPause: () => void;
@@ -27,7 +29,12 @@ export default function PlayerBar(p: Props) {
   const set = <K extends keyof PlayerSettings>(k: K, v: PlayerSettings[K]) => p.onSettings({ ...p.settings, [k]: v });
 
   const chosen = voices.find((v) => v.name === p.settings.voice);
-  const voiceLabel = chosen ? `${chosen.name} (${chosen.lang})` : p.settings.voice ? `${p.settings.voice} (not available here)` : 'Automatic (best English voice)';
+  const piperId = p.piper.voices.find((v) => v.id === p.settings.piperVoice)?.id ?? p.piper.voices[0]?.id ?? '';
+  const engineStatus = p.engine === 'piper'
+    ? `Using Piper (local voice ${piperId})`
+    : p.piper.available ? 'Piper is installed; using browser voices as chosen'
+    : p.piper.loaded ? `Piper ${p.piper.note || 'not available'}; using browser voices. Run npm run tts:setup to install it (English only).` : 'Checking for Piper…';
+  const voiceLabel = p.engine === 'piper' ? `${piperId} (Piper)` : chosen ? `${chosen.name} (${chosen.lang})` : p.settings.voice ? `${p.settings.voice} (not available here)` : 'Automatic (best English voice)';
   const openPicker = () => {
     p.onPause(); // sampling voices would interrupt the reading
     setPicker(true);
@@ -45,6 +52,15 @@ export default function PlayerBar(p: Props) {
     <footer className="player" aria-label="Audio player">
       {open && (
         <div className="settings" role="dialog" aria-label="Playback settings">
+          <label>
+            Speech engine
+            <select value={p.settings.engine} onChange={(e) => set('engine', e.target.value as PlayerSettings['engine'])}>
+              <option value="auto">Automatic: Piper if installed, else browser</option>
+              <option value="piper">Piper (local neural voice)</option>
+              <option value="browser">Browser voices</option>
+            </select>
+            <span className="hint">{engineStatus}</span>
+          </label>
           <div className="voice-field">
             <span>Voice &amp; language</span>
             <button className="btn voice-btn" onClick={openPicker}><span>{voiceLabel}</span><span className="muted">Change…</span></button>
@@ -117,7 +133,7 @@ export default function PlayerBar(p: Props) {
         </select>
         <button className={'icon-btn' + (open ? ' active' : '')} onClick={() => setOpen(!open)} aria-label="Playback settings" aria-expanded={open}><SettingsIcon /></button>
       </div>
-      {picker && <VoicePicker current={p.settings.voice} rate={p.settings.rate} onSelect={(voice) => set('voice', voice)} onClose={() => setPicker(false)} />}
+      {picker && <VoicePicker current={p.settings.voice} rate={p.settings.rate} onSelect={(voice) => set('voice', voice)} piper={p.piper} piperVoice={p.settings.piperVoice} engine={p.engine} onSelectPiper={(id) => set('piperVoice', id)} onClose={() => setPicker(false)} />}
     </footer>
   );
 }

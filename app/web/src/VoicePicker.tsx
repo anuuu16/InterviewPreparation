@@ -1,30 +1,47 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CloseIcon, PlayIcon, SearchIcon, StopIcon } from './Icons';
-import { compareVoices, familyOf, isNovelty, languageName, pickDefaultVoice, sampleText, speechSupported, useVoices } from './speech';
+import { compareVoices, familyOf, isNovelty, languageName, pickDefaultVoice, sampleText, speechSupported, useVoices, type PiperState } from './speech';
+import { Speaker } from './speaker';
 
 interface Props {
-  current: string; // saved voice name, '' = automatic
+  current: string; // saved browser voice name, '' = automatic
   rate: number;
   onSelect: (voiceName: string) => void;
+  piper: PiperState;
+  piperVoice: string; // saved Piper voice id, '' = first installed
+  engine: 'piper' | 'browser'; // engine currently in use
+  onSelectPiper: (id: string) => void;
   onClose: () => void;
 }
 
-export default function VoicePicker({ current, rate, onSelect, onClose }: Props) {
+export default function VoicePicker({ current, rate, onSelect, piper, piperVoice, engine, onSelectPiper, onClose }: Props) {
   const voices = useVoices();
   const auto = useMemo(() => pickDefaultVoice(voices), [voices]);
   const active = voices.find((v) => v.name === current);
 
   const [query, setQuery] = useState('');
   const [family, setFamily] = useState(() => (active ? familyOf(active.lang) : 'en'));
-  const [sampling, setSampling] = useState<string | null>(null); // voiceURI being sampled
+  const [tab, setTab] = useState<'piper' | 'browser'>(engine);
+  const [sampling, setSampling] = useState<string | null>(null); // voiceURI (or "piper:<id>") being sampled
   const token = useRef(0);
+  const speaker = useRef(new Speaker()).current;
+  const activePiper = piper.voices.find((v) => v.id === piperVoice)?.id ?? piper.voices[0]?.id ?? '';
 
   const stopSample = () => {
     token.current += 1;
+    speaker.cancel();
     if (speechSupported) window.speechSynthesis.cancel();
     setSampling(null);
   };
-  useEffect(() => () => { if (speechSupported) window.speechSynthesis.cancel(); }, []);
+  useEffect(() => () => { speaker.cancel(); if (speechSupported) window.speechSynthesis.cancel(); }, [speaker]);
+
+  const samplePiper = (id: string, language: string) => {
+    const key = `piper:${id}`;
+    if (sampling === key) return stopSample();
+    stopSample();
+    setSampling(key);
+    speaker.speak(sampleText(language), { engine: 'piper', rate, browserVoice: '', piperVoice: id }, () => setSampling(null));
+  };
 
   const sample = (v: SpeechSynthesisVoice) => {
     if (sampling === v.voiceURI) return stopSample();
@@ -77,6 +94,46 @@ export default function VoicePicker({ current, rate, onSelect, onClose }: Props)
           <button className="icon-btn" onClick={() => { stopSample(); onClose(); }} aria-label="Close"><CloseIcon /></button>
         </header>
 
+        <div className="tabs voice-tabs" role="tablist">
+          <button role="tab" aria-selected={tab === 'piper'} onClick={() => { stopSample(); setTab('piper'); }}>
+            Piper (local){piper.available ? '' : ' · not installed'}
+          </button>
+          <button role="tab" aria-selected={tab === 'browser'} onClick={() => { stopSample(); setTab('browser'); }}>Browser voices</button>
+        </div>
+
+        {tab === 'piper' && (
+          <div className="voice-list">
+            <p className="voice-hint">
+              Piper is a fast offline neural voice that sounds more natural and consistent than most browser voices. When it is not available the app uses your browser voices automatically.
+            </p>
+            {!piper.available && (
+              <div className="voice-row">
+                <div className="voice-info">
+                  <strong>Piper is not available{piper.note ? ` (${piper.note})` : ''}</strong>
+                  <span className="muted">Install English only: run <code>npm run tts:setup</code> in the project folder, then restart <code>npm start</code>.</span>
+                </div>
+              </div>
+            )}
+            {piper.voices.map((v) => (
+              <div key={v.id} className={'voice-row' + (v.id === activePiper ? ' selected' : '')}>
+                <div className="voice-info">
+                  <strong>{v.id}</strong>
+                  <span className="muted">{languageName(v.language)} · {v.quality || 'voice'} · runs on this computer</span>
+                </div>
+                <div className="voice-actions">
+                  <button className="btn small" onClick={() => samplePiper(v.id, v.language)} aria-label={`Play sample of ${v.id}`}>
+                    {sampling === `piper:${v.id}` ? <StopIcon /> : <PlayIcon />} Sample
+                  </button>
+                  <button className={'btn small' + (v.id === activePiper ? ' primary' : '')} onClick={() => onSelectPiper(v.id)}>
+                    {v.id === activePiper ? 'Default ✓' : 'Set as default'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === 'browser' && (<>
         <div className="voice-tools">
           <label className="search">
             <SearchIcon />
@@ -136,6 +193,7 @@ export default function VoicePicker({ current, rate, onSelect, onClose }: Props)
           ))}
           {voices.length > 0 && !groups.length && <p className="empty">No voices match.</p>}
         </div>
+        </>)}
       </div>
     </div>
   );

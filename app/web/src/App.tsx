@@ -6,6 +6,8 @@ import Inline from './Inline';
 import Markdown from './Markdown';
 import { warmMermaid } from './Mermaid';
 import PlayerBar from './PlayerBar';
+import { Speaker, type SpeakOptions } from './speaker';
+import { usePiper } from './speech';
 import { buildSteps, type PlayerSettings } from './tts';
 import { LEVELS, type Item, type Level, type Question, type Topic, type View } from './types';
 import { useLocal } from './useLocal';
@@ -13,7 +15,7 @@ import { usePlayer } from './usePlayer';
 
 type ThemePref = 'system' | 'light' | 'dark';
 
-const DEFAULT_SETTINGS: PlayerSettings = { rate: 1, voice: '', quiz: false, thinkSeconds: 8, gapSeconds: 2, autoNext: true, announceCode: true, follow: true, style: 'explain' };
+const DEFAULT_SETTINGS: PlayerSettings = { rate: 1, voice: '', quiz: false, thinkSeconds: 8, gapSeconds: 2, autoNext: true, announceCode: true, follow: true, style: 'explain', engine: 'auto', piperVoice: '' };
 
 function useDark(pref: ThemePref) {
   const [system, setSystem] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -72,12 +74,21 @@ export default function App() {
   const selected: Item | undefined = items[selIndex];
   const favCount = useMemo(() => topics.reduce((n, t) => n + t.questions.filter((q) => q.favorite).length, 0), [topics]);
 
-  // ---- audio ------------------------------------------------------------------------------
+  // ---- audio ------
+  const piper = usePiper();
+  const speaker = useMemo(() => new Speaker(), []);
+  const speakOptions = (): SpeakOptions => {
+    const usePiperVoice = piper.available && settings.engine !== 'browser' && !speaker.piperBroken;
+    const voice = piper.voices.find((v) => v.id === settings.piperVoice)?.id ?? piper.voices[0]?.id ?? '';
+    return { engine: usePiperVoice ? 'piper' : 'browser', rate: settings.rate, browserVoice: settings.voice, piperVoice: voice };
+  };
   const player = usePlayer({
     count: items.length,
     steps: (i) => buildSteps(items[i].number, items[i].q.question, items[i].q.answer, settings),
     onIndex: (i) => setSelectedId(items[i].q.id),
     settings: () => settings,
+    speaker,
+    speakOptions,
   });
   // changing the reading style mid-playback restarts the current question in the new style
   const firstStyle = useRef(settings.style);
@@ -285,6 +296,8 @@ export default function App() {
         now={player.now}
         countdown={player.countdown}
         settings={settings}
+        piper={piper}
+        engine={speakOptions().engine}
         onSettings={setSettings}
         onPlay={() => player.play(player.status === 'paused' ? undefined : selIndex)}
         onPause={player.pause}

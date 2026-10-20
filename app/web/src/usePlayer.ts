@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { pickDefaultVoice, speechSupported } from './speech';
+import type { Speaker, SpeakOptions } from './speaker';
 import type { PlayerSettings, Step } from './tts';
 
 export type Status = 'idle' | 'playing' | 'paused';
@@ -9,6 +9,8 @@ interface Options {
   steps: (index: number) => Step[];
   onIndex: (index: number) => void;
   settings: () => PlayerSettings;
+  speaker: Speaker;
+  speakOptions: () => SpeakOptions;
 }
 
 /**
@@ -24,7 +26,6 @@ export function usePlayer(opts: Options) {
   const token = useRef(0); // bumped on every stop/pause/jump so stale callbacks are ignored
   const pos = useRef({ q: 0, s: 0 });
   const timers = useRef<{ wait?: number; tick?: number }>({});
-  const keep = useRef<SpeechSynthesisUtterance | null>(null); // prevents early GC (Chrome bug)
 
   const [status, setStatus] = useState<Status>('idle');
   const [index, setIndex] = useState(0);
@@ -41,7 +42,7 @@ export function usePlayer(opts: Options) {
   const halt = () => {
     token.current += 1;
     clearTimers();
-    if (speechSupported) window.speechSynthesis.cancel();
+    o.current.speaker.cancel();
   };
 
   const finish = () => {
@@ -85,24 +86,11 @@ export function usePlayer(opts: Options) {
       return;
     }
 
-    const settings = cur.settings();
-    const u = new SpeechSynthesisUtterance(step.text);
-    u.rate = settings.rate;
-    const all = window.speechSynthesis.getVoices();
-    // saved voice, else the best English voice (the content is English), else the browser default
-    const voice = all.find((v) => v.name === settings.voice) ?? pickDefaultVoice(all);
-    if (voice) {
-      u.voice = voice;
-      u.lang = voice.lang;
-    }
-    u.onend = next;
-    u.onerror = (e) => {
-      if (e.error === 'interrupted' || e.error === 'canceled') return; // we caused it
-      next();
-    };
-    keep.current = u;
+    const opts = cur.speakOptions();
     setNow({ text: step.text, part: step.part, block: step.block });
-    window.speechSynthesis.speak(u);
+    cur.speaker.speak(step.text, opts, next);
+    // fetch the next sentences now so Piper playback has no gaps
+    for (const ahead of steps.slice(s + 1, s + 3)) if (ahead.kind === 'speak') cur.speaker.prefetch(ahead.text, opts);
   };
 
   const start = (q: number, s: number) => {

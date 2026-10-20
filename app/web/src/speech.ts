@@ -73,3 +73,43 @@ export function useVoices() {
   }, []);
   return voices;
 }
+
+export interface PiperVoiceInfo {
+  id: string; // e.g. en_US-lessac-medium
+  language: string; // e.g. en_US
+  quality: string;
+}
+
+export interface PiperState {
+  available: boolean;
+  voices: PiperVoiceInfo[];
+  note: string; // why it is unavailable, e.g. "not installed"
+  loaded: boolean;
+}
+
+/** Whether the local Piper server is available (the Node server starts it when installed). */
+export function usePiper(): PiperState {
+  const [state, setState] = useState<PiperState>({ available: false, voices: [], note: '', loaded: false });
+  useEffect(() => {
+    let off = false;
+    let tries = 0;
+    let timer = 0;
+    const load = async () => {
+      try {
+        const d = await (await fetch('/api/tts/status')).json();
+        if (off) return;
+        setState({ available: !!d.available, voices: d.voices ?? [], note: d.note ?? '', loaded: true });
+        // Piper can still be starting right after the server boots: check a few more times
+        if (!d.available && d.note !== 'not installed' && ++tries < 8) timer = window.setTimeout(load, 2000);
+      } catch {
+        if (!off) setState((s) => ({ ...s, loaded: true }));
+      }
+    };
+    void load();
+    return () => {
+      off = true;
+      window.clearTimeout(timer);
+    };
+  }, []);
+  return state;
+}

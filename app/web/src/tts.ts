@@ -292,6 +292,8 @@ export interface PlayerSettings {
   announceCode: boolean;
   follow: boolean; // scroll the block being read into view
   style: Style;
+  engine: 'auto' | 'piper' | 'browser'; // auto = Piper when installed, else the browser
+  piperVoice: string; // '' = first installed Piper voice
 }
 
 const QUESTION_INTROS = ['Question {n}.', 'Next up, question {n}.', 'Alright, question {n}.', "Let's look at question {n}."];

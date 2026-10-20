@@ -4,6 +4,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { spawn } = require('child_process');
 const { build, DATA_DIR, LEVELS } = require('./build');
 
 const PORT = process.env.PORT || 3000;
@@ -74,6 +75,72 @@ route('DELETE', '/api/topics/([a-z0-9-]+)/questions/([\\w-]+)', ({ m }) => {
   return { ok: true };
 });
 
+
+// ---- optional Piper text-to-speech (see tools/piper/README.md) -------------------------------
+// If Piper is installed we start it as a child process and proxy /api/tts/*; otherwise the UI
+// silently uses the browser's own voices.
+const PIPER_DIR = path.join(__dirname, '..', 'tools', 'piper');
+const PIPER_PORT = Number(process.env.PIPER_PORT || 5199);
+const piper = { child: null, ready: false, voices: [], note: '' };
+
+function piperRequest(method, urlPath, body) {
+  return new Promise((resolve, reject) => {
+    const req = http.request({ host: '127.0.0.1', port: PIPER_PORT, path: urlPath, method, headers: body ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } : {}, timeout: 30000 }, resolve);
+    req.on('timeout', () => req.destroy(new Error('Piper timed out')));
+    req.on('error', reject);
+    req.end(body);
+  });
+}
+
+async function piperHealth() {
+  const res = await piperRequest('GET', '/health');
+  let raw = '';
+  for await (const c of res) raw += c;
+  return JSON.parse(raw);
+}
+
+function startPiper() {
+  if (process.env.TTS === 'off') { piper.note = 'disabled (TTS=off)'; return; }
+  const py = path.join(PIPER_DIR, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
+  const voices = path.join(PIPER_DIR, 'voices');
+  if (!fs.existsSync(py) || !fs.existsSync(voices) || !fs.readdirSync(voices).some((f) => f.endsWith('.onnx'))) {
+    piper.note = 'not installed';
+    console.log('Piper TTS: not installed, using browser voices (npm run tts:setup to add it).');
+    return;
+  }
+  const child = spawn(py, [path.join(PIPER_DIR, 'server.py'), '--port', String(PIPER_PORT)], { stdio: ['ignore', 'inherit', 'inherit'] });
+  piper.child = child;
+  child.on('exit', (code) => { piper.ready = false; piper.child = null; piper.note = `stopped (exit ${code})`; });
+  child.on('error', (e) => { piper.note = `could not start: ${e.message}`; });
+  const stop = () => child.kill();
+  process.on('exit', stop);
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { stop(); process.exit(0); });
+
+  (async () => { // wait for the model server to come up
+    for (let i = 0; i < 40 && piper.child; i += 1) {
+      try {
+        piper.voices = (await piperHealth()).voices;
+        piper.ready = true;
+        piper.note = '';
+        console.log(`Piper TTS ready: ${piper.voices.map((v) => v.id).join(', ')}`);
+        return;
+      } catch { await new Promise((r) => setTimeout(r, 500)); }
+    }
+    if (!piper.ready) piper.note = piper.note || 'did not start in time';
+  })();
+}
+
+async function readRaw(req, limit = 64 * 1024) {
+  const chunks = [];
+  let size = 0;
+  for await (const c of req) {
+    size += c.length;
+    if (size > limit) throw { status: 413, message: 'Body too large' };
+    chunks.push(c);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
 const readBody = (req) =>
   new Promise((resolve, reject) => {
     let s = '';
@@ -90,6 +157,15 @@ http.createServer(async (req, res) => {
     res.end(type === 'application/json' ? JSON.stringify(data) : data);
   };
   try {
+    if (url === '/api/tts/status') {
+      return send(200, { available: piper.ready, voices: piper.ready ? piper.voices : [], note: piper.ready ? '' : piper.note });
+    }
+    if (url === '/api/tts/speak' && req.method === 'POST') {
+      if (!piper.ready) return send(503, { error: 'Piper is not available' });
+      const upstream = await piperRequest('POST', '/speak', await readRaw(req));
+      res.writeHead(upstream.statusCode || 502, { 'Content-Type': upstream.headers['content-type'] || 'application/octet-stream' });
+      return upstream.pipe(res);
+    }
     if (url.startsWith('/api/')) {
       for (const r of routes) {
         const m = r.method === req.method && url.match(r.re);
@@ -113,5 +189,6 @@ http.createServer(async (req, res) => {
   }
 }).listen(PORT, '127.0.0.1', () => {
   build();
+  startPiper();
   console.log(`Interview Prep manager: http://localhost:${PORT}`);
 });
