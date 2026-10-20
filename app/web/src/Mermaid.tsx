@@ -4,6 +4,9 @@ type MermaidApi = typeof import('mermaid').default;
 let loader: Promise<MermaidApi> | null = null;
 let counter = 0;
 
+// Rendered SVGs by theme + source. A diagram that is shown again (new mount, re-render, back to a question) appears instantly instead of flashing "Rendering diagram…".
+const svgCache = new Map<string, string>();
+
 // Mermaid is large, so it is only downloaded when an answer actually contains a diagram.
 const loadMermaid = () => (loader ??= import('mermaid').then((m) => m.default));
 
@@ -23,10 +26,17 @@ export function warmMermaid() {
 }
 
 export default function Mermaid({ code, dark, block }: { code: string; dark: boolean; block?: number }) {
-  const [svg, setSvg] = useState('');
+  const key = (dark ? 'dark:' : 'light:') + code;
+  const [svg, setSvg] = useState(() => svgCache.get(key) ?? '');
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const cached = svgCache.get(key);
+    if (cached !== undefined) {
+      setSvg(cached);
+      setError('');
+      return;
+    }
     let cancelled = false;
     const id = `mermaid-${++counter}`;
     setError('');
@@ -40,6 +50,7 @@ export default function Mermaid({ code, dark, block }: { code: string; dark: boo
       });
       try {
         const out = await mermaid.render(id, code);
+        svgCache.set(key, out.svg);
         if (!cancelled) setSvg(out.svg);
       } catch (e) {
         document.getElementById(`d${id}`)?.remove(); // mermaid leaves a stray node on failure
@@ -49,7 +60,7 @@ export default function Mermaid({ code, dark, block }: { code: string; dark: boo
     return () => {
       cancelled = true;
     };
-  }, [code, dark]);
+  }, [key, code, dark]);
 
   if (error)
     return (

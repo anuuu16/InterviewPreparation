@@ -1,4 +1,4 @@
-import { isValidElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { isValidElement, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -46,6 +46,64 @@ function CodeBlock({ lang, block, children }: { lang: string; block?: number; ch
   );
 }
 
+
+const REHYPE_HIGHLIGHT = [rehypeHighlight, { languages, ignoreMissing: true }] as const;
+
+/**
+ * The rendered Markdown. Memoized and given stable plugin/component objects: if these were re-created on every
+ * render, React would see "new" component types, throw the DOM away and rebuild it (diagrams and code blocks
+ * would flash on every hover or player update).
+ */
+const Body = memo(function Body({ source, dark }: { source: string; dark: boolean }) {
+  const rehypePlugins = useMemo(() => {
+    const byOffset = blockIndexByOffset(source);
+    // tag each top-level element with the same block index the speech code uses
+    const tagBlocks = () => (tree: HNode) => {
+      for (const n of tree.children ?? []) {
+        const idx = n.type === 'element' ? byOffset.get(n.position?.start.offset ?? -1) : undefined;
+        if (idx !== undefined) n.properties = { ...n.properties, dataBlock: idx };
+      }
+    };
+    return [tagBlocks, REHYPE_HIGHLIGHT] as never[];
+  }, [source]);
+
+  const components = useMemo(
+    () => ({
+      pre({ node, children }: { node?: { properties?: Record<string, unknown> }; children?: ReactNode }) {
+        const block = blockOf(node);
+        const code = Array.isArray(children) ? children[0] : children;
+        if (isValidElement<{ className?: string; children?: ReactNode }>(code)) {
+          const lang = /language-(\w+)/.exec(code.props.className ?? '')?.[1] ?? '';
+          if (lang === 'mermaid') return <Mermaid code={textOf(code.props.children).trim()} dark={dark} block={block} />;
+          return <CodeBlock lang={lang} block={block}>{code}</CodeBlock>;
+        }
+        return <pre data-block={block}>{children}</pre>;
+      },
+      table({ node, children }: { node?: { properties?: Record<string, unknown> }; children?: ReactNode }) {
+        return (
+          <div className="table-wrap" data-block={blockOf(node)}>
+            <table>{children}</table>
+          </div>
+        );
+      },
+      a({ href, children }: { href?: string; children?: ReactNode }) {
+        return (
+          <a href={href} target="_blank" rel="noreferrer">
+            {children}
+          </a>
+        );
+      },
+    }),
+    [dark],
+  );
+
+  return (
+    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={rehypePlugins} components={components}>
+      {source}
+    </ReactMarkdown>
+  );
+});
+
 interface Props {
   source: string;
   dark: boolean;
@@ -61,17 +119,6 @@ export default function Markdown({ source, dark, onPlayBlock, activeBlock = null
   const root = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null); // block under the pointer
   const [top, setTop] = useState(0);
-
-  // tag each top-level element with the same block index the speech code uses
-  const tagBlocks = useMemo(() => {
-    const byOffset = blockIndexByOffset(source);
-    return () => (tree: HNode) => {
-      for (const n of tree.children ?? []) {
-        const idx = n.type === 'element' ? byOffset.get(n.position?.start.offset ?? -1) : undefined;
-        if (idx !== undefined) n.properties = { ...n.properties, dataBlock: idx };
-      }
-    };
-  }, [source]);
 
   useEffect(() => setHover(null), [source]);
 
@@ -123,38 +170,7 @@ export default function Markdown({ source, dark, onPlayBlock, activeBlock = null
           <PlayIcon />
         </button>
       )}
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[tagBlocks, [rehypeHighlight, { languages, ignoreMissing: true }]]}
-        components={{
-          pre({ node, children }) {
-            const block = blockOf(node);
-            const code = Array.isArray(children) ? children[0] : children;
-            if (isValidElement<{ className?: string; children?: ReactNode }>(code)) {
-              const lang = /language-(\w+)/.exec(code.props.className ?? '')?.[1] ?? '';
-              if (lang === 'mermaid') return <Mermaid code={textOf(code.props.children).trim()} dark={dark} block={block} />;
-              return <CodeBlock lang={lang} block={block}>{code}</CodeBlock>;
-            }
-            return <pre data-block={block}>{children}</pre>;
-          },
-          table({ node, children }) {
-            return (
-              <div className="table-wrap" data-block={blockOf(node)}>
-                <table>{children}</table>
-              </div>
-            );
-          },
-          a({ href, children }) {
-            return (
-              <a href={href} target="_blank" rel="noreferrer">
-                {children}
-              </a>
-            );
-          },
-        }}
-      >
-        {source}
-      </ReactMarkdown>
+      <Body source={source} dark={dark} />
     </div>
   );
 }
