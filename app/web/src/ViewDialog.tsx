@@ -9,7 +9,7 @@ export interface Hidden {
   topics: string[]; // topic slugs
   modules: string[]; // "<topic slug>/<module>"
 }
-export const DEFAULT_LAYOUT: Layout = { list: 'left', sidebar: true };
+export const DEFAULT_LAYOUT: Layout = { list: 'right', sidebar: true };
 export const DEFAULT_HIDDEN: Hidden = { topics: [], modules: [] };
 export const moduleKey = (slug: string, module: string) => `${slug}/${module}`;
 

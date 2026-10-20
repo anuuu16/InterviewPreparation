@@ -61,7 +61,7 @@ export default function App() {
   const [audioOpen, setAudioOpen] = useState(false);
   const [progressOpen, setProgressOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
-  const [layout, setLayout] = useLocal<Layout>('ip.layout', DEFAULT_LAYOUT);
+  const [layout, setLayout] = useLocal<Layout>('ip.layout2', DEFAULT_LAYOUT);
   const [hidden, setHidden] = useLocal<Hidden>('ip.hidden', DEFAULT_HIDDEN);
   const [tracking, setTracking] = useLocal<boolean>('ip.tracking', false); // progress is opt-in, off by default
   const [readFilter, setReadFilter] = useState<'all' | 'unread' | 'read'>('all');
@@ -356,7 +356,7 @@ export default function App() {
   const listShown = layout.list !== 'hidden';
   const leftTabStyle: React.CSSProperties = narrow ? {} : { left: sideW };
   const listTabLeft = !narrow && !listOnRight; // the list sits next to the topics menu
-  const listTabStyle: React.CSSProperties = narrow ? {} : listTabLeft ? { left: sideW + (listShown ? 360 : 0), ...(sideW === 0 ? { top: 'calc(45% + 64px)' } : {}) } : { right: listShown ? 360 : 0 };
+  const listTabStyle: React.CSSProperties = narrow ? {} : listTabLeft ? { left: sideW + (listShown ? 360 : 0), top: 'calc(45% + 64px)' } : { right: listShown ? 360 : 0 };
   const playingId = player.status === 'playing' ? items[player.index]?.q.id : undefined;
 
   return (
@@ -591,9 +591,9 @@ export default function App() {
 
       {!drawer && !dialogOpen && (
         <>
-          <button className="edge-tab left" style={leftTabStyle} onClick={toggleSide} aria-label="Show or hide the topics menu" title="Topics menu (swipe right)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={!narrow && layout.sidebar ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'} /></svg>
-          </button>
+          {(narrow || view.kind !== 'problems') && <button className="edge-tab left" style={leftTabStyle} onClick={toggleSide} aria-label="Show or hide the topics menu" title="Topics menu (swipe right)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={!narrow && showSide ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'} /></svg>
+          </button>}
           {view.kind !== 'problems' && (
             <button className={'edge-tab ' + (listTabLeft ? 'left' : 'right')} style={listTabStyle} onClick={toggleList} aria-label="Show or hide the question list" title="Questions (swipe left)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={(listTabLeft ? listShown : !listShown) && !narrow ? 'm15 6-6 6 6 6' : narrow ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'} /></svg>
