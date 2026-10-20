@@ -261,14 +261,15 @@ Target shape for a "complete" topic: **50–130 questions**, roughly 25% basic, 
 | Databases | `data/databases.json` | Complete (76) |
 | System Design | `data/system-design.json` | Complete (67) |
 | DevOps & CI/CD | `data/devops-ci-cd.json` | Complete (65) |
-| Git & Version Control | `data/git-version-control.json` | **In progress** (33): basics done; still needs most of Tech Lead, intermediate and advanced (see the outline in the original request: rebase in depth, reflog, bisect, internals, monorepo practice) |
+| Git & Version Control | `data/git-version-control.json` | Complete (68); commands were run in throwaway repos |
 | Azure & Cloud | `data/azure-cloud.json` | Complete (71) |
 | Networking & Security | `data/networking-security.json` | Complete (73) |
 | AI Engineering | `data/ai-engineering.json` | Complete (72); revisit facts that change fast (providers, protocols) |
 | Design Principles | `data/design-principles.json` | Complete (83) |
 | Leadership & Behavioral | `data/leadership-behavioral.json` | Complete (63) |
 | Problems (code library) | `problems/` | Sorting, binary search, two sum done; see section 15.9 for the planned list |
-| Planned | | Software process (waterfall, agile, Scrum, Kanban), Python, .NET/C#, data structures as problems |
+| SDLC & Agile | `data/sdlc-agile.json` | Complete (20); extend with more Scrum and estimation depth |
+| Planned | | Python, .NET/C#, more code problems (linked list, trees, graphs, DP, LRU cache) |
 
 Every topic also has a curated list in `resources/<topic>.json` (official docs, tutorials, references). Add one when you create a topic; verify links with `npm run resources:check`.
 
