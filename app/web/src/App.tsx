@@ -83,7 +83,8 @@ export default function App() {
     return () => mq.removeEventListener('change', on);
   }, []);
   const [scrolled, setScrolled] = useState(false);
-  const lastListSide = useRef<'left' | 'right'>('left');
+  // the side the question list was last on (default: right); survives a reload while the list is hidden
+  const lastListSide = useRef<'left' | 'right'>(((): 'left' | 'right' => { try { return localStorage.getItem('ip.listSide') === 'left' ? 'left' : 'right'; } catch { return 'right'; } })());
   const touch = useRef<{ x: number; y: number } | null>(null);
   const readerRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -350,9 +351,16 @@ export default function App() {
     if (layout.list !== 'hidden') { lastListSide.current = layout.list; setLayout({ ...layout, list: 'hidden' }); }
     else setLayout({ ...layout, list: lastListSide.current });
   };
+  useEffect(() => {
+    if (layout.list === 'hidden') return;
+    lastListSide.current = layout.list;
+    try { localStorage.setItem('ip.listSide', layout.list); } catch { /* ignore */ }
+  }, [layout.list]);
   // where the tabs sit on wide screens: on the edge of the panel they control
   const sideW = showSide ? 250 : 0;
-  const listOnRight = layout.list === 'right';
+  // a hidden list keeps its side, so its arrow stays on the edge where it will reappear
+  const listSide = layout.list === 'hidden' ? lastListSide.current : layout.list;
+  const listOnRight = listSide === 'right';
   const listShown = layout.list !== 'hidden';
   const leftTabStyle: React.CSSProperties = narrow ? {} : { left: sideW };
   const listTabLeft = !narrow && !listOnRight; // the list sits next to the topics menu
