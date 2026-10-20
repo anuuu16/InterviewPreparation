@@ -82,7 +82,9 @@ export default function App() {
     mq.addEventListener('change', on);
     return () => mq.removeEventListener('change', on);
   }, []);
-  const [scrolled, setScrolled] = useState(false);
+  // Compact header/footer appear only while their full versions are off screen, so never both at once.
+  const [fullHeadVisible, setFullHeadVisible] = useState(true); // title + action buttons at the top of the answer
+  const [pagerVisible, setPagerVisible] = useState(false); // Previous/Next row at the end of the answer
   // the side the question list was last on (default: right); survives a reload while the list is hidden
   const lastListSide = useRef<'left' | 'right'>(((): 'left' | 'right' => { try { return localStorage.getItem('ip.listSide') === 'left' ? 'left' : 'right'; } catch { return 'right'; } })());
   const touch = useRef<{ x: number; y: number } | null>(null);
@@ -356,6 +358,24 @@ export default function App() {
     lastListSide.current = layout.list;
     try { localStorage.setItem('ip.listSide', layout.list); } catch { /* ignore */ }
   }, [layout.list]);
+  useEffect(() => {
+    const root = readerRef.current;
+    if (!root || view.kind === 'problems') return;
+    setFullHeadVisible(true);
+    setPagerVisible(false);
+    const actions = root.querySelector('.actions');
+    const pager = root.querySelector('.pager');
+    const obs = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.target === actions) setFullHeadVisible(e.isIntersecting);
+        if (e.target === pager) setPagerVisible(e.isIntersecting);
+      }
+    }, { root, threshold: 0 });
+    if (actions) obs.observe(actions);
+    if (pager) obs.observe(pager);
+    return () => obs.disconnect();
+  }, [selected?.q.id, view.kind]);
+  const miniHead = !fullHeadVisible;
   // where the tabs sit on wide screens: on the edge of the panel they control
   const sideW = showSide ? 250 : 0;
   // a hidden list keeps its side, so its arrow stays on the edge where it will reappear
@@ -512,17 +532,17 @@ export default function App() {
           </ol>
         </section>
 
-        <main className="reader" ref={readerRef} onScroll={(e) => { const v = e.currentTarget.scrollTop > 180; if (v !== scrolled) setScrolled(v); }}>
+        <main className="reader" ref={readerRef}>
           {selected ? (
             <article key={selected.q.id}>
               <div className="mini-head-wrap">
-                <div className={'mini-head' + (scrolled ? ' show' : '')} aria-hidden={!scrolled}>
-                  <button className="mini-title" tabIndex={scrolled ? 0 : -1} onClick={() => readerRef.current?.scrollTo({ top: 0 })} title="Back to the top">
+                <div className={'mini-head' + (miniHead ? ' show' : '')} aria-hidden={!miniHead}>
+                  <button className="mini-title" tabIndex={miniHead ? 0 : -1} onClick={() => readerRef.current?.scrollTo({ top: 0 })} title="Back to the top">
                     <UpIcon /><span className="muted">#{selected.number}</span><span className="mini-q"><Inline text={selected.q.question} /></span>
                   </button>
-                  <button className="icon-btn" tabIndex={scrolled ? 0 : -1} onClick={() => player.play(selIndex)} aria-label="Listen" title="Listen"><PlayIcon /></button>
-                  <button className={'icon-btn' + (selected.q.favorite ? ' on-fav' : '')} tabIndex={scrolled ? 0 : -1} onClick={() => toggleFav(selected)} aria-label="Favorite" title="Favorite"><StarIcon filled={selected.q.favorite} /></button>
-                  {tracking && <button className={'icon-btn' + (progress.isRead(selected.q.id) ? ' on-read' : '')} tabIndex={scrolled ? 0 : -1} onClick={() => toggleRead(selected.q.id, !progress.isRead(selected.q.id))} aria-label="Mark as read" title="Mark as read"><CheckIcon /></button>}
+                  <button className="icon-btn" tabIndex={miniHead ? 0 : -1} onClick={() => player.play(selIndex)} aria-label="Listen" title="Listen"><PlayIcon /></button>
+                  <button className={'icon-btn' + (selected.q.favorite ? ' on-fav' : '')} tabIndex={miniHead ? 0 : -1} onClick={() => toggleFav(selected)} aria-label="Favorite" title="Favorite"><StarIcon filled={selected.q.favorite} /></button>
+                  {tracking && <button className={'icon-btn' + (progress.isRead(selected.q.id) ? ' on-read' : '')} tabIndex={miniHead ? 0 : -1} onClick={() => toggleRead(selected.q.id, !progress.isRead(selected.q.id))} aria-label="Mark as read" title="Mark as read"><CheckIcon /></button>}
                 </div>
               </div>
               <div className="crumbs">
@@ -575,10 +595,10 @@ export default function App() {
                 <div className="tags">{selected.q.tags.map((t) => <button key={t} className="tag" onClick={() => setSearch(t)}>#{t}</button>)}</div>
               )}
               <div className="mini-foot-wrap">
-                <div className="mini-foot">
-                  <button className="icon-btn" onClick={() => step(-1)} disabled={selIndex === 0} aria-label="Previous question" title="Previous"><PrevIcon /></button>
+                <div className={'mini-foot' + (pagerVisible ? ' hide' : '')} aria-hidden={pagerVisible}>
+                  <button className="icon-btn" tabIndex={pagerVisible ? -1 : 0} onClick={() => step(-1)} disabled={selIndex === 0} aria-label="Previous question" title="Previous"><PrevIcon /></button>
                   <span className="muted">{selIndex + 1} / {items.length}</span>
-                  <button className="icon-btn" onClick={() => step(1)} disabled={selIndex >= items.length - 1} aria-label="Next question" title="Next"><NextIcon /></button>
+                  <button className="icon-btn" tabIndex={pagerVisible ? -1 : 0} onClick={() => step(1)} disabled={selIndex >= items.length - 1} aria-label="Next question" title="Next"><NextIcon /></button>
                 </div>
               </div>
               <nav className="pager">

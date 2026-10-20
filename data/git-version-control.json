@@ -432,6 +432,459 @@
         "bisect"
       ],
       "favorite": false
+    },
+    {
+      "id": "git-version-control-034",
+      "question": "What does `git rebase` do, and what is the golden rule of rebasing?",
+      "answer": "**Short answer:** Rebase takes the commits of your branch and replays them, one by one, on top of a new base. The result is a straight history, but the replayed commits are new commits with new hashes. The golden rule: never rebase commits that other people already have.\n\nSay `feature` split from `main`, and `main` moved on. A merge joins them with a merge commit. A rebase moves your commits to start at the new tip of `main`.\n\n```mermaid\nflowchart LR\n    subgraph Before[\"Before\"]\n        A1[\"A\"] --> B1[\"B\"] --> C1[\"C main\"]\n        B1 --> D1[\"D\"] --> E1[\"E feature\"]\n    end\n    subgraph After[\"After rebase\"]\n        A2[\"A\"] --> B2[\"B\"] --> C2[\"C main\"] --> D2[\"D'\"] --> E2[\"E' feature\"]\n    end\n```\n\nD and E become D' and E'. They have the same changes but a different parent, so they are different commits.\n\n```bash\ngit switch feature\ngit rebase main\n```\n\n```text\nSuccessfully rebased and updated refs/heads/feature.\n```\n\nWhy the golden rule exists: if a teammate has D and E, and you replace them with D' and E', their branch and yours now disagree. Git sees duplicate changes, and conflicts appear. Rebase your own private branch freely. Do not rebase `main` or any shared branch.\n\n| | Merge | Rebase |\n| --- | --- | --- |\n| History | Keeps the real shape | Linear |\n| Rewrites commits | No | Yes |\n| Safe on shared branches | Yes | No |\n| Conflicts | Once | Possibly once per replayed commit |\n\n**Gotcha:** after rebasing a branch you already pushed, a normal push is rejected. You need `git push --force-with-lease`, and only when the branch is yours alone.\n\n**Interview tip:** Say that rebase does not change content, it changes the base and the hashes. Then state the rule and the safe exception: your own unshared branch.",
+      "level": "intermediate",
+      "module": "Rewriting History",
+      "tags": [
+        "rebase",
+        "history"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-035",
+      "question": "How does interactive rebase work: squash, fixup, reword, edit, reorder, drop?",
+      "answer": "**Short answer:** `git rebase -i <base>` opens a to-do list of your commits. You change the word in front of each line, and Git replays the commits with those actions. It is the tool for cleaning a branch before review.\n\nStart it for the commits after `main`:\n\n```bash\ngit rebase -i main\n```\n\nThe editor shows lines like this, oldest commit first:\n\n```text\npick 42f96c4 Add cart model\npick c04cc7c wip\npick cfc5fed Add cart tests\npick af44734 fix typo in cart model\n```\n\n| Action | What it does |\n| --- | --- |\n| `pick` | Keep the commit as it is |\n| `reword` | Keep the changes, edit the message |\n| `edit` | Stop so you can change the commit, then `git rebase --continue` |\n| `squash` | Meld into the previous commit and combine the messages |\n| `fixup` | Meld into the previous commit and drop this message |\n| `drop` | Delete the commit |\n| reorder lines | Reorder the commits |\n\nI changed the list to put the typo fix right after its model commit, drop `wip` and reword the tests commit:\n\n```text\npick 42f96c4 Add cart model\nfixup af44734 fix typo in cart model\ndrop c04cc7c wip\nreword cfc5fed Add cart tests\n```\n\n```bash\ngit log --oneline\n```\n\n```text\neae5148 Add cart tests\n02e799c Add cart model\n2d4af63 Add base\n```\n\nFour commits became two clean ones. The hashes are new.\n\nA handy shortcut: `git commit --fixup <hash>` creates a commit named `fixup! ...`, and `git rebase -i --autosquash main` puts it in the right place automatically.\n\n**Gotcha:** if you reorder commits that touch the same lines, you get conflicts. Also, never use it on pushed shared commits. If you go wrong, `git rebase --abort` returns to the start.\n\n**Interview tip:** Say that you commit freely while working, then tidy with interactive rebase before opening the merge request. Reviewers get a clear story.",
+      "level": "intermediate",
+      "module": "Rewriting History",
+      "tags": [
+        "rebase",
+        "interactive",
+        "history"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-036",
+      "question": "What is the difference between `git pull`, `git pull --rebase` and the `pull.rebase` setting?",
+      "answer": "**Short answer:** A plain `git pull` fetches and then merges. If you and the remote both have new commits, you get an extra merge commit. `git pull --rebase` fetches and replays your local commits on top of the remote ones, which keeps history linear. Set `pull.rebase true` to make that the default.\n\n```mermaid\nflowchart LR\n    R[\"origin/main: A, B, R1\"]\n    L[\"local main: A, B, L1\"]\n    L -- \"git pull\" --> M[\"A, B, R1, L1 and a merge commit\"]\n    L -- \"git pull --rebase\" --> P[\"A, B, R1, L1'\"]\n```\n\nPull gives a merge commit. Pull with rebase gives a straight line with L1 replayed as L1 prime.\n\nSettings:\n\n```bash\ngit config --global pull.rebase true     # always rebase on pull\ngit config --global pull.ff only         # or: refuse anything that is not a fast-forward\n```\n\nWith `pull.ff only` a diverged pull fails with a message, and you choose between merge and rebase on purpose. Modern Git warns, or stops, when branches have diverged and you did not choose a style.\n\nThe rebase option is safe when the local commits are only yours and not pushed. It becomes a problem if you have merge commits locally; use `--rebase=merges` (since Git 2.18) to keep them.\n\n| Option | Result | Good when |\n| --- | --- | --- |\n| `pull` (merge) | Merge commits in history | You want exact history |\n| `pull --rebase` | Linear history | Feature branches with a team that likes linear history |\n| `pull --ff-only` | Fails if diverged | `main`, where you should never have local commits |\n\n**Gotcha:** if the rebase hits conflicts, you are in the middle of a rebase. Resolve, `git add`, `git rebase --continue`, or `git rebase --abort` to go back.\n\n**Interview tip:** Say you set `pull.rebase` or `pull.ff` in the team setup so nobody creates accidental \"Merge branch main of origin\" commits.",
+      "level": "intermediate",
+      "module": "Remotes & Collaboration",
+      "tags": [
+        "pull",
+        "rebase",
+        "config"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-037",
+      "question": "What is the difference between `reset`, `revert`, `restore` and `checkout`?",
+      "answer": "**Short answer:** `reset` moves the branch pointer (and optionally the index and files). `revert` adds a new commit that undoes an old one. `restore` copies file content from a commit or the index into the index or the working tree. `checkout` is the older command that did several of these jobs.\n\n| Command | What it changes | History | Safe for shared commits |\n| --- | --- | --- | --- |\n| `git reset --soft <c>` | Branch pointer only | Rewrites (moves back) | No |\n| `git reset --mixed <c>` | Pointer and index | Rewrites | No |\n| `git reset --hard <c>` | Pointer, index and files | Rewrites | No |\n| `git revert <c>` | Adds a new inverse commit | Adds | Yes |\n| `git restore <file>` | Working file from the index | None | Local only |\n| `git restore --staged <file>` | Index from HEAD | None | Local only |\n| `git restore --source=<c> <file>` | File from any commit | None | Local only |\n| `git checkout <branch>` | Moves HEAD, switch branch | None | Yes |\n| `git checkout -- <file>` | Same as restore | None | Local only |\n\nReset modes, shown on a repository with two commits:\n\n```bash\ngit reset --soft HEAD~1    # last commit is undone, changes stay staged\ngit reset HEAD~1           # undone, changes stay in the files, not staged\ngit reset --hard HEAD~1    # undone and changes deleted\n```\n\n```text\nA  f1          <- after --soft: staged\n?? f1          <- after the default mixed: untracked file again\nHEAD is now at 782cb29 Change 6    <- after --hard, f1 is gone\n```\n\nRestore a single file from an older commit:\n\n```bash\ngit restore --source=HEAD~2 a\ncat a\n```\n\n```text\n1\n```\n\n**Gotcha:** `reset --hard` also throws away uncommitted work in tracked files, and nothing in the reflog can bring that back. Run `git status` first, and use `git stash` if unsure.\n\n**Interview tip:** Organise the answer by the three areas: reset moves the branch pointer, restore moves content between areas, revert adds history.",
+      "level": "intermediate",
+      "module": "Undo & Recovery",
+      "tags": [
+        "reset",
+        "revert",
+        "restore",
+        "checkout"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-038",
+      "question": "How does `git cherry-pick` work, and what are its pitfalls?",
+      "answer": "**Short answer:** `git cherry-pick <commit>` copies the change of one commit onto your current branch as a new commit. It is the tool for backporting a fix. The pitfalls are duplicate commits with different hashes, conflicts when context differs, and losing track of where the change came from.\n\n```bash\ngit switch main\ngit cherry-pick -x f2\ngit log -1 --format=%B\n```\n\n```text\n[main 428170c] fix: hotfix h\n\nfix: hotfix h\n\n(cherry picked from commit 61e1c8dce30144b9368b87555c22679b844e922e)\n```\n\nThe option `-x` appends the original hash to the message. Use it on shared branches, so anyone can trace the origin.\n\nUseful variants:\n- `git cherry-pick A..B` copies a range (A excluded, B included).\n- `git cherry-pick -m 1 <merge>` copies a merge commit, choosing parent 1 as the mainline.\n- `git cherry-pick -n` applies the change without committing.\n- If it stops with a conflict: fix, `git add`, `git cherry-pick --continue`, or `--abort`.\n\nPitfalls:\n- **Duplicates.** The copy has a new hash. When both branches are merged later, Git usually handles identical changes well, but history shows the change twice, and `git log main..release` still lists the original.\n- **Hidden dependencies.** The fix may rely on an earlier commit that you did not pick. It applies cleanly but behaves wrongly. Test after every pick.\n- **Ordering.** Pick older commits first.\n- **Missing trace.** Without `-x` nobody knows where it came from.\n\nTo check if a change is already on another branch, `git cherry -v main feature` lists commits of `feature` that have no equivalent on `main` (marked `+`), and commits that have one (marked `-`).\n\n**Gotcha:** if you cherry-pick many commits of a feature, ask if a merge or a rebase would be simpler.\n\n**Interview tip:** Say it is for backports and hotfixes, not for moving a whole feature.",
+      "level": "intermediate",
+      "module": "Rewriting History",
+      "tags": [
+        "cherry-pick",
+        "backport"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-039",
+      "question": "How do you recover \"lost\" commits and branches with `git reflog`?",
+      "answer": "**Short answer:** The reflog is a local log of where `HEAD` and each branch pointed, over time. Even after a hard reset, a deleted branch or a bad rebase, the old commits are still in the object store for a while, and the reflog tells you their hashes. Create a branch from that hash and the work is back.\n\nExample: delete a branch with unmerged work, then restore it.\n\n```bash\ngit branch -D feature/cart\ngit reflog | head -3\ngit branch feature/cart HEAD@{1}\ngit log --oneline feature/cart\n```\n\n```text\nDeleted branch feature/cart (was dd46209).\n06ba897 HEAD@{0}: checkout: moving from feature/cart to main\ndd46209 HEAD@{1}: commit: cart 2\n96abc86 HEAD@{2}: commit: cart 1\ndd46209 cart 2\n96abc86 cart 1\n06ba897 root\n```\n\nGit even prints the hash when you delete (`was dd46209`). Another example, undo a wrong reset:\n\n```bash\ngit reset --hard HEAD~1\ngit reflog | head -2\ngit reset --hard HEAD@{1}      # back to where you were\n```\n\n```text\ne573903 HEAD@{0}: reset: moving to HEAD~1\n3740805 HEAD@{1}: commit: Oops commit\n```\n\nFacts to know:\n- The reflog is local. It is not pushed and a fresh clone has none.\n- Entries expire: 90 days for reachable and 30 days for unreachable commits by default. `git gc` then removes unreachable objects.\n- `git reflog show feature` shows one branch. `HEAD@{2.hours.ago}` is also a valid reference.\n- Uncommitted changes are never in the reflog.\n\n**Gotcha:** after `git gc --prune=now` or when the retention time passes, the commit is really gone.\n\n**Interview tip:** Say \"if it was ever committed, it is almost always recoverable\". It shows that you work without fear and that you also stress committing early.",
+      "level": "intermediate",
+      "module": "Undo & Recovery",
+      "tags": [
+        "reflog",
+        "recovery"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-040",
+      "question": "How does `git bisect` find the commit that introduced a bug?",
+      "answer": "**Short answer:** `git bisect` does a binary search over history. You mark one commit good and one bad, and Git checks out the middle one. You test and answer good or bad, and the range halves each time. With a test script (`bisect run`) it finds the culprit automatically in about log2 of n steps.\n\nManual flow:\n\n```bash\ngit bisect start\ngit bisect bad                 # current commit is broken\ngit bisect good v1.4.0         # this older tag worked\n# Git checks out a middle commit; you test, then\ngit bisect good                # or: git bisect bad\ngit bisect reset               # finish and go back\n```\n\nAutomated flow: write a script that exits 0 for good and non-zero (1 to 127, except 125) for bad. Exit code 125 means \"cannot test this commit, skip it\".\n\n```bash\ngit bisect start HEAD HEAD~5\ngit bisect run ./t.sh\n```\n\n```text\nrunning './t.sh'\nrunning './t.sh'\nrunning './t.sh'\n12a8e7a82cdd67f867c90fe33db144eb31be92a6 is the first bad commit\n```\n\nIn a history of 6 commits where the bug appeared in commit 4, three runs were enough. A history of 1000 commits needs about 10 steps.\n\n```mermaid\nflowchart LR\n    G[\"good<br/>v1.4.0\"] --> M1[\"test middle\"]\n    M1 -- \"bad\" --> L[\"search older half\"]\n    M1 -- \"good\" --> R[\"search newer half\"]\n    L --> F[\"first bad commit\"]\n    R --> F\n```\n\n**Gotcha:** bisect works well only if every commit builds and the test is reliable. Broken intermediate commits and flaky tests give wrong answers. That is another reason for small atomic commits and linear, always-green history.\n\n**Interview tip:** Mention `git bisect skip` for unbuildable commits and the habit of turning the bisect script into a regression test afterwards.",
+      "level": "intermediate",
+      "module": "Undo & Recovery",
+      "tags": [
+        "bisect",
+        "debugging"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-041",
+      "question": "What are the advanced stash features: untracked files, partial stash, apply and stash branches?",
+      "answer": "**Short answer:** Beyond plain `git stash`, you can include untracked files with `-u`, stash only chosen hunks with `push -p`, name stashes, keep a stash with `apply`, and turn one into a branch with `stash branch`.\n\n```bash\necho tmp >> v.txt\necho new > untracked.txt\ngit stash -u -m \"cart wip\"\ngit stash list\n```\n\n```text\nSaved working directory and index state On main: cart wip\nstash@{0}: On main: cart wip\n```\n\n| Command | Use |\n| --- | --- |\n| `git stash push -m \"msg\"` | Save with a name |\n| `git stash -u` | Include untracked files |\n| `git stash -a` | Include ignored files as well (rarely wanted) |\n| `git stash push -p` | Pick hunks interactively |\n| `git stash push -- path/file` | Stash only some paths |\n| `git stash apply stash@{1}` | Apply but keep the stash |\n| `git stash pop` | Apply and drop the stash if there is no conflict |\n| `git stash show -p stash@{0}` | See the content |\n| `git stash branch rescue` | New branch from the stash base, apply and drop |\n\n```bash\ngit stash branch rescue\n```\n\n```text\nSwitched to a new branch 'rescue'\nOn branch rescue\n```\n\nThis is the cleanest way to continue after the base branch moved on and `pop` conflicts, because the branch starts at the commit where you stashed.\n\nStashes are commits under `refs/stash`, so they are also in the reflog and can be recovered after a drop with `git fsck --unreachable | grep commit`, if you act soon.\n\n**Gotcha:** `git stash` without `-u` leaves untracked files in place, which can make the next branch switch fail or surprise you. Also, stash entries are local and easy to forget.\n\n**Interview tip:** Say that for work longer than a day you prefer a WIP commit on a branch. It is visible, shareable and backed up when pushed.",
+      "level": "intermediate",
+      "module": "Undo & Recovery",
+      "tags": [
+        "stash",
+        "workflow"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-042",
+      "question": "How does `git add -p` help to craft clean commits?",
+      "answer": "**Short answer:** `git add -p` shows each changed hunk of your edits and asks if you want to stage it. This lets you split one messy working tree into several focused commits, so each commit contains only one idea.\n\nWhen you fix a bug and also clean a neighbouring function, one `git add .` mixes both. With `-p` you stage the bug fix first.\n\n```bash\ngit add -p\n```\n\n```text\n@@ -10,6 +10,7 @@ func total(items []Item) int {\n ...\n(1/2) Stage this hunk [y,n,q,a,d,j,J,g,/,e,?]?\n```\n\nKeys you use most:\n\n| Key | Meaning |\n| --- | --- |\n| `y` / `n` | Stage or skip this hunk |\n| `s` | Split the hunk into smaller hunks |\n| `e` | Edit the hunk by hand, for hunks that cannot be split |\n| `q` | Quit |\n| `?` | Help |\n\nThe cycle becomes: `git add -p`, `git diff --staged` to review exactly what goes in, `git commit`, then repeat for the next idea.\n\nRelated tools:\n- `git restore -p file` discards chosen hunks only.\n- `git reset -p` unstages chosen hunks.\n- `git commit --fixup <hash>` with `rebase -i --autosquash` puts a small fix into the earlier commit it belongs to.\n- `git diff --staged` before every commit is a good habit.\n\n**Gotcha:** `add -p` does not stage new untracked files. Use `git add -N <file>` (intent to add) first, then `-p` works for that file too.\n\n**Interview tip:** Tie this to review quality: small, single-purpose commits are easy to review, revert and bisect.",
+      "level": "intermediate",
+      "module": "Git Fundamentals",
+      "tags": [
+        "staging",
+        "commits",
+        "add-p"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-043",
+      "question": "How does `git worktree` help you work on several branches at once?",
+      "answer": "**Short answer:** `git worktree add` creates another folder that has a different branch checked out, and it shares the same `.git` data with your main folder. You can fix a hotfix in one folder while a long build or test runs in another, without stashing or cloning again. It exists since Git 2.5.\n\n```bash\ngit worktree add ../orders-hotfix -b hotfix/login\ngit worktree list\n```\n\n```text\nPreparing worktree (new branch 'hotfix')\nHEAD is now at 782cb29 Change 6\n/work/orders         782cb29 [main]\n/work/orders-hotfix  782cb29 [hotfix]\n```\n\nYou can now open `../orders-hotfix` in a second editor window, commit there, push, and then remove it:\n\n```bash\ngit worktree remove ../orders-hotfix\ngit worktree prune          # clean records of deleted folders\n```\n\nWhy it is better than the alternatives:\n\n| Option | Problem |\n| --- | --- |\n| `git stash` and switch | Easy to forget, and the build cache is lost |\n| A second `git clone` | Duplicates all objects, and branches are not shared |\n| Worktree | One object store, separate working folders |\n\nGood uses: review a merge request without touching your own work, run a long test on one branch while coding on another, compare two versions side by side, build a release branch while developing on `main`.\n\nRules: the same branch cannot be checked out in two worktrees at once. Git refuses, which prevents two folders from fighting over one branch. A worktree has its own index and its own uncommitted changes.\n\n**Gotcha:** dependency folders such as `node_modules` are not shared, so each worktree needs its own install. Do not delete a worktree folder by hand; use `git worktree remove`.\n\n**Interview tip:** Say that you use worktrees for reviews and hotfixes to avoid context switch costs.",
+      "level": "intermediate",
+      "module": "Branching & Merging",
+      "tags": [
+        "worktree",
+        "workflow"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-044",
+      "question": "How do you resolve conflicts well: merge tools, `rerere`, and what do \"ours\" and \"theirs\" mean?",
+      "answer": "**Short answer:** Understand both sides, resolve in a three-way tool, test, and let `rerere` remember repeat resolutions. Be careful with the words ours and theirs, because they swap meaning between merge and rebase.\n\nSteps: `git status` lists conflicted files. `git mergetool` opens a three-way tool that shows base, your side and their side. For tricky files `git checkout --conflict=diff3 file` adds the common ancestor into the markers, which helps to see what each side really changed. Enable it for good with `git config --global merge.conflictstyle zdiff3` (Git 2.35+).\n\nOurs and theirs:\n\n| Operation | \"ours\" (stage 2) | \"theirs\" (stage 3) |\n| --- | --- | --- |\n| `git merge topic` on `main` | `main`, the branch you are on | `topic`, the one you merge in |\n| `git rebase main` on `topic` | `main`, the new base | `topic`, your commit being replayed |\n\nDuring a rebase the roles feel reversed, because Git builds the result on top of the base and applies your commits one at a time. I checked both cases. In the rebase on `topic`, `git show :2:f` printed the content from `main` and `:3:f` printed the one from `topic`. In a merge on `topic` it was the opposite.\n\n```bash\ngit checkout --ours -- file       # take the side marked ours\ngit checkout --theirs -- file\ngit merge -X theirs topic         # on conflicts only, prefer theirs\n```\n\n`rerere` means \"reuse recorded resolution\". It remembers how you fixed a conflict and applies it next time. Useful when you rebase a long branch several times.\n\n```bash\ngit config rerere.enabled true\ngit merge x1\n```\n\n```text\nCONFLICT (add/add): Merge conflict in cf\nRecorded preimage for 'cf'\n```\n\nAfter you resolve and commit, the same conflict later prints `Resolved 'cf' using previous resolution.`\n\n**Gotcha:** `-X theirs` and `-s ours` are different. The first is an option for conflicting hunks only, and the second (strategy) ignores the other branch completely.\n\n**Interview tip:** Say that after resolving you build and run tests, since a clean text merge can still be wrong.",
+      "level": "intermediate",
+      "module": "Branching & Merging",
+      "tags": [
+        "conflicts",
+        "rerere",
+        "merge",
+        "rebase"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-045",
+      "question": "What is the difference between `git diff A..B` and `A...B`, and between `git log A..B` and `A...B`?",
+      "answer": "**Short answer:** Two dots and three dots mean different things in `diff` and in `log`. For `log`, `A..B` is commits in B but not in A, and `A...B` is commits in either but not both. For `diff`, `A..B` compares the two tips, while `A...B` compares B with the merge base of A and B, which shows only what B added.\n\nTake `main` and `feature`, split at a common commit M, each with its own new commits.\n\n```mermaid\nflowchart LR\n    M[\"M\"] --> X[\"main: X\"]\n    M --> Y[\"feature: Y\"]\n```\n\n| Command | Meaning here |\n| --- | --- |\n| `git log main..feature` | Commits only in feature: Y |\n| `git log feature..main` | Commits only in main: X |\n| `git log main...feature` | Both sides: X and Y |\n| `git diff main..feature` | Tip of main against tip of feature (includes the reverse of X) |\n| `git diff main...feature` | Merge base M against feature: only the change made on feature |\n\nA real run on two branches with one commit each:\n\n```bash\ngit log --oneline c1..c2\ngit log --oneline c1...c2\ngit diff --stat main...f2\n```\n\n```text\n4ab624f price 20\n--\n6a55cbc price 10\n4ab624f price 20\n g | 2 ++\n h | 1 +\n 2 files changed, 3 insertions(+)\n```\n\nThe first block is `c1..c2`, the second is `c1...c2`.\n\nWhen to use which:\n- \"What will my merge request add?\" is `git diff origin/main...HEAD`. This is what the platform shows.\n- \"What do I have that is not pushed yet?\" is `git log @{u}..HEAD`.\n- \"What did the remote get that I do not have?\" is `git log HEAD..@{u}`.\n- \"What differs between two branches in both directions?\" is `git log --left-right main...feature`.\n\n**Gotcha:** `git diff A B` and `git diff A..B` are the same, but `git log A B` (with a space) means \"commits reachable from A or B\", not a range.\n\n**Interview tip:** Remember the pair: log with two dots is the set difference, diff with three dots starts from the merge base. Merge request diffs use the three-dot idea.",
+      "level": "intermediate",
+      "module": "Branching & Merging",
+      "tags": [
+        "diff",
+        "log",
+        "revisions"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-046",
+      "question": "What does `git fetch` do internally, and what is `FETCH_HEAD`?",
+      "answer": "**Short answer:** Fetch asks the remote which refs it has, downloads the commits and objects you are missing, and updates your remote-tracking refs such as `refs/remotes/origin/main`. It does not touch your branches or files. `FETCH_HEAD` is a file that records what the last fetch downloaded.\n\nThe rule that decides what to update is the refspec in `.git/config`:\n\n```text\n[remote \"origin\"]\n    url = git@gitlab.example.com:shop/orders.git\n    fetch = +refs/heads/*:refs/remotes/origin/*\n```\n\nIt reads: take every branch on the remote (`refs/heads/*`) and store it locally as `refs/remotes/origin/*`. The `+` allows non-fast-forward updates of these tracking refs, since they only mirror the remote.\n\n```bash\ngit fetch\ncat .git/FETCH_HEAD\ngit log --oneline main..origin/main\n```\n\n```text\nFrom .../remote\n   1a95fb0..03353fe  main       -> origin/main\n03353fe...\tbranch 'main' of .../remote\n03353fe second\n```\n\nThe line with two hashes shows the old and new value of `origin/main`. The `FETCH_HEAD` line holds the new hash and the source. Scripts use it, for example `git fetch origin main` followed by `git merge FETCH_HEAD`.\n\nSteps inside a fetch:\n1. Ask the remote for its list of refs.\n2. Compare with what you have and negotiate the missing commits.\n3. Receive a pack with only the missing objects.\n4. Update the tracking refs.\n\nYou can fetch a single branch (`git fetch origin main`), or a merge request ref on GitLab: `git fetch origin merge-requests/42/head:mr-42`.\n\n**Gotcha:** a fetch that downloads nothing new only means your tracking refs are up to date, not that your branch is. Compare with `git status -sb`.\n\n**Interview tip:** Explain that this is why `git pull` is just fetch plus merge, and why fetch can never lose your work.",
+      "level": "intermediate",
+      "module": "Remotes & Collaboration",
+      "tags": [
+        "fetch",
+        "remotes",
+        "internals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-047",
+      "question": "How do you clean up stale remote branches?",
+      "answer": "**Short answer:** Deleting a branch on the server does not remove your local `origin/old-branch` reference. Run `git fetch --prune` (or set `fetch.prune true`) to drop tracking refs whose branch is gone, delete merged local branches yourself, and delete remote branches with `git push origin --delete`.\n\n```bash\ngit branch -r\ngit fetch --prune\ngit branch -r\n```\n\n```text\n  origin/HEAD -> origin/main\n  origin/main\n  origin/old-branch\nFrom .../remote\n - [deleted]         (none)     -> origin/old-branch\n  origin/HEAD -> origin/main\n  origin/main\n```\n\n| Task | Command |\n| --- | --- |\n| Remove stale tracking refs | `git fetch --prune` or `git remote prune origin` |\n| Do it every time | `git config --global fetch.prune true` |\n| Delete a remote branch | `git push origin --delete old-branch` |\n| List merged local branches | `git branch --merged main` |\n| Delete a merged local branch | `git branch -d feature/x` |\n| Force-delete an unmerged branch | `git branch -D feature/x` |\n| Find local branches whose remote is gone | `git branch -vv` and look for `: gone]` |\n\nA small clean-up script for local branches already merged into `main`:\n\n```bash\ngit branch --merged main | grep -v '^\\*\\|main' | xargs -r git branch -d\n```\n\nGNU `xargs -r` skips the command when there is no input. On macOS use plain `xargs` and check the list first.\n\n**Gotcha:** after a squash merge, `git branch --merged` does not list the feature branch, because the squashed commit has a different hash. Use `git branch -vv` and look for `gone` after fetching with prune, since the platform deleted the source branch.\n\n**Interview tip:** Say you turn on \"delete source branch after merge\" in GitLab and `fetch.prune` locally, so clean-up happens by itself.",
+      "level": "intermediate",
+      "module": "Remotes & Collaboration",
+      "tags": [
+        "prune",
+        "branches",
+        "cleanup"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-048",
+      "question": "How do you force push safely with `--force-with-lease`?",
+      "answer": "**Short answer:** After you rewrite your own branch (rebase or amend), a normal push is rejected. Use `git push --force-with-lease`. It forces the update only if the remote branch is still where you last saw it. If a teammate pushed something meanwhile, it refuses, so you do not overwrite their work.\n\nA plain `--force` replaces the remote branch whatever is there. The lease adds a check, like \"I expect the remote to be at this hash\".\n\n```bash\ngit commit --amend -m \"fix v2\"\ngit push --force-with-lease\n```\n\nNormal case, nobody else pushed:\n\n```text\n + 03353fe...87889e3 main -> main (forced update)\n```\n\nIf a teammate pushed after your last fetch:\n\n```text\n ! [rejected]        fix -> fix (stale info)\nerror: failed to push some refs to '.../remote.git'\n```\n\nYou then fetch, look at what arrived, rebase on it, and push again.\n\nRules:\n- Only force push your own feature branch. Never `main` or release branches (protect them so the server refuses).\n- Fetch first so the lease knows the current state. A background fetch by an IDE can hide new commits from the check, because it moves your remote-tracking ref. For more safety use `--force-with-lease=branch:expectedhash`, or add `--force-if-includes` (Git 2.30+).\n- Add an alias: `git config --global alias.pushf \"push --force-with-lease\"`.\n\n| Option | Behaviour |\n| --- | --- |\n| `--force` | Overwrites without checks |\n| `--force-with-lease` | Overwrites only if the remote is as expected |\n| `--force-if-includes` | Also checks that you have integrated the remote tip locally |\n\n**Gotcha:** the lease protects against surprise commits that you never fetched. It does not protect a branch that several people work on on purpose. Agree on who owns which branch.\n\n**Interview tip:** Say \"I never use plain force. I use force-with-lease on my own branches only\".",
+      "level": "intermediate",
+      "module": "Remotes & Collaboration",
+      "tags": [
+        "push",
+        "force",
+        "safety"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-049",
+      "question": "Submodules, subtrees or a package manager: how do you share code between repositories?",
+      "answer": "**Short answer:** Prefer a package manager and versioned packages for libraries. Use submodules when you must pin an exact commit of another repository and keep its history separate. Use subtree when you want the other code copied into your repository, so that normal clone and checkout just work.\n\n| Option | What is stored | Strength | Weakness |\n| --- | --- | --- | --- |\n| Package manager (npm, Go modules, NuGet) | A version number | Simple, semantic versions, caching | Needs a registry or tags |\n| Submodule | A pointer to an exact commit, plus `.gitmodules` | Pins a commit, histories stay separate | Extra steps, easy to forget to update or push |\n| Subtree | A copy of the other code in your history | Plain clone works, nothing special for users | History gets bigger, pushing changes upstream is harder |\n\nAdding a submodule:\n\n```bash\ngit submodule add ../lib vendor/lib\ncat .gitmodules\ngit status -s\n```\n\n```text\n[submodule \"vendor/lib\"]\n\tpath = vendor/lib\n\turl = ../lib\nA  .gitmodules\nA  vendor/lib\n```\n\nThe parent repository records only the commit hash of `vendor/lib`. Anyone cloning must run:\n\n```bash\ngit clone --recurse-submodules <url>\ngit submodule update --init --recursive    # if already cloned\n```\n\nTo move the pinned version: enter the submodule, check out the new commit, then commit the changed pointer in the parent repository.\n\nCommon trouble: someone commits the pointer but forgets to push the submodule commit. Others then fail with \"not our ref\". CI must also fetch submodules (in GitLab set `GIT_SUBMODULE_STRATEGY: recursive`).\n\nSubtree example: `git subtree add --prefix=vendor/lib <url> main --squash`.\n\n**Gotcha:** a submodule is not a branch. It points to one commit, and in detached HEAD state, which surprises new users.\n\n**Interview tip:** Say that you use packages for libraries and avoid submodules unless pinning source is a real need. Then mention the clone and CI steps they require.",
+      "level": "intermediate",
+      "module": "Repository Management",
+      "tags": [
+        "submodules",
+        "subtree",
+        "dependencies"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-050",
+      "question": "How do Git config levels, aliases and `includeIf` work?",
+      "answer": "**Short answer:** Git reads settings from three levels: system, global (your user), and local (the repository). The most specific one wins. Aliases are shortcuts for commands. `includeIf` loads extra config only for repositories in a certain folder, which is how you keep work and personal identities apart.\n\n| Level | File | Set with |\n| --- | --- | --- |\n| System | `/etc/gitconfig` | `git config --system` |\n| Global | `~/.gitconfig` | `git config --global` |\n| Local | `.git/config` | `git config` (default) |\n| Worktree | `.git/config.worktree` | `git config --worktree` |\n\nLocal overrides global, which overrides system. See where a value comes from:\n\n```bash\ngit config --show-origin user.email\ngit config --list --show-origin\n```\n\nAliases:\n\n```bash\ngit config --global alias.st \"status -sb\"\ngit config --global alias.lg \"log --oneline --graph --decorate\"\ngit lg\n```\n\nDifferent identity for work repositories:\n\n```text\n# ~/.gitconfig\n[user]\n\tname = Anu Personal\n\temail = me@home.example\n[includeIf \"gitdir:~/work/\"]\n\tpath = ~/.gitconfig-work\n\n# ~/.gitconfig-work\n[user]\n\temail = anu@company.example\n```\n\nInside a repository under `~/work/` the email was the company one, and the name stayed personal:\n\n```text\nfile:.../home/.gitconfig-work\tanu@company.example\nAnu Personal\n```\n\nThe trailing slash in `gitdir:~/work/` matters, it means \"everything under this folder\". For remotes there is `hasconfig:remote.*.url:` (Git 2.36+).\n\n**Gotcha:** committing with the wrong email is a common mistake and it ends up in history. Add `user.useConfigOnly true` so Git refuses to guess an identity.\n\n**Interview tip:** Say that you keep a shared team config in the repository docs, but you never commit personal config, and use includeIf for company and personal repositories.",
+      "level": "intermediate",
+      "module": "Repository Management",
+      "tags": [
+        "config",
+        "aliases",
+        "identity"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-051",
+      "question": "How do you handle line endings (CRLF and LF) and `.gitattributes`?",
+      "answer": "**Short answer:** Windows uses CRLF and Linux and macOS use LF, and mixed endings make noisy diffs and break shell scripts. Put a `.gitattributes` file in the repository to set the rules for everyone, rather than relying on each person's `core.autocrlf`.\n\nA sensible file:\n\n```text\n* text=auto\n*.sh text eol=lf\n*.bat text eol=crlf\n*.png binary\n*.psd binary\n```\n\nMeaning:\n- `text=auto`: Git detects text files and normalises them to LF inside the repository.\n- `eol=lf` or `eol=crlf`: force a given ending in the working tree for those files.\n- `binary`: never change, never diff as text.\n\nCheck what Git sees:\n\n```bash\ngit ls-files --eol win.txt\n```\n\n```text\ni/crlf  w/crlf  attr/text=auto        \twin.txt\n```\n\n`i/` is the ending in the index, `w/` the working tree, and `attr/` the rule applied. Here a Windows-style file shows CRLF in both places. Running `git add --renormalize .` re-adds files so the index version follows the rules and becomes LF.\n\nPersonal fallback setting: `core.autocrlf true` on Windows (convert to LF on commit, CRLF on checkout) and `input` on macOS and Linux (convert to LF on commit only). The attributes file takes priority and is shared, so it is the better tool.\n\nTypical bug: a shell script with CRLF in a Linux container fails with `bad interpreter: /bin/sh^M`. Forcing `*.sh text eol=lf` prevents it.\n\n**Gotcha:** adding `.gitattributes` to an old repository can show many files as changed. Do the normalisation in a separate commit, and add it to `.git-blame-ignore-revs`.\n\n**Interview tip:** Mention the container case. Developers on Windows and Docker builds on Linux is where this bites teams most.",
+      "level": "intermediate",
+      "module": "Repository Management",
+      "tags": [
+        "gitattributes",
+        "line-endings",
+        "windows"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-052",
+      "question": "How do you sign commits and tags, and how do you verify them?",
+      "answer": "**Short answer:** A signature proves that a commit was created by the holder of a key. The author name in Git is only text, so anyone can fake it. You can sign with GPG, or since Git 2.34 with an SSH key. The platform then shows a Verified badge, and you can require signed commits on protected branches.\n\nSetup with an SSH key:\n\n```bash\ngit config --global gpg.format ssh\ngit config --global user.signingkey ~/.ssh/id_ed25519.pub\ngit config --global commit.gpgsign true      # sign every commit\ngit config --global tag.gpgsign true\n```\n\nSign and verify:\n\n```bash\ngit commit -S -m \"fix(auth): rotate token on login\"\ngit log --show-signature -1\ngit tag -s v2.0.0 -m \"Release 2.0.0\"\ngit verify-tag v2.0.0\n```\n\nFor SSH signatures, verification locally needs an allowed signers file:\n\n```bash\ngit config --global gpg.ssh.allowedSignersFile ~/.config/git/allowed_signers\n```\n\nEach line of that file holds an email and a public key. Also upload the public key to GitLab as a signing key so the server can mark commits as verified.\n\n| Method | Pros | Cons |\n| --- | --- | --- |\n| GPG | Mature, key expiry, web of trust | Harder to set up |\n| SSH key | Reuses the key you already have, simple | Needs the allowed signers file for local checks (Git 2.34+) |\n| Sigstore style (gitsign) | No long-lived keys | Needs extra tooling |\n\nWhat signing does not do: it does not prove that the code is good or reviewed. It proves authorship and integrity.\n\n**Gotcha:** a rebase or squash by someone else re-creates the commits, and the original signatures are lost. The new commit is signed by the person who rebased, or by the platform if the web UI squashed it.\n\n**Interview tip:** Link signing to supply-chain security and regulated work: you can say who produced a release, and that nobody changed history after the fact.",
+      "level": "intermediate",
+      "module": "Team Practice & Leadership",
+      "tags": [
+        "signing",
+        "gpg",
+        "ssh",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-053",
+      "question": "How do you use tags and semantic versioning in a release workflow?",
+      "answer": "**Short answer:** Use semantic versioning: MAJOR.MINOR.PATCH, where major means a breaking change, minor a compatible feature, and patch a compatible fix. Create an annotated tag `vMAJOR.MINOR.PATCH` on the exact commit that CI built, and let the release pipeline run from the tag.\n\nTypical flow:\n\n1. Merge changes to `main` with conventional commit messages.\n2. Choose the next version: any `feat` means minor, only `fix` means patch, any breaking change means major. Tools such as release-please or semantic-release can do this.\n3. Tag the commit and push the tag.\n4. The pipeline for tags builds, tests, publishes the artifact and creates release notes.\n\n```bash\ngit tag -a v1.2.0 -m \"Release 1.2.0\"\ngit describe\ngit tag -l \"v1.*\"\ngit push origin v1.2.0\n```\n\n```text\nv1.2.0\nv1.2.0\n```\n\n`git describe` prints the nearest tag and, if the commit is after it, the number of commits since and the hash, such as `v1.2.0-5-g3a4b5c6`. This is a handy build version. Release notes between two tags:\n\n```bash\ngit log --oneline v1.1.0..v1.2.0\n```\n\n| Version change | Example |\n| --- | --- |\n| Bug fix, no API change | 1.2.0 to 1.2.1 |\n| New feature, compatible | 1.2.1 to 1.3.0 |\n| Breaking change | 1.3.0 to 2.0.0 |\n| Pre-release | 2.0.0-rc.1 |\n\nProtect release tags in GitLab so only maintainers can create or delete them, and never move a published tag. If a release is wrong, publish a new patch version.\n\n**Gotcha:** Go modules and many package tools read the Git tag as the version, so a wrong tag or a missing `v` prefix breaks consumers.\n\n**Interview tip:** Say that the tag, the built artifact and the changelog should be traceable to each other, from the running service back to the commit.",
+      "level": "intermediate",
+      "module": "Workflows & Strategy",
+      "tags": [
+        "tags",
+        "semver",
+        "releases"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-054",
+      "question": "How do `git format-patch`, `git am` and `git apply` work?",
+      "answer": "**Short answer:** These tools move commits as plain text files, without a shared remote. `format-patch` writes each commit as an email-style patch file, `am` applies those files and keeps the author, date and message, and `apply` applies a raw diff to the working tree without making a commit.\n\n```bash\ngit format-patch -1 HEAD -o ../patches\ngit switch main\ngit am ../patches/0001-Add-b.patch\ngit log --oneline\n```\n\n```text\nApplying: Add b\nea1d1b6 Add b\nc1eea63 one\n```\n\nA patch file starts like an email: `From <sha>`, `From: author`, `Date:`, `Subject: [PATCH] message`, a diffstat and then the diff.\n\n| Command | Result |\n| --- | --- |\n| `git diff > change.diff` | A plain diff of uncommitted work |\n| `git apply change.diff` | Applies it to files, no commit |\n| `git apply --check change.diff` | Dry run |\n| `git format-patch main..feature` | One patch file per commit |\n| `git am *.patch` | Creates commits with the original author |\n| `git am --abort` / `--continue` | Same idea as for rebase |\n| `git bundle create repo.bundle --all` | Whole repository in one file |\n\nWhere this is still useful: projects that review by mailing list (the Linux kernel works this way), moving a fix between unrelated repositories or forks, sending a change from an air-gapped network by file, and attaching a fix to a ticket.\n\n**Gotcha:** `git am` stops on conflicts. Fix the files, `git add`, `git am --continue`. A mismatch in line endings is a frequent cause; try `git am --3way`.\n\n**Interview tip:** Mention bundles for offline transfers, which is common in secured environments with no direct network path.",
+      "level": "intermediate",
+      "module": "Remotes & Collaboration",
+      "tags": [
+        "patches",
+        "format-patch",
+        "am"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-055",
+      "question": "What do `.gitignore`, `git rm --cached` and `git clean` each do?",
+      "answer": "**Short answer:** `.gitignore` hides untracked files from Git. `git rm --cached` stops tracking a file but keeps it on disk. `git clean` deletes untracked files from the working tree. Use `git clean -n` first to see what would be removed.\n\nCase: a `.env` file was committed by mistake.\n\n```bash\necho \".env\" >> .gitignore\ngit rm --cached .env\ngit status -s\n```\n\n```text\nrm '.env'\nD  .env\n?? .gitignore\n```\n\nThe file stays on disk, and the next commit removes it from the current tree. It is still in older commits. If it held a secret, rotate it.\n\nClean up untracked files:\n\n```bash\ngit clean -n         # dry run\ngit clean -f         # delete untracked files\ngit clean -fd        # also folders\ngit clean -fdx       # also ignored files, like build output\n```\n\n```text\nWould remove junk.tmp\nRemoving junk.tmp\n```\n\n| Task | Command |\n| --- | --- |\n| Why is a file ignored? | `git check-ignore -v path` |\n| List ignored files | `git status --ignored` |\n| Personal ignore for one repo | `.git/info/exclude` |\n| Global ignore | `git config --global core.excludesFile ~/.gitignore_global` |\n| Stop Git noticing local edits to a tracked file | `git update-index --skip-worktree path` |\n\n**Gotcha:** `git clean -fdx` is destructive and cannot be undone, because the files were never committed. It removes your local `.env` and build caches too. Always run the dry run first.\n\n**Interview tip:** Say that `.gitignore` is for files that should never be tracked, and that tracked files need `rm --cached` because ignore rules only work for untracked paths.",
+      "level": "intermediate",
+      "module": "Repository Management",
+      "tags": [
+        "gitignore",
+        "clean",
+        "rm"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-056",
+      "question": "What merge methods do GitLab and GitHub offer, and what is a merge request in Git terms?",
+      "answer": "**Short answer:** A merge request (GitHub: pull request) is a platform record that asks to merge a source branch into a target branch after review and checks. When you click merge, the server runs one of a few Git operations: a merge commit, a squash, a fast-forward, or a rebase followed by a merge.\n\nGitLab project settings offer these merge methods:\n\n| Method | What the server does | History on `main` |\n| --- | --- | --- |\n| Merge commit | `git merge --no-ff` | Branch commits plus a merge commit |\n| Merge commit with semi-linear history | Requires the branch to be rebased first, then a merge commit | Linear, with merge commits |\n| Fast-forward merge | Only allowed if no rebase is needed, no merge commit | Straight line |\n| Squash commits (option) | All branch commits become one | One commit per merge request |\n\nGitHub offers three buttons: merge commit, squash and merge, rebase and merge.\n\nA merge request in Git terms is simply refs and a diff:\n\n```bash\ngit fetch origin merge-requests/42/head:mr-42    # GitLab keeps a ref per merge request\ngit diff origin/main...mr-42                     # what the request adds\n```\n\nThe page shows the three-dot diff, so changes already on `main` do not appear as yours.\n\nOther concepts:\n- **Draft** merge requests: marked not ready, merging is blocked. Open them early to share direction.\n- **Merged results pipelines** (GitLab): the pipeline runs on the result of merging your branch with the target, to catch conflicts with `main` before merging.\n- **Merge trains** (GitLab): queue of merge requests tested one after the other, so `main` stays green.\n- **Squash and the commit message**: the merge request title often becomes the final subject, so a good title matters.\n\n**Gotcha:** fast-forward only needs frequent rebases when many people merge. Merge trains or semi-linear mode reduces the manual work.\n\n**Interview tip:** Name the method your team uses and why. Add that the method is a platform setting, so the same rule applies to everyone.",
+      "level": "intermediate",
+      "module": "Workflows & Strategy",
+      "tags": [
+        "gitlab",
+        "merge-request",
+        "squash",
+        "merge-methods"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-057",
+      "question": "What is Git's object model: blobs, trees, commits and tags?",
+      "answer": "**Short answer:** Git is a content-addressable store. It keeps four kinds of objects, each named by the hash of its content: a blob (file content), a tree (a folder listing), a commit (a snapshot with history info) and a tag (a named pointer with a message). Everything else in Git is built from these.\n\n```mermaid\nflowchart LR\n    T[\"tag v1\"] --> C[\"commit\"]\n    C --> R[\"tree<br/>root folder\"]\n    C -. parent .-> P[\"parent commit\"]\n    R --> B1[\"blob<br/>hello.txt\"]\n    R --> S[\"tree<br/>src\"]\n    S --> B2[\"blob<br/>main.go\"]\n```\n\nA tag points to a commit, a commit points to a root tree and its parents, trees point to blobs and sub-trees.\n\nYou can look at them with plumbing commands:\n\n```bash\ngit cat-file -p HEAD^{tree}\ngit cat-file -t $(git rev-parse HEAD:hello.txt)\ngit cat-file -s HEAD:hello.txt\n```\n\n```text\n100644 blob ce013625030ba8dba906f756967f9e9ca394464a\thello.txt\n040000 tree 77df178079bf87a06c3c0f74a434ed330bfa78b0\tsrc\n\nblob\n6\n```\n\nThe blob has no file name. Names live in the tree. So two files with the same content share one blob.\n\nHow the id is computed: the hash of a header plus the content. For a blob, the header is the word `blob`, a space, the size, and a zero byte. You can check it by hand: hashing `blob 6`, a zero byte, and `hello` plus newline with SHA-1 gave `ce01362`, the same id as `git hash-object hello.txt`.\n\nHash functions: Git used SHA-1 for most of its life (40 hex characters). It supports SHA-256 (64 characters) with `git init --object-format=sha256`. In such a repository the commit id has 64 characters. SHA-256 repositories cannot yet talk to SHA-1 ones, and hosting support is limited, so most teams still use SHA-1.\n\nBecause ids come from content, an object can never change silently. A change gives a new id, and a commit id covers its whole history through the parent links. This is what makes Git history tamper-evident.\n\n**Gotcha:** SHA-1 is known to be weak against deliberate collisions. Git uses a hardened SHA-1 implementation that detects known attack patterns, so it is safe for practical use, and the SHA-256 work is the long term fix.\n\n**Interview tip:** Draw the four objects on a whiteboard. It shows that you understand Git as a data structure rather than a list of commands.",
+      "level": "advanced",
+      "module": "Git Internals",
+      "tags": [
+        "objects",
+        "internals",
+        "sha"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-058",
+      "question": "What is inside the `.git` directory?",
+      "answer": "**Short answer:** `.git` is the whole repository. The key parts are `objects` (all data), `refs` (branch and tag pointers), `HEAD` (current branch), `index` (the staging area), `config`, and `hooks`. Your working folder is just a checkout of one commit from it.\n\n```bash\nfind .git -maxdepth 1 | sort\n```\n\n```text\n.git\n.git/COMMIT_EDITMSG\n.git/HEAD\n.git/config\n.git/description\n.git/hooks\n.git/index\n.git/info\n.git/logs\n.git/objects\n.git/refs\n```\n\n| Path | What it holds |\n| --- | --- |\n| `HEAD` | The current branch, like `ref: refs/heads/main` |\n| `config` | Local settings and remotes |\n| `index` | The staging area: a binary list of paths, modes and blob ids |\n| `objects/` | Loose objects in folders by the first two hex digits, and `pack/` for packfiles |\n| `refs/heads`, `refs/tags`, `refs/remotes` | One small file per branch, tag or remote-tracking branch |\n| `packed-refs` | Many refs packed in one text file (after `git gc`) |\n| `logs/` | The reflog data |\n| `hooks/` | Sample and active hook scripts |\n| `info/exclude` | A personal ignore file |\n| `COMMIT_EDITMSG`, `FETCH_HEAD`, `ORIG_HEAD` | Scratch files from recent operations |\n\nA loose object lives under a folder named by the first two characters of its id. The blob with id `ce01362...` sits at `.git/objects/ce/013625...`, zlib compressed.\n\n```bash\ncat .git/HEAD\ncat .git/refs/heads/main\ngit ls-files -s\n```\n\n```text\nref: refs/heads/main\n0eb6006f44773fef2785d6d59bc5f5e3c0473802\n100644 ce013625030ba8dba906f756967f9e9ca394464a 0\thello.txt\n```\n\nThe last command reads the index. Each entry has the file mode, the blob id, the stage number (0 means no conflict, 1 to 3 are used during a conflict) and the path.\n\n**Gotcha:** never edit files in `.git` by hand, and do not copy only the working folder if you want history. In a worktree or submodule, `.git` is a file that points to the real directory.\n\n**Interview tip:** Say that deleting `.git` removes the history but keeps the files, and that copying `.git` alone is a full backup of the repository.",
+      "level": "advanced",
+      "module": "Git Internals",
+      "tags": [
+        "internals",
+        "git-directory"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-059",
+      "question": "How do packfiles, delta compression and `git gc` work?",
+      "answer": "**Short answer:** New objects are stored one by one as loose, compressed files. `git gc` collects them into a packfile, where similar objects are stored as deltas against each other, and removes unreachable objects after a grace period. Packfiles make the repository small and make clones fast.\n\nIn a repository with 40 commits that changed one big file a little each time, the object folder took about 496 KB on disk with loose objects and about 32 KB after `git gc`.\n\n```bash\ngit count-objects -v\ngit gc\ngit count-objects -v\ngit verify-pack -v .git/objects/pack/pack-*.idx | tail -3\n```\n\n```text\ncount: 98\nin-pack: 0\npacks: 0\ncount: 0\nin-pack: 98\npacks: 1\nnon delta: 86 objects\nchain length = 1: 20 objects\nchain length = 2: 18 objects\n```\n\nBefore, 98 loose objects. After, they are all in one pack. The summary shows that many objects are stored as a delta of another object, and the delta chains are short.\n\nKey ideas:\n- **Delta compression** is a storage trick. It does not change the snapshot model. Git picks similar objects (often versions of the same file), stores one in full and the other as a difference.\n- The `.idx` file is an index into the `.pack` file for fast lookup.\n- Git runs `gc --auto` for you after some commands when there are many loose objects.\n- Pushing and fetching send packfiles too, called thin packs, with only the missing objects.\n- `git gc --prune=now` deletes unreachable objects immediately. Normally they live at least two weeks, and the reflog keeps them reachable.\n\n| Command | Use |\n| --- | --- |\n| `git gc` | Pack and clean |\n| `git repack -ad` | Rebuild packs, drop redundant ones |\n| `git count-objects -vH` | Size report |\n| `git fsck` | Check object integrity, find dangling objects |\n\n**Gotcha:** a large binary that changes often compresses badly, so repository size still grows. That is the reason for LFS.\n\n**Interview tip:** Say \"snapshots in the model, deltas only in storage\". It clears the common confusion.",
+      "level": "advanced",
+      "module": "Git Internals",
+      "tags": [
+        "packfiles",
+        "gc",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-060",
+      "question": "How are branches, tags and remote-tracking refs stored? Are they just files?",
+      "answer": "**Short answer:** Yes. A ref is a file whose content is a commit hash. Branches live in `refs/heads`, tags in `refs/tags`, and remote-tracking branches in `refs/remotes`. `HEAD` is a file that usually holds a symbolic reference to a branch. After `git gc` many refs are collected into one file, `packed-refs`.\n\n```bash\nfind .git/refs -type f | sort\ncat .git/packed-refs\ngit rev-parse main\ngit symbolic-ref HEAD\n```\n\n```text\n.git/refs/heads/main\n# pack-refs with: peeled fully-peeled sorted \n4ba1dbd... refs/heads/main\n4cad1d3... refs/tags/v1\n```\n\nHashes shortened and they will differ on your machine. After the garbage collection, the loose ref files are packed. When a ref exists in both, the loose file wins.\n\nThis explains many behaviours:\n- Creating a branch writes 41 bytes. Deleting a branch deletes a pointer.\n- A commit moves a branch by writing the new hash into the file. Git does that atomically with a lock file.\n- Annotated tag refs point to a tag object, and the tag object points to the commit. The `^{}` lines in `packed-refs` show the peeled commit.\n- Reflog entries are under `.git/logs/refs/...`, one line per movement.\n- `refs/stash`, `refs/notes/*` and the GitLab refs `refs/merge-requests/*` are also normal refs.\n\nPlumbing commands to work with refs safely:\n\n```bash\ngit update-ref refs/heads/rescue 3740805     # create or move a ref\ngit for-each-ref refs/heads                   # list refs with data\ngit show-ref --tags\ngit symbolic-ref HEAD refs/heads/main         # change what HEAD points to\n```\n\nA newer storage format, the reftable backend, exists in recent Git versions (it arrived in 2.45) for very large numbers of refs. Files remain the default.\n\n**Gotcha:** with the file backend, refs differing only by case clash on case-insensitive file systems (macOS, Windows). Avoid branch names such as `Feature` and `feature`.\n\n**Interview tip:** Link it back to performance: Git operations on thousands of branches are fast because refs are tiny, but listing 100,000 loose refs is slow, which is why packed-refs and reftable exist.",
+      "level": "advanced",
+      "module": "Git Internals",
+      "tags": [
+        "refs",
+        "internals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-061",
+      "question": "How does Git find the merge base and perform a three-way merge?",
+      "answer": "**Short answer:** Git finds the best common ancestor of the two tips, called the merge base. Then it compares the base with each side. If only one side changed a part, it takes that change. If both changed the same part in different ways, it reports a conflict. This is a three-way merge.\n\n```mermaid\nflowchart LR\n    B[\"base\"] --> O[\"ours: X\"]\n    B --> T[\"theirs: Y\"]\n    O --> M[\"merge result\"]\n    T --> M\n```\n\nThe base is the third input. It lets Git know who changed what.\n\n```bash\ngit merge-base c1 c2\ngit merge-base --all HEAD HEAD~3\n```\n\n```text\ne573903\n62bd4e5\n```\n\nHow decisions are made for each region:\n\n| Base | Ours | Theirs | Result |\n| --- | --- | --- | --- |\n| A | A | B | B (only they changed it) |\n| A | B | A | B (only we changed it) |\n| A | B | B | B (same change on both sides) |\n| A | B | C | Conflict |\n\nWhy the base matters: with only two versions, Git could not tell whether a line was added by one side or deleted by the other. The base makes the intent clear.\n\nTricky case: criss-cross merges, where two branches have merged each other, so there can be more than one best base. The old `recursive` strategy merged those bases into a virtual one. The `ort` strategy (default since Git 2.34) does it faster and with fewer wrong results.\n\nYou can preview a merge without touching anything, since Git 2.38:\n\n```bash\ngit merge-tree --write-tree x1 x2\necho $?\n```\n\n```text\n<tree id>\n100644 05bef1a... 2\tcf\n100644 331bae0... 3\tcf\n\nAuto-merging cf\nCONFLICT (add/add): Merge conflict in cf\n```\n\nThe exit code is 1 on conflicts and 0 on a clean merge. The first line is the id of the resulting tree. This is how servers can test mergeability without a working tree.\n\n**Gotcha:** a conflict-free merge can be wrong in meaning, since Git sees lines, not logic.\n\n**Interview tip:** Use the table. It shows that you understand why merge needs three inputs.",
+      "level": "advanced",
+      "module": "Git Internals",
+      "tags": [
+        "merge",
+        "merge-base",
+        "internals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-062",
+      "question": "What merge strategies exist, and how does rename detection work?",
+      "answer": "**Short answer:** The default strategy is `ort` (Git 2.34 and later; before that `recursive`). Others are `octopus` for merging more than two branches, `ours` to record a merge while keeping our tree, and `subtree`. Git does not record renames. It detects them by comparing content similarity when diffing or merging.\n\n| Strategy or option | Meaning |\n| --- | --- |\n| `-s ort` | Default two-branch strategy, handles renames and criss-cross merges |\n| `-s octopus` | Merge several branches at once, refuses if there are conflicts |\n| `-s ours` | Result is exactly our tree, the other branch only joins the history |\n| `-X ours` / `-X theirs` | On conflicting hunks, prefer one side |\n| `-X ignore-space-change` | Ignore whitespace differences |\n| `-X find-renames=70%` | Set the similarity threshold |\n| `-s subtree` | Merge a project that lives in a subfolder |\n\nA use for `-s ours`: mark an old branch as merged without taking its content.\n\n```bash\ngit merge -s ours old-release -m \"Mark old-release as merged\"\n```\n\nRename detection: if a file disappears and another appears with at least 50 percent similar content (the default), Git treats it as a rename. Therefore a rename plus a small edit is still understood in a merge, and changes made by a teammate to the old name are applied to the new name.\n\n```bash\ngit mv a b\ngit commit -m \"refactor: rename a\"\ngit diff -M --stat HEAD~1\ngit log --follow --oneline b\n```\n\n```text\n hello.txt => greeting.txt | 0\n 1 file changed, 0 insertions(+), 0 deletions(-)\n3322c15 rename\n523f24e init\n```\n\nIdeas to keep: if you rename and rewrite most of a file in one commit, detection fails and Git shows a delete and an add. So rename in one commit and edit in another. Directory renames are handled by `ort`: new files added by another branch into the old directory move with the rename.\n\n**Gotcha:** `-s ours` is often confused with `-X ours`. The first one throws away everything from the other branch, even clean changes.\n\n**Interview tip:** Say that Git stores snapshots and infers renames. It ties together the object model and merge behaviour.",
+      "level": "advanced",
+      "module": "Git Internals",
+      "tags": [
+        "merge-strategies",
+        "ort",
+        "renames"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-063",
+      "question": "How do you rewrite history at scale with `git filter-repo`, and what are the consequences?",
+      "answer": "**Short answer:** `git filter-repo` is a separate tool (a Python script that you install, recommended by the Git project over the old `filter-branch`) that rewrites every commit in a repository. Use it to remove a file or secret from all history, extract a folder into its own repository, or fix author emails. Every affected commit gets a new hash, so everyone must re-clone.\n\nTypical jobs:\n\n```bash\ngit clone --mirror git@gitlab.example.com:shop/orders.git orders-clean.git\ncd orders-clean.git\ngit filter-repo --invert-paths --path config/prod.env     # remove a file everywhere\ngit filter-repo --path services/payments/ --path-rename services/payments/:  # extract a folder\ngit filter-repo --replace-text expressions.txt            # scrub strings\ngit filter-repo --mailmap mailmap.txt                     # rewrite author identity\n```\n\nCheck these options against the documentation of the version you use. The tool refuses to run on a non-fresh clone unless you pass `--force`, to protect you from damaging the only copy.\n\nConsequences you must plan:\n1. All commit ids from the first changed commit onward are new, as each commit id includes its parents.\n2. Tags and branches are rewritten. Signed commits lose their signatures.\n3. Open merge requests and local clones point at the old history. Teammates should re-clone, and not merge old branches back, or the removed data returns.\n4. `filter-repo` removes the `origin` remote on purpose. Add it again and force push all refs with `git push --force --mirror`, which needs permission to bypass branch protection.\n5. The server may keep old objects in caches and in merge request refs. Contact the platform admin for a purge when removing secrets.\n6. Deployment pipelines that refer to commit hashes may break.\n\n| Tool | Status |\n| --- | --- |\n| `git filter-repo` | Recommended, fast, safe defaults |\n| `git filter-branch` | Slow, error-prone, discouraged |\n| BFG Repo-Cleaner | Simple for big files and passwords, Java |\n\n**Gotcha:** if a secret leaked, rotate it first. Rewriting history is a clean-up, not a fix.\n\n**Interview tip:** Mention the communication plan as much as the command: freeze, announce, rewrite, force push, ask everyone to re-clone.",
+      "level": "advanced",
+      "module": "Rewriting History",
+      "tags": [
+        "filter-repo",
+        "history",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-064",
+      "question": "How do partial clone, shallow clone, sparse checkout and `git maintenance` help with huge repositories?",
+      "answer": "**Short answer:** Each reduces a different cost. Shallow clone limits the history. Partial clone delays downloading file contents. Sparse checkout limits which folders appear in your working tree. `git maintenance` runs background jobs that keep the repository fast.\n\n| Technique | Command | Saves |\n| --- | --- | --- |\n| Shallow clone | `git clone --depth 1 <url>` | History size. Good for CI builds |\n| Partial clone | `git clone --filter=blob:none <url>` | Downloads file contents on demand |\n| Sparse checkout | `git sparse-checkout set <dirs>` (Git 2.25+) | Files in the working tree |\n| Maintenance | `git maintenance start` (Git 2.30+) | Slow `fetch`, `status` and `log` over time |\n\nExamples with a local source repository that has three commits:\n\n```bash\ngit clone --depth 1 file:///work/srcrepo shallow\ngit -C shallow log --oneline\ngit -C shallow rev-parse --is-shallow-repository\n```\n\n```text\n4d8ded3 c3\ntrue\n```\n\nOnly one commit exists in the shallow clone, although the source has three.\n\n```bash\ngit clone --filter=blob:none --no-checkout file:///work/srcrepo partial\ncd partial\ngit config remote.origin.partialclonefilter\ngit sparse-checkout set svc-a\ngit checkout main\nls\n```\n\n```text\nblob:none\nsvc-a\n```\n\nThe partial clone has all commits and trees, but file contents arrive only when needed. Together with sparse checkout, only `svc-a` is on disk. This needs a server that allows filters; GitLab does. A shallow clone cannot always push or find a merge base, so use it for read-only work like CI, and `git fetch --unshallow` to get the full history back.\n\nMaintenance schedules jobs such as prefetching, commit-graph updates and repacking:\n\n```bash\ngit maintenance start      # registers hourly and daily background tasks\ngit maintenance run --task=gc\n```\n\nAlso useful: `core.fsmonitor true` and `core.untrackedCache true` to speed up `git status` in big working trees.\n\n**Gotcha:** blobless partial clones make some commands slow, as `git blame` or `git log -p` fetch many blobs one by one. Treeless clones (`--filter=tree:0`) are good for CI but worse for developers.\n\n**Interview tip:** Match the technique to the user: CI gets shallow, developers get partial plus sparse, and the server team keeps maintenance and bitmaps current.",
+      "level": "advanced",
+      "module": "Repository Management",
+      "tags": [
+        "partial-clone",
+        "sparse-checkout",
+        "maintenance",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-065",
+      "question": "What are the commit graph and bitmap indexes, and why do they make Git faster?",
+      "answer": "**Short answer:** Many operations walk the history: log, merge-base, \"is A an ancestor of B\". The commit-graph file caches the parent links and dates of commits so Git does not have to open and parse each commit object. Reachability bitmaps, stored beside a packfile, list which objects belong to chosen commits, so fetch and clone can decide what to send without walking everything.\n\n```bash\ngit commit-graph write --reachable\nls .git/objects/info\ngit repack -adb\nls .git/objects/pack\n```\n\n```text\ncommit-graph\npacks\npack-<sha>.bitmap\npack-<sha>.idx\npack-<sha>.pack\npack-<sha>.rev\n```\n\n| Feature | File | Speeds up |\n| --- | --- | --- |\n| Commit graph | `.git/objects/info/commit-graph` | `log --graph`, `merge-base`, `branch --contains`, `tag --contains` |\n| Generation numbers | Stored in the commit graph | Ancestor checks stop early |\n| Bitmap index | `pack-*.bitmap` | Clone and fetch object counting on servers |\n| Multi-pack index | `multi-pack-index` | Fast lookup over many packs |\n| Changed-path Bloom filters | In the commit graph | `git log -- path` on big repositories |\n\nYou rarely run these by hand. Hosting platforms keep bitmaps and graphs up to date on the server, and `git maintenance` or `gc` maintains the commit graph locally (the setting `fetch.writeCommitGraph` writes it on fetch).\n\nWhy a lead should care: on a large monorepo, `git log -- some/dir` or `git branch --contains` may take minutes without these files and seconds with them. When developers say \"Git is slow\", measure first with `GIT_TRACE=1` or `GIT_TRACE_PERFORMANCE=1`, check `git count-objects -vH`, and make sure maintenance is on.\n\n**Gotcha:** these files are caches. They are safe to delete and rebuild, and they are not pushed.\n\n**Interview tip:** Say that you do not tune Git by guessing. You enable maintenance, use partial clone and sparse checkout, and measure with trace output.",
+      "level": "advanced",
+      "module": "Git Internals",
+      "tags": [
+        "commit-graph",
+        "bitmaps",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-066",
+      "question": "What is the revision syntax: `HEAD~2`, `HEAD^2`, `@{upstream}`, `:/text` and more?",
+      "answer": "**Short answer:** Git has a small language for naming commits. `~n` goes back n first-parent steps, `^n` selects the nth parent of a merge, `@{u}` is the upstream, `@{n}` the nth previous value in the reflog, `:/text` the newest commit whose message matches, and `A..B` or `A...B` are ranges.\n\n| Syntax | Meaning |\n| --- | --- |\n| `HEAD`, `main`, `v1.0`, `a1b2c3d` | Branch, tag or an abbreviated hash |\n| `HEAD~1`, `HEAD~` | The parent (first parent) |\n| `HEAD~3` | Three generations back along first parents |\n| `HEAD^`, `HEAD^1` | First parent |\n| `HEAD^2` | Second parent. Only merges have one |\n| `HEAD^{tree}` | The tree of the commit |\n| `main@{1}` | Where main pointed one move ago (reflog) |\n| `HEAD@{2.hours.ago}` | Where HEAD was two hours ago |\n| `@{u}` or `@{upstream}` | The upstream branch of the current branch |\n| `@{push}` | Where a push would go |\n| `:/fix typo` | Newest commit whose message matches |\n| `HEAD:path/file` | The blob of a file at that commit |\n| `:2:file` | The file in the index at stage 2 (during conflicts) |\n| `A..B`, `A...B` | Ranges (see the range question) |\n| `^A B` | Commits reachable from B but not from A |\n\nOn a small history with three commits and a merge:\n\n```bash\ngit log -1 --format=%s HEAD~1\ngit log -1 --format=%s :/two\ngit log -1 --format=%s HEAD^1\ngit log -1 --format=%s HEAD^2\n```\n\n```text\ntwo\ntwo\nthree\nside\n```\n\n`HEAD^1` is the branch you merged into, and `HEAD^2` is the branch you merged.\n\nRemember the difference: `~` walks back along the first parent, repeated. `^` picks which parent. So `HEAD~2` equals `HEAD^^`, but `HEAD^2` is not the same as `HEAD~2`.\n\n`git rev-parse` turns any of these into a full hash, which scripts need:\n\n```bash\ngit rev-parse --short HEAD~2\ngit rev-parse --abbrev-ref @{u}\n```\n\n**Gotcha:** in some shells you must quote `HEAD@{1}` or `HEAD^`. In zsh the braces and in Windows `cmd` the caret need quotes.\n\n**Interview tip:** The pair `HEAD~2` against `HEAD^2` is a classic follow-up, so say it clearly.",
+      "level": "advanced",
+      "module": "Git Internals",
+      "tags": [
+        "rev-parse",
+        "revisions",
+        "reference"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-067",
+      "question": "Explain step by step what happens on `git commit`, `git merge` and `git push`.",
+      "answer": "**Short answer:** A commit turns the index into tree objects, wraps them in a commit object that points to the parent, then moves the branch pointer. A merge finds the base, merges the trees, and writes a commit with two parents. A push sends the missing objects in a pack and asks the remote to move a ref, which succeeds only if it is a fast-forward or forced.\n\n**git commit**\n1. Read the index (the staged snapshot).\n2. Write tree objects for each folder, bottom up. Blobs already exist from `git add`.\n3. Write a commit object: root tree, parent (current `HEAD`), author, committer, message.\n4. Update the current branch file to the new commit hash and add a reflog line.\n5. Run hooks around it: `pre-commit`, `commit-msg`, `post-commit`.\n\n**git merge topic**\n1. Find the merge base of `HEAD` and `topic`.\n2. If `HEAD` is the base, fast-forward: move the branch, update the files. Done.\n3. Otherwise compare base, ours and theirs per file, merge changed regions and detect renames.\n4. If clean, write the merged tree and a commit with two parents. If not, write conflict markers, record stages 1 to 3 in the index, and stop.\n\n**git push origin main**\n1. Ask the remote for its refs.\n2. Work out which objects the remote lacks, and build a pack of those only.\n3. Send the pack and a command: \"move `refs/heads/main` from old to new\".\n4. The remote checks that the new commit descends from the old one (fast-forward). Otherwise it rejects, unless the push is forced.\n5. Server-side hooks and platform rules run (protected branches, push rules). Then the ref is updated, and the pipeline starts.\n\n```mermaid\nsequenceDiagram\n    participant L as Local repo\n    participant R as Remote\n    L->>R: ask for refs\n    R-->>L: refs and hashes\n    L->>L: compute missing objects, build pack\n    L->>R: pack + update main old to new\n    R->>R: check fast-forward, run hooks\n    R-->>L: ok or rejected\n```\n\n```bash\ngit push origin main\n```\n\n```text\n ! [rejected]        main -> main (non-fast-forward)\nhint: Updates were rejected because the tip of your current branch is behind\n```\n\nThat rejection is step 4: your commit does not descend from the remote one.\n\n**Gotcha:** a push moves a ref on the remote. It does not \"send a branch\". The objects are just the transport.\n\n**Interview tip:** Walk through one of them slowly and name the objects created. That is what turns a command user into someone who understands Git.",
+      "level": "advanced",
+      "module": "Git Internals",
+      "tags": [
+        "internals",
+        "commit",
+        "merge",
+        "push"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "git-version-control-068",
+      "question": "How would you design a release process on Git, from feature to production?",
+      "answer": "**Short answer:** Keep one source of truth (`main`), merge small reviewed changes behind feature flags, build once from a tagged commit, promote the same artifact through environments, and use short-lived release branches only for supported versions. Every step must be traceable to a commit.\n\n```mermaid\nflowchart LR\n    F[\"Feature branch\"] --> MR[\"Merge request<br/>review and CI\"]\n    MR --> M[\"main\"]\n    M --> T[\"Tag v1.4.0\"]\n    T --> B[\"Build artifact once\"]\n    B --> S[\"Staging\"]\n    S --> P[\"Production\"]\n    M -. \"backport fix\" .-> R[\"release/1.3\"]\n```\n\nChanges flow left to right. The tag marks what was built, and the same artifact is promoted. Fixes for old versions are cherry-picked to a release branch.\n\nDesign decisions to state:\n\n| Area | Decision |\n| --- | --- |\n| Branching | Short-lived branches from `main`, protected `main` and release branches |\n| Merge method | Squash or fast-forward, one rule for all |\n| Quality gates | Required pipeline, approvals, CODEOWNERS for risky areas |\n| Versioning | Semantic versioning, annotated tags created by the pipeline or a release manager |\n| Build | Build once from the tag. Never rebuild per environment |\n| Config | Environment settings outside the artifact (variables, vault) |\n| Unfinished work | Feature flags, so merging does not mean releasing |\n| Hotfix | Fix on `main`, then `cherry-pick -x` to `release/x.y` and tag `x.y.z` |\n| Rollback | Redeploy the previous tag. A revert commit is the Git-level rollback |\n| Traceability | From a running version, tag, commit, merge request, ticket |\n| Release notes | `git log vPrev..vNext` grouped by conventional commit type |\n\nSequence for a hotfix in production:\n\n```bash\ngit switch release/1.3\ngit cherry-pick -x 61e1c8d\ngit tag -a v1.3.2 -m \"Hotfix 1.3.2\"\ngit push origin release/1.3 v1.3.2\n```\n\nAdd measures: lead time from merge to production, change failure rate, and time to restore. These come from delivery research that many teams use.\n\nFor regulated work such as avionics software, add a signed tag, a stored build record and a release checklist, and keep release branches long enough to support the fielded versions.\n\n**Gotcha:** the process fails when the artifact differs between staging and production. \"Build once, promote\" prevents it.\n\n**Interview tip:** Walk through one change from commit to production and name the control at each step. Then explain what you would change if releases had to be monthly instead of daily.",
+      "level": "advanced",
+      "module": "Workflows & Strategy",
+      "tags": [
+        "tech-lead",
+        "release-process",
+        "design"
+      ],
+      "favorite": false
     }
   ]
 }

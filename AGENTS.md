@@ -255,7 +255,7 @@ Target shape for a "complete" topic: **50–130 questions**, roughly 25% basic, 
 | JavaScript | `data/javascript.json` | Complete (66); extend with more output puzzles |
 | Node.js | `data/nodejs.json` | Complete (65) |
 | React | `data/react.json` | Complete (57); extend with forms and testing depth |
-| TypeScript | `data/typescript.json` | **In progress** (58): basics and Tech Lead done; still needs the advanced section (compiler internals, type-level programming, performance) and type challenges verified with `tsc` |
+| TypeScript | `data/typescript.json` | Complete (74); type claims verified with `tsc` |
 | Kubernetes | `data/kubernetes.json` | Complete (57); extend with AKS and service mesh |
 | Microservices | `data/microservices.json` | Complete (55) |
 | Databases | `data/databases.json` | Complete (76) |

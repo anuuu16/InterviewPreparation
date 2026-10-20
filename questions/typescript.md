@@ -2,7 +2,7 @@
 
 [← Back to index](../README.md) · [⭐ Favorites](favorites.md)
 
-58 questions · 0 favorites · [📚 Resources](#resources)
+74 questions · 0 favorites · [📚 Resources](#resources)
 
 ## Contents
 
@@ -72,21 +72,38 @@
 - [56. \[Tech Lead\] How do you keep TypeScript compile times under control in a large repo?](#56-tech-lead-how-do-you-keep-typescript-compile-times-under-control-in-a-large-repo)
 - [57. \[Tech Lead\] How do you author a TypeScript library: declaration files, the `exports` map and dual ESM/CJS?](#57-tech-lead-how-do-you-author-a-typescript-library-declaration-files-the-exports-map-and-dual-esmcjs)
 - [58. \[Tech Lead\] How do you decide how clever your types should be?](#58-tech-lead-how-do-you-decide-how-clever-your-types-should-be)
+- [59. How is the type system "a program", and what are the pitfalls of recursive and distributive conditional types?](#59-how-is-the-type-system-a-program-and-what-are-the-pitfalls-of-recursive-and-distributive-conditional-types)
+- [60. How do you build a type-safe event emitter with generics?](#60-how-do-you-build-a-type-safe-event-emitter-with-generics)
+- [61. How do you make a builder or API enforce required steps at compile time?](#61-how-do-you-make-a-builder-or-api-enforce-required-steps-at-compile-time)
+- [62. What are the limits of type-level computation, and what is "type instantiation is excessively deep"?](#62-what-are-the-limits-of-type-level-computation-and-what-is-type-instantiation-is-excessively-deep)
+- [63. Where are the soundness holes in TypeScript, and how do you limit them?](#63-where-are-the-soundness-holes-in-typescript-and-how-do-you-limit-them)
+- [64. What makes the TypeScript type checker slow, and how do you diagnose it?](#64-what-makes-the-typescript-type-checker-slow-and-how-do-you-diagnose-it)
+- [65. How does the TypeScript compiler work, from source text to JavaScript?](#65-how-does-the-typescript-compiler-work-from-source-text-to-javascript)
+- [66. What does declaration emit do, and what does `isolatedDeclarations` change?](#66-what-does-declaration-emit-do-and-what-does-isolateddeclarations-change)
+- [67. How do decorators work in TypeScript, and what is the difference between standard and experimental decorators?](#67-how-do-decorators-work-in-typescript-and-what-is-the-difference-between-standard-and-experimental-decorators)
+- [68. What are `using` declarations, and how do they manage resources?](#68-what-are-using-declarations-and-how-do-they-manage-resources)
+- [69. How does control flow analysis narrow types, and where does it stop working?](#69-how-does-control-flow-analysis-narrow-types-and-where-does-it-stop-working)
+- [70. How do you design the public types of a library: overloads vs generics, helpful errors and API stability?](#70-how-do-you-design-the-public-types-of-a-library-overloads-vs-generics-helpful-errors-and-api-stability)
+- [71. Type challenge: how do you implement `DeepPartial` and `DeepReadonly`?](#71-type-challenge-how-do-you-implement-deeppartial-and-deepreadonly)
+- [72. Type challenge: how do you re-implement `Pick`, `Omit`, `ReturnType`, `Awaited` and `Exclude`?](#72-type-challenge-how-do-you-re-implement-pick-omit-returntype-awaited-and-exclude)
+- [73. Type challenge: how do you implement `UnionToIntersection`, tuple `Length`, `First`, `Last` and `Reverse`?](#73-type-challenge-how-do-you-implement-uniontointersection-tuple-length-first-last-and-reverse)
+- [74. Type challenge: how do you type a `get(obj, "a.b.c")` function that returns the right type?](#74-type-challenge-how-do-you-type-a-getobj-abc-function-that-returns-the-right-type)
 
 ## Browse by module
 
 | Module | Questions |
 | --- | --- |
-| Advanced Types (4) | [37](#37-what-are-template-literal-types-and-where-are-they-useful) · [52](#52-what-are-covariance-contravariance-and-bivariance-and-what-do-in-and-out-do) · [54](#54-what-are-branded-opaque-types-and-when-do-you-use-them) · [58](#58-tech-lead-how-do-you-decide-how-clever-your-types-should-be) |
-| Compiler Internals & Performance (1) | [56](#56-tech-lead-how-do-you-keep-typescript-compile-times-under-control-in-a-large-repo) |
+| Advanced Types (9) | [37](#37-what-are-template-literal-types-and-where-are-they-useful) · [52](#52-what-are-covariance-contravariance-and-bivariance-and-what-do-in-and-out-do) · [54](#54-what-are-branded-opaque-types-and-when-do-you-use-them) · [58](#58-tech-lead-how-do-you-decide-how-clever-your-types-should-be) · [59](#59-how-is-the-type-system-a-program-and-what-are-the-pitfalls-of-recursive-and-distributive-conditional-types) · [60](#60-how-do-you-build-a-type-safe-event-emitter-with-generics) · [61](#61-how-do-you-make-a-builder-or-api-enforce-required-steps-at-compile-time) · [62](#62-what-are-the-limits-of-type-level-computation-and-what-is-type-instantiation-is-excessively-deep) · [63](#63-where-are-the-soundness-holes-in-typescript-and-how-do-you-limit-them) |
+| Compiler Internals & Performance (5) | [56](#56-tech-lead-how-do-you-keep-typescript-compile-times-under-control-in-a-large-repo) · [64](#64-what-makes-the-typescript-type-checker-slow-and-how-do-you-diagnose-it) · [65](#65-how-does-the-typescript-compiler-work-from-source-text-to-javascript) · [66](#66-what-does-declaration-emit-do-and-what-does-isolateddeclarations-change) · [69](#69-how-does-control-flow-analysis-narrow-types-and-where-does-it-stop-working) |
 | Configuration & Strictness (3) | [19](#19-what-does-strict-mode-turn-on-and-what-are-the-most-important-flags) · [22](#22-tech-lead-which-tsconfig-settings-would-you-standardise-for-a-team) · [23](#23-tech-lead-what-is-your-policy-on-any-and-which-typescript-eslint-rules-matter) |
-| Frameworks & Libraries (5) | [24](#24-tech-lead-how-do-you-type-an-api-boundary-when-typescript-types-disappear-at-runtime) · [25](#25-tech-lead-how-do-you-share-types-between-frontend-and-backend) · [45](#45-how-do-you-type-dom-events-and-dom-elements-safely) · [46](#46-how-do-you-type-react-props-state-and-hooks-with-typescript) · [47](#47-how-do-you-type-express-and-nestjs-handlers-and-dtos) |
-| Functions & Classes (7) | [11](#11-how-do-optional-and-default-parameters-work) · [12](#12-how-do-you-type-functions-and-what-are-function-overloads) · [18](#18-how-do-classes-work-in-typescript-access-modifiers-readonly-abstract-and-parameter-properties) · [41](#41-how-do-you-type-this-in-typescript-and-what-is-thistype) · [42](#42-what-is-the-difference-between-abstract-classes-and-interfaces-and-what-does-implements-do) · [43](#43-how-do-you-write-mixins-in-typescript) · [44](#44-how-do-you-type-async-code-promise-awaited-promiseall-and-async-generators) |
+| Frameworks & Libraries (7) | [24](#24-tech-lead-how-do-you-type-an-api-boundary-when-typescript-types-disappear-at-runtime) · [25](#25-tech-lead-how-do-you-share-types-between-frontend-and-backend) · [45](#45-how-do-you-type-dom-events-and-dom-elements-safely) · [46](#46-how-do-you-type-react-props-state-and-hooks-with-typescript) · [47](#47-how-do-you-type-express-and-nestjs-handlers-and-dtos) · [67](#67-how-do-decorators-work-in-typescript-and-what-is-the-difference-between-standard-and-experimental-decorators) · [70](#70-how-do-you-design-the-public-types-of-a-library-overloads-vs-generics-helpful-errors-and-api-stability) |
+| Functions & Classes (8) | [11](#11-how-do-optional-and-default-parameters-work) · [12](#12-how-do-you-type-functions-and-what-are-function-overloads) · [18](#18-how-do-classes-work-in-typescript-access-modifiers-readonly-abstract-and-parameter-properties) · [41](#41-how-do-you-type-this-in-typescript-and-what-is-thistype) · [42](#42-what-is-the-difference-between-abstract-classes-and-interfaces-and-what-does-implements-do) · [43](#43-how-do-you-write-mixins-in-typescript) · [44](#44-how-do-you-type-async-code-promise-awaited-promiseall-and-async-generators) · [68](#68-what-are-using-declarations-and-how-do-they-manage-resources) |
 | Generics & Utility Types (6) | [31](#31-how-do-generics-work-in-typescript-constraints-defaults-and-inference) · [32](#32-when-do-you-use-generics-instead-of-overloads-and-the-other-way-round) · [33](#33-what-are-the-most-useful-utility-types-in-typescript) · [34](#34-how-do-keyof-typeof-and-indexed-access-types-work-together) · [35](#35-what-are-mapped-types-and-how-does-as-key-remapping-work) · [36](#36-what-are-conditional-types-and-infer) |
 | Migration & Leadership (4) | [21](#21-tech-lead-how-would-you-adopt-typescript-in-an-existing-javascript-codebase) · [26](#26-tech-lead-how-do-you-upgrade-typescript-and-the-type-packages-of-dependencies-safely) · [27](#27-tech-lead-what-is-on-your-typescript-code-review-checklist) · [30](#30-tech-lead-how-do-you-teach-typescript-to-a-team-and-raise-the-level-of-the-whole-codebase) |
 | Modules & Tooling (7) | [28](#28-tech-lead-how-do-you-test-types) · [40](#40-how-do-declaration-merging-module-augmentation-ambient-declarations-and-dts-files-work) · [48](#48-how-does-module-resolution-work-node16-nodenext-and-bundler-and-what-are-the-esmcjs-pitfalls) · [49](#49-how-do-path-aliases-work-in-typescript-and-what-do-they-not-do) · [50](#50-how-do-project-references-and-monorepos-work-in-typescript) · [51](#51-what-do-import-type-and-verbatimmodulesyntax-do) · [57](#57-tech-lead-how-do-you-author-a-typescript-library-declaration-files-the-exports-map-and-dual-esmcjs) |
 | Narrowing & Safety (9) | [14](#14-what-is-a-type-assertion-as-and-why-is-it-unsafe) · [15](#15-what-does-the-non-null-assertion-operator--do-and-when-is-it-acceptable) · [16](#16-how-does-type-narrowing-work-with-typeof-instanceof-in-and-equality) · [17](#17-what-are-discriminated-unions-and-how-do-you-check-them-exhaustively) · [20](#20-how-do-you-handle-null-and-undefined-safely-optional-chaining-nullish-coalescing-and-defaults) · [29](#29-tech-lead-should-you-use-result-types-or-exceptions-for-error-handling-in-typescript) · [38](#38-how-do-you-narrow-unknown-with-type-guards-and-assertion-functions) · [39](#39-what-does-the-satisfies-operator-do-and-how-is-it-different-from-a-type-annotation-or-as) · [53](#53-what-are-excess-property-checks-and-what-is-a-fresh-object-literal) |
 | Type Basics (12) | [1](#1-what-is-typescript-and-what-does-it-compile-to) · [2](#2-what-is-structural-typing-and-how-is-it-different-from-nominal-typing) · [3](#3-what-is-the-difference-between-any-unknown-never-and-void) · [4](#4-when-should-you-write-type-annotations-and-when-can-you-rely-on-inference) · [5](#5-what-are-the-primitive-types-in-typescript-and-why-should-you-avoid-string-and-number) · [6](#6-what-is-the-difference-between-interface-and-type-and-when-do-you-use-which) · [7](#7-what-are-union-and-intersection-types) · [8](#8-what-are-literal-types-and-what-does-as-const-do) · [9](#9-how-do-arrays-tuples-and-readonly-arrays-work-in-typescript) · [10](#10-should-you-use-enum-or-union-types-of-string-literals) · [13](#13-how-do-optional-properties-readonly-and-index-signatures-work-on-object-types) · [55](#55-what-is-the-difference-between-const-and-readonly-and-how-do-you-model-immutability) |
+| Type Challenges (4) | [71](#71-type-challenge-how-do-you-implement-deeppartial-and-deepreadonly) · [72](#72-type-challenge-how-do-you-re-implement-pick-omit-returntype-awaited-and-exclude) · [73](#73-type-challenge-how-do-you-implement-uniontointersection-tuple-length-first-last-and-reverse) · [74](#74-type-challenge-how-do-you-type-a-getobj-abc-function-that-returns-the-right-type) |
 
 ## Basic
 
@@ -2555,6 +2572,780 @@ type SettingKey = "theme" | "language" | "notifications.email";
 **Interview tip:** This question checks judgement. Show that you enjoy the type system but treat it like any code: it must be readable, tested and worth its cost.
 
 _Module: Advanced Types · Tags: tech-lead, complexity, maintainability_
+
+### 59. How is the type system "a program", and what are the pitfalls of recursive and distributive conditional types?
+
+**Short answer:** Conditional types, `infer`, mapped types and recursion together make the type system a small functional language that runs at compile time. The two classic traps are distribution (a conditional type applies to each member of a union separately) and `never` (an empty union makes a distributive type return `never`).
+
+In this "language", a generic type is a function, a union is a set, `extends` is a pattern match, and recursion replaces loops.
+
+```ts
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type Expect<T extends true> = T;
+
+// Distribution: a naked type parameter splits a union
+type ToArray<T> = T extends unknown ? T[] : never;
+type A = ToArray<string | number>; // string[] | number[]
+type _a = Expect<Equal<A, string[] | number[]>>;
+
+// Wrap in a tuple to stop distribution
+type ToArrayWhole<T> = [T] extends [unknown] ? T[] : never;
+type B = ToArrayWhole<string | number>; // (string | number)[]
+type _b = Expect<Equal<B, (string | number)[]>>;
+
+// never is an empty union: distribution gives never
+type C = ToArray<never>; // never
+type _c = Expect<Equal<C, never>>;
+
+// So test for never with a tuple wrapper
+type IsNever<T> = [T] extends [never] ? true : false;
+type _d = Expect<Equal<IsNever<never>, true>>;
+
+// Recursion: flatten any depth of arrays
+type Flatten<T> = T extends readonly (infer U)[] ? Flatten<U> : T;
+type D = Flatten<number[][][]>; // number
+type _e = Expect<Equal<D, number>>;
+```
+
+Built-ins use this too: `Exclude<"a" | "b", "a">` is `"b"` because `Exclude` distributes.
+
+**Pitfalls**
+- Distribution only happens when the checked type is a naked type parameter. `T[] extends ...` or `[T] extends ...` does not distribute.
+- `boolean` is the union `true | false`, so `IsString<boolean>`-style helpers can return a union.
+- Inside a generic function a conditional type stays unresolved, so you cannot use the value as if you knew which branch was taken.
+- Deep recursion hits the compiler's depth limit (see the instantiation depth question). Write recursion in tail form with an accumulator.
+- Error messages for recursive types are long. Keep helpers small and test them.
+
+**Interview tip:** Say "distributive over naked type parameters, and never is the empty union". These two sentences answer most trick questions about conditional types.
+
+_Module: Advanced Types · Tags: conditional-types, recursion, distribution_
+
+### 60. How do you build a type-safe event emitter with generics?
+
+**Short answer:** Describe all events in one map type, `{ eventName: payloadType }`, and make the class generic over that map. Methods take a key `K extends keyof Events` and a payload of type `Events[K]`, so the handler and the emitted value are linked to the event name. Wrong names and wrong payloads become compile errors.
+
+The core trick is the link between two parameters through the shared type parameter `K`. When you call `emit("login", ...)`, K becomes `"login"`, and the second parameter becomes `Events["login"]`.
+
+```ts
+type Handler<P> = (payload: P) => void;
+
+class Emitter<Events extends { [K in keyof Events]: unknown }> {
+  private handlers = new Map<keyof Events, Set<Handler<never>>>();
+
+  on<K extends keyof Events>(event: K, handler: Handler<Events[K]>): () => void {
+    const set = this.handlers.get(event) ?? new Set<Handler<never>>();
+    set.add(handler as Handler<never>); // one contained cast
+    this.handlers.set(event, set);
+    return () => set.delete(handler as Handler<never>); // unsubscribe function
+  }
+
+  emit<K extends keyof Events>(event: K, payload: Events[K]): void {
+    this.handlers.get(event)?.forEach((h) => (h as Handler<Events[K]>)(payload));
+  }
+}
+
+interface AppEvents {
+  login: { userId: string };
+  logout: undefined;
+}
+
+const bus = new Emitter<AppEvents>();
+const off = bus.on("login", (p) => console.log("hello", p.userId)); // p is typed
+bus.emit("login", { userId: "u1" }); // prints: hello u1
+off();
+bus.emit("login", { userId: "u2" }); // prints nothing: unsubscribed
+bus.on("logout", () => console.log("bye"));
+bus.emit("logout", undefined);       // prints: bye
+// bus.emit("login", { id: 1 });
+// error TS2353: Object literal may only specify known properties, and 'id' does not exist in type '{ userId: string; }'.
+// bus.emit("nope", 1);
+// error TS2345: Argument of type '"nope"' is not assignable to parameter of type 'keyof AppEvents'.
+```
+
+The constraint `{ [K in keyof Events]: unknown }` lets you pass an `interface` such as `AppEvents`. The simpler `Record<string, unknown>` rejects interfaces because they have no index signature.
+
+**Design notes**
+- The private storage cannot be fully typed per key, so there is one small cast inside, and the public API stays safe. This is a common trade-off in library code.
+- Return an unsubscribe function from `on`. It avoids needing the same function reference to call `off`.
+- Events with no payload can use `undefined` or `void` as the payload type.
+
+**Interview tip:** Point out where the unsafety is hidden (the cast in the storage) and why callers cannot see it. That shows you understand that internal casts are acceptable when the public types are precise.
+
+_Module: Advanced Types · Tags: generics, event-emitter, design_
+
+### 61. How do you make a builder or API enforce required steps at compile time?
+
+**Short answer:** Track what is still missing in a type parameter. Each method returns a new builder type with that item removed from the "missing" set. The `build()` method declares `this: Builder<never>`, so it can only be called when nothing is missing. The type parameter is a "phantom": it carries information but no runtime value.
+
+This is the same idea as a state machine in the type system. It is useful for request builders, query builders and configuration objects where leaving out a step is a bug.
+
+```ts
+type Fields = "url" | "method";
+
+class RequestBuilder<Missing extends string = Fields> {
+  declare private readonly _missing: Missing; // phantom: makes the type parameter matter
+  private constructor(private readonly data: Record<string, string>) {}
+
+  static create(): RequestBuilder {
+    return new RequestBuilder({});
+  }
+  url(url: string): RequestBuilder<Exclude<Missing, "url">> {
+    return new RequestBuilder({ ...this.data, url });
+  }
+  method(method: "GET" | "POST"): RequestBuilder<Exclude<Missing, "method">> {
+    return new RequestBuilder({ ...this.data, method });
+  }
+  build(this: RequestBuilder<never>): string {
+    return `${this.data.method} ${this.data.url}`;
+  }
+}
+
+const ok = RequestBuilder.create().url("/users").method("GET").build(); // "GET /users"
+const bad = RequestBuilder.create().url("/users").build();
+// error TS2684: The 'this' context of type 'RequestBuilder<"method">' is not assignable to method's 'this' of type 'RequestBuilder<never>'.
+```
+
+Without the phantom field the compiler sees that `Missing` is unused, treats all builders as the same type, and the check passes silently. That is a good gotcha to remember.
+
+**Why `never`?** `RequestBuilder<"method">` is not assignable to `RequestBuilder<never>`, but `RequestBuilder<never>` is what remains after every required step is done.
+
+**Trade-offs**
+- Great autocomplete and early errors, but the error text mentions `this` contexts, which can confuse users.
+- The order of calls is free. If order matters, return different classes for each step instead.
+- Do not over-use this. For two fields, an options object with required properties is simpler: `build({ url, method })`.
+
+**Interview tip:** Mention the alternative (an options object) first, then explain the builder as the answer for fluent APIs where steps are discovered gradually, such as query builders.
+
+_Module: Advanced Types · Tags: builder, generics, phantom-types_
+
+### 62. What are the limits of type-level computation, and what is "type instantiation is excessively deep"?
+
+**Short answer:** The compiler stops runaway type recursion with error TS2589, "Type instantiation is excessively deep and possibly infinite". Ordinary recursive types fail after very few levels (often well under a hundred). Tail-recursive conditional types, supported since TypeScript 4.5, can go about a thousand levels. Type-level arithmetic is therefore possible but only for small numbers.
+
+Type-level numbers are built from tuple lengths, because TypeScript can read `T["length"]` as a number literal and can spread tuples.
+
+```ts
+type BuildTuple<N extends number, T extends unknown[] = []> =
+  T["length"] extends N ? T : BuildTuple<N, [...T, unknown]>; // tail position, so it is optimised
+
+type Add<A extends number, B extends number> =
+  [...BuildTuple<A>, ...BuildTuple<B>]["length"];
+
+type Seven = Add<3, 4>;
+const s: Seven = 7; // Seven is the literal type 7
+
+type T999 = BuildTuple<999>["length"]; // ok
+// type T1000 = BuildTuple<1000>["length"];
+// error TS2589: Type instantiation is excessively deep and possibly infinite.
+
+// Non tail-recursive: the recursive call is wrapped inside a tuple
+type Copy<T> = T extends [infer H, ...infer R] ? [H, ...Copy<R>] : [];
+type Fifty = Copy<BuildTuple<50>>; // ok
+// type Hundred = Copy<BuildTuple<100>>;
+// error TS2589: Type instantiation is excessively deep and possibly infinite.
+```
+
+Tested with TypeScript 5.9: the first call failed at 1000 levels and the second at 100 levels. Treat these as rough numbers, since they depend on the shape of the type and can change between versions.
+
+**How to stay under the limits**
+- Write recursion in tail form: pass an accumulator and put the recursive call alone in the branch.
+- Process big unions or lists in chunks.
+- Keep type-level arithmetic for small things, like tuple lengths or ranges of 0 to 20. For real arithmetic, use runtime code.
+- Template literal unions also have a limit of about 100,000 members, with error TS2590.
+
+**Gotcha:** `// @ts-ignore` on a TS2589 error hides it, but the result becomes `any`, and the checker may be slow. Fix the type instead.
+
+**Interview tip:** The honest answer is "you can, but should not". Show that you know the limit exists, the tail-recursion workaround, and that runtime code is a better place for logic.
+
+_Module: Advanced Types · Tags: recursion-limit, tail-recursion, ts2589_
+
+### 63. Where are the soundness holes in TypeScript, and how do you limit them?
+
+**Short answer:** TypeScript is deliberately not fully sound. The main holes are `any`, type assertions, array and method bivariance, index signatures, non-null assertions, mutable aliases of `readonly` data, and narrowing that is not invalidated by function calls. You reduce the risk with strict flags, lint rules, `unknown` and validation at boundaries.
+
+The design goal is to be useful for JavaScript code, not to prove it correct. Knowing the holes tells you where bugs hide.
+
+```ts
+// 1. any and assertions
+const n = JSON.parse("1") as string; // compiles, n is really a number
+
+// 2. Array covariance
+class Animal {}
+class Dog extends Animal { bark() {} }
+const dogs: Dog[] = [new Dog()];
+const animals: Animal[] = dogs;
+animals.push(new Animal()); // compiles; dogs now holds a non-Dog
+
+// 3. Index signatures promise a value for every key
+const stock: Record<string, number> = { a: 1 };
+const missing: number = stock.zzz; // compiles; at runtime undefined
+
+// 4. Narrowing survives function calls that change the value
+function reset(o: { x: string | number }) { o.x = 0; }
+function f(o: { x: string | number }) {
+  if (typeof o.x === "string") {
+    reset(o);
+    console.log(o.x.toUpperCase()); // compiles; crashes at runtime
+  }
+}
+
+// 5. Method bivariance and Object.keys
+const keys: string[] = Object.keys({ a: 1 }); // string[] and not ("a")[], on purpose
+```
+
+| Hole | How to limit it |
+| --- | --- |
+| `any` | `noImplicitAny`, lint `no-explicit-any` and `no-unsafe-*` |
+| Assertions and `!` | Lint rules, type guards, schema validation |
+| Array covariance | Use `readonly T[]` for parameters you do not change |
+| Index signatures | `noUncheckedIndexedAccess`, use `Map` |
+| Method bivariance | Declare callbacks as function properties so `strictFunctionTypes` applies |
+| Narrowing lost by calls | Copy the value to a `const` before the check |
+| `JSON.parse`, `fetch().json()` | Return `unknown` and parse with a schema |
+
+**Remember:** `strictFunctionTypes` and `strictNullChecks` close two of the largest holes. Turn them on first.
+
+**Interview tip:** Say that TypeScript trades soundness for usability on purpose, and that a lead's job is to place runtime checks at the boundaries where the compile-time promise ends.
+
+_Module: Advanced Types · Tags: soundness, type-safety, strictness_
+
+### 64. What makes the TypeScript type checker slow, and how do you diagnose it?
+
+**Short answer:** Slow checking usually comes from expensive types, not from many lines. The usual causes are huge unions, deep or unbounded recursion, big intersections, complex generic inference, and missing annotations on exported functions. Measure with `--extendedDiagnostics`, then use `--generateTrace` to find the files and types that cost the most.
+
+**Step 1: get the numbers.**
+
+```bash
+tsc --noEmit --extendedDiagnostics
+```
+
+Typical lines, shortened from a real run:
+
+```text
+Files:                          8
+Types:                      14347
+Instantiations:              3051
+Memory used:               78148K
+Parse time:                 0.07s
+Bind time:                  0.04s
+Check time:                 0.23s
+```
+
+Read it like this: high **Parse time** means too many files (check `include`, `exclude`, `--listFiles`); high **Check time** means expensive types; large **Instantiations** or **Types** counts point at generic-heavy code; high **Memory** can mean huge unions.
+
+**Step 2: trace it.**
+
+```bash
+tsc --noEmit --generateTrace ./trace
+npx @typescript/analyze-trace ./trace   # lists the hot spots and slow files
+```
+
+You can also open `trace/trace.json` in Perfetto or `chrome://tracing`.
+
+**Common causes and fixes**
+- Unions with thousands of members, or template literal cross products. Split them or use `string`.
+- Intersections of many object types. Use `interface extends`, which is cached by name.
+- Unannotated exported functions whose return type must be inferred from a long body. Add return types.
+- Heavy libraries with complex types (ORMs, schema builders, big JSX libraries). Isolate them in one package with project references.
+- Deep recursive conditional types. Rewrite in tail form or simplify.
+- Too many `@types/*` packages included globally. Set `types: []` and list only what you need.
+- Re-declared large generics in hot paths. Use a named `interface` or alias once.
+
+```json
+{ "compilerOptions": { "skipLibCheck": true, "types": ["node"], "incremental": true } }
+```
+
+**Gotcha:** Checking time in the editor (tsserver) can differ from CLI time, because the editor checks one file and its dependencies on demand. Profile both when users complain about slow autocomplete.
+
+**Interview tip:** Name the process: measure, find the hot type, simplify, measure again. Interviewers prefer this over a list of flags.
+
+_Module: Compiler Internals & Performance · Tags: performance, diagnostics, generatetrace_
+
+### 65. How does the TypeScript compiler work, from source text to JavaScript?
+
+**Short answer:** The compiler pipeline has five main steps. The scanner turns text into tokens, the parser builds a syntax tree (AST), the binder creates symbols and scopes, the checker works out types and reports errors, and the emitter writes JavaScript, declaration files and source maps. The checker is by far the most expensive step.
+
+```mermaid
+flowchart LR
+    S["Source text"] --> SC["Scanner"]
+    SC --> P["Parser"]
+    P --> A["AST"]
+    A --> B["Binder"]
+    B --> C["Checker"]
+    C --> D["Diagnostics"]
+    C --> E["Emitter"]
+    E --> O["JS, .d.ts, maps"]
+```
+
+Read it left to right: the text becomes an AST, the AST gets symbols, the checker uses both to produce errors and types, and the emitter produces files.
+
+| Step | Job |
+| --- | --- |
+| Scanner | Splits characters into tokens such as identifiers, keywords and strings |
+| Parser | Builds the AST for each file. It keeps going after syntax errors |
+| Binder | Creates symbols for declarations, links names to scopes and builds the control flow graph |
+| Checker | Resolves types, checks assignability, infers generics, narrows with control flow, reports errors |
+| Emitter | Applies transforms that remove types and lower syntax, then prints files |
+
+**Related pieces**
+- A **Program** is the set of source files plus options. Module resolution decides which files are loaded.
+- The **language service** (tsserver) reuses the same parts for editors: completion, rename and quick fixes.
+- The checker is **lazy**: it checks a type only when something asks for it. That is why editors feel fast, and why `tsc` must walk everything.
+- Type checking and emit are independent. Tools like swc and esbuild only parse and emit, so they ignore types completely. That is why `tsc --noEmit` is still needed in CI.
+- A native port of the compiler written in Go was announced in 2025 (project name Corsa). The pipeline idea stays the same. I would check the current status before quoting numbers.
+
+**Gotcha:** Because emit does not need type information (except for a few features like `const enum` and declaration output), the compiler can emit JavaScript even when type errors exist, unless `noEmitOnError` is on.
+
+**Interview tip:** Draw the five steps and say which one is slow. Then connect it to practice: "transpile with swc, check with tsc".
+
+_Module: Compiler Internals & Performance · Tags: compiler, ast, internals_
+
+### 66. What does declaration emit do, and what does `isolatedDeclarations` change?
+
+**Short answer:** Declaration emit creates `.d.ts` files that describe your public API. Normally this needs the full type checker, because inferred types must be written out. With `isolatedDeclarations` (TypeScript 5.5) every exported item must have explicit types, so each file's declaration can be generated by looking at that file only. That allows fast, parallel `.d.ts` generation by tools other than `tsc`.
+
+In a large monorepo, producing declarations is often the slowest step, because the checker must understand the whole dependency graph. If exports are annotated, a simple tool can copy the annotations into a `.d.ts`.
+
+```ts
+// api.ts with "isolatedDeclarations": true
+export function add(a: number, b: number) {
+  return a + b;
+}
+// error TS9007: Function must have an explicit return type annotation with --isolatedDeclarations.
+
+export function add2(a: number, b: number): number {
+  return a + b;
+}
+export const config: { port: number } = { port: 80 };
+export const makeId = (n: number): string => `id-${n}`;
+
+// The generated .d.ts (checked with tsc 5.9):
+// export declare function add2(a: number, b: number): number;
+// export declare const config: { port: number };
+// export declare const makeId: (n: number) => string;
+```
+
+**What you must annotate:** return types of exported functions, types of exported variables and class members, and anything the declaration needs that cannot be seen locally. Simple literals and some obvious cases do not need annotations.
+
+**Benefits**
+- Faster builds in large repos, since other tools can emit `.d.ts` in parallel.
+- Clearer public API: annotated signatures do not change by accident when the body changes.
+- Fewer circular type inference problems.
+
+**Costs**
+- More typing for exported code. Internal code is not affected.
+- You must adopt it in packages that are meant to be published or consumed through project references.
+
+**Related flags:** `declaration`, `emitDeclarationOnly` (only `.d.ts`, good with a separate transpiler), `declarationMap` (go-to-definition into source), and `stripInternal` (hide `@internal` items).
+
+**Interview tip:** Connect it to the earlier question about compile times. The rule "annotate exported return types" was good style before, and now it is also a performance feature.
+
+_Module: Compiler Internals & Performance · Tags: declaration, isolated-declarations, tooling_
+
+### 67. How do decorators work in TypeScript, and what is the difference between standard and experimental decorators?
+
+**Short answer:** A decorator is a function that wraps or replaces a class, method, property or accessor. TypeScript 5.0 supports the standard (ECMAScript stage 3) decorators by default. The older `experimentalDecorators` flag keeps the previous behaviour, which Angular, NestJS and TypeORM still need together with `emitDecoratorMetadata`. The two systems are not compatible.
+
+| | Standard (5.0 and later) | Experimental |
+| --- | --- | --- |
+| Flag | none | `experimentalDecorators` |
+| Signature | `(value, context)` | `(target, key, descriptor)` |
+| Parameter decorators | Not supported | Supported |
+| Reflected metadata (`design:paramtypes`) | Not available | `emitDecoratorMetadata` |
+| Used by | New code, small libraries | NestJS, Angular, TypeORM, class-validator |
+
+```ts
+// Standard decorator: a method decorator that logs calls
+function logged<This, Args extends unknown[], Return>(
+  method: (this: This, ...args: Args) => Return,
+  context: ClassMethodDecoratorContext<This, (this: This, ...args: Args) => Return>,
+) {
+  const name = String(context.name);
+  return function (this: This, ...args: Args): Return {
+    console.log(`call ${name}(${args.join(", ")})`);
+    return method.call(this, ...args);
+  };
+}
+
+class Calculator {
+  @logged
+  add(a: number, b: number): number {
+    return a + b;
+  }
+}
+
+console.log(new Calculator().add(2, 3));
+// prints: call add(2, 3)
+// prints: 5
+```
+
+**What metadata means.** With `emitDecoratorMetadata`, the compiler writes the type of each decorated parameter into the output (for example `design:paramtypes`), so Nest can find which class to inject, and `ValidationPipe` knows the DTO class. Types such as interfaces become `Object` because they do not exist at runtime. That is why Nest DTOs and injection tokens must be classes.
+
+**Tooling gotcha:** esbuild does not support `emitDecoratorMetadata`, so a Nest project built or tested with plain esbuild or Vite loses injection metadata. Use `tsc`, swc (with its decorator metadata option) or the Nest CLI setup. This is a frequent reason why "tests pass in tsc but fail in Vitest".
+
+**Interview tip:** Say which side you are on: new standalone code can use standard decorators, but a Nest or Angular codebase stays on experimental decorators until the framework moves. Never mix the two in one project.
+
+_Module: Frameworks & Libraries · Tags: decorators, metadata, nestjs_
+
+### 68. What are `using` declarations, and how do they manage resources?
+
+**Short answer:** `using` (TypeScript 5.2) declares a variable that is disposed automatically when the block ends, like `try/finally` or Python's `with`. The object provides a `[Symbol.dispose]()` method (or `[Symbol.asyncDispose]()` with `await using`). Disposal runs in reverse order, even if an error is thrown.
+
+Without it you write `try { ... } finally { handle.close() }` around every file handle, lock, connection or timer. With `using`, cleanup is declared next to the acquisition and cannot be forgotten.
+
+```ts
+class TempFile {
+  constructor(public name: string) {
+    console.log("open", name);
+  }
+  [Symbol.dispose](): void {
+    console.log("close", this.name);
+  }
+}
+
+function work(fail: boolean): void {
+  using a = new TempFile("a.tmp");
+  using b = new TempFile("b.tmp");
+  console.log("working");
+  if (fail) throw new Error("boom");
+}
+
+try {
+  work(true);
+} catch (e) {
+  console.log("caught", (e as Error).message);
+}
+// prints: open a.tmp
+// prints: open b.tmp
+// prints: working
+// prints: close b.tmp   (reverse order)
+// prints: close a.tmp
+// prints: caught boom
+
+async function query() {
+  // await using conn = await pool.connect(); // calls conn[Symbol.asyncDispose]() at the end
+}
+```
+
+I compiled and ran this example with `tsc` targeting ES2022 (the compiler lowers `using`) and Node.
+
+**Details**
+- Add `"lib": ["esnext.disposable"]` (or `esnext`) so `Symbol.dispose` is known.
+- Older runtimes do not have `Symbol.dispose`. Node 20 and later defines it. In browsers check support or add a polyfill.
+- `DisposableStack` and `AsyncDisposableStack` help with several resources and cleanup callbacks.
+- If both the body and a disposer throw, the errors are combined into a `SuppressedError`.
+- Use it for locks, transactions, temporary files, test setup, spans in tracing code and subscriptions.
+
+**Gotcha:** A `using` variable is `const`. You cannot reassign it, and the value must be an object with the dispose method (or `null` or `undefined`).
+
+**Interview tip:** Compare it with `try/finally` and with Go's `defer`. It is a good example of TypeScript adopting an ECMAScript feature early and lowering it for older targets.
+
+_Module: Functions & Classes · Tags: using, resource-management, ts-5.2_
+
+### 69. How does control flow analysis narrow types, and where does it stop working?
+
+**Short answer:** The binder builds a control flow graph of your function: branches, loops, returns and assignments. The checker walks that graph backwards from each use of a variable and combines what it learns along each path. That is how a variable can have one declared type and a narrower type at each line.
+
+For each reference the checker asks: "what could have happened to this variable on the way here?". Checks like `typeof x === "string"`, assignments, `return`, `throw` and `switch` cases refine the type. Paths that join (after an `if/else`) combine their results into a union.
+
+```ts
+function f(x: string | number | null) {
+  if (x === null) return;          // path ends here
+  // x: string | number
+  if (typeof x === "string") {
+    x.toUpperCase();               // x: string
+  } else {
+    x.toFixed();                   // x: number
+  }
+  // x: string | number again, the two paths join
+}
+
+let value: string | number = "a";  // declared: string | number
+value.toUpperCase();               // narrowed by assignment to string
+value = 5;
+value.toFixed();                   // narrowed to number
+
+// Aliased conditions (TypeScript 4.4)
+function g(x: string | undefined) {
+  const hasValue = x !== undefined;
+  if (hasValue) x.length;          // works: the const condition is tracked
+}
+
+// Narrowing is lost inside callbacks for let variables that are reassigned
+function h(x: string | undefined) {
+  let y = x;
+  if (y !== undefined) {
+    [1].forEach(() => {
+      // y.length; // error TS18048: 'y' is possibly 'undefined'.
+    });
+  }
+  y = undefined;
+}
+```
+
+**Where it stops**
+- Function calls do not invalidate narrowing of object properties (a soundness hole). Calls that you expect to change a value are assumed to be harmless.
+- Callbacks cannot rely on narrowing of `let` or parameters that are reassigned later. Since TypeScript 5.4, narrowing is kept in closures created after the last assignment.
+- Complex expressions, destructuring of unions and `Array.prototype.filter` need type predicates. TypeScript 5.5 infers some of them.
+- Very large functions with many branches can make analysis slow. The checker has limits for loops and unions.
+
+**Remember:** Assignment narrowing uses the declared type as a ceiling. You can narrow to a member of the declared union, but not to something outside it.
+
+**Interview tip:** Use the phrase "control flow graph built by the binder, walked by the checker". It shows you know why narrowing works at all, and not just that it works.
+
+_Module: Compiler Internals & Performance · Tags: control-flow, narrowing, internals_
+
+### 70. How do you design the public types of a library: overloads vs generics, helpful errors and API stability?
+
+**Short answer:** Public types are part of your API contract, so keep them small, precise and stable. Prefer generics that infer from the call site, use overloads only for truly different shapes, protect inference with `NoInfer` and `const` type parameters, and design error messages deliberately, since users read them more than your docs.
+
+**Principles**
+1. **Make the common call need no type arguments.** Users should write `createStore(initial)`, not `createStore<State>(initial)`.
+2. **Infer from one place.** If a parameter should not drive inference, mark it with `NoInfer<T>` (TypeScript 5.4).
+3. **Use `const` type parameters** (5.0) to keep literal types of tuples and objects without asking the user to write `as const`.
+4. **Return precise types, accept wide ones.** Take `readonly string[]` and return the exact result type.
+5. **Do not leak internals.** Export a few named types, not helper types with long conditional bodies.
+6. **Treat type changes as breaking changes.** Making a return type narrower is fine. Making a parameter type narrower breaks callers.
+
+```ts
+// NoInfer: the default must be one of the options, and must not widen T
+function pickOne<T extends string>(options: T[], fallback: NoInfer<T>): T {
+  return options[0] ?? fallback;
+}
+pickOne(["small", "large"], "small");
+// pickOne(["small", "large"], "huge");
+// error TS2345: Argument of type '"huge"' is not assignable to parameter of type '"small" | "large"'.
+
+// const type parameter (5.0): literals are kept without "as const"
+function defineRoutes<const T extends readonly { path: string }[]>(routes: T): T {
+  return routes;
+}
+const r = defineRoutes([{ path: "/" }, { path: "/users" }]);
+type Paths = (typeof r)[number]["path"]; // "/" | "/users"
+
+// Error-friendly types: a readable message instead of a cryptic failure
+type RequireId<T> = "id" extends keyof T ? T : { error: "Type must have an id property" };
+function save<T extends { id: unknown }>(item: RequireId<T>): void {}
+```
+
+**Overloads or generics?** Use a generic when the output follows the input smoothly. Use overloads for a handful of distinct shapes (for example "callback style" versus "promise style"). Put the most specific overload first, and keep the list short.
+
+**Tools for quality**
+- Type tests (see the testing types question) for every public helper.
+- `@arethetypeswrong/cli` and `publint` for package metadata.
+- Mark old APIs with `@deprecated` JSDoc, which editors show as a strike-through.
+- Keep `.d.ts` output readable. Run `tsc --declaration` and read it once.
+
+**Interview tip:** The line "users should not need to write a type argument in the common case" is a strong design principle to quote.
+
+_Module: Frameworks & Libraries · Tags: library-design, generics, api-design_
+
+### 71. Type challenge: how do you implement `DeepPartial` and `DeepReadonly`?
+
+**Short answer:** Write a recursive mapped type: map over the keys, and for each value that is an object, apply the same type again. Handle functions and arrays on purpose, because a naive version breaks them. `Partial` and `Readonly` from the standard library are shallow, so nested objects stay unchanged.
+
+The key idea is "if the value is an object, recurse, otherwise stop". Functions are objects too, so they need a separate branch, or you would map over their (empty) keys and lose the call signature.
+
+```ts
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type Expect<T extends true> = T;
+
+type DeepPartial<T> = T extends (...args: never[]) => unknown
+  ? T // keep functions as they are
+  : T extends readonly (infer U)[]
+    ? DeepPartial<U>[]
+    : T extends object
+      ? { [K in keyof T]?: DeepPartial<T[K]> }
+      : T;
+
+type DeepReadonly<T> = T extends (...args: never[]) => unknown
+  ? T
+  : T extends readonly (infer U)[]
+    ? readonly DeepReadonly<U>[]
+    : T extends object
+      ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+      : T;
+
+interface Config {
+  server: { host: string; port: number };
+  tags: string[];
+  onStart: () => void;
+}
+
+type PartialConfig = DeepPartial<Config>;
+const c: PartialConfig = { server: { port: 80 } }; // host is optional now
+
+type _1 = Expect<Equal<PartialConfig["server"], { host?: string; port?: number } | undefined>>;
+type _2 = Expect<Equal<DeepReadonly<Config>["tags"], readonly string[]>>;
+type _3 = Expect<Equal<DeepReadonly<Config>["onStart"], () => void>>;
+
+declare const ro: DeepReadonly<Config>;
+// ro.server.port = 1;
+// error TS2540: Cannot assign to 'port' because it is a read-only property.
+```
+
+All three `Expect` lines compile with tsc 5.9, which proves the types are what the comments say.
+
+**Details**
+- `PartialConfig["server"]` includes `undefined` because the property is optional.
+- Arrays are mapped through `U[]`, so a `string[]` stays an array. A mapped type applied to an array type directly also works in modern TypeScript (homomorphic mapped types keep arrays), but the explicit branch is clearer.
+- `Date`, `Map` and `Set` are objects too. A deep version will map their keys, which is wrong. Add branches for them when they appear in your data.
+
+**Gotcha:** Deep types are expensive on large types. In real code, pick the few properties that need to be optional.
+
+**Interview tip:** Begin with the shallow `Partial` definition, then say "now make it recursive and guard functions and arrays". The order shows the thinking.
+
+_Module: Type Challenges · Tags: type-challenge, mapped-types, recursion_
+
+### 72. Type challenge: how do you re-implement `Pick`, `Omit`, `ReturnType`, `Awaited` and `Exclude`?
+
+**Short answer:** `Pick` is a mapped type over chosen keys. `Exclude` is a distributive conditional type. `Omit` is `Pick` of the keys left after `Exclude`. `ReturnType` uses `infer` on the return position of a function. `Awaited` unwraps promises recursively with `infer`.
+
+Writing these from memory is a standard interview exercise. They use only the four tools you already know: mapped types, indexed access, conditional types and `infer`.
+
+```ts
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type Expect<T extends true> = T;
+
+type MyPick<T, K extends keyof T> = { [P in K]: T[P] };
+
+type MyExclude<T, U> = T extends U ? never : T;
+
+type MyOmit<T, K extends keyof T> = MyPick<T, MyExclude<keyof T, K>>;
+
+type MyReturnType<F extends (...args: never[]) => unknown> =
+  F extends (...args: never[]) => infer R ? R : never;
+
+type MyAwaited<T> = T extends PromiseLike<infer U> ? MyAwaited<U> : T;
+
+interface Todo {
+  title: string;
+  done: boolean;
+  due?: Date;
+}
+
+type _1 = Expect<Equal<MyPick<Todo, "title" | "done">, { title: string; done: boolean }>>;
+type _2 = Expect<Equal<MyOmit<Todo, "due">, { title: string; done: boolean }>>;
+type _3 = Expect<Equal<MyExclude<"a" | "b" | "c", "a">, "b" | "c">>;
+type _4 = Expect<Equal<MyReturnType<() => Promise<number>>, Promise<number>>>;
+type _5 = Expect<Equal<MyAwaited<Promise<Promise<string>>>, string>>;
+type _6 = Expect<Equal<MyAwaited<number>, number>>;
+```
+
+**Why each one works**
+- `MyPick`: `[P in K]` loops only over the chosen keys. Because `K extends keyof T`, the lookup `T[P]` is always valid. A typo in `K` is an error. Standard `Omit` has no such check on `K`.
+- `MyExclude`: a naked `T` distributes over the union, so each member is tested separately and the matching ones become `never`, which disappears from a union.
+- `MyOmit`: take all the keys, remove the unwanted ones, then pick what remains.
+- `MyReturnType`: the pattern `(...args: never[]) => infer R` matches any function. Using `never[]` for the parameters accepts all parameter lists.
+- `MyAwaited`: if T looks like a promise, unwrap one level and repeat. The real `Awaited` also handles objects with a `then` method and edge cases.
+
+**Gotcha:** The real `Omit<T, K>` accepts any `K extends keyof any`, so a misspelled key is silently ignored. Our `MyOmit` is stricter on purpose. Use the strict form in your own code if you prefer early errors.
+
+**Interview tip:** Run the checks out loud: "Pick is a mapped type, Exclude is a distributive conditional, Omit is built from both". Short, accurate statements work better than long derivations.
+
+_Module: Type Challenges · Tags: type-challenge, utility-types, infer_
+
+### 73. Type challenge: how do you implement `UnionToIntersection`, tuple `Length`, `First`, `Last` and `Reverse`?
+
+**Short answer:** Tuple helpers use pattern matching with `infer` and spread: `T extends [infer H, ...infer R]`. `Length` reads `T["length"]`. `UnionToIntersection` is the famous one: it puts the union in a function parameter position (contravariant), and `infer` then produces the intersection.
+
+```ts
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type Expect<T extends true> = T;
+
+type Length<T extends readonly unknown[]> = T["length"];
+
+type First<T extends unknown[]> = T extends [infer H, ...unknown[]] ? H : never;
+
+type Last<T extends unknown[]> = T extends [...unknown[], infer L] ? L : never;
+
+type Reverse<T extends unknown[]> = T extends [infer H, ...infer R] ? [...Reverse<R>, H] : [];
+
+// Union to intersection: A | B  ->  A & B
+type UnionToIntersection<U> =
+  (U extends unknown ? (arg: U) => void : never) extends (arg: infer I) => void ? I : never;
+
+type _1 = Expect<Equal<Length<[1, 2, 3]>, 3>>;
+type _2 = Expect<Equal<First<["a", "b"]>, "a">>;
+type _3 = Expect<Equal<First<[]>, never>>;
+type _4 = Expect<Equal<Last<[1, 2, 3]>, 3>>;
+type _5 = Expect<Equal<Reverse<[1, 2, 3]>, [3, 2, 1]>>;
+type _6 = Expect<Equal<UnionToIntersection<{ a: 1 } | { b: 2 }>, { a: 1 } & { b: 2 }>>;
+```
+
+**How `UnionToIntersection` works, step by step**
+1. The first conditional distributes over the union and turns each member into a function: `((arg: A) => void) | ((arg: B) => void)`.
+2. The second step asks TypeScript for a single `I` such that this union of functions matches `(arg: I) => void`.
+3. A function parameter is contravariant. For both functions to accept the argument, `I` must be a subtype of both `A` and `B`, which is `A & B`. So `infer` produces the intersection.
+
+**Related questions you may get**
+- `IsUnion<T>`: compare `T` with `[T] extends [UnionToIntersection<T>]`, a common trick. Check it with tests before using it.
+- `Push` and `Concat` for tuples: `[...T, U]` and `[...A, ...B]`.
+- `Includes`, `Flatten` and `Join` follow the same pattern-and-recurse style.
+
+**Gotcha:** `UnionToIntersection` on primitives collapses to `never`, for example `string | number`, because `string & number` is empty. It is meant for object types, typically for merging function overloads or event maps.
+
+**Interview tip:** If you only remember one thing, remember the sentence "contravariant position turns union into intersection". It explains why the trick works.
+
+_Module: Type Challenges · Tags: type-challenge, tuples, unions_
+
+### 74. Type challenge: how do you type a `get(obj, "a.b.c")` function that returns the right type?
+
+**Short answer:** Build two helper types. One finds all valid dotted paths of an object type (`Paths<T>`), and one finds the type at a given path (`PathValue<T, P>`). Both use template literal types and recursion. The function then accepts only valid paths and returns the exact value type.
+
+This is a realistic problem. Libraries such as lodash `get`, form libraries (React Hook Form) and config readers need it. It combines mapped types, template literals, `infer` and recursion.
+
+```ts
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type Expect<T extends true> = T;
+
+type Paths<T> = T extends object
+  ? { [K in keyof T & string]: T[K] extends object ? K | `${K}.${Paths<T[K]>}` : K }[keyof T & string]
+  : never;
+
+type PathValue<T, P extends string> = P extends `${infer Head}.${infer Tail}`
+  ? Head extends keyof T
+    ? PathValue<T[Head], Tail>
+    : never
+  : P extends keyof T
+    ? T[P]
+    : never;
+
+function get<T, P extends Paths<T>>(obj: T, path: P): PathValue<T, P> {
+  return path
+    .split(".")
+    .reduce<unknown>((acc, key) => (acc as Record<string, unknown>)[key], obj) as PathValue<T, P>;
+}
+
+const settings = {
+  user: { name: "Asha", address: { city: "Pune" } },
+  retries: 3,
+};
+
+const city = get(settings, "user.address.city"); // type: string
+const retries = get(settings, "retries");        // type: number
+console.log(city, retries);                       // prints: Pune 3
+// get(settings, "user.phone");
+// error TS2345: Argument of type '"user.phone"' is not assignable to parameter of type '"user" | "user.address.city" | "retries" | "user.name" | "user.address"'.
+
+type S = typeof settings;
+type _1 = Expect<Equal<PathValue<S, "user.address.city">, string>>;
+type _2 = Expect<Equal<Paths<S>, "user" | "retries" | "user.name" | "user.address" | "user.address.city">>;
+```
+
+**How it works**
+- `Paths` loops over the keys. For a nested object it produces the key itself and every `key.subpath`. The outer `[keyof T & string]` turns the mapped object into a union of its values.
+- `PathValue` splits the string at the first dot with a template literal pattern, looks up the head, and recurses on the tail.
+- Inside the function there is one cast, because the compiler cannot prove that a runtime `reduce` produces the computed type. The public signature stays precise.
+
+**Limits and trade-offs**
+- Arrays and optional properties need extra branches (`number` indexes, `undefined` handling).
+- Recursive types over a big object are slow and can hit depth limits (see the instantiation depth question). Libraries often limit the depth with a counter.
+- Error messages list the whole union of paths, which is long for large objects.
+
+**Interview tip:** Start by saying you would split the problem in two: all valid paths, and the type at a path. Interviewers care more about the decomposition than about the final code.
+
+_Module: Type Challenges · Tags: type-challenge, template-literal-types, recursion_
 
 ---
 

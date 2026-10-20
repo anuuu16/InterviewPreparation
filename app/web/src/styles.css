@@ -495,4 +495,21 @@ button { cursor: pointer; }
 .mini-head .icon-btn.on-read { color: var(--good); }
 .mini-foot { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 99px; box-shadow: var(--shadow); font-size: 13px; opacity: 0.92; }
 .mini-foot .icon-btn:disabled { opacity: 0.35; }
-@media (prefers-reduced-motion: reduce) { .mini-head { transition: none; } }
+.mini-foot { transition: opacity 0.18s ease, transform 0.18s ease; }
+.mini-foot.hide { opacity: 0; transform: translate(-50%, 12px); pointer-events: none; visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .mini-head, .mini-foot { transition: none; } }
+
+/* ---------- audio player on phones: a small button that expands ---------- */
+.player-mini { position: fixed; right: 12px; bottom: 12px; z-index: 40; display: flex; align-items: center; gap: 2px; padding: 4px 4px 4px 4px; border-radius: 99px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.player-mini .play-btn { width: 42px; height: 42px; }
+@media (max-width: 700px) {
+  .player.sheet { position: fixed; left: 8px; right: 8px; bottom: 8px; grid-row: auto; z-index: 40; grid-template-columns: auto minmax(0, 1fr); gap: 4px 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+  .player.sheet .play-btn { width: 40px; height: 40px; }
+  .player.sheet .icon-btn { width: 34px; height: 34px; }
+  .player.sheet .transport { gap: 0; }
+  .player.sheet .player-right { justify-self: end; gap: 0; }
+  .player.sheet .player-right select { padding: 4px 2px; max-width: 64px; }
+  .player.sheet .pos { display: none; }
+  .player.sheet .now { grid-column: 1 / -1; order: 3; font-size: 13px; }
+  .player.sheet .now-label { display: none; }
+}

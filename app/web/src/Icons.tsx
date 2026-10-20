@@ -29,3 +29,4 @@ export const CheckIcon = make(<path d="m5 12.5 4.5 4.5L19 7" />);
 export const ProgressIcon = make(<><circle cx="12" cy="12" r="9" /><path d="m8 12.5 3 3 5-6" /></>);
 export const LayoutIcon = make(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16M15 4v16" /></>);
 export const UpIcon = make(<path d="m6 15 6-6 6 6" />);
+export const DownIcon = make(<path d="m6 9 6 6 6-6" />);
