@@ -17,6 +17,7 @@ This file is the rulebook for anyone (human or AI agent) adding content to this 
 - [13. Reference: commands and files](#13-reference-commands-and-files)
 - [14. Feedback loop: fix what the reader reported](#14-feedback-loop-fix-what-the-reader-reported)
 - [15. Problems: code in many languages, with a guide](#15-problems-code-in-many-languages-with-a-guide)
+- [16. Handoff: project state, known issues and backlog](#16-handoff-project-state-known-issues-and-backlog)
 
 ## 1. What this repo is
 
@@ -511,3 +512,49 @@ Add them one at a time, simplest ideas first. Each is a full problem as above.
 | Trees and graphs | Tree traversals, BST operations, BFS/DFS, shortest path (Dijkstra), topological sort |
 | Dynamic programming | Fibonacci to memoisation, knapsack, longest common subsequence, coin change, edit distance |
 | Design | LRU/LFU cache, rate limiter, parking lot / elevator (object design), pub/sub |
+
+## 16. Handoff: project state, known issues and backlog
+
+Read this first when you pick the project up again.
+
+### State (last updated at the end of the first long build session)
+
+- **17 topics, about 1,160 questions** (see the table in section 11), each with a Technical Lead section, modules and a curated `resources/<topic>.json`. **3 code problems** (sorting, binary search, two sum) with 105 solutions that all pass `npm run problems:test`.
+- **App features:** rendered Markdown with code highlighting and Mermaid (diagrams are cached so they never flash), search/filter/group by level or module, favorites, notes and feedback for agents (`npm run feedback`), resources dialog and "Further reading", opt-in reading progress, view options (hide topics/modules, move or hide panels, edge arrows, swipe on phones), compact reader header/footer, and a text-to-speech player (browser voices or optional Piper) with reading styles, quiz mode, sleep timer, lock-screen controls, "Play all", and audio for problem guides.
+- **Quality gates:** `npm run validate` (0 errors expected; ~127 style warnings are normal, mostly "no Interview tip"), `npm run problems:test`, `npm run resources:check`. All Mermaid diagrams were rendered once in the app (all passed); re-check after adding many.
+- Everything is committed and pushed to `main`. The generated Markdown (`questions/`, `problems/*/README.md`, README tables) must be committed with the sources: run `npm run build` first.
+
+### Running it
+
+```sh
+npm run setup     # once
+npm start         # http://localhost:3000 (PORT=4000 npm start); stale app/Piper processes are stopped first
+npm run tts:setup # optional: Piper with ONE English voice (about 60 MB)
+```
+
+### Known issues and limits
+
+- **Phones and voices:** the Piper voice runs on the computer that runs `npm start`. On a phone the app falls back to the browser voice, which some phones pause when the screen locks. Making Piper reachable from a phone on the home network (serve the app on the LAN, keep the Piper port internal) is the main audio backlog item.
+- **Progress is browser-only** (`localStorage`, key `ip.progress.v1`), behind the `ProgressStorage` adapter in `app/web/src/progress.ts`; add a server adapter to sync across devices.
+- **Facts to double-check** (flagged by the writing agents as written from memory; verify against current docs before relying on them): Node permission-model flags and type-stripping versions; Kubernetes feature versions (native sidecars, nftables kube-proxy, in-place resize), Ingress-NGINX retirement timing; kubenet retirement, Managed Redis naming and Functions plan names on Azure; PostgreSQL 18 `uuidv7()` and several SQL Server edition/feature claims; the OWASP Top 10 and LLM Top 10 category lists; provider-specific LLM features and the MCP spec; Kaniko status and tool versions in the DevOps topic; Git reftable version, `filter-repo` options, GitLab-specific behaviours; the React Compiler/`useEffectEvent` versions. The Raft, multi-region RPO/RTO and Kafka exactly-once wording in the microservices topic were also flagged.
+- Diagrams and audio were verified by automated checks and by reading, not by listening to every answer. Spot-check new content in the app (light and dark theme).
+- `pnpm-lock.yaml` in the repo root is an empty file created by some other tool; it is intentionally not tracked.
+
+### Backlog (ideas, roughly by value)
+
+1. Piper (or another local neural voice) usable from a phone; optional server-side progress.
+2. More topics: Python, .NET/C#, more on Scrum/estimation, a security deep dive on authentication flows.
+3. More code problems: linked list, stack/queue, trees, graphs (BFS/DFS), dynamic programming, LRU cache, heap/top-K (see section 15.9).
+4. Spaced repetition using the optional read counter (suggest what to revisit).
+5. Feedback and notes on code problems (they exist for questions and topics only).
+6. A CI job that runs `npm run validate`, `npm run problems:test` and `npm run resources:check` on push.
+7. Export/import of progress and favorites.
+
+### Lessons for agents working in this repo
+
+- **Background writers:** one agent per topic file. Several agents may run at once; if an import fails with a JSON parse error from another topic's file, wait a few seconds and retry. Never run state-changing git commands from a writing agent; the lead validates, rebuilds and commits.
+- **Verify, do not trust:** run the code in examples, parse YAML, compile Go with `--go`, check type errors with `tsc`, render diagrams in the app, run Git examples in throwaway repos (never inside this repo).
+- **Account limits:** long parallel runs can hit a spending/rate limit. Agent work is saved on disk; resume an agent with `SendMessage` to continue instead of starting over, and mark partial topics "In progress" in section 11.
+- **Do not commit half-generated state:** the importer rebuilds `questions/*.md` and the README table; commit those together with the data they came from.
+- **User preferences:** keep the UI simple (filters, audio bar and extras appear only when needed); audio is a core feature (people who cannot read along must be able to listen); content must stand on its own without seeing the code (it is read aloud).
+
