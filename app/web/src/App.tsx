@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import * as api from './api';
 import AudioSettings from './AudioSettings';
 import Editor, { type EditorResult } from './Editor';
-import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, LayoutIcon, ListIcon, MenuIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon } from './Icons';
+import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, LayoutIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon } from './Icons';
 import Inline from './Inline';
 import Markdown from './Markdown';
 import Notes from './Notes';
@@ -75,6 +75,15 @@ export default function App() {
   const [drawer, setDrawer] = useState<'' | 'topics' | 'list'>('');
   const [editor, setEditor] = useState<{ topicSlug: string; question?: Question } | null>(null);
   const dark = useDark(themePref);
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 1100px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1100px)');
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  const lastListSide = useRef<'left' | 'right'>('left');
+  const touch = useRef<{ x: number; y: number } | null>(null);
   const readerRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -321,17 +330,37 @@ export default function App() {
   const showSide = layout.sidebar || view.kind === 'problems';
   const showList = layout.list !== 'hidden' || view.kind === 'problems';
   const panesColumns = [showSide ? '250px' : '', ...(layout.list === 'right' ? ['minmax(0, 1fr)', showList ? '360px' : ''] : [showList ? '360px' : '', 'minmax(0, 1fr)'])].filter(Boolean).join(' ');
+  // Phones and tablets: swipe right for the topics menu, swipe left for the question list (and swipe back to close).
+  // Wide screens: the edge tabs show or hide the same panels.
+  const onTouchStart = (e: React.TouchEvent) => { touch.current = (e.target as HTMLElement).closest('pre, table, svg, input, textarea, [data-noswipe]') ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const t = touch.current; touch.current = null;
+    if (!t || !narrow) return;
+    const dx = e.changedTouches[0].clientX - t.x, dy = e.changedTouches[0].clientY - t.y;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    if (drawer === 'topics') { if (dx < 0) setDrawer(''); }
+    else if (drawer === 'list') { if (dx > 0) setDrawer(''); }
+    else if (dx > 0) setDrawer('topics');
+    else setDrawer('list');
+  };
+  const toggleSide = () => (narrow ? setDrawer(drawer === 'topics' ? '' : 'topics') : setLayout({ ...layout, sidebar: !layout.sidebar }));
+  const toggleList = () => {
+    if (narrow) return setDrawer(drawer === 'list' ? '' : 'list');
+    if (layout.list !== 'hidden') { lastListSide.current = layout.list; setLayout({ ...layout, list: 'hidden' }); }
+    else setLayout({ ...layout, list: lastListSide.current });
+  };
+  // where the tabs sit on wide screens: on the edge of the panel they control
+  const sideW = showSide ? 250 : 0;
+  const listOnRight = layout.list === 'right';
+  const listShown = layout.list !== 'hidden';
+  const leftTabStyle: React.CSSProperties = narrow ? {} : { left: sideW };
+  const listTabLeft = !narrow && !listOnRight; // the list sits next to the topics menu
+  const listTabStyle: React.CSSProperties = narrow ? {} : listTabLeft ? { left: sideW + (listShown ? 360 : 0) } : { right: listShown ? 360 : 0 };
   const playingId = player.status === 'playing' ? items[player.index]?.q.id : undefined;
 
   return (
     <div className="app">
-      <header className="topbar">
-        <button className="icon-btn" onClick={() => setDrawer('topics')} aria-label="Topics"><MenuIcon /></button>
-        <strong>{title}</strong>
-        <button className="icon-btn" onClick={() => setDrawer('list')} aria-label="Questions"><ListIcon /></button>
-      </header>
-
-      <div className={'panes' + (layout.list === 'right' ? ' l-right' : layout.list === 'hidden' ? ' l-hidden' : '') + (!layout.sidebar && view.kind !== 'problems' ? ' no-side' : '')} style={{ '--cols': panesColumns } as React.CSSProperties}>
+      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className={'panes' + (layout.list === 'right' ? ' l-right' : layout.list === 'hidden' ? ' l-hidden' : '') + (!layout.sidebar && view.kind !== 'problems' ? ' no-side' : '')} style={{ '--cols': panesColumns } as React.CSSProperties}>
         {drawer && <div className="backdrop" onClick={() => setDrawer('')} />}
 
         <nav className={'sidebar' + (drawer === 'topics' ? ' open' : '')} aria-label="Topics">
@@ -541,6 +570,19 @@ export default function App() {
           </>
         )}
       </div>
+
+      {!drawer && !dialogOpen && (
+        <>
+          <button className="edge-tab left" style={leftTabStyle} onClick={toggleSide} aria-label="Show or hide the topics menu" title="Topics menu (swipe right)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={!narrow && layout.sidebar ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'} /></svg>
+          </button>
+          {view.kind !== 'problems' && (
+            <button className={'edge-tab ' + (listTabLeft ? 'left' : 'right')} style={listTabStyle} onClick={toggleList} aria-label="Show or hide the question list" title="Questions (swipe left)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={(listTabLeft ? listShown : !listShown) && !narrow ? 'm15 6-6 6 6 6' : narrow ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'} /></svg>
+            </button>
+          )}
+        </>
+      )}
 
       {player.status !== 'idle' && (
         <PlayerBar
