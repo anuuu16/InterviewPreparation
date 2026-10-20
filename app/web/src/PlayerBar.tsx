@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { PlayerSettings } from './tts';
 import type { Status } from './usePlayer';
-import { speechSupported } from './usePlayer';
+import { speechSupported, useVoices } from './speech';
+import VoicePicker from './VoicePicker';
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon, SettingsIcon, StopIcon } from './Icons';
 
 interface Props {
@@ -19,25 +20,18 @@ interface Props {
   onNext: () => void;
 }
 
-function useVoices() {
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  useEffect(() => {
-    if (!speechSupported) return;
-    const load = () => setVoices(window.speechSynthesis.getVoices());
-    load();
-    window.speechSynthesis.addEventListener('voiceschanged', load);
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', load);
-  }, []);
-  return voices;
-}
-
 export default function PlayerBar(p: Props) {
   const [open, setOpen] = useState(false);
+  const [picker, setPicker] = useState(false);
   const voices = useVoices();
   const set = <K extends keyof PlayerSettings>(k: K, v: PlayerSettings[K]) => p.onSettings({ ...p.settings, [k]: v });
 
-  const english = voices.filter((v) => v.lang.toLowerCase().startsWith('en'));
-  const list = english.length ? english : voices;
+  const chosen = voices.find((v) => v.name === p.settings.voice);
+  const voiceLabel = chosen ? `${chosen.name} (${chosen.lang})` : p.settings.voice ? `${p.settings.voice} (not available here)` : 'Automatic (best English voice)';
+  const openPicker = () => {
+    p.onPause(); // sampling voices would interrupt the reading
+    setPicker(true);
+  };
   const playing = p.status === 'playing';
 
   const caption =
@@ -51,11 +45,16 @@ export default function PlayerBar(p: Props) {
     <footer className="player" aria-label="Audio player">
       {open && (
         <div className="settings" role="dialog" aria-label="Playback settings">
+          <div className="voice-field">
+            <span>Voice &amp; language</span>
+            <button className="btn voice-btn" onClick={openPicker}><span>{voiceLabel}</span><span className="muted">Change…</span></button>
+          </div>
           <label>
-            Voice
-            <select value={p.settings.voice} onChange={(e) => set('voice', e.target.value)}>
-              <option value="">Browser default</option>
-              {list.map((v) => <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>)}
+            Reading style
+            <select value={p.settings.style} onChange={(e) => set('style', e.target.value as PlayerSettings['style'])}>
+              <option value="explain">Explain: like a mentor talking you through it</option>
+              <option value="brief">Brief: short answer and interview tip only</option>
+              <option value="full">Full: read everything as written</option>
             </select>
           </label>
           <label className="check">
@@ -118,6 +117,7 @@ export default function PlayerBar(p: Props) {
         </select>
         <button className={'icon-btn' + (open ? ' active' : '')} onClick={() => setOpen(!open)} aria-label="Playback settings" aria-expanded={open}><SettingsIcon /></button>
       </div>
+      {picker && <VoicePicker current={p.settings.voice} rate={p.settings.rate} onSelect={(voice) => set('voice', voice)} onClose={() => setPicker(false)} />}
     </footer>
   );
 }

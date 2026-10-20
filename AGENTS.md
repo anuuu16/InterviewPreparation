@@ -9,7 +9,7 @@ This repo is an interview-preparation question bank. Humans read the generated M
 3. Never remove or change `id` or `favorite` of existing questions (the user stars them in the app). Append new questions; fix wording in place.
 4. A topic is one file: `data/<slug>.json` with `{ "name": "...", "questions": [...] }`. Slug is lowercase, `a-z0-9-`.
 5. `app/build.js` and `app/server.js` stay zero-dependency Node. UI dependencies live only in `app/web/package.json`.
-6. The UI tags each top-level Markdown block (paragraph, list, table, code block, diagram) so users can start audio from it. Keep answers as normal Markdown: no raw HTML, because it is skipped when read aloud.
+6. The UI tags each top-level Markdown block (paragraph, list, table, code block, diagram) so users can start audio from it. Keep answers as normal Markdown: no raw HTML, because it is skipped when read aloud. The narrator's *Explain* style relies on the answer shape: a bold lead-in such as `**Short answer:**`, `**Interview tip:**` or `**Gotcha:**` at the start of a paragraph is turned into natural speech, and the first paragraph is what *Brief* mode reads. Keep that structure.
 
 ## Question schema
 

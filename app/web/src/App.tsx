@@ -13,7 +13,7 @@ import { usePlayer } from './usePlayer';
 
 type ThemePref = 'system' | 'light' | 'dark';
 
-const DEFAULT_SETTINGS: PlayerSettings = { rate: 1, voice: '', quiz: false, thinkSeconds: 8, gapSeconds: 2, autoNext: true, announceCode: true, follow: true };
+const DEFAULT_SETTINGS: PlayerSettings = { rate: 1, voice: '', quiz: false, thinkSeconds: 8, gapSeconds: 2, autoNext: true, announceCode: true, follow: true, style: 'explain' };
 
 function useDark(pref: ThemePref) {
   const [system, setSystem] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -79,6 +79,13 @@ export default function App() {
     onIndex: (i) => setSelectedId(items[i].q.id),
     settings: () => settings,
   });
+  // changing the reading style mid-playback restarts the current question in the new style
+  const firstStyle = useRef(settings.style);
+  useEffect(() => {
+    if (firstStyle.current === settings.style) return;
+    firstStyle.current = settings.style;
+    if (player.status === 'playing') player.play(player.index);
+  }, [settings.style]); // eslint-disable-line react-hooks/exhaustive-deps
   const listKey = items.map((it) => it.q.id).join('|');
   useEffect(() => { player.stop(); }, [listKey]); // eslint-disable-line react-hooks/exhaustive-deps
 

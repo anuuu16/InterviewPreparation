@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { pickDefaultVoice, speechSupported } from './speech';
 import type { PlayerSettings, Step } from './tts';
 
 export type Status = 'idle' | 'playing' | 'paused';
@@ -9,8 +10,6 @@ interface Options {
   onIndex: (index: number) => void;
   settings: () => PlayerSettings;
 }
-
-export const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
 /**
  * Plays questions one after another with the browser's speech synthesis.
@@ -89,7 +88,9 @@ export function usePlayer(opts: Options) {
     const settings = cur.settings();
     const u = new SpeechSynthesisUtterance(step.text);
     u.rate = settings.rate;
-    const voice = window.speechSynthesis.getVoices().find((v) => v.name === settings.voice);
+    const all = window.speechSynthesis.getVoices();
+    // saved voice, else the best English voice (the content is English), else the browser default
+    const voice = all.find((v) => v.name === settings.voice) ?? pickDefaultVoice(all);
     if (voice) {
       u.voice = voice;
       u.lang = voice.lang;

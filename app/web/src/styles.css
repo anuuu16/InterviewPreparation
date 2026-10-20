@@ -294,3 +294,25 @@ button { cursor: pointer; }
 .qplay svg { width: 12px; height: 12px; }
 .qrow:hover .qplay, .qplay:focus-visible { display: grid; }
 @media (hover: none) { .qrow:hover .qplay { display: none; } }
+
+/* ---------- voice picker ---------- */
+.voice-field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.voice-btn { width: 100%; justify-content: space-between; text-align: left; }
+.voice-btn > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.voice-modal { width: min(720px, 100%); height: min(760px, 92dvh); }
+.voice-tools { display: flex; gap: 10px; padding: 14px 20px 0; }
+.voice-tools .search { flex: 1; }
+.voice-tools select { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; max-width: 45%; }
+.voice-hint { margin: 10px 20px 0; font-size: 13px; color: var(--muted); }
+.voice-list { flex: 1; overflow-y: auto; padding: 8px 20px 20px; }
+.voice-list h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 18px 0 6px; }
+.voice-list h3 .muted { text-transform: none; letter-spacing: 0; font-weight: 400; margin-left: 6px; }
+.voice-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; background: var(--panel); }
+.voice-row.selected { border-color: var(--accent); background: var(--accent-soft); }
+.voice-info { display: flex; flex-direction: column; min-width: 0; }
+.voice-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.voice-info .muted { font-size: 12.5px; }
+.voice-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.btn.small { padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+.btn.small svg { width: 14px; height: 14px; }
+@media (max-width: 640px) { .voice-row { flex-direction: column; align-items: stretch; } .voice-actions { justify-content: flex-end; } .voice-tools { flex-direction: column; } .voice-tools select { max-width: none; padding: 8px 10px; } }
