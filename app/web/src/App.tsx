@@ -462,7 +462,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className={'panes' + (layout.list === 'right' ? ' l-right' : layout.list === 'hidden' ? ' l-hidden' : '') + (!layout.sidebar && view.kind !== 'problems' && !pageView ? ' no-side' : '') + (pageView ? ' page-view' : '')} style={{ '--cols': panesColumns } as React.CSSProperties}>
+      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className={'panes' + (layout.list === 'right' ? ' l-right' : layout.list === 'hidden' && view.kind !== 'problems' ? ' l-hidden' : '') + (!layout.sidebar && view.kind !== 'problems' && !pageView ? ' no-side' : '') + (pageView ? ' page-view' : '')} style={{ '--cols': panesColumns } as React.CSSProperties}>
         {drawer && <div className="backdrop" onClick={() => setDrawer('')} />}
 
         <nav className={'sidebar' + (drawer === 'topics' ? ' open' : '')} aria-label="Topics">
