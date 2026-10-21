@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 
+/** Phones keep the normal scroll indicator; the dot rail is for larger screens. */
+function usePhone() {
+  const query = '(max-width: 700px)';
+  const [phone, setPhone] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setPhone(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return phone;
+}
+
 interface Section {
   el: HTMLElement;
   label: string;
@@ -75,6 +88,7 @@ function collect(container: HTMLElement): Section[] {
  * the ringed one is where you are, hollow ones are still ahead. Click a dot to jump there.
  */
 export default function ReadRail({ container, contentKey }: Props) {
+  const phone = usePhone();
   const [sections, setSections] = useState<Section[]>([]);
   const [active, setActive] = useState(0);
   const [progress, setProgress] = useState(0); // 0..1 of the scrollable distance
@@ -91,13 +105,13 @@ export default function ReadRail({ container, contentKey }: Props) {
   // find the sections after the answer has rendered, and again when its height changes (diagrams, fonts)
   useEffect(() => {
     const root = container.current;
-    if (!root) return;
+    if (!root || phone) return;
     const t = window.setTimeout(refresh, 60);
     const ro = new ResizeObserver(() => { window.clearTimeout(raf.current); raf.current = window.setTimeout(refresh, 120); });
     const article = root.querySelector('article');
     if (article) ro.observe(article);
     return () => { window.clearTimeout(t); window.clearTimeout(raf.current); ro.disconnect(); };
-  }, [contentKey, container, refresh]);
+  }, [contentKey, container, refresh, phone]);
 
   const measure = useCallback(() => {
     const root = container.current;
@@ -115,16 +129,16 @@ export default function ReadRail({ container, contentKey }: Props) {
 
   useEffect(() => {
     const root = container.current;
-    if (!root) return;
+    if (!root || phone) return;
     let frame = 0;
     const on = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(measure); };
     measure();
     root.addEventListener('scroll', on, { passive: true });
     window.addEventListener('resize', on);
     return () => { cancelAnimationFrame(frame); root.removeEventListener('scroll', on); window.removeEventListener('resize', on); };
-  }, [container, measure]);
+  }, [container, measure, phone]);
 
-  if (!scrollable || sections.length < 2) return null;
+  if (phone || !scrollable || sections.length < 2) return null;
 
   const totalWords = sections.reduce((n, s) => n + s.words, 0) || 1;
   const minutesLeft = Math.max(0, Math.ceil((totalWords * (1 - progress)) / WORDS_PER_MINUTE));
