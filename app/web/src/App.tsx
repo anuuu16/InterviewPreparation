@@ -530,7 +530,7 @@ export default function App() {
           })}
           </div>
           <div className="sidebar-foot">
-            <button className="btn" onClick={newTopic}><PlusIcon /> New topic</button>
+            {!api.isHosted && <button className="btn" onClick={newTopic}><PlusIcon /> New topic</button>}
             <span className="foot-icons">
               <button className="icon-btn" onClick={() => setViewOpen(true)} aria-label="View options" title="Layout and what to show"><LayoutIcon /></button>
               {tracking && <button className="icon-btn" onClick={() => setProgressOpen(true)} aria-label="My progress" title="My progress"><ProgressIcon /></button>}
@@ -598,7 +598,7 @@ export default function App() {
                 )}
                 {view.kind === 'set' && <button className="icon-btn" onClick={() => { if (window.confirm(`Delete the study set "${title}"? The questions stay in the bank.`)) { studySets.remove(view.id); setView({ kind: 'home' }); } }} aria-label="Delete this study set" title="Delete this study set"><TrashIcon /></button>}
                 {items.length > 0 && <button className="icon-btn" onClick={() => player.play(0)} aria-label="Play all in this list" title="Play all in this list, from the top"><PlayIcon /></button>}
-                <button className="icon-btn" onClick={() => setEditor({ topicSlug: view.kind === 'topic' ? view.slug : topics[0]?.slug ?? '' })} aria-label="Add question" title="Add question"><PlusIcon /></button>
+                {!api.isHosted && <button className="icon-btn" onClick={() => setEditor({ topicSlug: view.kind === 'topic' ? view.slug : topics[0]?.slug ?? '' })} aria-label="Add question" title="Add question"><PlusIcon /></button>}
                 <button className="icon-btn mobile-only" onClick={() => setDrawer('')} aria-label="Close"><CloseIcon /></button>
               </span>
             </div>
@@ -710,7 +710,7 @@ export default function App() {
                 {tracking && <button className={'btn' + (progress.isRead(selected.q.id) ? ' done' : '')} onClick={() => toggleRead(selected.q.id, !progress.isRead(selected.q.id))} aria-pressed={progress.isRead(selected.q.id)}>
                   <CheckIcon /> {progress.isRead(selected.q.id) ? 'Read' : 'Mark as read'}
                 </button>}
-                <button className="btn" onClick={() => setEditor({ topicSlug: selected.topic.slug, question: selected.q })}><EditIcon /> Edit</button>
+                {!api.isHosted && <button className="btn" onClick={() => setEditor({ topicSlug: selected.topic.slug, question: selected.q })}><EditIcon /> Edit</button>}
                 <button className="btn desktop-only" onClick={() => setViewOpen(true)} title="Layout and what to show"><LayoutIcon /> Layout</button>
                 <button className={'btn' + (notesOpen ? ' on' : '')} onClick={() => setNotesOpen(!notesOpen)} aria-expanded={notesOpen}>
                   <NoteIcon /> Notes{openNotes > 0 && <span className="btn-count">{openNotes}</span>}
@@ -799,8 +799,8 @@ export default function App() {
         <ResourcesDialog
           title={topics.find((t) => t.slug === view.slug)?.name ?? ''}
           items={resources[view.slug] ?? []}
-          onAdd={(r) => addResource(view.slug, r)}
-          onRemove={(url) => removeResource(view.slug, url)}
+          onAdd={api.isHosted ? undefined : (r) => addResource(view.slug, r)}
+          onRemove={api.isHosted ? undefined : (url) => removeResource(view.slug, url)}
           onClose={() => setResourcesOpen(false)}
         />
       )}

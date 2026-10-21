@@ -1,10 +1,9 @@
 import type { FeedbackEntry, Problem, Question, Resource, Topic } from './types';
 
 /**
- * Hosted (static) mode. The question bank, problems and resources are JSON files built from git.
- * Everything you change on the hosted site (favorites, edits, new questions, notes, feedback) is an "overlay"
- * kept in this browser and, when the site has the /api/overlay function (Cloudflare Pages + KV), synced there
- * so it follows you between devices. Merge anything you want to keep into data/*.json yourself.
+ * Hosted (static) mode: no server. The question bank, problems and resources are JSON files built from git and
+ * read-only. Favorites and notes are kept in this browser (localStorage) and never leave it. The editing calls below
+ * remain for completeness, but the UI hides them in this mode.
  */
 interface Overlay {
   favorites: Record<string, boolean>;
@@ -19,7 +18,6 @@ interface Overlay {
 }
 const EMPTY: Overlay = { favorites: {}, edits: {}, deleted: [], added: {}, topics: [], feedback: [], resources: {}, removed: {}, updatedAt: 0 };
 const KEY = 'ip.overlay.v1';
-const TOKEN = 'ip.editToken';
 const LEVELS = ['basic', 'intermediate', 'advanced'];
 
 const store = {
@@ -28,40 +26,12 @@ const store = {
 };
 
 let overlay: Overlay = (() => { try { return { ...EMPTY, ...JSON.parse(store.get(KEY) ?? '{}') }; } catch { return { ...EMPTY }; } })();
-let remote: 'unknown' | 'on' | 'off' = 'unknown';
-let loaded: Promise<void> | null = null;
-let timer = 0;
 
-const headers = () => ({ 'Content-Type': 'application/json', 'x-edit-token': store.get(TOKEN) ?? '' });
-
-/** Pull the synced overlay once. 404 means a plain static host: stay local. 401 asks for the edit token. */
-function sync(): Promise<void> {
-  loaded ??= (async () => {
-    try {
-      let res = await fetch('/api/overlay', { headers: headers() });
-      if (res.status === 401) {
-        const t = window.prompt('This site is protected. Enter your edit token (leave empty to work offline):');
-        if (t) { store.set(TOKEN, t.trim()); res = await fetch('/api/overlay', { headers: headers() }); }
-      }
-      if (!res.ok) { remote = 'off'; return; }
-      remote = 'on';
-      const data = (await res.json()) as Overlay | null;
-      // the newer side wins, so a first visit on a new device picks up your changes and an offline edit is not lost
-      if (data && (data.updatedAt ?? 0) > overlay.updatedAt) { overlay = { ...EMPTY, ...data }; store.set(KEY, JSON.stringify(overlay)); }
-      else if (overlay.updatedAt > (data?.updatedAt ?? 0)) push();
-    } catch { remote = 'off'; }
-  })();
-  return loaded;
-}
-function push() {
-  window.clearTimeout(timer);
-  timer = window.setTimeout(() => { void fetch('/api/overlay', { method: 'PUT', headers: headers(), body: JSON.stringify(overlay) }).catch(() => {}); }, 600);
-}
 function commit(next: Overlay) {
   overlay = { ...next, updatedAt: Date.now() };
   store.set(KEY, JSON.stringify(overlay));
-  if (remote !== 'off') push();
 }
+const sync = async () => {};
 
 let base: Promise<Topic[]> | null = null;
 const baseTopics = () => (base ??= fetch('/static/all.json').then((r) => { if (!r.ok) throw new Error('Could not load the question bank'); return r.json() as Promise<Topic[]> }));

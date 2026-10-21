@@ -40,14 +40,14 @@ export function FurtherReading({ items, onAll }: { items: Resource[]; onAll: () 
 }
 
 /** All resources for a topic, grouped by type, with a simple way to add or remove one. */
-export function ResourcesDialog({ title, items, onAdd, onRemove, onClose }: { title: string; items: Resource[]; onAdd: (r: Resource) => Promise<void>; onRemove: (url: string) => Promise<void>; onClose: () => void }) {
+export function ResourcesDialog({ title, items, onAdd, onRemove, onClose }: { title: string; items: Resource[]; onAdd?: (r: Resource) => Promise<void>; onRemove?: (url: string) => Promise<void>; onClose: () => void }) {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<Resource>({ title: '', url: '', type: 'article', description: '' });
   const [error, setError] = useState('');
 
   const save = async () => {
     try {
-      await onAdd(form);
+      await onAdd?.(form);
       setForm({ title: '', url: '', type: 'article', description: '' });
       setAdding(false);
       setError('');
@@ -70,13 +70,13 @@ export function ResourcesDialog({ title, items, onAdd, onRemove, onClose }: { ti
             return group.length ? (
               <section key={type}>
                 <h3 className="res-type">{TYPE_LABEL[type]}</h3>
-                <ul className="res-list">{group.map((r) => <Row key={r.url} r={r} onRemove={() => onRemove(r.url)} />)}</ul>
+                <ul className="res-list">{group.map((r) => <Row key={r.url} r={r} onRemove={onRemove ? () => onRemove(r.url) : undefined} />)}</ul>
               </section>
             ) : null;
           })}
           {!items.length && <p className="muted">No resources yet.</p>}
 
-          {adding ? (
+          {!onAdd ? null : adding ? (
             <div className="res-form">
               <input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
               <input placeholder="https://…" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />

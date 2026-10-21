@@ -20,6 +20,8 @@ const TYPE_LABEL: Record<FeedbackType, string> = {
 };
 
 /** Personal notes, and feedback that the next agent run will pick up (`npm run feedback`). */
+import { isHosted } from './api';
+
 export default function Notes({ topic, question, entries, onAdd, onUpdate, onDelete }: Props) {
   const [kind, setKind] = useState<'note' | 'feedback'>('note');
   const [type, setType] = useState<FeedbackType>('more-detail');
@@ -44,12 +46,12 @@ export default function Notes({ topic, question, entries, onAdd, onUpdate, onDel
   return (
     <section className="notes" aria-label="Notes and feedback">
       <div className="notes-form">
-        <div className="segmented" role="group" aria-label="Kind">
+        {!isHosted && <div className="segmented" role="group" aria-label="Kind">
           <button className={kind === 'note' ? 'active' : ''} onClick={() => setKind('note')}>My note</button>
           <button className={kind === 'feedback' ? 'active' : ''} onClick={() => setKind('feedback')}>Feedback for the author</button>
-        </div>
+        </div>}
         <p className="hint">
-          {kind === 'note' ? 'A private study note. It stays in the repo but is never acted on.' : 'The next agent run lists this (npm run feedback), fixes the answer, and marks it resolved.'}
+          {kind === 'note' ? 'A private study note.' + (isHosted ? ' It stays in this browser.' : ' It stays in the repo but is never acted on.') + '' : 'The next agent run lists this (npm run feedback), fixes the answer, and marks it resolved.'}
         </p>
         <div className="notes-row">
           {kind === 'feedback' && (

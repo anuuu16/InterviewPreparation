@@ -1,9 +1,12 @@
-# Hosting on Cloudflare Pages (free, no Node server)
+# Hosting on Cloudflare Pages (free, fully static)
 
-The hosted site is static files plus one small Function. `npm start` (the local Node app) is unchanged.
+The hosted site is only static files: no Node server, no Functions, no database. `npm start` (the local app) is unchanged.
 
-**What works hosted:** reading, search, filters, Home, Interview prep, study sets, progress, favorites, notes and feedback, editing and adding questions, browser voices.
-**What does not:** the Piper voice (browser voices are used) and automatic writes to `data/*.json`. Edits made on the site live in an *overlay* (browser storage, plus Cloudflare KV if you bind it). Copy what you want to keep into `data/*.json` yourself.
+**Works hosted:** reading, search, filters, Home, Interview prep (your resume never leaves the browser), study sets, progress, favorites, private notes, code problems, resources, browser voices.
+**Turned off hosted (they need to write to the repo):** add, edit and delete questions, new topics, adding or removing resources, "feedback for the author", and the Piper voice.
+**Stored in the browser only (localStorage):** favorites, notes, progress, study sets, layout, your resume and job description. They do not sync between devices. Clearing site data removes them.
+
+Content changes happen locally (`data/*.json`, import, validate), then `git push` redeploys the site.
 
 ## Deploy
 
@@ -14,22 +17,11 @@ The hosted site is static files plus one small Function. `npm start` (the local 
    - Environment variable: `NODE_VERSION` = `20` (or newer)
 3. Each push to `main` redeploys.
 
-## Sync between devices (optional)
-
-Without this, favorites, edits and notes stay in the browser you used.
-
-1. Workers & Pages, KV, create a namespace (for example `interview-prep`).
-2. Your Pages project, Settings, Bindings, add a KV namespace binding named `IP_KV`.
-3. Settings, Variables and Secrets, add a secret `EDIT_TOKEN` (any long random string). The site asks for it once per browser.
-   Alternative: put Cloudflare Access in front of the site instead.
-
-The notes are stored as one JSON document under the key `overlay`. Without `EDIT_TOKEN` or Access, anyone with the URL can read and overwrite it.
+The site is public. The question bank has no personal data and the private `personal/` folder is never exported. If you want it private, put Cloudflare Access in front of it.
 
 ## Try it locally
 
 ```sh
-npm run build:static              # writes app/web/dist-static
-npx wrangler pages dev app/web/dist-static    # serves it with Functions; add --kv IP_KV to test sync
+npm run build:static
+npx wrangler pages dev app/web/dist-static     # or any static file server on that folder
 ```
-
-Notes: the private `personal/` folder is never exported. Re-run the build after changing `data/*.json`.

@@ -14,7 +14,6 @@
     "feedback": "node app/feedback.js",
     "problems:test": "node app/problems-test.js",
     "resources:check": "node app/resources-check.js",
-    "build:static": "npm --prefix app/web run build:static && node app/export-static.js",
-    "preview:static": "npx wrangler pages dev app/web/dist-static"
+    "build:static": "npm --prefix app/web run build:static && node app/export-static.js"
   }
 }
