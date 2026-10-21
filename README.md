@@ -5,25 +5,62 @@ Interview questions and answers, organised by language/topic. Read them right he
 ## Topics
 
 <!-- TOPICS:START -->
+**Languages & Runtimes**
+
+| Topic | Total | Basic | Intermediate | Advanced | ⭐ |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [Golang](questions/golang.md) | 126 | 28 | 78 | 20 | 0 |
+| [JavaScript](questions/javascript.md) | 66 | 20 | 34 | 12 | 1 |
+| [Node.js](questions/nodejs.md) | 65 | 17 | 28 | 20 | 0 |
+| [TypeScript](questions/typescript.md) | 74 | 20 | 35 | 19 | 0 |
+
+**Frameworks & Frontend**
+
+| Topic | Total | Basic | Intermediate | Advanced | ⭐ |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [React](questions/react.md) | 57 | 15 | 28 | 14 | 0 |
+
+**Architecture & Design**
+
+| Topic | Total | Basic | Intermediate | Advanced | ⭐ |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [Design Principles](questions/design-principles.md) | 83 | 22 | 43 | 18 | 0 |
+| [Microservices](questions/microservices.md) | 55 | 13 | 29 | 13 | 0 |
+| [System Design](questions/system-design.md) | 67 | 17 | 29 | 21 | 0 |
+
+**Data**
+
+| Topic | Total | Basic | Intermediate | Advanced | ⭐ |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [Databases](questions/databases.md) | 76 | 20 | 34 | 22 | 0 |
+
+**Cloud & DevOps**
+
+| Topic | Total | Basic | Intermediate | Advanced | ⭐ |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [Azure & Cloud](questions/azure-cloud.md) | 71 | 20 | 30 | 21 | 0 |
+| [DevOps & CI/CD](questions/devops-ci-cd.md) | 65 | 17 | 32 | 16 | 0 |
+| [Git & Version Control](questions/git-version-control.md) | 68 | 20 | 34 | 14 | 0 |
+| [Kubernetes](questions/kubernetes.md) | 57 | 15 | 28 | 14 | 0 |
+
+**Web & Security**
+
+| Topic | Total | Basic | Intermediate | Advanced | ⭐ |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [Networking & Security](questions/networking-security.md) | 73 | 20 | 39 | 14 | 0 |
+
+**AI**
+
 | Topic | Total | Basic | Intermediate | Advanced | ⭐ |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | [AI Engineering](questions/ai-engineering.md) | 72 | 22 | 37 | 13 | 0 |
-| [Azure & Cloud](questions/azure-cloud.md) | 71 | 20 | 30 | 21 | 0 |
-| [Databases](questions/databases.md) | 76 | 20 | 34 | 22 | 0 |
-| [Design Principles](questions/design-principles.md) | 83 | 22 | 43 | 18 | 0 |
-| [DevOps & CI/CD](questions/devops-ci-cd.md) | 65 | 17 | 32 | 16 | 0 |
-| [Git & Version Control](questions/git-version-control.md) | 68 | 20 | 34 | 14 | 0 |
-| [Golang](questions/golang.md) | 126 | 28 | 78 | 20 | 0 |
-| [JavaScript](questions/javascript.md) | 66 | 20 | 34 | 12 | 1 |
-| [Kubernetes](questions/kubernetes.md) | 57 | 15 | 28 | 14 | 0 |
+
+**Career & Process**
+
+| Topic | Total | Basic | Intermediate | Advanced | ⭐ |
+| --- | ---: | ---: | ---: | ---: | ---: |
 | [Leadership & Behavioral](questions/leadership-behavioral.md) | 63 | 16 | 34 | 13 | 0 |
-| [Microservices](questions/microservices.md) | 55 | 13 | 29 | 13 | 0 |
-| [Networking & Security](questions/networking-security.md) | 73 | 20 | 39 | 14 | 0 |
-| [Node.js](questions/nodejs.md) | 65 | 17 | 28 | 20 | 0 |
-| [React](questions/react.md) | 57 | 15 | 28 | 14 | 0 |
 | [SDLC & Agile](questions/sdlc-agile.md) | 20 | 10 | 7 | 3 | 0 |
-| [System Design](questions/system-design.md) | 67 | 17 | 29 | 21 | 0 |
-| [TypeScript](questions/typescript.md) | 74 | 20 | 35 | 19 | 0 |
 
 [⭐ All favorites](questions/favorites.md)
 <!-- TOPICS:END -->

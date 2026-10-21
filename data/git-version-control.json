@@ -1,5 +1,6 @@
 {
   "name": "Git & Version Control",
+  "group": "Cloud & DevOps",
   "questions": [
     {
       "id": "git-version-control-001",

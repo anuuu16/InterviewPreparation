@@ -2,6 +2,7 @@
 //
 //   node app/import.js questions.md --topic "React"            # add new, update existing (matched by question text)
 //   node app/import.js questions.md --topic "React" --replace  # file order becomes the topic order; questions not in the file are removed
+//   node app/import.js questions.md --topic "Datadog" --group "Tools & Observability"  # set the sidebar group (see app/groups.json)
 //
 // File format (see AGENTS.md):
 //
@@ -51,9 +52,10 @@ function parse(text) {
 
 function main() {
   const args = process.argv.slice(2);
-  const file = args.find((a) => !a.startsWith('--') && args[args.indexOf(a) - 1] !== '--topic');
+  const file = args.find((a) => !a.startsWith('--') && !['--topic', '--group'].includes(args[args.indexOf(a) - 1]));
   const topicName = args[args.indexOf('--topic') + 1];
   const replace = args.includes('--replace');
+  const group = args.includes('--group') ? args[args.indexOf('--group') + 1] : undefined;
   if (!file || !topicName || args.indexOf('--topic') < 0) {
     console.error('Usage: node app/import.js <file.md> --topic "<Topic name>" [--replace]');
     process.exit(1);
@@ -71,7 +73,14 @@ function main() {
 
   const slug = slugify(topicName);
   const dataFile = path.join(DATA_DIR, `${slug}.json`);
-  const topic = fs.existsSync(dataFile) ? JSON.parse(fs.readFileSync(dataFile, 'utf8')) : { name: topicName, questions: [] };
+  let topic = fs.existsSync(dataFile) ? JSON.parse(fs.readFileSync(dataFile, 'utf8')) : { name: topicName, ...(group ? { group } : {}), questions: [] };
+  if (group && topic.group !== group) {
+    const known = JSON.parse(fs.readFileSync(path.join(__dirname, 'groups.json'), 'utf8'));
+    if (!known.includes(group)) console.warn(`Note: "${group}" is not in app/groups.json; add it there if it is a new group.`);
+    const withGroup = {};
+    for (const [k, v] of Object.entries(topic)) { withGroup[k] = v; if (k === 'name') withGroup.group = group; }
+    topic = withGroup;
+  }
   const byText = new Map(topic.questions.map((q) => [q.question, q]));
   let next = topic.questions.reduce((m, q) => Math.max(m, Number((q.id.match(/(\d+)$/) || [])[1] || 0)), 0);
 

@@ -55,13 +55,25 @@ route('GET', '/api/resources', () => resources.listAll());
 route('POST', '/api/resources/((?:problem-)?[a-z0-9-]+)', ({ m, body }) => { const e = resources.add(m[1], body); build(); return e; });
 route('PUT', '/api/resources/((?:problem-)?[a-z0-9-]+)/remove', ({ m, body }) => { resources.remove(m[1], String(body.url || '')); build(); return { ok: true }; });
 route('GET', '/api/problems', () => problemsLib.loadProblems());
+route('GET', '/api/groups', () => JSON.parse(fs.readFileSync(path.join(__dirname, 'groups.json'), 'utf8')));
+route('PUT', '/api/topics/([a-z0-9-]+)', ({ m, body }) => {
+  const t = read(m[1]);
+  const group = String(body.group || '').trim();
+  if (!group) throw { status: 400, message: 'Group required' };
+  const moved = {};
+  for (const [k, v] of Object.entries(t)) { moved[k] = v; if (k === 'name') moved.group = group; }
+  if (!('name' in t)) moved.group = group;
+  save(m[1], moved);
+  return { slug: m[1], group };
+});
 route('POST', '/api/topics', ({ body }) => {
   const name = String(body.name || '').trim();
   const slug = slugify(name);
   if (!slug) throw { status: 400, message: 'Name required' };
   if (fs.existsSync(file(slug))) throw { status: 409, message: 'Topic exists' };
-  save(slug, { name, questions: [] });
-  return { slug, name };
+  const group = String(body.group || '').trim();
+  save(slug, group ? { name, group, questions: [] } : { name, questions: [] });
+  return { slug, name, group };
 });
 route('GET', '/api/topics/([a-z0-9-]+)', ({ m }) => read(m[1]));
 route('POST', '/api/topics/([a-z0-9-]+)/questions', ({ m, body }) => {

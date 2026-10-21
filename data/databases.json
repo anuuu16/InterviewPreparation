@@ -1,5 +1,6 @@
 {
   "name": "Databases",
+  "group": "Data",
   "questions": [
     {
       "id": "databases-001",

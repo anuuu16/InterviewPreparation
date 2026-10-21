@@ -1,5 +1,6 @@
 {
   "name": "Golang",
+  "group": "Languages & Runtimes",
   "questions": [
     {
       "id": "golang-001",

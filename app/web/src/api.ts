@@ -12,7 +12,8 @@ async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T>
 }
 
 export const getAll = () => call<Topic[]>('/all');
-export const createTopic = (name: string) => call<{ slug: string; name: string }>('/topics', 'POST', { name });
+export const createTopic = (name: string, group?: string) => call<{ slug: string; name: string }>('/topics', 'POST', { name, group });
+export const getGroups = () => call<string[]>('/groups');
 export const addQuestion = (slug: string, q: Partial<Question>) => call<Question>(`/topics/${slug}/questions`, 'POST', q);
 export const updateQuestion = (slug: string, id: string, q: Partial<Question>) =>
   call<Question>(`/topics/${slug}/questions/${id}`, 'PUT', q);

@@ -1,5 +1,6 @@
 {
   "name": "Networking & Security",
+  "group": "Web & Security",
   "questions": [
     {
       "id": "networking-security-001",

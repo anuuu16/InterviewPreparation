@@ -1,5 +1,6 @@
 {
   "name": "JavaScript",
+  "group": "Languages & Runtimes",
   "questions": [
     {
       "id": "javascript-005",

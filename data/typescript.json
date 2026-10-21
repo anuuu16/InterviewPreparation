@@ -1,5 +1,6 @@
 {
   "name": "TypeScript",
+  "group": "Languages & Runtimes",
   "questions": [
     {
       "id": "typescript-001",

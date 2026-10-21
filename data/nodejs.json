@@ -1,5 +1,6 @@
 {
   "name": "Node.js",
+  "group": "Languages & Runtimes",
   "questions": [
     {
       "id": "nodejs-011",

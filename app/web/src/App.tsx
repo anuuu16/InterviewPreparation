@@ -2,8 +2,10 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import * as api from './api';
 import AudioSettings from './AudioSettings';
 import Editor, { type EditorResult } from './Editor';
-import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, LayoutIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon, TrashIcon, UpIcon } from './Icons';
+import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, LayoutIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon, TrashIcon, UpIcon, DownIcon } from './Icons';
 import Inline from './Inline';
+import NewTopicDialog from './NewTopicDialog';
+import { groupTopics } from './groups';
 import Markdown from './Markdown';
 import Notes from './Notes';
 import { warmMermaid } from './Mermaid';
@@ -67,6 +69,9 @@ export default function App() {
   const [viewOpen, setViewOpen] = useState(false);
   const [layout, setLayout] = useLocal<Layout>('ip.layout2', DEFAULT_LAYOUT);
   const [hidden, setHidden] = useLocal<Hidden>('ip.hidden', DEFAULT_HIDDEN);
+  const [groupOrder, setGroupOrder] = useState<string[]>([]);
+  const [collapsedGroups, setCollapsedGroups] = useLocal<string[]>('ip.collapsedGroups', []);
+  const [newTopicOpen, setNewTopicOpen] = useState(false);
   const [tracking, setTracking] = useLocal<boolean>('ip.tracking', false); // progress is opt-in, off by default
   const [readFilter, setReadFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [toast, setToast] = useState<{ id: string; text: string } | null>(null);
@@ -112,6 +117,7 @@ export default function App() {
 
   const reload = useCallback(() => api.getAll().then(setTopics).catch((e: Error) => setLoadError(e.message)), []);
   useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => { api.getGroups().then(setGroupOrder).catch(() => {}); }, []);
   useEffect(() => { api.getResources().then(setResources).catch(() => {}); }, []);
   useEffect(() => { api.getProblems().then(setProblems).catch(() => {}); }, []);
   useEffect(() => { api.getFeedback().then(setFeedback).catch(() => {}); }, []);
@@ -287,14 +293,15 @@ export default function App() {
     setResources((all) => ({ ...all, [key]: (all[key] ?? []).filter((x) => x.url !== url) }));
   };
 
-  const newTopic = async () => {
-    const name = window.prompt('New topic name (e.g. TypeScript, System Design):')?.trim();
-    if (!name) return;
-    try {
-      const t = await api.createTopic(name);
-      await reload();
-      setView({ kind: 'topic', slug: t.slug });
-    } catch (e) { window.alert(e instanceof Error ? e.message : 'Could not create topic'); }
+  const newTopic = () => setNewTopicOpen(true);
+  const createTopicIn = async (name: string, group: string) => {
+    const t = await api.createTopic(name, group);
+    const gs = await api.getGroups().catch(() => groupOrder);
+    setGroupOrder(gs);
+    await reload();
+    setCollapsedGroups((c) => c.filter((x) => x !== group));
+    setNewTopicOpen(false);
+    setView({ kind: 'topic', slug: t.slug });
   };
 
   // ---- reading progress -------------------------------------------------------------------
@@ -487,14 +494,29 @@ export default function App() {
             </>
           )}
           <div className="nav-title">Topics</div>
-          <div className="nav-group">
-            {topics.map((t) => (
-              <button key={t.slug} className={'nav has-bar' + (isView({ kind: 'topic', slug: t.slug }) ? ' active' : '')} onClick={() => go({ kind: 'topic', slug: t.slug })}>
-                <span className="nav-line"><span>{t.name}</span><span className="count">{tracking ? `${progress.readCount(t.questions.map((q) => q.id))}/${t.questions.length}` : t.questions.length}</span></span>
-                {tracking && <span className="nav-bar"><i style={{ width: t.questions.length ? `${(progress.readCount(t.questions.map((q) => q.id)) / t.questions.length) * 100}%` : 0 }} /></span>}
-              </button>
-            ))}
-          </div>
+          {groupTopics(topics, groupOrder).map((g) => {
+            const activeHere = view.kind === 'topic' && g.topics.some((t) => t.slug === view.slug);
+            const open = activeHere || !collapsedGroups.includes(g.name);
+            return (
+              <div key={g.name} className="topic-group">
+                <button className="group-head" onClick={() => setCollapsedGroups(open && !activeHere ? [...collapsedGroups, g.name] : collapsedGroups.filter((x) => x !== g.name))} aria-expanded={open}>
+                  <span className={'chev' + (open ? '' : ' closed')}><DownIcon /></span>
+                  <span className="group-name">{g.name}</span>
+                  <span className="count">{g.topics.length}</span>
+                </button>
+                {open && (
+                  <div className="nav-group">
+                    {g.topics.map((t) => (
+                      <button key={t.slug} className={'nav has-bar' + (isView({ kind: 'topic', slug: t.slug }) ? ' active' : '')} onClick={() => go({ kind: 'topic', slug: t.slug })}>
+                        <span className="nav-line"><span>{t.name}</span><span className="count">{tracking ? `${progress.readCount(t.questions.map((q) => q.id))}/${t.questions.length}` : t.questions.length}</span></span>
+                        {tracking && <span className="nav-bar"><i style={{ width: t.questions.length ? `${(progress.readCount(t.questions.map((q) => q.id)) / t.questions.length) * 100}%` : 0 }} /></span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
           </div>
           <div className="sidebar-foot">
             <button className="btn" onClick={newTopic}><PlusIcon /> New topic</button>
@@ -796,7 +818,8 @@ export default function App() {
         </div>
       )}
 
-      {viewOpen && <ViewDialog topics={allTopics} layout={layout} hidden={hidden} onLayout={setLayout} onHidden={setHidden} tracking={tracking} onTracking={setTracking} onClose={() => setViewOpen(false)} />}
+      {newTopicOpen && <NewTopicDialog groups={groupOrder} onCreate={createTopicIn} onClose={() => setNewTopicOpen(false)} />}
+      {viewOpen && <ViewDialog groupOrder={groupOrder} topics={allTopics} layout={layout} hidden={hidden} onLayout={setLayout} onHidden={setHidden} tracking={tracking} onTracking={setTracking} onClose={() => setViewOpen(false)} />}
 
       {audioOpen && (
         <AudioSettings settings={settings} piper={piper} engine={speakOptions().engine} onSettings={setSettings} onBeforeSample={player.pause} onClose={() => setAudioOpen(false)} />

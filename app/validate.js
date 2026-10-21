@@ -195,6 +195,9 @@ for (const f of files) {
     continue;
   }
   if (!topic.name || !Array.isArray(topic.questions)) { err(f, 'needs "name" and "questions"'); continue; }
+  const knownGroups = JSON.parse(fs.readFileSync(path.join(__dirname, 'groups.json'), 'utf8'));
+  if (!topic.group) warn(slug, 'topic has no "group" (sidebar section); add one from app/groups.json');
+  else if (!knownGroups.includes(topic.group)) warn(slug, `group "${topic.group}" is not listed in app/groups.json`);
   const ids = new Set();
   const titles = new Set();
   const idRe = new RegExp(`^${slug.replace(/[-]/g, '\\-')}-\\d+$`);

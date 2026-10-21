@@ -1,5 +1,6 @@
 {
   "name": "Microservices",
+  "group": "Architecture & Design",
   "questions": [
     {
       "id": "microservices-013",

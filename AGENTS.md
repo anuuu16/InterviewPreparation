@@ -123,6 +123,8 @@ Edit the JSON directly or use the app's Edit button (it has a live preview). To 
 
 ## 4. Data model
 
+Every topic file also has a **`group`** (the section it appears under in the sidebar, the New topic dialog and the README table), chosen from the ordered list in `app/groups.json` (Languages & Runtimes, Frameworks & Frontend, Architecture & Design, Data, Cloud & DevOps, Quality & Testing, Tools & Observability, Web & Security, AI, Career & Process). Set it when you create a topic: `npm run import -- batch.md --topic "Datadog" --group "Tools & Observability"`. Add a new group to `app/groups.json` only when none fits (keep the list short, 8 to 12).
+
 ```json
 {
   "id": "react-014",

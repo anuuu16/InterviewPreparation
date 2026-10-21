@@ -105,21 +105,23 @@ function renderFavorites(topics) {
   return out.join('\n');
 }
 
+const GROUPS = JSON.parse(fs.readFileSync(path.join(__dirname, 'groups.json'), 'utf8'));
+const groupRank = (g) => (GROUPS.includes(g) ? GROUPS.indexOf(g) : GROUPS.length);
+
 function renderIndex(topics) {
-  const rows = topics.map((t) => {
+  const row = (t) => {
     const n = (lvl) => t.questions.filter((q) => q.level === lvl).length;
     const favs = t.questions.filter((q) => q.favorite).length;
     return `| [${t.name}](questions/${t.slug}.md) | ${t.questions.length} | ${n('basic')} | ${n('intermediate')} | ${n('advanced')} | ${favs} |`;
-  });
-  return [
-    START,
-    '| Topic | Total | Basic | Intermediate | Advanced | ⭐ |',
-    '| --- | ---: | ---: | ---: | ---: | ---: |',
-    ...rows,
-    '',
-    '[⭐ All favorites](questions/favorites.md)',
-    END,
-  ].join('\n');
+  };
+  const names = [...new Set(topics.map((t) => t.group || 'Other'))].sort((a, b) => groupRank(a) - groupRank(b) || a.localeCompare(b));
+  const out = [START];
+  for (const g of names) {
+    out.push(`**${g}**`, '', '| Topic | Total | Basic | Intermediate | Advanced | ⭐ |', '| --- | ---: | ---: | ---: | ---: | ---: |',
+      ...topics.filter((t) => (t.group || 'Other') === g).map(row), '');
+  }
+  out.push('[⭐ All favorites](questions/favorites.md)', END);
+  return out.join('\n');
 }
 
 

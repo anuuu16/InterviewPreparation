@@ -1,3 +1,4 @@
+import { groupTopics } from './groups';
 import type { Topic } from './types';
 import { CloseIcon } from './Icons';
 
@@ -14,6 +15,7 @@ export const DEFAULT_HIDDEN: Hidden = { topics: [], modules: [] };
 export const moduleKey = (slug: string, module: string) => `${slug}/${module}`;
 
 interface Props {
+  groupOrder: string[];
   topics: Topic[]; // all topics, unfiltered
   layout: Layout;
   hidden: Hidden;
@@ -27,7 +29,7 @@ interface Props {
 const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
 /** Two simple things: where the panels go, and which topics and modules to show. */
-export default function ViewDialog({ topics, layout, hidden, onLayout, onHidden, tracking, onTracking, onClose }: Props) {
+export default function ViewDialog({ groupOrder, topics, layout, hidden, onLayout, onHidden, tracking, onTracking, onClose }: Props) {
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" role="dialog" aria-modal="true" aria-label="View options">
@@ -60,7 +62,21 @@ export default function ViewDialog({ topics, layout, hidden, onLayout, onHidden,
 
           <h3 className="view-h">Show only what I am preparing</h3>
           <p className="hint">Untick a topic or a module to hide it everywhere. Nothing is deleted, and your progress is kept.</p>
-          {topics.map((t) => {
+          {groupTopics(topics, groupOrder).map((g) => {
+            const slugs = g.topics.map((t) => t.slug);
+            const shown = slugs.filter((x) => !hidden.topics.includes(x)).length;
+            return (
+              <section key={g.name} className="view-group">
+                <label className="check view-group-head">
+                  <input
+                    type="checkbox"
+                    checked={shown > 0}
+                    ref={(el) => { if (el) el.indeterminate = shown > 0 && shown < slugs.length; }}
+                    onChange={() => onHidden({ ...hidden, topics: shown > 0 ? [...new Set([...hidden.topics, ...slugs])] : hidden.topics.filter((x) => !slugs.includes(x)) })}
+                  />
+                  <span>{g.name}</span>
+                </label>
+          {g.topics.map((t) => {
             const mods = [...new Set(t.questions.map((q) => q.module ?? 'Other'))];
             const topicHidden = hidden.topics.includes(t.slug);
             return (
@@ -84,6 +100,9 @@ export default function ViewDialog({ topics, layout, hidden, onLayout, onHidden,
                   ))}
                 </ul>
               </details>
+            );
+          })}
+              </section>
             );
           })}
           {(hidden.topics.length > 0 || hidden.modules.length > 0) && <button className="btn small" onClick={() => onHidden(DEFAULT_HIDDEN)}>Show everything</button>}

@@ -14,6 +14,7 @@ export interface Question {
 export interface Topic {
   slug: string;
   name: string;
+  group?: string; // sidebar section, e.g. "Languages & Runtimes"
   questions: Question[];
 }
 
