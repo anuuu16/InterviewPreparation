@@ -583,3 +583,5 @@ button { cursor: pointer; }
 @media (max-width: 700px) {
   .cards.two { grid-template-columns: minmax(0, 1fr); }
 }
+
+.set-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 8px; }

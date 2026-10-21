@@ -569,6 +569,12 @@ export default function App() {
                 <button className="icon-btn mobile-only" onClick={() => setDrawer('')} aria-label="Close"><CloseIcon /></button>
               </span>
             </div>
+            {view.kind === 'set' && (
+              <div className="set-actions">
+                <button className="btn small" onClick={() => go({ kind: 'interview' })}>View analysis</button>
+                <button className="btn small danger" onClick={() => { if (window.confirm(`Delete the study set "${title}"? The questions stay in the bank.`)) { studySets.remove(view.id); setView({ kind: 'home' }); } }}><TrashIcon /> Delete set</button>
+              </div>
+            )}
             {tracking && view.kind === 'topic' && (() => {
               const t = topics.find((x) => x.slug === view.slug);
               if (!t) return null;
