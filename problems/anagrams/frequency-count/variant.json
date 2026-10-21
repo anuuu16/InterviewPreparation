@@ -1,0 +1,6 @@
+{
+  "title": "Frequency count array",
+  "summary": "Count each letter with one array: add for the first word, subtract for the second, and check for all zeros.",
+  "order": 2,
+  "complexity": { "best": "O(1)", "average": "O(k)", "worst": "O(k)", "space": "O(1)" }
+}

@@ -1,0 +1,6 @@
+{
+  "title": "Breadth-first search",
+  "summary": "Explore each island ring by ring with a queue; the same cost, and a natural fit when distance matters.",
+  "order": 3,
+  "complexity": { "best": "O(rows × cols)", "average": "O(rows × cols)", "worst": "O(rows × cols)", "space": "O(rows × cols)" }
+}

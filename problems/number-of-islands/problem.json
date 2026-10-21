@@ -1,0 +1,25 @@
+{
+  "title": "Number of islands",
+  "summary": "Count the connected groups of land in a grid: the classic way to learn flood fill with depth-first search, breadth-first search and union-find.",
+  "level": "intermediate",
+  "tags": [
+    "graphs",
+    "grid",
+    "dfs",
+    "bfs",
+    "union-find",
+    "recursion",
+    "queue",
+    "stack"
+  ],
+  "order": 10,
+  "related": [
+    "system-design-013",
+    "javascript-039",
+    "git-version-control-065",
+    "kubernetes-067",
+    "golang-044",
+    "golang-109",
+    "git-version-control-057"
+  ]
+}

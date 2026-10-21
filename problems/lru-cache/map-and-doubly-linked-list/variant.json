@@ -1,0 +1,6 @@
+{
+  "title": "Hash map and doubly linked list",
+  "summary": "The map finds the node in O(1) and the linked list with sentinels moves or removes it in O(1).",
+  "order": 2,
+  "complexity": { "best": "O(1)", "average": "O(1)", "worst": "O(1)", "space": "O(n)" }
+}

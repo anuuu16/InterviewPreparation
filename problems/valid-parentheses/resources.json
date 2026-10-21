@@ -1,0 +1,58 @@
+[
+  {
+    "title": "LeetCode: Valid Parentheses",
+    "url": "https://leetcode.com/problems/valid-parentheses/",
+    "type": "tool",
+    "description": "The original problem statement to practise with an online judge.",
+    "level": "beginner"
+  },
+  {
+    "title": "Stack (abstract data type) (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Stack_(abstract_data_type)",
+    "type": "reference",
+    "description": "Push, pop, peek and where stacks are used, including the call stack.",
+    "level": "beginner"
+  },
+  {
+    "title": "Call stack (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Call_stack",
+    "type": "reference",
+    "description": "How function calls use a stack and why deep recursion overflows it.",
+    "level": "intermediate"
+  },
+  {
+    "title": "MDN: Array.prototype.pop",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/pop",
+    "type": "official-docs",
+    "description": "JavaScript arrays as stacks: push and pop, and what pop returns on an empty array.",
+    "level": "beginner"
+  },
+  {
+    "title": "Python: using lists as stacks",
+    "url": "https://docs.python.org/3/tutorial/datastructures.html#using-lists-as-stacks",
+    "type": "official-docs",
+    "description": "Why a list is a good stack in Python and when to use collections.deque instead.",
+    "level": "beginner"
+  },
+  {
+    "title": "Java: ArrayDeque",
+    "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayDeque.html",
+    "type": "official-docs",
+    "description": "The recommended stack and queue in Java, with push, pop and peek.",
+    "level": "intermediate"
+  },
+  {
+    "title": ".NET: Stack<T>",
+    "url": "https://learn.microsoft.com/dotnet/api/system.collections.generic.stack-1",
+    "type": "official-docs",
+    "description": "The .NET stack, including TryPop and TryPeek.",
+    "level": "beginner"
+  },
+  {
+    "title": "C++: std::stack",
+    "url": "https://en.cppreference.com/w/cpp/container/stack",
+    "type": "reference",
+    "description": "The stack adaptor and the undefined behaviour of top() on an empty stack.",
+    "level": "intermediate"
+  }
+]

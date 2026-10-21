@@ -1,0 +1,22 @@
+{
+  "title": "Anagrams",
+  "summary": "Decide whether two words use the same letters, and group a list of words into anagram families: a classic lesson in choosing a good hash key.",
+  "level": "basic",
+  "tags": [
+    "hashing",
+    "hash-map",
+    "strings",
+    "sorting",
+    "counting"
+  ],
+  "order": 9,
+  "related": [
+    "javascript-022",
+    "golang-009",
+    "golang-110",
+    "golang-010",
+    "networking-security-015",
+    "system-design-028",
+    "golang-114"
+  ]
+}

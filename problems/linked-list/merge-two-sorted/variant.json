@@ -1,0 +1,8 @@
+{
+  "title": "Merge two sorted lists",
+  "summary": "Use a dummy head and a tail pointer to relink the smaller front node each time.",
+  "order": 5,
+  "complexity": { "best": "O(min(m, n))", "average": "O(m + n)", "worst": "O(m + n)", "space": "O(1)" },
+  "stable": true,
+  "inPlace": true
+}

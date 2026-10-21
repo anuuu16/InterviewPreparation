@@ -1,0 +1,58 @@
+[
+  {
+    "title": "LeetCode: Fibonacci Number",
+    "url": "https://leetcode.com/problems/fibonacci-number/",
+    "type": "tool",
+    "description": "The plain Fibonacci problem to practise all four approaches.",
+    "level": "beginner"
+  },
+  {
+    "title": "LeetCode: Climbing Stairs",
+    "url": "https://leetcode.com/problems/climbing-stairs/",
+    "type": "tool",
+    "description": "The most common first dynamic programming interview problem.",
+    "level": "beginner"
+  },
+  {
+    "title": "Dynamic programming (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Dynamic_programming",
+    "type": "reference",
+    "description": "Overlapping subproblems and optimal substructure, with classic examples.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Memoization (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Memoization",
+    "type": "reference",
+    "description": "Caching the results of function calls, and how it differs from tabulation.",
+    "level": "beginner"
+  },
+  {
+    "title": "Fibonacci sequence (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Fibonacci_sequence",
+    "type": "reference",
+    "description": "Definition, closed form, growth rate and the fast doubling and matrix methods.",
+    "level": "beginner"
+  },
+  {
+    "title": "Python: functools.cache",
+    "url": "https://docs.python.org/3/library/functools.html#functools.cache",
+    "type": "official-docs",
+    "description": "Built-in memoisation for pure functions, and lru_cache for a bounded cache.",
+    "level": "beginner"
+  },
+  {
+    "title": "MDN: BigInt",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt",
+    "type": "official-docs",
+    "description": "Arbitrary-size integers in JavaScript, needed when Fibonacci passes 2^53.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Java: Math.addExact",
+    "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Math.html#addExact(long,long)",
+    "type": "official-docs",
+    "description": "Addition that throws on overflow instead of wrapping silently.",
+    "level": "intermediate"
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "title": "LRU cache",
+  "summary": "Design a cache that evicts the least recently used item, with constant-time get and put: the classic design problem that combines a hash map and a linked list.",
+  "level": "intermediate",
+  "tags": [
+    "design",
+    "cache",
+    "hash-map",
+    "linked-list",
+    "data-structures",
+    "complexity"
+  ],
+  "order": 8,
+  "related": [
+    "javascript-066",
+    "golang-120",
+    "golang-059",
+    "system-design-054",
+    "system-design-039",
+    "databases-056",
+    "networking-security-010"
+  ]
+}

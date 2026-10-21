@@ -1,0 +1,6 @@
+{
+  "title": "Interview variant: climbing stairs",
+  "summary": "Count the ways to climb n stairs with 1 or 2 steps: the same recurrence as Fibonacci in disguise.",
+  "order": 5,
+  "complexity": { "best": "O(n)", "average": "O(n)", "worst": "O(n)", "space": "O(1)" }
+}

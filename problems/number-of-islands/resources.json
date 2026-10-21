@@ -1,0 +1,65 @@
+[
+  {
+    "title": "LeetCode: Number of Islands",
+    "url": "https://leetcode.com/problems/number-of-islands/",
+    "type": "tool",
+    "description": "The original problem statement to practise with an online judge.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Flood fill (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Flood_fill",
+    "type": "reference",
+    "description": "The algorithm behind the paint bucket tool, with stack and queue versions.",
+    "level": "beginner"
+  },
+  {
+    "title": "Depth-first search (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Depth-first_search",
+    "type": "reference",
+    "description": "How DFS works on graphs, with recursive and iterative forms.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Breadth-first search (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Breadth-first_search",
+    "type": "reference",
+    "description": "How BFS works and why it finds shortest paths in unweighted graphs.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Disjoint-set data structure (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Disjoint-set_data_structure",
+    "type": "reference",
+    "description": "Union-find with path compression and union by rank or size.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Connected component (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Component_(graph_theory)",
+    "type": "reference",
+    "description": "The graph idea behind an island: a maximal set of connected cells.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Python: collections.deque",
+    "url": "https://docs.python.org/3/library/collections.html#collections.deque",
+    "type": "official-docs",
+    "description": "A fast double-ended queue for breadth-first search.",
+    "level": "beginner"
+  },
+  {
+    "title": "Java: ArrayDeque",
+    "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayDeque.html",
+    "type": "official-docs",
+    "description": "The recommended stack and queue in Java.",
+    "level": "intermediate"
+  },
+  {
+    "title": "C++: std::queue",
+    "url": "https://en.cppreference.com/w/cpp/container/queue",
+    "type": "reference",
+    "description": "The queue adaptor used for breadth-first search.",
+    "level": "intermediate"
+  }
+]

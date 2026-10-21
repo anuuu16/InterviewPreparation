@@ -1,0 +1,65 @@
+[
+  {
+    "title": "LeetCode: LRU Cache",
+    "url": "https://leetcode.com/problems/lru-cache/",
+    "type": "tool",
+    "description": "The original design problem to practise with an online judge.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Cache replacement policies (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Cache_replacement_policies",
+    "type": "reference",
+    "description": "LRU, LFU, FIFO, CLOCK and ARC compared.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Doubly linked list (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Doubly_linked_list",
+    "type": "reference",
+    "description": "Insert and remove in constant time, and the sentinel node trick.",
+    "level": "beginner"
+  },
+  {
+    "title": "Python: collections.OrderedDict",
+    "url": "https://docs.python.org/3/library/collections.html#collections.OrderedDict",
+    "type": "official-docs",
+    "description": "move_to_end and popitem make a short LRU cache in Python.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Python: functools.lru_cache",
+    "url": "https://docs.python.org/3/library/functools.html#functools.lru_cache",
+    "type": "official-docs",
+    "description": "The built-in LRU cache decorator for pure functions.",
+    "level": "beginner"
+  },
+  {
+    "title": "Java: LinkedHashMap",
+    "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/LinkedHashMap.html",
+    "type": "official-docs",
+    "description": "Access order and removeEldestEntry give an LRU cache in a few lines.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Go: container/list",
+    "url": "https://pkg.go.dev/container/list",
+    "type": "official-docs",
+    "description": "The standard doubly linked list, used with a map for an LRU cache.",
+    "level": "intermediate"
+  },
+  {
+    "title": "MDN: Map",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map",
+    "type": "official-docs",
+    "description": "JavaScript Map keeps insertion order, which allows a very short LRU trick.",
+    "level": "beginner"
+  },
+  {
+    "title": "Redis: key eviction",
+    "url": "https://redis.io/docs/latest/develop/reference/eviction/",
+    "type": "official-docs",
+    "description": "How Redis approximates LRU and LFU with maxmemory policies.",
+    "level": "intermediate"
+  }
+]

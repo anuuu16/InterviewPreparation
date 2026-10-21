@@ -1,0 +1,6 @@
+{
+  "title": "Naive recursion",
+  "summary": "Translate the definition directly into a function that calls itself twice. Simple, correct and exponentially slow.",
+  "order": 1,
+  "complexity": { "best": "O(2^n)", "average": "O(2^n)", "worst": "O(2^n)", "space": "O(n)" }
+}

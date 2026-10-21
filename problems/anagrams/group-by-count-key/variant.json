@@ -1,0 +1,6 @@
+{
+  "title": "Group with a hash map: letter-count key",
+  "summary": "Use the 26 letter counts as the key, which avoids sorting each word.",
+  "order": 4,
+  "complexity": { "best": "O(n k)", "average": "O(n k)", "worst": "O(n k)", "space": "O(n k)" }
+}

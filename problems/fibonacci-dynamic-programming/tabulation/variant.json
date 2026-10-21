@@ -1,0 +1,6 @@
+{
+  "title": "Tabulation (bottom-up)",
+  "summary": "Fill a table from the smallest case upwards with a loop, with no recursion at all.",
+  "order": 3,
+  "complexity": { "best": "O(n)", "average": "O(n)", "worst": "O(n)", "space": "O(n)" }
+}

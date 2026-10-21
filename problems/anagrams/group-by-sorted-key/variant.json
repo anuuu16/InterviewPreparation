@@ -1,0 +1,6 @@
+{
+  "title": "Group with a hash map: sorted-letters key",
+  "summary": "Use the sorted letters of each word as the hash map key, so all anagrams land in the same group.",
+  "order": 3,
+  "complexity": { "best": "O(n k log k)", "average": "O(n k log k)", "worst": "O(n k log k)", "space": "O(n k)" }
+}

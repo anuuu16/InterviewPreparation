@@ -268,7 +268,7 @@ Target shape for a "complete" topic: **50–130 questions**, roughly 25% basic, 
 | AI Engineering | `data/ai-engineering.json` | Complete (72); revisit facts that change fast (providers, protocols) |
 | Design Principles | `data/design-principles.json` | Complete (83) |
 | Leadership & Behavioral | `data/leadership-behavioral.json` | Complete (63) |
-| Problems (code library) | `problems/` | Sorting, binary search, two sum done; see section 15.9 for the planned list |
+| Problems (code library) | `problems/` | 10 done: sorting, binary search, two sum, valid parentheses, linked list, tree traversals, fibonacci and DP, LRU cache, anagrams, number of islands; see section 15.9 for what is next |
 | SDLC & Agile | `data/sdlc-agile.json` | Complete (20); extend with more Scrum and estimation depth |
 | Planned | | Python, .NET/C#, more code problems (linked list, trees, graphs, DP, LRU cache) |
 
@@ -479,6 +479,13 @@ Mermaid is encouraged in *Walkthrough*. Follow section 8 rules.
 - Go files must be `gofmt`-formatted (`gofmt -w file.go`); the runner fails unformatted files. A multi-agent tip: do not touch `problems/README.md`, it is generated.
 - Number the key steps in comments (`// 1.`, `// 2.`) and match them to the numbered list in *Code explanation*.
 - Never edit the generated `problems/<slug>/README.md`; `npm run build` rewrites it.
+- **Structured inputs** (trees, grids, scripted scenarios): encode the test data as plain text that all seven harnesses parse the same way (for example a level-order list with the word `null` for a missing child, grid rows joined by spaces, `capacity` plus `put k v; get k` scripts). Print the word `empty` for an empty list or tree. Document the exact format in the notes. Where an output needs a separator other than a single space (for example ` | ` between levels), say so in the guide.
+- **Generator pattern:** keep the cases in one table and generate the seven harnesses plus `expected.txt` from an independent reference implementation in a throwaway script. It catches the case where every language is wrong in the same way. Always `gofmt -w` the generated Go.
+- **C# must print nothing but the answer:** compiler warnings go to stdout and fail the comparison (for example an unused local function gives CS8321). No unused helpers, no warnings. Top-level statements must come before type declarations, so for design problems (nodes, classes) put the harness first and the classes at the end with a comment.
+- **C++ ownership:** for linked structures use a node pool or `unique_ptr` so cycles do not leak, and cast `size()` to `int` before subtracting.
+- **Mermaid in notes:** `sequenceDiagram` participant aliases must not contain quotes or parentheses, and message text must not contain arrows.
+- The 80 to 100 line guideline may stretch to about 130 lines for tree and design problems whose harness builds structures.
+- `npm run problems:test` for a problem with five approaches can take several minutes (C#, C++ and Swift are slow). While iterating use `--lang javascript,typescript,python,go,java`, and run the full set once at the end (in the background if your tool has a short timeout). After adding `variant.json`, confirm the PASS count matches the number of files.
 - `related` ids come from `data/*.json`. Search the `question` text of the questions, not a title field.
 
 **Verify** every file by running it:
@@ -519,7 +526,7 @@ Read this first when you pick the project up again.
 
 ### State (last updated at the end of the first long build session)
 
-- **17 topics, about 1,160 questions** (see the table in section 11), each with a Technical Lead section, modules and a curated `resources/<topic>.json`. **3 code problems** (sorting, binary search, two sum) with 105 solutions that all pass `npm run problems:test`.
+- **17 topics, about 1,160 questions** (see the table in section 11), each with a Technical Lead section, modules and a curated `resources/<topic>.json`. **10 code problems** with about 290 solutions in 7 languages that all pass `npm run problems:test`.
 - **App features:** rendered Markdown with code highlighting and Mermaid (diagrams are cached so they never flash), search/filter/group by level or module, favorites, notes and feedback for agents (`npm run feedback`), resources dialog and "Further reading", opt-in reading progress, view options (hide topics/modules, move or hide panels, edge arrows, swipe on phones), compact reader header/footer, and a text-to-speech player (browser voices or optional Piper) with reading styles, quiz mode, sleep timer, lock-screen controls, "Play all", and audio for problem guides.
 - **Quality gates:** `npm run validate` (0 errors expected; ~127 style warnings are normal, mostly "no Interview tip"), `npm run problems:test`, `npm run resources:check`. All Mermaid diagrams were rendered once in the app (all passed); re-check after adding many.
 - Everything is committed and pushed to `main`. The generated Markdown (`questions/`, `problems/*/README.md`, README tables) must be committed with the sources: run `npm run build` first.
@@ -549,7 +556,7 @@ npm run tts:setup # optional: Piper with ONE English voice (about 60 MB)
 
 1. Piper (or another local neural voice) usable from a phone; optional server-side progress.
 2. More topics: Python, .NET/C#, more on Scrum/estimation, a security deep dive on authentication flows.
-3. More code problems: linked list, stack/queue, trees, graphs (BFS/DFS), dynamic programming, LRU cache, heap/top-K (see section 15.9).
+3. More code problems: heap and top-K, trie, two pointers and sliding window, backtracking (permutations, N-Queens), shortest path (Dijkstra), topological sort, knapsack and edit distance, rate limiter design (see section 15.9).
 4. Spaced repetition using the optional read counter (suggest what to revisit).
 5. Feedback and notes on code problems (they exist for questions and topics only).
 6. A CI job that runs `npm run validate`, `npm run problems:test` and `npm run resources:check` on push.

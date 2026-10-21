@@ -1,0 +1,39 @@
+// Valid parentheses, approach 1: brute force. Delete matching pairs "()", "[]", "{}" until nothing changes.
+// A string is valid exactly when this reduces it to the empty string.
+static bool IsValid(string s)
+{
+    string previous;
+    do
+    {
+        previous = s; // 1. remember the string before this round
+        s = s.Replace("()", "").Replace("[]", "").Replace("{}", ""); // 2. remove every adjacent pair
+    } while (s != previous); // 3. stop when a round removes nothing
+    return s.Length == 0; // 4. valid only if everything was removed
+}
+
+string[] cases =
+{
+    "()",
+    "()[]{}",
+    "(]",
+    "([)]",
+    "{[]}",
+    "",
+    "(",
+    ")",
+    "((",
+    "))",
+    "(((())))",
+    "{[()()]}",
+    "([{}])",
+    "(()",
+    "())",
+    "]",
+    "()()()()",
+    "{{{{}}}}[",
+    "((((((((((",
+    "[({})](",
+    "{[}]",
+};
+
+foreach (var s in cases) Console.WriteLine(IsValid(s) ? "true" : "false");

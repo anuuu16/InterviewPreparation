@@ -1,0 +1,6 @@
+{
+  "title": "Hash map and list scan",
+  "summary": "Keep values in a hash map and the usage order in a plain list; correct, but moving a key costs O(n).",
+  "order": 1,
+  "complexity": { "best": "O(1)", "average": "O(n)", "worst": "O(n)", "space": "O(n)" }
+}

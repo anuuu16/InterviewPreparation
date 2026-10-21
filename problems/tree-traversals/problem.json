@@ -1,0 +1,23 @@
+{
+  "title": "Tree traversals",
+  "summary": "Visit every node of a binary tree in pre-order, in-order, post-order or level order: the base for searching, copying, printing and validating trees.",
+  "level": "basic",
+  "tags": [
+    "trees",
+    "binary-tree",
+    "recursion",
+    "dfs",
+    "bfs",
+    "stack",
+    "queue"
+  ],
+  "order": 6,
+  "related": [
+    "databases-013",
+    "databases-058",
+    "git-version-control-057",
+    "javascript-039",
+    "golang-012",
+    "golang-109"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "title": "Detect a cycle (Floyd tortoise and hare)",
+  "summary": "Move one pointer one step and another two steps; they meet only if the list has a cycle.",
+  "order": 4,
+  "complexity": { "best": "O(1)", "average": "O(n)", "worst": "O(n)", "space": "O(1)" },
+  "inPlace": true
+}

@@ -38,6 +38,13 @@ Popular coding problems with a written guide and tested code in several language
 | [Sorting](problems/sorting/README.md) | 7 | 7 |
 | [Binary search](problems/binary-search/README.md) | 5 | 7 |
 | [Two sum](problems/two-sum/README.md) | 3 | 7 |
+| [Valid parentheses](problems/valid-parentheses/README.md) | 3 | 7 |
+| [Linked list](problems/linked-list/README.md) | 5 | 7 |
+| [Tree traversals](problems/tree-traversals/README.md) | 3 | 7 |
+| [Fibonacci and dynamic programming](problems/fibonacci-dynamic-programming/README.md) | 5 | 7 |
+| [LRU cache](problems/lru-cache/README.md) | 2 | 7 |
+| [Anagrams](problems/anagrams/README.md) | 4 | 7 |
+| [Number of islands](problems/number-of-islands/README.md) | 4 | 7 |
 <!-- PROBLEMS:END -->
 
 ## Study app (read, listen, manage)

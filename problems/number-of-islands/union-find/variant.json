@@ -1,0 +1,6 @@
+{
+  "title": "Union-find (disjoint set)",
+  "summary": "Treat each land cell as its own island and merge neighbours; each successful merge removes one island.",
+  "order": 4,
+  "complexity": { "best": "O(rows × cols)", "average": "O(rows × cols × α)", "worst": "O(rows × cols × α)", "space": "O(rows × cols)" }
+}

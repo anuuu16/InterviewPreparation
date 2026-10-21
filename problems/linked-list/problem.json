@@ -1,0 +1,21 @@
+{
+  "title": "Linked list",
+  "summary": "Reverse a list, find a cycle and merge two sorted lists: the classic pointer problems that teach you to rewire nodes without losing the rest of the list.",
+  "level": "basic",
+  "tags": [
+    "linked-list",
+    "pointers",
+    "two-pointers",
+    "recursion",
+    "complexity"
+  ],
+  "order": 5,
+  "related": [
+    "golang-012",
+    "golang-013",
+    "golang-055",
+    "golang-109",
+    "javascript-066",
+    "golang-120"
+  ]
+}

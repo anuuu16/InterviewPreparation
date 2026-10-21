@@ -1,0 +1,21 @@
+{
+  "title": "Fibonacci and dynamic programming",
+  "summary": "Use Fibonacci to learn dynamic programming: why naive recursion repeats work, and how memoisation, tabulation and a rolling window fix it. Includes climbing stairs.",
+  "level": "basic",
+  "tags": [
+    "dynamic-programming",
+    "recursion",
+    "memoization",
+    "fibonacci",
+    "complexity"
+  ],
+  "order": 7,
+  "related": [
+    "javascript-049",
+    "react-041",
+    "golang-109",
+    "javascript-039",
+    "golang-007",
+    "golang-009"
+  ]
+}

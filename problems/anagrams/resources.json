@@ -1,0 +1,65 @@
+[
+  {
+    "title": "LeetCode: Valid Anagram",
+    "url": "https://leetcode.com/problems/valid-anagram/",
+    "type": "tool",
+    "description": "The two-word anagram check, with the Unicode follow-up.",
+    "level": "beginner"
+  },
+  {
+    "title": "LeetCode: Group Anagrams",
+    "url": "https://leetcode.com/problems/group-anagrams/",
+    "type": "tool",
+    "description": "The grouping problem solved with a hash map.",
+    "level": "beginner"
+  },
+  {
+    "title": "Anagram (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Anagram",
+    "type": "reference",
+    "description": "What an anagram is, with history and examples.",
+    "level": "beginner"
+  },
+  {
+    "title": "Hash table (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Hash_table",
+    "type": "reference",
+    "description": "How hashing, collisions and load factor work.",
+    "level": "beginner"
+  },
+  {
+    "title": "Counting sort (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Counting_sort",
+    "type": "reference",
+    "description": "The counting idea behind the frequency array, and when it beats comparison sorting.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Python: collections.Counter",
+    "url": "https://docs.python.org/3/library/collections.html#collections.Counter",
+    "type": "official-docs",
+    "description": "A multiset of counts; Counter(a) == Counter(b) checks anagrams for any characters.",
+    "level": "beginner"
+  },
+  {
+    "title": "Go maps in action",
+    "url": "https://go.dev/blog/maps",
+    "type": "article",
+    "description": "How Go maps work, including which key types are allowed (arrays are, slices are not).",
+    "level": "intermediate"
+  },
+  {
+    "title": "MDN: Array.prototype.sort",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort",
+    "type": "official-docs",
+    "description": "The default sort compares strings, which matters when sorting numbers.",
+    "level": "beginner"
+  },
+  {
+    "title": "Java: HashMap",
+    "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/HashMap.html",
+    "type": "official-docs",
+    "description": "The Java hash map, computeIfAbsent and key equality rules.",
+    "level": "beginner"
+  }
+]

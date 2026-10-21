@@ -1,0 +1,65 @@
+[
+  {
+    "title": "LeetCode: Binary Tree Inorder Traversal",
+    "url": "https://leetcode.com/problems/binary-tree-inorder-traversal/",
+    "type": "tool",
+    "description": "The in-order problem, with the follow-up to do it without recursion.",
+    "level": "beginner"
+  },
+  {
+    "title": "LeetCode: Binary Tree Level Order Traversal",
+    "url": "https://leetcode.com/problems/binary-tree-level-order-traversal/",
+    "type": "tool",
+    "description": "The level-by-level problem solved with a queue.",
+    "level": "beginner"
+  },
+  {
+    "title": "Tree traversal (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Tree_traversal",
+    "type": "reference",
+    "description": "Pre-order, in-order, post-order and level order, with pseudocode for the recursive and iterative forms.",
+    "level": "beginner"
+  },
+  {
+    "title": "Binary tree (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Binary_tree",
+    "type": "reference",
+    "description": "Terms such as height, depth, full, complete and balanced trees.",
+    "level": "beginner"
+  },
+  {
+    "title": "Depth-first search (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Depth-first_search",
+    "type": "reference",
+    "description": "The graph search that tree pre-order and post-order come from.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Breadth-first search (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Breadth-first_search",
+    "type": "reference",
+    "description": "The queue-based search that level order is a special case of.",
+    "level": "intermediate"
+  },
+  {
+    "title": "Python: collections.deque",
+    "url": "https://docs.python.org/3/library/collections.html#collections.deque",
+    "type": "official-docs",
+    "description": "A fast double-ended queue; popleft is constant time, unlike list.pop(0).",
+    "level": "beginner"
+  },
+  {
+    "title": "Java: ArrayDeque",
+    "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayDeque.html",
+    "type": "official-docs",
+    "description": "The recommended stack and queue in Java.",
+    "level": "intermediate"
+  },
+  {
+    "title": "C++: std::queue",
+    "url": "https://en.cppreference.com/w/cpp/container/queue",
+    "type": "reference",
+    "description": "The queue adaptor used for breadth-first search.",
+    "level": "intermediate"
+  }
+]

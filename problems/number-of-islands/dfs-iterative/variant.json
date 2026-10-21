@@ -1,0 +1,6 @@
+{
+  "title": "Depth-first search (iterative)",
+  "summary": "The same flood fill with an explicit stack, so a huge island cannot overflow the call stack.",
+  "order": 2,
+  "complexity": { "best": "O(rows × cols)", "average": "O(rows × cols)", "worst": "O(rows × cols)", "space": "O(rows × cols)" }
+}

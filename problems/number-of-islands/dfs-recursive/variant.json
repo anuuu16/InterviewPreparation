@@ -1,0 +1,6 @@
+{
+  "title": "Depth-first search (recursive)",
+  "summary": "Scan the grid; at each unexplored land cell count a new island and explore all its land with recursion.",
+  "order": 1,
+  "complexity": { "best": "O(rows × cols)", "average": "O(rows × cols)", "worst": "O(rows × cols)", "space": "O(rows × cols)" }
+}

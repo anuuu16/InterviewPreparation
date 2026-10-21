@@ -1,0 +1,7 @@
+{
+  "title": "Detect a cycle (hash set)",
+  "summary": "Remember every node you have visited; meeting one again means the list loops.",
+  "order": 3,
+  "complexity": { "best": "O(1)", "average": "O(n)", "worst": "O(n)", "space": "O(n)" },
+  "inPlace": false
+}
