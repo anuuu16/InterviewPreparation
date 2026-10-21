@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import * as api from './api';
 import AudioSettings from './AudioSettings';
 import Editor, { type EditorResult } from './Editor';
-import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, LayoutIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon, UpIcon } from './Icons';
+import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, LayoutIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon, TrashIcon, UpIcon } from './Icons';
 import Inline from './Inline';
 import Markdown from './Markdown';
 import Notes from './Notes';
@@ -528,6 +528,8 @@ export default function App() {
             onOpenQuestion={(id) => { openQuestion(id); setDrawer(''); }}
             onCreateSet={studySets.add}
             onOpenSet={(id) => go({ kind: 'set', id })}
+            sets={studySets.sets}
+            onUpdateSet={studySets.update}
           />
         ) : view.kind === 'problems' ? (
           <Problems
@@ -561,6 +563,7 @@ export default function App() {
                 {view.kind === 'topic' && (
                   <button className="icon-btn" onClick={() => setResourcesOpen(true)} aria-label="Resources" title="Resources: docs and tutorials"><BookIcon /></button>
                 )}
+                {view.kind === 'set' && <button className="icon-btn" onClick={() => { if (window.confirm(`Delete the study set "${title}"? The questions stay in the bank.`)) { studySets.remove(view.id); setView({ kind: 'home' }); } }} aria-label="Delete this study set" title="Delete this study set"><TrashIcon /></button>}
                 {items.length > 0 && <button className="icon-btn" onClick={() => player.play(0)} aria-label="Play all in this list" title="Play all in this list, from the top"><PlayIcon /></button>}
                 <button className="icon-btn" onClick={() => setEditor({ topicSlug: view.kind === 'topic' ? view.slug : topics[0]?.slug ?? '' })} aria-label="Add question" title="Add question"><PlusIcon /></button>
                 <button className="icon-btn mobile-only" onClick={() => setDrawer('')} aria-label="Close"><CloseIcon /></button>

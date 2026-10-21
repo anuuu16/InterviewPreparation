@@ -33,6 +33,7 @@ export function useStudySets() {
       commit([set, ...sets]);
       return set;
     },
+    update: (id: string, ids: string[], note?: string) => commit(sets.map((s) => (s.id === id ? { ...s, ids, note: note ?? s.note } : s))),
     rename: (id: string, name: string) => commit(sets.map((s) => (s.id === id ? { ...s, name: name.trim() || s.name } : s))),
     remove: (id: string) => commit(sets.filter((s) => s.id !== id)),
   }), [list]);

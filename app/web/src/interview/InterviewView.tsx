@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Inline from '../Inline';
 import { useLocal } from '../useLocal';
 import { LEVELS, type Level, type StudySet, type Topic } from '../types';
@@ -10,6 +10,8 @@ interface Props {
   onOpenQuestion: (id: string) => void;
   onCreateSet: (name: string, ids: string[], note: string) => StudySet;
   onOpenSet: (id: string) => void;
+  sets: StudySet[];
+  onUpdateSet: (id: string, ids: string[], note: string) => void;
 }
 
 interface Saved { resume: string; jd: string }
@@ -30,9 +32,13 @@ function FileInput({ label, onText, onError }: { label: string; onText: (t: stri
   );
 }
 
-export default function InterviewView({ topics, onOpenQuestion, onCreateSet, onOpenSet }: Props) {
+export default function InterviewView({ topics, onOpenQuestion, onCreateSet, onOpenSet, sets, onUpdateSet }: Props) {
   const [saved, setSaved] = useLocal<Saved>('ip.interview.v1', { resume: '', jd: '' });
-  const [plan, setPlan] = useState<Plan | null>(null);
+  const [snap, setSnap] = useState<Saved | null>(null); // the inputs the current analysis was made from
+  const plan = useMemo<Plan | null>(() => (snap && topics.length ? buildPlan(snap.resume, snap.jd, topics) : null), [snap, topics]);
+  const stale = !!snap && (snap.resume !== saved.resume || snap.jd !== saved.jd);
+  // come back to your last inputs and see the analysis straight away
+  useEffect(() => { if (!snap && topics.length && (saved.resume.trim() || saved.jd.trim())) setSnap(saved); }, [topics.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const [opts, setOpts] = useState<SetOptions>(DEFAULT_OPTS);
   const [name, setName] = useState('');
   const [error, setError] = useState('');
@@ -55,7 +61,7 @@ export default function InterviewView({ topics, onOpenQuestion, onCreateSet, onO
   }, [ids, topics]);
   const titleOf = useMemo(() => new Map(topics.flatMap((t) => t.questions.map((q) => [q.id, q.question] as const))), [topics]);
 
-  const analyze = () => { setPlan(buildPlan(saved.resume, saved.jd, topics)); setOpen({}); setCopied(false); };
+  const analyze = () => { setSnap({ ...saved }); setOpen({}); setCopied(false); };
   const toggleLevel = (l: Level) => setOpts((o) => ({ ...o, levels: o.levels.includes(l) ? o.levels.filter((x) => x !== l) : [...o.levels, l] }));
   const copy = async () => {
     try { await navigator.clipboard.writeText(aiPrompt(saved.resume, saved.jd)); setCopied(true); } catch { setError('Could not copy. Select the text manually.'); }
@@ -63,9 +69,12 @@ export default function InterviewView({ topics, onOpenQuestion, onCreateSet, onO
   const create = () => {
     if (!plan || !ids.length) return;
     const defaultName = plan.roleTitle ? `Prep: ${plan.roleTitle}` : 'Interview prep set';
-    const set = onCreateSet(name.trim() || defaultName, ids, 'from resume and job description');
-    onOpenSet(set.id);
+    const finalName = name.trim() || defaultName;
+    const same = sets.find((x) => x.name === finalName);
+    if (same) { onUpdateSet(same.id, ids, 'from resume and job description'); onOpenSet(same.id); return; }
+    onOpenSet(onCreateSet(finalName, ids, 'from resume and job description').id);
   };
+  const sameName = plan ? sets.find((x) => x.name === (name.trim() || (plan.roleTitle ? `Prep: ${plan.roleTitle}` : 'Interview prep set'))) : undefined;
   const empty = !saved.resume.trim() && !saved.jd.trim();
 
   return (
@@ -87,10 +96,11 @@ export default function InterviewView({ topics, onOpenQuestion, onCreateSet, onO
           </section>
         </div>
         {error && <p className="error">{error}</p>}
+        {stale && <p className="muted small">The text changed since the last analysis. Press Re-analyze to update the results below.</p>}
         <div className="actions">
-          <button className="btn primary" disabled={empty} onClick={analyze}>Analyze</button>
+          <button className="btn primary" disabled={empty} onClick={analyze}>{snap ? 'Re-analyze' : 'Analyze'}</button>
           <button className="btn" onClick={() => setSaved({ resume: SAMPLE_RESUME, jd: SAMPLE_JD })}>Use sample</button>
-          <button className="btn" disabled={empty} onClick={() => { setSaved({ resume: '', jd: '' }); setPlan(null); }}>Clear</button>
+          <button className="btn" disabled={empty} onClick={() => { setSaved({ resume: '', jd: '' }); setSnap(null); }}>Clear</button>
           <button className="btn" disabled={empty} onClick={copy}>{copied ? 'Copied' : 'Copy as AI prompt'}</button>
         </div>
         <p className="muted small">Your text is kept in this browser only, so you can come back to it. Clear removes it.</p>
@@ -159,7 +169,7 @@ export default function InterviewView({ topics, onOpenQuestion, onCreateSet, onO
                 <p key={t} className="muted small"><b>{t}</b>: {[...mods].map(([m, n]) => `${m} (${n})`).join(', ')}</p>
               ))}
               <input className="set-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={plan.roleTitle ? `Prep: ${plan.roleTitle}` : 'Name of the set'} aria-label="Study set name" />
-              <div className="actions"><button className="btn primary" disabled={!ids.length} onClick={create}>Create and open</button></div>
+              <div className="actions"><button className="btn primary" disabled={!ids.length} onClick={create}>{sameName ? 'Update existing set' : 'Create and open'}</button></div>
             </section>
           </>
         )}

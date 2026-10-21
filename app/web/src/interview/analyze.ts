@@ -83,7 +83,7 @@ function detect(text: string, optionalOnly = false): SkillHit[] {
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 const EDU = /university|college|school|bachelor|master|degree|b\.?tech|m\.?tech|b\.?sc|b\.?e\b|diploma|graduat|class|10th|12th|cgpa|gpa|%/i;
 
-interface Range { start: number; end: number; present: boolean; line: string }
+interface Range { start: number; end: number; present: boolean; line: string; precise: boolean }
 
 const monthIndex = (y: number, m: number) => y * 12 + (m - 1);
 function toMonth(tok: string, isEnd: boolean): number | null {
@@ -110,10 +110,12 @@ function parseRanges(text: string): Range[] {
       const present = /present|current|now|till date/i.test(m[2]);
       const end = present ? nowIdx : toMonth(m[2], true);
       if (start == null || end == null || end < start) continue;
-      out.push({ start, end, present, line: l });
+      out.push({ start, end, present, line: l, precise: !/^\d{4}$/.test(m[1].trim()) });
     }
   }
-  return out;
+  // year-only ranges (2013 - 2017) are usually school years that share a line with job text in two-column layouts;
+  // when the jobs have month-precise dates, trust those
+  return out.some((r) => r.precise) ? out.filter((r) => r.precise) : out;
 }
 
 const fmt = (i: number) => `${MONTHS[i % 12][0].toUpperCase()}${MONTHS[i % 12].slice(1)} ${Math.floor(i / 12)}`;

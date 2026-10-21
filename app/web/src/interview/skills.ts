@@ -32,6 +32,7 @@ export const SKILLS: Skill[] = [
   { id: 'testing', name: 'Testing', kind: 'practice', re: w('jest|cypress|selenium|playwright|unit test(?:ing|s)?|tdd|test automation|testing library|browserstack'), topic: 'react', modules: ['Architecture & Quality'], keywords: ['test'] },
   // back end
   { id: 'node', name: 'Node.js', kind: 'backend', re: w('node(?:\\.js|js)?|express(?:\\.js)?|nestjs|nest\\.js|fastify'), topic: 'nodejs' },
+  { id: 'ruby', name: 'Ruby on Rails', kind: 'backend', re: w('ruby(?: on rails)?|rails|erb') },
   { id: 'rest', name: 'REST / APIs', kind: 'backend', re: w('rest(?:ful)?(?: apis?)?|web api|openapi|swagger|graphql|grpc'), topic: 'nodejs', modules: ['HTTP & APIs'], keywords: ['api', 'rest', 'http'] },
   // cloud
   { id: 'azure', name: 'Azure', kind: 'cloud', re: w('azure|aks|entra|azure devops'), topic: 'azure-cloud' },
