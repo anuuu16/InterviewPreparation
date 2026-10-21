@@ -1,0 +1,8 @@
+name = "interview-prep"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "app/web/dist-static"
+
+# Create the namespace once:  npx wrangler kv namespace create IP_KV   then paste its id here.
+# [[kv_namespaces]]
+# binding = "IP_KV"
+# id = "<paste-the-id>"

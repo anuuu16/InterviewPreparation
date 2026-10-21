@@ -134,6 +134,10 @@ Restart `npm start`. Nothing else to configure; see [tools/piper/README.md](tool
 
 Run `npm start` in one terminal and `npm run dev` in another (hot reload on http://localhost:5173, API proxied to port 3000).
 
+## Hosting
+
+A free, server-less version runs on Cloudflare Pages: see [DEPLOY.md](DEPLOY.md).
+
 ## Without the app
 
 The Markdown in `questions/` and `problems/*/README.md` is **generated**: don't edit it by hand. The sources are `data/<topic>.json` and the folders in `problems/`. After editing them:
