@@ -14,7 +14,13 @@ const PORT = process.env.PORT || 3000;
 const DIST = path.join(__dirname, 'web', 'dist');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.png': 'image/png', '.woff2': 'font/woff2' };
 const SLUG = /^[a-z0-9-]+$/;
-const file = (slug) => path.join(DATA_DIR, `${slug}.json`);
+// Private topics (resume- or job-specific prep) live in personal/, which is git-ignored and never built into Markdown.
+const PERSONAL_DIR = path.join(__dirname, '..', 'personal');
+const file = (slug) => {
+  const own = path.join(PERSONAL_DIR, `${slug}.json`);
+  return fs.existsSync(own) ? own : path.join(DATA_DIR, `${slug}.json`);
+};
+const topicSlugs = () => [DATA_DIR, PERSONAL_DIR].flatMap((d) => (fs.existsSync(d) ? fs.readdirSync(d) : [])).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, ''));
 
 const read = (slug) => JSON.parse(fs.readFileSync(file(slug), 'utf8'));
 const save = (slug, topic) => {
@@ -37,16 +43,8 @@ function clean(body, base = {}) {
 const routes = [];
 const route = (method, pattern, fn) => routes.push({ method, re: new RegExp(`^${pattern}$`), fn });
 
-route('GET', '/api/topics', () =>
-  fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json')).map((f) => {
-    const slug = f.replace(/\.json$/, '');
-    return { slug, name: read(slug).name };
-  }));
-route('GET', '/api/all', () =>
-  fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json')).map((f) => {
-    const slug = f.replace(/\.json$/, '');
-    return { slug, ...read(slug) };
-  }).sort((a, b) => a.name.localeCompare(b.name)));
+route('GET', '/api/topics', () => topicSlugs().map((slug) => ({ slug, name: read(slug).name })));
+route('GET', '/api/all', () => topicSlugs().map((slug) => ({ slug, ...read(slug) })).sort((a, b) => a.name.localeCompare(b.name)));
 route('GET', '/api/feedback', () => feedback.listAll());
 route('POST', '/api/feedback', ({ body }) => feedback.add(body));
 route('PUT', '/api/feedback/(fb-[a-z0-9]+)', ({ m, body }) => feedback.update(m[1], body));
@@ -72,6 +70,7 @@ route('POST', '/api/topics', ({ body }) => {
   if (!slug) throw { status: 400, message: 'Name required' };
   if (fs.existsSync(file(slug))) throw { status: 409, message: 'Topic exists' };
   const group = String(body.group || '').trim();
+  if (group === 'Personal') { fs.mkdirSync(PERSONAL_DIR, { recursive: true }); fs.writeFileSync(path.join(PERSONAL_DIR, `${slug}.json`), '{}'); } // kept private
   save(slug, group ? { name, group, questions: [] } : { name, questions: [] });
   return { slug, name, group };
 });
