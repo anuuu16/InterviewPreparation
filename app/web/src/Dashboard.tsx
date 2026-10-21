@@ -6,6 +6,7 @@ interface Props {
   topics: Topic[];
   problems: Problem[];
   sets: StudySet[];
+  interviewPrep: boolean;
   tracking: boolean;
   isRead: (id: string) => boolean;
   favCount: number;
@@ -26,7 +27,7 @@ function questionOfTheDay(topics: Topic[]): Item | null {
   return all[(Math.imul(seed, 2654435761) >>> 0) % all.length];
 }
 
-export default function Dashboard({ topics, problems, sets, tracking, isRead, favCount, lastId, onGo, onOpenQuestion, onListenQuestion, onRenameSet, onRemoveSet }: Props) {
+export default function Dashboard({ topics, problems, sets, interviewPrep, tracking, isRead, favCount, lastId, onGo, onOpenQuestion, onListenQuestion, onRenameSet, onRemoveSet }: Props) {
   const last = lastId ? topics.flatMap((t) => t.questions.map((q) => ({ q, topic: t }))).find((x) => x.q.id === lastId) : undefined;
   const qod = questionOfTheDay(topics);
   const total = topics.reduce((n, t) => n + t.questions.length, 0);
@@ -64,10 +65,10 @@ export default function Dashboard({ topics, problems, sets, tracking, isRead, fa
 
         <h2 className="section-title">Start here</h2>
         <div className="cards four">
-          <button className="card action" onClick={() => onGo({ kind: 'interview' })}>
+          {interviewPrep && <button className="card action" onClick={() => onGo({ kind: 'interview' })}>
             <strong>Interview prep</strong>
             <span>Upload a resume and a job description. Get likely questions by round and a study set.</span>
-          </button>
+          </button>}
           {problems.length > 0 && (
             <button className="card action" onClick={() => onGo({ kind: 'problems' })}>
               <strong>Code problems</strong>

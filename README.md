@@ -136,7 +136,7 @@ Run `npm start` in one terminal and `npm run dev` in another (hot reload on http
 
 ## Hosting
 
-The same code builds two ways. `npm start` is the full local app (edit, add, feedback, Piper voice). `npm run build:static` makes a read-only, fully static site for free hosting such as Cloudflare Pages; favorites, notes, progress and study sets stay in the visitor's browser. See [DEPLOY.md](DEPLOY.md).
+The same code builds two ways. `npm start` is the full local app (edit, add, feedback, Interview prep and study sets, Piper voice). `npm run build:static` makes a read-only, fully static site for free hosting such as Cloudflare Pages; favorites, notes and progress stay in the visitor's browser. See [DEPLOY.md](DEPLOY.md).
 
 ## Without the app
 

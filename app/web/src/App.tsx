@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from './api';
+import { features } from './features';
 import AudioSettings from './AudioSettings';
 import Editor, { type EditorResult } from './Editor';
 import { BookIcon, CheckIcon, CloseIcon, EditIcon, FilterIcon, HeadphonesIcon, LayoutIcon, MoonIcon, NextIcon, NoteIcon, PlayIcon, PlusIcon, PrevIcon, ProgressIcon, SearchIcon, SettingsIcon, StarIcon, SunIcon, TrashIcon, UpIcon, DownIcon } from './Icons';
@@ -113,6 +114,7 @@ export default function App() {
   useEffect(() => {
     if (view.kind === 'topic' && allTopics.length && !topics.some((t) => t.slug === view.slug)) setView({ kind: 'home' });
     if (view.kind === 'set' && !studySets.sets.some((x) => x.id === view.id)) setView({ kind: 'home' });
+    if ((view.kind === 'interview' && !features.interviewPrep) || (view.kind === 'set' && !features.studySets)) setView({ kind: 'home' });
   }, [topics, studySets.sets]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reload = useCallback(() => api.getAll().then(setTopics).catch((e: Error) => setLoadError(e.message)), []);
@@ -468,7 +470,7 @@ export default function App() {
           <div className="sidebar-scroll">
           <div className="nav-group">
             <button className={'nav' + (isView({ kind: 'home' }) ? ' active' : '')} onClick={() => go({ kind: 'home' })}>Home</button>
-            <button className={'nav' + (isView({ kind: 'interview' }) ? ' active' : '')} onClick={() => go({ kind: 'interview' })}>Interview prep</button>
+            {features.interviewPrep && <button className={'nav' + (isView({ kind: 'interview' }) ? ' active' : '')} onClick={() => go({ kind: 'interview' })}>Interview prep</button>}
             <button className={'nav' + (isView({ kind: 'all' }) ? ' active' : '')} onClick={() => go({ kind: 'all' })}>All questions</button>
             <button className={'nav' + (isView({ kind: 'favorites' }) ? ' active' : '')} onClick={() => go({ kind: 'favorites' })}>
               <span>Favorites</span><span className="count">{favCount}</span>
@@ -481,7 +483,7 @@ export default function App() {
               </button>
             </div>
           )}
-          {studySets.sets.length > 0 && (
+          {features.studySets && studySets.sets.length > 0 && (
             <>
               <div className="nav-title">Study sets</div>
               <div className="nav-group">
@@ -530,7 +532,7 @@ export default function App() {
           })}
           </div>
           <div className="sidebar-foot">
-            {!api.isHosted && <button className="btn" onClick={newTopic}><PlusIcon /> New topic</button>}
+            {features.newTopic && <button className="btn" onClick={newTopic}><PlusIcon /> New topic</button>}
             <span className="foot-icons">
               <button className="icon-btn" onClick={() => setViewOpen(true)} aria-label="View options" title="Layout and what to show"><LayoutIcon /></button>
               {tracking && <button className="icon-btn" onClick={() => setProgressOpen(true)} aria-label="My progress" title="My progress"><ProgressIcon /></button>}
@@ -544,7 +546,8 @@ export default function App() {
           <Dashboard
             topics={topics}
             problems={problems}
-            sets={studySets.sets}
+            sets={features.studySets ? studySets.sets : []}
+            interviewPrep={features.interviewPrep}
             tracking={tracking}
             isRead={progress.isRead}
             favCount={favCount}
@@ -598,7 +601,7 @@ export default function App() {
                 )}
                 {view.kind === 'set' && <button className="icon-btn" onClick={() => { if (window.confirm(`Delete the study set "${title}"? The questions stay in the bank.`)) { studySets.remove(view.id); setView({ kind: 'home' }); } }} aria-label="Delete this study set" title="Delete this study set"><TrashIcon /></button>}
                 {items.length > 0 && <button className="icon-btn" onClick={() => player.play(0)} aria-label="Play all in this list" title="Play all in this list, from the top"><PlayIcon /></button>}
-                {!api.isHosted && <button className="icon-btn" onClick={() => setEditor({ topicSlug: view.kind === 'topic' ? view.slug : topics[0]?.slug ?? '' })} aria-label="Add question" title="Add question"><PlusIcon /></button>}
+                {features.editQuestions && <button className="icon-btn" onClick={() => setEditor({ topicSlug: view.kind === 'topic' ? view.slug : topics[0]?.slug ?? '' })} aria-label="Add question" title="Add question"><PlusIcon /></button>}
                 <button className="icon-btn mobile-only" onClick={() => setDrawer('')} aria-label="Close"><CloseIcon /></button>
               </span>
             </div>
@@ -710,7 +713,7 @@ export default function App() {
                 {tracking && <button className={'btn' + (progress.isRead(selected.q.id) ? ' done' : '')} onClick={() => toggleRead(selected.q.id, !progress.isRead(selected.q.id))} aria-pressed={progress.isRead(selected.q.id)}>
                   <CheckIcon /> {progress.isRead(selected.q.id) ? 'Read' : 'Mark as read'}
                 </button>}
-                {!api.isHosted && <button className="btn" onClick={() => setEditor({ topicSlug: selected.topic.slug, question: selected.q })}><EditIcon /> Edit</button>}
+                {features.editQuestions && <button className="btn" onClick={() => setEditor({ topicSlug: selected.topic.slug, question: selected.q })}><EditIcon /> Edit</button>}
                 <button className="btn desktop-only" onClick={() => setViewOpen(true)} title="Layout and what to show"><LayoutIcon /> Layout</button>
                 <button className={'btn' + (notesOpen ? ' on' : '')} onClick={() => setNotesOpen(!notesOpen)} aria-expanded={notesOpen}>
                   <NoteIcon /> Notes{openNotes > 0 && <span className="btn-count">{openNotes}</span>}
@@ -799,8 +802,8 @@ export default function App() {
         <ResourcesDialog
           title={topics.find((t) => t.slug === view.slug)?.name ?? ''}
           items={resources[view.slug] ?? []}
-          onAdd={api.isHosted ? undefined : (r) => addResource(view.slug, r)}
-          onRemove={api.isHosted ? undefined : (url) => removeResource(view.slug, url)}
+          onAdd={!features.resourceEditing ? undefined : (r) => addResource(view.slug, r)}
+          onRemove={!features.resourceEditing ? undefined : (url) => removeResource(view.slug, url)}
           onClose={() => setResourcesOpen(false)}
         />
       )}

@@ -19,4 +19,4 @@ export const getProblems = impl.getProblems;
 export const getResources = impl.getResources;
 export const addResource = impl.addResource;
 export const removeResource = impl.removeResource;
-export const isHosted = import.meta.env.MODE === 'static';
+export { isHosted } from './features';

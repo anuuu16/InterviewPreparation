@@ -1,0 +1,9 @@
+{
+  "_comment": "Features on the HOSTED (static, Cloudflare) site only. true = available, false = hidden. The local app (npm start) always has everything. Rebuild with npm run build:static after changing.",
+  "interviewPrep": false,
+  "studySets": false,
+  "editQuestions": false,
+  "newTopic": false,
+  "resourceEditing": false,
+  "authorFeedback": false
+}

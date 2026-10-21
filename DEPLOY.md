@@ -2,11 +2,27 @@
 
 The hosted site is only static files: no Node server, no Functions, no database. `npm start` (the local app) is unchanged.
 
-**Works hosted:** reading, search, filters, Home, Interview prep (your resume never leaves the browser), study sets, progress, favorites, private notes, code problems, resources, browser voices.
-**Turned off hosted (they need to write to the repo):** add, edit and delete questions, new topics, adding or removing resources, "feedback for the author", and the Piper voice.
-**Stored in the browser only (localStorage):** favorites, notes, progress, study sets, layout, your resume and job description. They do not sync between devices. Clearing site data removes them.
+**Works hosted:** reading, search, filters, Home, progress, favorites, private notes, code problems, resources, browser voices.
+**Turned off hosted (use the local app for them):** Interview prep (resume and job description analysis) and study sets.
+**Also off (they need to write to the repo):** add, edit and delete questions, new topics, adding or removing resources, "feedback for the author", and the Piper voice.
+**Stored in the browser only (localStorage):** favorites, notes, progress and layout. They do not sync between devices. Clearing site data removes them.
 
 Content changes happen locally (`data/*.json`, import, validate), then `git push` redeploys the site.
+
+## Choose what the hosted site shows
+
+`app/web/hosted-features.json` lists the features of the **hosted build only** (`true` shows, `false` hides). The local app always has everything.
+
+| Flag | Controls |
+| --- | --- |
+| `interviewPrep` | the Interview prep page (resume and job description analysis) |
+| `studySets` | saved study sets in the sidebar and on Home |
+| `editQuestions` | add and edit question buttons |
+| `newTopic` | the New topic button |
+| `resourceEditing` | add and remove resources |
+| `authorFeedback` | the "Feedback for the author" tab in Notes |
+
+Edit the file, push, and Cloudflare rebuilds. Edits and feedback only make sense locally, because the hosted site cannot write to the repo.
 
 ## Deploy
 
