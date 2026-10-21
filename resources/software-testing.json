@@ -1,0 +1,146 @@
+[
+  {
+    "title": "Martin Fowler: The Practical Test Pyramid",
+    "url": "https://martinfowler.com/articles/practical-test-pyramid.html",
+    "type": "article",
+    "description": "The classic guide to test layers, with real examples of each.",
+    "level": "beginner",
+    "module": "Testing Fundamentals"
+  },
+  {
+    "title": "Martin Fowler: Mocks Aren't Stubs",
+    "url": "https://martinfowler.com/articles/mocksArentStubs.html",
+    "type": "article",
+    "description": "Test doubles explained, and classicist vs mockist testing.",
+    "level": "intermediate",
+    "module": "Test Doubles & Design"
+  },
+  {
+    "title": "Kent C. Dodds: The Testing Trophy",
+    "url": "https://kentcdodds.com/blog/the-testing-trophy-and-testing-classifications",
+    "type": "article",
+    "description": "Why integration tests give the best return for UI code.",
+    "level": "beginner",
+    "module": "Test Strategy & Leadership"
+  },
+  {
+    "title": "Node.js test runner",
+    "url": "https://nodejs.org/api/test.html",
+    "type": "official-docs",
+    "description": "Built-in node:test: describe/it, mocks, fake timers, coverage.",
+    "level": "beginner",
+    "module": "Unit Testing"
+  },
+  {
+    "title": "Jest documentation",
+    "url": "https://jestjs.io/docs/getting-started",
+    "type": "official-docs",
+    "description": "Matchers, mocks, timers and snapshots.",
+    "level": "beginner",
+    "module": "Unit Testing"
+  },
+  {
+    "title": "Vitest documentation",
+    "url": "https://vitest.dev/guide/",
+    "type": "official-docs",
+    "description": "Vite-native test runner with a Jest-compatible API.",
+    "level": "beginner",
+    "module": "Unit Testing"
+  },
+  {
+    "title": "Testing Library: guiding principles",
+    "url": "https://testing-library.com/docs/guiding-principles",
+    "type": "official-docs",
+    "description": "Test the way users use your app; query by role.",
+    "level": "beginner",
+    "module": "Unit Testing"
+  },
+  {
+    "title": "Mock Service Worker",
+    "url": "https://mswjs.io/docs/",
+    "type": "official-docs",
+    "description": "Mock the network at the request level in tests and the browser.",
+    "level": "intermediate",
+    "module": "Integration & API Testing"
+  },
+  {
+    "title": "Pact documentation",
+    "url": "https://docs.pact.io/",
+    "type": "official-docs",
+    "description": "Consumer-driven contract testing, the broker and can-i-deploy.",
+    "level": "intermediate",
+    "module": "Contract Testing"
+  },
+  {
+    "title": "Testcontainers",
+    "url": "https://testcontainers.com/",
+    "type": "official-docs",
+    "description": "Real databases and brokers in throwaway containers for integration tests.",
+    "level": "intermediate",
+    "module": "Integration & API Testing"
+  },
+  {
+    "title": "Playwright documentation",
+    "url": "https://playwright.dev/docs/intro",
+    "type": "official-docs",
+    "description": "Auto-waiting, tracing and parallel browser tests.",
+    "level": "intermediate",
+    "module": "End-to-End & Browser Testing"
+  },
+  {
+    "title": "Cypress documentation",
+    "url": "https://docs.cypress.io/",
+    "type": "official-docs",
+    "description": "Architecture, retry-ability, intercepts and best practices.",
+    "level": "intermediate",
+    "module": "End-to-End & Browser Testing"
+  },
+  {
+    "title": "Selenium documentation",
+    "url": "https://www.selenium.dev/documentation/",
+    "type": "official-docs",
+    "description": "WebDriver, waits, page objects and Grid.",
+    "level": "intermediate",
+    "module": "End-to-End & Browser Testing"
+  },
+  {
+    "title": "BrowserStack Percy docs",
+    "url": "https://www.browserstack.com/docs/percy",
+    "type": "official-docs",
+    "description": "Visual testing: snapshots, baselines and review.",
+    "level": "intermediate",
+    "module": "Visual & Accessibility Testing"
+  },
+  {
+    "title": "axe-core",
+    "url": "https://github.com/dequelabs/axe-core",
+    "type": "repo",
+    "description": "The accessibility rules engine used by most automated a11y tests.",
+    "level": "intermediate",
+    "module": "Visual & Accessibility Testing"
+  },
+  {
+    "title": "Grafana k6 documentation",
+    "url": "https://grafana.com/docs/k6/latest/",
+    "type": "official-docs",
+    "description": "Load, stress and soak tests written in JavaScript.",
+    "level": "intermediate",
+    "module": "Performance & Security Testing"
+  },
+  {
+    "title": "Google Testing Blog: Flaky tests at Google",
+    "url": "https://testing.googleblog.com/2016/05/flaky-tests-at-google-and-how-we.html",
+    "type": "article",
+    "description": "Where flakiness comes from and how a large org handles it.",
+    "level": "advanced",
+    "module": "Flaky Tests & CI"
+  },
+  {
+    "title": "Stryker mutator",
+    "url": "https://stryker-mutator.io/",
+    "type": "tool",
+    "description": "Mutation testing for JavaScript, C# and Scala.",
+    "level": "advanced",
+    "module": "Advanced Techniques"
+  }
+]

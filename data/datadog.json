@@ -1,0 +1,958 @@
+{
+  "name": "Datadog",
+  "group": "Tools & Observability",
+  "questions": [
+    {
+      "id": "datadog-001",
+      "question": "What is observability, and how is it different from monitoring?",
+      "answer": "**Short answer:** Monitoring tells you that something is wrong, using checks you defined in advance. Observability means your system emits enough data (metrics, logs, traces) that you can ask new questions and find out why it is wrong, even for a failure nobody predicted.\n\nMonitoring is a smoke alarm. It watches known signals and rings when a threshold is crossed. Observability is having cameras in every room: after the alarm rings, you can look back and see what happened.\n\nThe three classic signals are:\n\n| Signal | What it is | Good at |\n| --- | --- | --- |\n| Metrics | Numbers over time (request count, CPU, latency) | Cheap trends, alerts, dashboards |\n| Logs | Timestamped events with detail | The exact error and its context |\n| Traces | One request followed across services | Where time was spent, which dependency failed |\n\nEach signal alone is weak. Metrics say the error rate is up but not which request. Logs have the detail but are hard to search without a hint. Traces show the path but only for sampled requests. The skill is moving between them with shared tags and ids.\n\n```mermaid\nflowchart LR\n    A[\"Alert on metric\"] --> B[\"Dashboard: which service?\"]\n    B --> C[\"Trace: which span is slow?\"]\n    C --> D[\"Logs for that trace\"]\n    D --> E[\"Code and recent deploy\"]\n```\n\nRead it left to right: you start wide with a metric and narrow down to a log line and a code change.\n\n**Gotcha:** Having Datadog installed is not observability. If services do not share tags, do not log trace ids and do not emit useful custom metrics, you only have three separate silos.\n\n**Interview tip:** Say \"monitoring answers known questions, observability lets me answer unknown ones\". Then give one example: an alert fired on error rate, and you used a trace and its logs to find a bad dependency.",
+      "level": "basic",
+      "module": "Observability Basics",
+      "tags": [
+        "observability",
+        "monitoring",
+        "fundamentals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-002",
+      "question": "What is Datadog and what are its main products?",
+      "answer": "**Short answer:** Datadog is a SaaS observability and security platform. An Agent and language libraries send metrics, logs, traces and user data to Datadog, where you build dashboards, monitors and investigations on top of one shared tag system.\n\nThe value is that everything lives in one place and is linked by tags such as `env`, `service` and `version`. You can go from a monitor to a trace to a log line without switching tools.\n\n| Product | What it does |\n| --- | --- |\n| Infrastructure Monitoring | Hosts, containers, Kubernetes, cloud integrations, host map |\n| APM | Distributed traces, service map, latency and error stats |\n| Log Management | Collect, parse, index, search and archive logs |\n| RUM | Real user sessions, page loads, errors in browser and mobile apps |\n| Synthetic Monitoring | Scripted API and browser checks from outside |\n| Monitors | Alerts on metrics, logs, traces, tests and more |\n| Dashboards and Notebooks | Live views, and shareable investigations |\n| SLOs | Service level objectives and error budgets |\n| Network Performance Monitoring | Traffic between hosts, services and zones |\n| Database Monitoring | Query samples, plans and waits for databases |\n| Continuous Profiler | Always-on CPU and memory profiles |\n| Error Tracking | Groups similar errors into issues |\n| Incident Management | Declare, track and review incidents |\n| Security products | Cloud security, application protection, SIEM |\n\nProduct names change over time, so check the current product list when you prepare.\n\n**Gotcha:** Each product is usually billed on a different unit (hosts, indexed log events, ingested spans, sessions). Turning everything on has a cost. See the cost questions later.\n\n**Interview tip:** Do not recite the list. Say which three you use daily (for example APM, logs and monitors) and describe one workflow that connects them.",
+      "level": "basic",
+      "module": "Observability Basics",
+      "tags": [
+        "datadog",
+        "products",
+        "overview"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-003",
+      "question": "What does the Datadog Agent do and how does it run?",
+      "answer": "**Short answer:** The Datadog Agent is a small program that runs next to your workloads. It collects system metrics, runs integration checks, tails logs, receives traces from tracing libraries and custom metrics over DogStatsD, and forwards everything to Datadog over HTTPS.\n\nIt has several parts in one process family:\n- The collector runs checks (CPU, memory, disk, Postgres, Redis, and so on) on a schedule, usually every 15 seconds.\n- The log collector tails files or container output.\n- The trace agent listens on port 8126 for spans from `dd-trace` libraries.\n- DogStatsD listens on UDP port 8125 (or a Unix socket) for custom metrics.\n- The forwarder batches data and sends it out.\n\nHow it runs depends on the platform:\n\n| Platform | Typical setup |\n| --- | --- |\n| Virtual machine | OS package or install script, one Agent per host |\n| Docker | Agent container with the Docker socket mounted |\n| Kubernetes | A DaemonSet, so one Agent pod per node, plus a Cluster Agent |\n| Serverless and PaaS | Libraries or extensions instead of a full Agent |\n\nIn Kubernetes the node Agent sees all pods on its node. The Cluster Agent is a separate deployment that talks to the API server once, so you do not overload it with one watch per node.\n\n```yaml\n# datadog.yaml (host Agent, read-only example)\napi_key: ENC[dd_api_key]   # use secrets, never a plain key in git\nsite: datadoghq.com        # your Datadog site\nlogs_enabled: true\napm_config:\n  enabled: true\n```\n\n**Gotcha:** The API key is a secret. Store it in a Kubernetes Secret or a secret manager, and never in an image or a repo.\n\n**Interview tip:** Mention that the Agent pushes data out over HTTPS, so you only need outbound access. That is a common security question.",
+      "level": "basic",
+      "module": "Agent & Setup",
+      "tags": [
+        "agent",
+        "setup",
+        "kubernetes"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-004",
+      "question": "What are integrations and Autodiscovery in Datadog?",
+      "answer": "**Short answer:** An integration is a prepared check (and often a dashboard) for a technology such as Postgres, NGINX, Redis or Kubernetes. Autodiscovery lets the Agent find containers as they start and apply the right integration to them automatically.\n\nOn a fixed host you would write a file such as `conf.d/redisdb.d/conf.yaml` with the address of Redis. In Kubernetes pods come and go and their IPs change, so static files do not work. Autodiscovery solves this with templates. The template says \"when a container with this image or annotation appears, run this check against its IP\".\n\nYou attach the template to the pod with annotations:\n\n```yaml\n# Pod annotations (read-only example)\nmetadata:\n  annotations:\n    ad.datadoghq.com/redis.checks: |\n      {\n        \"redisdb\": {\n          \"init_config\": {},\n          \"instances\": [{\"host\": \"%%host%%\", \"port\": \"6379\"}]\n        }\n      }\n```\n\nThe part after `ad.datadoghq.com/` is the container name, then `.checks` for metric checks or `.logs` for log settings. `%%host%%` is a template variable filled in at runtime.\n\nMany popular images are recognised by default, so you may get basic checks with no annotations at all.\n\n**Gotcha:** The container name in the annotation must match the container name in the pod spec exactly, or the annotation is silently ignored. Use `agent configcheck` and `agent status` inside the Agent pod to see what was loaded.\n\n**Interview tip:** Say that you treat annotations as part of the service's deployment manifest. The team that owns the pod owns how it is monitored.",
+      "level": "basic",
+      "module": "Agent & Setup",
+      "tags": [
+        "integrations",
+        "autodiscovery",
+        "agent"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-005",
+      "question": "What is unified service tagging and why does it matter?",
+      "answer": "**Short answer:** Unified service tagging means every metric, log, trace and RUM event carries the same three tags: `env`, `service` and `version`. That one convention lets you pivot from any signal to any other, and see which release caused a change.\n\nWithout it, the metric says `app:orders`, the log says `svc=orders-api` and the trace says `orders-service`. Nobody can connect them. With it, a single filter `service:orders env:prod` works in every product.\n\n| Tag | Meaning | Example |\n| --- | --- | --- |\n| `env` | Environment | `prod`, `staging` |\n| `service` | One deployable unit | `orders-api` |\n| `version` | Release of the code | `1.14.2` or a git SHA |\n\nIn Kubernetes you set it once as labels and environment variables on the pod:\n\n```yaml\n# Deployment pod template (read-only example)\nmetadata:\n  labels:\n    tags.datadoghq.com/env: prod\n    tags.datadoghq.com/service: orders-api\n    tags.datadoghq.com/version: \"1.14.2\"\nspec:\n  containers:\n    - name: orders-api\n      env:\n        - name: DD_ENV\n          valueFrom: {fieldRef: {fieldPath: \"metadata.labels['tags.datadoghq.com/env']\"}}\n        - name: DD_SERVICE\n          valueFrom: {fieldRef: {fieldPath: \"metadata.labels['tags.datadoghq.com/service']\"}}\n        - name: DD_VERSION\n          valueFrom: {fieldRef: {fieldPath: \"metadata.labels['tags.datadoghq.com/version']\"}}\n```\n\nThe labels tag the container metrics and logs. The `DD_*` variables tell the tracing library what to put on traces.\n\n**Gotcha:** If `version` is missing, deployment tracking and comparing versions will not work. If `service` differs between logs and traces, correlation breaks.\n\n**Interview tip:** Call this \"the single most valuable thing to standardise first\" and say you enforce it in the Helm chart template, not by asking each team.",
+      "level": "basic",
+      "module": "Observability Basics",
+      "tags": [
+        "tagging",
+        "env",
+        "service",
+        "version"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-006",
+      "question": "What are tags in Datadog, and what is the difference between host tags and metric tags?",
+      "answer": "**Short answer:** Tags are `key:value` labels you use to filter, group and aggregate data. Some tags describe the host or container (host tags), and some are added by your code to a specific metric (metric tags). Every unique combination of tag values creates a separate time series.\n\nExamples: `env:prod`, `team:payments`, `region:westeurope`, `endpoint:/orders`. In a query you filter with braces and group with `by`:\n\n```text\navg:system.cpu.user{env:prod,team:payments} by {host}\n```\n\nWhere tags come from:\n- The Agent adds host tags from config, cloud integrations (such as the Azure subscription or resource group) and Kubernetes labels.\n- Your code adds metric tags when it emits a custom metric.\n- Pipelines can add tags to logs.\n\nThe important cost point is **cardinality**. Cardinality is the number of distinct tag value combinations. A metric with `endpoint` (50 values) and `status` (5 values) makes at most 250 series. If you add `user_id` with a million values, you make millions of series. Custom metrics are billed by series count.\n\n**Rules of thumb**\n- Tag with things you will filter or group by in a dashboard or monitor.\n- Keep values bounded: environment, region, endpoint template, status class.\n- Never use user ids, request ids, emails or full URLs as metric tags. Put them in logs or traces.\n\n**Interview tip:** Mention that tags are the join key between products and also the main cost driver, so tagging standards are an engineering decision and not just naming.",
+      "level": "basic",
+      "module": "Observability Basics",
+      "tags": [
+        "tags",
+        "cardinality",
+        "metrics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-007",
+      "question": "What metric types does Datadog support?",
+      "answer": "**Short answer:** The main types are count, rate, gauge, histogram and distribution (plus set). The type decides how values are aggregated on the Agent and how you should query them: a count adds up, a gauge is a snapshot, and a distribution keeps data so you can get global percentiles.\n\n| Type | What it records | Example |\n| --- | --- | --- |\n| Count | Events in an interval, which adds up | Number of orders placed |\n| Rate | Count divided by seconds | Requests per second |\n| Gauge | A value at a point in time | Queue length, memory in use |\n| Histogram | Agent-side stats on values: count, average, median, 95th percentile, max | Request size per host |\n| Distribution | Raw values aggregated at Datadog, so percentiles are global | Latency across all pods |\n| Set | Number of unique values | Unique users in a window |\n\nPick the type by the question:\n- \"How many?\" use count.\n- \"How much right now?\" use gauge.\n- \"How slow is the 99th percentile across the fleet?\" use distribution.\n\nThe difference between histogram and distribution matters. A histogram computes percentiles on each Agent, per host. You cannot average 95th percentiles from ten pods and get the real 95th percentile. A distribution sends the values to Datadog, which can compute a true percentile over all pods, and also by any tag.\n\n**Gotcha:** Averaging a gauge of p95 across hosts is mathematically wrong for fleet latency. Use a distribution.\n\n**Interview tip:** If asked \"how do you measure p99 latency across 30 pods\", answer distribution, and mention the extra cost of percentile aggregations on distributions.",
+      "level": "basic",
+      "module": "Metrics",
+      "tags": [
+        "metrics",
+        "count",
+        "gauge",
+        "distribution"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-008",
+      "question": "What are custom metrics and how does DogStatsD work?",
+      "answer": "**Short answer:** Custom metrics are metrics your application defines, such as `orders.placed`. DogStatsD is the Agent's StatsD-compatible server: your app sends small UDP packets to it, and the Agent aggregates and forwards them.\n\nThe flow is fire and forget. Your code sends a packet to the local Agent on port 8125 (or a Unix socket). It does not wait for a reply, so a slow Datadog never slows your request.\n\n```go\n// Go example (read-only): github.com/DataDog/datadog-go/v5/statsd\nclient, err := statsd.New(\"127.0.0.1:8125\",\n    statsd.WithTags([]string{\"env:prod\", \"service:orders-api\"}))\nif err != nil {\n    log.Fatal(err)\n}\ndefer client.Close()\n\n// count: one more order, tagged by payment method\n_ = client.Incr(\"orders.placed\", []string{\"method:card\"}, 1)\n// gauge: current queue depth\n_ = client.Gauge(\"orders.queue.depth\", float64(depth), nil, 1)\n// distribution: latency in ms for global percentiles\n_ = client.Distribution(\"orders.checkout.duration\", elapsedMs, []string{\"region:we\"}, 1)\n```\n\nPython uses the `datadog` or `datadog-api-client` packages with a similar `statsd.increment(...)`. Node uses `hot-shots`.\n\nIn Kubernetes, point your app at the node Agent. Options are a host port, a Unix socket on a hostPath volume, or the host IP from the downward API. Do not point at `localhost` inside the pod, because the Agent is not in your pod.\n\n**Gotchas**\n- UDP can drop packets under heavy load. For critical business counts, also keep a durable source such as the database.\n- Every unique tag combination is a billable custom metric series.\n\n**Interview tip:** Say you add business metrics (orders, payment failures) next to technical ones, because they show user impact first.",
+      "level": "basic",
+      "module": "Metrics",
+      "tags": [
+        "dogstatsd",
+        "custom-metrics",
+        "metrics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-009",
+      "question": "How does Datadog collect logs?",
+      "answer": "**Short answer:** The Agent tails log files or container output, adds tags and metadata, and sends the lines to Datadog Log Management. On Kubernetes you usually write to stdout and let the Agent read container logs from the node.\n\nCommon paths:\n\n| Source | How |\n| --- | --- |\n| Containers | Agent reads container stdout and stderr; set `DD_LOGS_ENABLED` and container collection |\n| Files | A `logs` section in a check config with `type: file` and a `path` |\n| Cloud services | Forwarders such as Azure Event Hub functions or Datadog's Azure integration |\n| Direct HTTP | Send to the logs intake API, mostly for edge cases |\n\nEach log gets reserved attributes: `host`, `service`, `source`, `status`, `message` and `timestamp`. The `source` tells Datadog which pipeline to run (for example `go`, `nginx`, `postgresql`). The `service` should match the APM service name.\n\nOn Kubernetes you set per-container values through an annotation:\n\n```yaml\n# Pod annotation (read-only example)\nad.datadoghq.com/orders-api.logs: '[{\"source\":\"go\",\"service\":\"orders-api\"}]'\n```\n\n**Gotchas**\n- If logs are plain text, Datadog must parse them with grok rules. If they are JSON, Datadog parses them automatically. Prefer JSON.\n- Multi-line stack traces need a multi-line rule or one JSON line per event, or each line becomes its own event and costs more.\n- Collecting every container's logs by default can surprise you on the bill.\n\n**Interview tip:** Say \"JSON to stdout, one event per line, with service, env and trace id\". It is the simplest setup that scales.",
+      "level": "basic",
+      "module": "Logs",
+      "tags": [
+        "logs",
+        "agent",
+        "collection"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-010",
+      "question": "How do log pipelines, facets and indexes work?",
+      "answer": "**Short answer:** A pipeline parses and enriches logs as they arrive. Facets make chosen attributes searchable and groupable. Indexes decide which logs are stored for search and for how long, and they are what you pay for.\n\nThe flow of a log line:\n\n```mermaid\nflowchart LR\n    A[\"Log from Agent\"] --> B[\"Pipeline: parse and remap\"]\n    B --> C[\"Facets and measures\"]\n    B --> D{\"Index filters\"}\n    D --> E[\"Index: searchable, retention\"]\n    D --> F[\"Exclusion filter: drop or sample\"]\n    B --> G[\"Archive in cloud storage\"]\n```\n\nLogs are processed first, then routed. Archives get logs regardless of whether they were indexed.\n\n- **Pipeline**: a list of processors (grok parser, date remapper, status remapper, service remapper, attribute remapper, and others). Datadog has built-in pipelines for common sources.\n- **Facet**: an attribute you promoted so you can filter on it in the side panel and use it in dashboards. A numeric facet is called a measure.\n- **Index**: a named bucket with a filter query, a retention period and optional daily quota. You can have one index for `env:prod status:error` with long retention, and another for noisy info logs with short retention.\n- **Exclusion filter**: inside an index, drops or samples matching logs so you do not pay to index them.\n\nYou can still keep excluded logs in an archive and search them later by rehydrating them.\n\n**Gotcha:** Facets are not retroactive in the way people hope. Searching on a non-faceted attribute works with `@attribute:value`, but dashboards and group-by need facets.\n\n**Interview tip:** Mention that you think of logs as three tiers: indexed (hot, searchable), generated metrics (cheap numbers from logs) and archives (cold, cheap).",
+      "level": "basic",
+      "module": "Logs",
+      "tags": [
+        "logs",
+        "pipelines",
+        "facets",
+        "indexes"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-011",
+      "question": "What are traces, spans and services in Datadog APM?",
+      "answer": "**Short answer:** A trace is the journey of one request through your system. It is made of spans. A span is one timed operation, such as an HTTP handler, a SQL query or a call to another service. A service is a group of spans that belong to the same application.\n\nEvery span has a name (operation), a resource, a start time, a duration, tags, and a parent. The first span is the root. Child spans show what the root waited for.\n\n```mermaid\nflowchart TD\n    A[\"web: GET /checkout (240 ms)\"] --> B[\"orders-api: POST /orders (200 ms)\"]\n    B --> C[\"postgres: INSERT orders (15 ms)\"]\n    B --> D[\"payments: POST /charge (150 ms)\"]\n    D --> E[\"redis: GET rate-limit (2 ms)\"]\n```\n\nRead it top down: the 200 ms in orders-api is mostly the payments call, so that is where to look.\n\nThe fields you meet daily:\n\n| Field | Meaning | Example |\n| --- | --- | --- |\n| Service | Application name from `DD_SERVICE` | `orders-api` |\n| Operation name | Kind of work | `http.request`, `postgres.query` |\n| Resource | The specific thing | `GET /orders/{id}`, a normalised SQL |\n| Duration | Time taken | 150 ms |\n| Tags | Attributes | `http.status_code:500`, `env:prod` |\n\nDatadog also computes trace metrics (hits, errors, latency) for every service and resource. These come from all traced requests, even if some traces are later dropped by sampling.\n\n**Gotcha:** A trace with a missing branch usually means one service did not propagate headers, or does not have the library installed.\n\n**Interview tip:** Walk through a slow request by reading the flame graph from the root, find the widest child span, then open its tags and logs.",
+      "level": "basic",
+      "module": "APM & Tracing",
+      "tags": [
+        "apm",
+        "traces",
+        "spans"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-012",
+      "question": "What are resource names and the service map?",
+      "answer": "**Short answer:** A resource is the specific endpoint or query a span handled, such as `GET /orders/{id}` or a normalised SQL statement. The service map is an auto-built graph of which services call which others, drawn from trace data.\n\nResources are how Datadog groups traces for statistics. For HTTP, the resource should be the route template, not the real URL. `GET /orders/{id}` is one resource. `GET /orders/8841` and `GET /orders/8842` would be thousands of resources and make stats useless.\n\n```text\n# ✅ good resource name (low cardinality)\nGET /orders/{id}\n# ❌ bad resource name (one per order)\nGET /orders/8841\n```\n\nMost router integrations (chi, gorilla, Express, Flask, FastAPI) set the route template automatically. If you wrap handlers yourself, set the resource name by hand.\n\nThe **service map** shows services as nodes and calls as edges, with error and latency colouring. It helps in three ways:\n- New engineers see how the system really connects.\n- During an incident you spot the unhealthy node.\n- You find unexpected dependencies, such as a service calling the database of another team.\n\nDatabases, caches and queues appear as nodes too, named after the span's `peer.service` or the integration.\n\n**Gotcha:** If your service map shows \"unnamed-service\" or duplicates like `orders` and `orders-api`, your `DD_SERVICE` values are inconsistent.\n\n**Interview tip:** Say that high-cardinality resource names are a classic first-week mistake and show you know the fix: route templates and SQL normalisation.",
+      "level": "basic",
+      "module": "APM & Tracing",
+      "tags": [
+        "apm",
+        "resources",
+        "service-map"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-013",
+      "question": "What are dashboards in Datadog, and how do widgets and template variables work?",
+      "answer": "**Short answer:** A dashboard is a page of widgets (graphs, tables, lists, maps and notes) that query live data. Template variables are dropdown filters at the top, such as `$env` and `$service`, that change every widget at once.\n\nCommon widgets: timeseries, query value (one big number), top list, table, heatmap, host map, log stream, SLO widget, and notes. Each graph widget holds one or more queries, optional formulas and display settings.\n\nA widget query that uses a template variable:\n\n```text\nsum:trace.http.request.hits{env:$env,service:$service}.as_count()\n```\n\nPick `env = prod` and `service = orders-api` at the top, and every widget updates.\n\nLayouts:\n\n| Layout | What it is | Use |\n| --- | --- | --- |\n| Grid (timeboard style) | Widgets in an automatic grid, shared time range | Troubleshooting and service overviews |\n| Free (screenboard style) | Place widgets anywhere, mixed time ranges | Status walls and TV displays |\n\nThe older names timeboard and screenboard still appear in docs and APIs, but the product now just calls them dashboards with different layouts.\n\nNotebooks are a related feature. They mix text and live graphs, and are better for investigations, post-incident reviews and runbooks, since you can freeze the time range.\n\n**Gotcha:** A dashboard with 60 widgets is slow and no one reads it. Aim for one question per dashboard.\n\n**Interview tip:** Mention template variables with saved views, so on-call can open \"prod, my service\" with one click.",
+      "level": "basic",
+      "module": "Dashboards & Monitors",
+      "tags": [
+        "dashboards",
+        "widgets",
+        "template-variables"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-014",
+      "question": "What types of monitors does Datadog offer?",
+      "answer": "**Short answer:** A monitor watches data and notifies when a condition is met. The main types are metric, anomaly, outlier, forecast, composite, log, APM, and synthetic monitors, plus many more specialised ones (host, process, integration, SLO, RUM, and so on).\n\n| Type | Fires when | Example |\n| --- | --- | --- |\n| Metric (threshold) | A metric crosses a fixed value | Error rate above 5 percent for 5 minutes |\n| Change | Value changes by a percent or amount | Traffic dropped 50 percent vs an hour ago |\n| Anomaly | Metric differs from its learned pattern | Order volume far below a normal Tuesday |\n| Outlier | One member of a group differs from peers | One pod with high CPU while others are quiet |\n| Forecast | A metric is predicted to cross a limit | Disk full in 3 days |\n| Composite | Several monitors are true together | High latency and high error rate |\n| Log | Count or measure from logs crosses a limit | More than 50 payment errors in 5 minutes |\n| APM | Traces stats for a service or resource | p95 latency of `POST /orders` |\n| Synthetic | A test fails from some locations | Login test failing |\n\nChoose by the question. A fixed threshold is easy to understand but breaks on seasonal data. Anomaly detection handles daily and weekly patterns but is harder to explain and tune.\n\n**Gotcha:** An anomaly monitor on a brand-new or very noisy metric produces false alerts, because the model has too little history to learn from.\n\n**Interview tip:** Explain that you start with simple threshold monitors on symptoms (errors, latency) and add anomaly or forecast only where a fixed number does not fit.",
+      "level": "basic",
+      "module": "Dashboards & Monitors",
+      "tags": [
+        "monitors",
+        "alerting",
+        "anomaly"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-015",
+      "question": "How do monitor thresholds, evaluation windows and notifications work?",
+      "answer": "**Short answer:** A monitor query runs on a schedule over a window, such as the last 5 minutes. You set a critical threshold (and optionally a warning), and the notification message routes to people or tools with `@` handles.\n\nA metric monitor query has this shape:\n\n```text\navg(last_5m):sum:trace.http.request.errors{env:prod,service:orders-api}.as_count() > 20\n```\n\nRead it as: average over the last 5 minutes of the error count, alert above 20.\n\nKey settings:\n- **Evaluation window** (`last_5m`, `last_1h`): longer is calmer, shorter reacts faster.\n- **Aggregation** (`avg`, `min`, `max`, `sum`): `min` means \"above the threshold for the whole window\", which is a good way to avoid blips.\n- **Thresholds**: alert and warning, and optional recovery thresholds so it does not flap.\n- **No data**: notify, or stay quiet.\n\nThe message can use Markdown and variables:\n\n```text\n{{#is_alert}}\nError count is {{value}} (limit {{threshold}}) on {{service.name}}.\nRunbook: https://wiki.example.com/runbooks/orders-errors\n@slack-orders-alerts @pagerduty-orders\n{{/is_alert}}\n{{#is_recovery}}Recovered.{{/is_recovery}}\n```\n\n`@slack-...`, `@pagerduty-...` and `@someone@example.com` are notification handles. You route warnings to chat and critical alerts to the pager.\n\n**Gotcha:** An alert without a link to a dashboard and a runbook wastes the first ten minutes of the incident.\n\n**Interview tip:** Say that every monitor message answers three things: what is broken, how bad, and what to do first.",
+      "level": "basic",
+      "module": "Dashboards & Monitors",
+      "tags": [
+        "monitors",
+        "thresholds",
+        "notifications"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-016",
+      "question": "What are the golden signals, RED and USE, and how do you apply them with Datadog?",
+      "answer": "**Short answer:** The four golden signals are latency, traffic, errors and saturation. RED (rate, errors, duration) applies to services. USE (utilisation, saturation, errors) applies to resources such as CPU, disk and pools. Together they give a small, standard set of things to watch.\n\n| Method | For | Signals | Datadog source |\n| --- | --- | --- | --- |\n| RED | Request-driven services | Rate, Errors, Duration | APM trace metrics: `hits`, `errors`, latency |\n| USE | Resources | Utilisation, Saturation, Errors | Infrastructure, Kubernetes, DB and pool metrics |\n| Golden signals | Any user-facing system | Latency, traffic, errors, saturation | Both |\n\nFor a Go HTTP service the trace metrics already exist once APM is on:\n\n```text\nsum:trace.http.request.hits{service:orders-api,env:prod}.as_rate()\nsum:trace.http.request.errors{service:orders-api,env:prod}.as_count()\n/ sum:trace.http.request.hits{service:orders-api,env:prod}.as_count()\n```\n\nThe first line is traffic, the second and third give the error ratio. Latency comes from the same trace metric as a percentile.\n\nSaturation is the one people forget: CPU throttling, memory near the limit, DB connection pool waits, goroutine count, queue depth and consumer lag.\n\n**Rules of thumb**\n- Page on symptoms users feel (errors, latency), not on causes (CPU 85 percent).\n- Use USE metrics on dashboards to explain a symptom, not to page.\n\n**Interview tip:** Name one saturation signal specific to your stack, for example CPU throttling in a Kubernetes pod with a low CPU limit. It shows real experience.",
+      "level": "basic",
+      "module": "SLOs & Alerting",
+      "tags": [
+        "golden-signals",
+        "red",
+        "use"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-017",
+      "question": "What are the host map, infrastructure list and events used for?",
+      "answer": "**Short answer:** The infrastructure list shows every host or container reporting, with tags and installed integrations. The host map is a coloured visual of the fleet, grouped by tag. Events are timestamped happenings, such as deploys, restarts and alerts, that you overlay on graphs.\n\n**Infrastructure list** answers: is the Agent reporting, which host has which tags, what version of the Agent runs where. It is the first place to check when \"my data is missing\".\n\n**Host map** and **container map** colour each box by a metric (for example CPU) and group by a tag (for example `availability_zone` or `kube_cluster_name`). You spot the one hot node in a sea of green.\n\n**Events** include:\n- Monitor state changes.\n- Kubernetes events such as `OOMKilled`, `BackOff` and failed scheduling.\n- Your own events, such as deployments, posted through the API.\n\n```bash\n# Post a deployment event (read-only example)\ncurl -X POST \"https://api.datadoghq.com/api/v1/events\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"DD-API-KEY: ${DD_API_KEY}\" \\\n  -d '{\"title\":\"Deploy orders-api 1.14.2\",\"text\":\"Pipeline 5521\",\n       \"tags\":[\"env:prod\",\"service:orders-api\",\"version:1.14.2\"]}'\n```\n\nYou can then overlay events on any timeseries as vertical markers. \"The error rate rose at the exact line of the deploy\" becomes visible.\n\n**Gotcha:** Use the API site that matches your account (for example `api.datadoghq.eu` for the EU site).\n\n**Interview tip:** Say that you add deploy events from the CI pipeline, so every graph tells you what changed.",
+      "level": "basic",
+      "module": "Agent & Setup",
+      "tags": [
+        "infrastructure",
+        "host-map",
+        "events"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-018",
+      "question": "How do you correlate logs, traces and metrics in Datadog?",
+      "answer": "**Short answer:** Put the trace id and span id into every log line, and use the same `service`, `env` and `version` tags everywhere. Datadog then shows \"Logs\" on a trace and \"Trace\" on a log, and metric graphs can be opened as the matching traces or logs.\n\nThe link is the trace id. The tracing library knows the current trace and span while handling a request. Your logger reads them and writes them as fields:\n\n```json\n{\"timestamp\":\"2026-03-02T10:15:30Z\",\"level\":\"error\",\"message\":\"payment declined\",\n \"service\":\"orders-api\",\"env\":\"prod\",\"version\":\"1.14.2\",\n \"dd\":{\"trace_id\":\"5435980842358723456\",\"span_id\":\"7432887236843215021\"}}\n```\n\nThe nested `dd.trace_id` and `dd.span_id` names are the ones Datadog's trace id remapper reads by default. Many tracing libraries can inject them automatically (for Python set `DD_LOGS_INJECTION=true`). In Go you add them with a small helper in your logger.\n\nAfter that you get:\n- On a trace, the **Logs** tab with the lines from that request.\n- On a log, a link to the trace.\n- From a metric graph, a context menu to view related traces or logs.\n\n**Gotchas**\n- If the log is plain text, Datadog needs a grok rule to extract the ids.\n- Trace ids in 128-bit form may be shown differently across languages. Use the library helpers instead of formatting them yourself.\n- The log `service` must match the APM `service`.\n\n**Interview tip:** Say that this single feature cuts incident time the most, and that you made it part of the service template.",
+      "level": "basic",
+      "module": "Observability Basics",
+      "tags": [
+        "correlation",
+        "logs",
+        "traces"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-019",
+      "question": "What is trace sampling and why do we need it?",
+      "answer": "**Short answer:** Sampling means keeping only a portion of traces. A busy service can produce millions of traces, and storing all of them costs too much and adds little value. Sampling keeps enough, especially errors and slow requests, to debug problems.\n\nThere are two places where traces can be dropped:\n- **Ingestion**: how many spans the tracer and Agent send to Datadog. Controlled by sampling rules and Agent limits.\n- **Retention**: how many ingested traces are kept for search and analysis. Controlled by retention filters.\n\nBy default, the tracing library decides at the start of a request whether to keep the trace (this is called head-based sampling), and the decision is passed to all downstream services so a trace is kept whole or dropped whole. The Agent also keeps a share of errors and rare traces so you still see them.\n\nAn important point: trace metrics (request counts, error counts, latency percentiles) are computed from the traffic the tracer reports, before sampling. So dashboards and monitors based on trace metrics stay accurate even when you keep only a small share of the traces.\n\n```bash\n# Example: sample 20 percent of traces in a service (read-only example)\nDD_TRACE_SAMPLE_RATE=0.2\n```\n\n**Gotcha:** Sampling hurts when you search for a specific user's slow request: it may not have been kept. Use error and latency based retention, and log ids for those cases.\n\n**Interview tip:** Say the key idea: sample the traces, not the metrics. Metrics stay complete, traces are examples.",
+      "level": "basic",
+      "module": "APM & Tracing",
+      "tags": [
+        "sampling",
+        "apm",
+        "cost"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-020",
+      "question": "[Tech Lead] How would you design an observability strategy for a microservices platform?",
+      "answer": "**Short answer:** Start from the questions you need to answer during an incident, not from the tools. Define a small standard (tags, log format, golden signals, trace propagation), make it the default in a service template, assign ownership, and review cost and usefulness every quarter.\n\nMy approach, in order:\n\n1. **Decide what you must answer.** Is the service up? Are users hurt? Where is the time spent? What changed? Which team owns it?\n2. **Set standards once.** Unified tags (`env`, `service`, `version`, plus `team`), JSON logs with trace ids, one naming convention for custom metrics, W3C trace context across all languages.\n3. **Collect the minimum per service.** RED metrics from APM, saturation metrics from infrastructure, structured logs, traces, and two or three business metrics.\n4. **Bake it in.** A Helm chart or service template with the Agent annotations, tracing library and default dashboard and monitors. A new service gets observability without a ticket.\n5. **Assign ownership.** Each service has a team, a Slack channel, an on-call rotation and a runbook link, recorded in the Service Catalog.\n6. **Alert on symptoms with SLOs.** Few pages, many dashboards.\n7. **Govern cost.** Budgets per team, a monthly review of top custom metrics, log volume and span ingestion.\n8. **Practise.** Game days and post-incident reviews feed back improvements.\n\n| Layer | Standard | Owner |\n| --- | --- | --- |\n| Tags and naming | Written convention, enforced in templates | Platform team |\n| Service dashboards and monitors | Generated from templates, tuned by teams | Service team |\n| SLOs and paging policy | Agreed with product | Service team and product |\n| Cost and retention | Budgets and reviews | Platform team with finance |\n\n**Gotcha:** A strategy that depends on each team doing it correctly by hand will drift. Automate the defaults.\n\n**Interview tip:** Say \"paved road\": the easy path is the compliant path, so adoption does not need policing.",
+      "level": "advanced",
+      "module": "Platform & Leadership",
+      "tags": [
+        "tech-lead",
+        "strategy",
+        "observability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-021",
+      "question": "[Tech Lead] What is your incident investigation workflow in Datadog?",
+      "answer": "**Short answer:** Alert, scope, find the unhealthy service on a dashboard, open a trace to find the slow or failing span, read the logs for that trace, check what changed (deploy, config, dependency), mitigate first, and then investigate the root cause.\n\n```mermaid\nflowchart TD\n    A[\"Monitor fires\"] --> B[\"Scope: which env, service, region?\"]\n    B --> C[\"Service dashboard: RED and saturation\"]\n    C --> D[\"Check changes: deploys, flags, events\"]\n    D --> E[\"APM: slow or failing spans\"]\n    E --> F[\"Logs by trace id\"]\n    F --> G{\"Cause clear?\"}\n    G -- yes --> H[\"Mitigate: rollback, scale, toggle\"]\n    G -- no --> E\n    H --> I[\"Confirm recovery, write notes\"]\n```\n\nFollow the arrows from the alert to a mitigation, and loop back to traces when the cause is not clear.\n\nPractical steps:\n- **Scope.** Is it all users or one region, one version, one tenant? Group the error graph by `version`, `region` and `resource_name`.\n- **Compare.** Use \"compare to previous day\" or `timeshift` to see what is unusual.\n- **Change check.** Look for a deploy marker or event on the graph. Most incidents follow a change.\n- **Trace.** Filter traces by `status:error` or high duration for the affected resource. Read the flame graph for the widest child span.\n- **Logs.** Open the logs for a failing trace. The error message and stack are usually there.\n- **Dependencies.** Look at the service map and downstream latency (database, cache, third-party API).\n- **Mitigate.** Roll back or toggle off before you fully understand. Understanding comes after the users are safe.\n- **Record.** Put findings in a Datadog Incident or Notebook as you go.\n\n**Gotcha:** Jumping into logs first is slow. Start from the shape of the problem, then go deeper.\n\n**Interview tip:** Stress \"mitigate first, root cause second\", and mention you keep a timeline in the incident channel.",
+      "level": "intermediate",
+      "module": "Incident Investigation",
+      "tags": [
+        "tech-lead",
+        "incidents",
+        "troubleshooting"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-022",
+      "question": "[Tech Lead] How do you design alerts that are actionable and avoid alert fatigue?",
+      "answer": "**Short answer:** Page on symptoms that users feel and that someone must act on now. Everything else is a ticket, a chat message or a dashboard. Every alert needs an owner, a runbook and a clear first action, and noisy alerts are fixed or deleted.\n\nA good rule: if you would not wake someone up and they could do nothing, it is not a page.\n\n| Question | If yes | If no |\n| --- | --- | --- |\n| Are users affected now (errors, latency, outage)? | Page | Next |\n| Will users be affected soon (disk full in 4 hours)? | Page or urgent ticket | Next |\n| Is it a cause, not a symptom (CPU high)? | Dashboard or warning | Ticket |\n| Can an engineer do something right now? | Keep | Remove |\n\nTechniques that cut noise in Datadog:\n- Alert on **ratios** (error percent) and not raw counts, so traffic dips do not break thresholds.\n- Use a **window and aggregation** that need the condition to hold, for example `min(last_10m)`.\n- Add a **recovery threshold** to stop flapping.\n- Use **composite monitors**: high latency and high traffic.\n- Use **multi-alert by group** (`by {service}`) so one monitor covers many services, with clear grouping.\n- Use **downtimes** for planned work.\n- Review: every month list the monitors with the most notifications and decide: tune, ticket, or delete.\n\nMeasure the quality of your alerting: percentage of pages that needed action, pages per on-call week, and time to acknowledge.\n\n**Gotcha:** CPU 80 percent pages train people to ignore the pager. SLO burn-rate alerts replace most of these.\n\n**Interview tip:** Say you treat noisy alerts as bugs with an owner and a deadline.",
+      "level": "intermediate",
+      "module": "SLOs & Alerting",
+      "tags": [
+        "tech-lead",
+        "alerting",
+        "on-call"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-023",
+      "question": "[Tech Lead] How do you define SLIs, SLOs and error budgets in Datadog?",
+      "answer": "**Short answer:** An SLI is a measured ratio of good events to total events. An SLO is a target for that ratio over a time window, such as 99.9 percent over 30 days. The error budget is the allowed bad share. Datadog SLOs track this, and burn-rate alerts warn you before the budget is gone.\n\nSteps:\n1. **Pick the user journey.** For checkout: \"a checkout request succeeds fast\".\n2. **Define the SLI.** Good events are requests with a status below 500 and a duration under 800 ms. Total events are all requests.\n3. **Set the target.** Agree with product. 99.9 percent over 30 days leaves about 43 minutes of full outage budget.\n4. **Create the SLO.** Datadog supports metric-based SLOs (good and total event queries), monitor-based SLOs, and time-slice SLOs (percent of time a condition holds).\n5. **Alert on burn rate.** Burn rate is how fast you spend the budget relative to the plan. A rate of 1 uses the budget exactly over the window.\n\nExample burn rate monitor query (read-only):\n\n```text\nburn_rate(\"abcd1234abcd1234abcd1234abcd1234\").over(\"30d\").long_window(\"1h\").short_window(\"5m\") > 14.4\n```\n\nA burn rate of 14.4 for one hour spends about 2 percent of a 30-day budget, which is a typical fast-burn page. A slower burn (for example 6 over 6 hours) can be a ticket. Using two windows avoids paging for a spike that has already ended.\n\n| Burn | Meaning | Action |\n| --- | --- | --- |\n| Fast | Budget gone in hours | Page |\n| Slow | Budget gone in days | Ticket |\n| Budget exhausted | No room for risk | Freeze risky releases, focus on reliability |\n\n**Gotcha:** An SLO nobody uses for decisions is decoration. Tie it to release policy.\n\n**Interview tip:** Mention the conversation with product: the SLO is a business agreement on how much failure is acceptable, not a technical number.",
+      "level": "intermediate",
+      "module": "SLOs & Alerting",
+      "tags": [
+        "tech-lead",
+        "slo",
+        "error-budget"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-024",
+      "question": "[Tech Lead] How do you control Datadog cost?",
+      "answer": "**Short answer:** Understand the cost model, find the top drivers with Datadog's own usage metrics, then cut waste at the source: custom metric cardinality, noisy logs, unneeded trace ingestion and unused products. Set budgets per team and review monthly.\n\nCost drivers (do not trust old price numbers; check your contract and the current pricing page):\n\n| Product | What usually drives cost | Lever |\n| --- | --- | --- |\n| Infrastructure | Number of hosts, containers, plan | Right-size fleet, remove stale hosts |\n| Custom metrics | Unique series (metric name times tag combinations) | Drop high-cardinality tags, Metrics without Limits |\n| Logs | Ingested volume, indexed events, retention | Exclusion filters, sampling, archives, log-based metrics |\n| APM | Hosts or containers, ingested span volume, retained spans | Sampling rules, retention filters |\n| RUM | Sessions, replay sessions | Session sampling rates |\n| Synthetics | Test runs | Frequency, locations |\n\nThe workflow:\n1. Open the **Plan and Usage** page and the estimated usage metrics (for example `datadog.estimated_usage.*`) to see what grows.\n2. Attribute usage to teams with tags, so each team sees its part.\n3. Fix top items first. Usually 20 percent of metrics or log sources cause 80 percent of cost.\n4. Add guardrails: daily quotas on indexes, monitors on estimated usage, tagging rules in review.\n5. Report to teams monthly. Cost visibility changes behaviour.\n\n**Gotchas**\n- Cutting data blindly can remove what you need in an incident. Ask which question each log or metric answers.\n- Archive is cheap, so excluded logs can still be kept for compliance and rehydrated.\n\n**Interview tip:** Give a real example, such as removing a `user_id` tag from a metric, and say the savings and the result you saw (without quoting prices).",
+      "level": "advanced",
+      "module": "Cost & Governance",
+      "tags": [
+        "tech-lead",
+        "cost",
+        "governance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-025",
+      "question": "[Tech Lead] How do you govern tagging and metric cardinality across teams?",
+      "answer": "**Short answer:** Write a short tagging standard, provide the compliant defaults in templates, check them in code review and CI, and monitor cardinality with Datadog's usage tools. Make the right tags automatic and the dangerous ones hard to add.\n\nA practical standard:\n\n| Tag | Required | Rule |\n| --- | --- | --- |\n| `env` | yes | `prod`, `staging`, `dev` only |\n| `service` | yes | Matches the Kubernetes deployment name |\n| `version` | yes | Release number or git SHA |\n| `team` | yes | A team in the Service Catalog |\n| `region` | if multi-region | Cloud region name |\n| Custom metric tags | max about 5 | Bounded values, no ids |\n\nEnforcement:\n- **Templates.** The Helm chart sets the labels and `DD_*` variables for every service.\n- **Review.** Code review rule: no unbounded values (user id, order id, email, raw URL) as metric tags.\n- **Monitoring.** Use the Metrics Summary page to see the number of tag combinations per metric, and alert on growth of estimated custom metrics.\n- **Tag configuration.** For existing metrics, use Metrics without Limits to keep only the tags people query, which reduces indexed series.\n- **Lint.** Terraform or script checks that monitors and dashboards use approved tags.\n\n**Gotchas**\n- Renaming a tag breaks old dashboards and monitors. Plan a migration with both tags for a while.\n- Free-form `team` values (`payments`, `Payments`, `payment-team`) split reports.\n\n**Interview tip:** Say that cardinality problems are found in review or by dashboards, not by invoices, and that is the goal of the governance.",
+      "level": "intermediate",
+      "module": "Cost & Governance",
+      "tags": [
+        "tech-lead",
+        "tagging",
+        "cardinality"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-026",
+      "question": "[Tech Lead] What is your checklist for onboarding a new service into Datadog?",
+      "answer": "**Short answer:** A new service should reach production already emitting unified tags, traces, JSON logs with trace ids, RED metrics, a default dashboard, a handful of monitors, an SLO, a Service Catalog entry and a runbook. The service template should do most of this.\n\nChecklist:\n\n- [ ] `DD_ENV`, `DD_SERVICE`, `DD_VERSION` set from pod labels.\n- [ ] Tracing library installed, with router, HTTP client and database integrations.\n- [ ] Logs are JSON on stdout with `dd.trace_id`, `dd.span_id`, `service`, `env`.\n- [ ] Log source and service annotation set, so the right pipeline runs.\n- [ ] Custom business metrics defined with bounded tags.\n- [ ] Runtime and profiling enabled (Continuous Profiler) where the cost is acceptable.\n- [ ] Service Catalog definition: team, Slack channel, on-call, runbook, tier, dependencies.\n- [ ] Dashboard created from the shared template.\n- [ ] Monitors: error ratio, p95 latency, saturation, pod restarts, SLO burn rate.\n- [ ] Synthetic check for the critical endpoint.\n- [ ] Deploy events and version tag sent from CI.\n- [ ] Alert routing tested with a test notification.\n- [ ] Load or game-day test shows that alerts fire and the dashboard answers questions.\n\nYou can keep the definition of done in the service template repo, and add a short CI check that fails when labels or the catalog file are missing.\n\n**Gotcha:** Monitors that were never tested often do not work when needed. Test the full path from alert to pager.\n\n**Interview tip:** Say that the checklist is a Definition of Done item for new services, and that you automate it.",
+      "level": "intermediate",
+      "module": "Platform & Leadership",
+      "tags": [
+        "tech-lead",
+        "onboarding",
+        "checklist"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-027",
+      "question": "[Tech Lead] How do you build dashboards that work, and avoid dashboard sprawl?",
+      "answer": "**Short answer:** Build few, purposeful dashboards: a service overview with golden signals, a dependency view, and a business view. Use templates and template variables, one question per dashboard, and review and delete unused ones.\n\nUseful dashboards for a service:\n\n| Dashboard | Question it answers | Content |\n| --- | --- | --- |\n| Service overview | Is it healthy? | RED, saturation, SLO status, deploy markers |\n| Dependencies | Is a downstream hurting us? | Latency and errors per DB, cache, API |\n| Kubernetes view | Are pods healthy? | Restarts, CPU throttling, memory, HPA |\n| Business KPIs | Is the product working? | Orders, payment success, conversion |\n\nDesign rules:\n- **Top row = answer.** The first row tells healthy or not in five seconds: a few big numbers and the SLO.\n- **Same layout everywhere.** On-call learns one layout and reads any service.\n- **Template variables** for env, service and region.\n- **Units and thresholds.** Label axes, use markers for SLO lines, and avoid dual axes that confuse.\n- **Link out.** Each widget links to traces, logs or a runbook.\n\nTo avoid sprawl:\n- Create dashboards from a template in code (Terraform), so changes go through review.\n- Use tags (`team`, `tier`) and naming (`[team] service - purpose`).\n- Review quarterly. Delete dashboards with no views.\n- Use Notebooks for one-off investigations instead of leaving a dashboard behind.\n\n**Gotcha:** A dashboard with 80 graphs is a data dump. If nobody can state what decision it supports, remove it.\n\n**Interview tip:** Say you test a dashboard by giving it to someone new on call and asking them to find a problem in two minutes.",
+      "level": "intermediate",
+      "module": "Dashboards & Monitors",
+      "tags": [
+        "tech-lead",
+        "dashboards",
+        "governance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-028",
+      "question": "[Tech Lead] How do you manage monitors and dashboards as code?",
+      "answer": "**Short answer:** Use the Datadog Terraform provider (or the API) to define monitors, dashboards, SLOs and synthetics in git. Changes go through pull requests, get reviewed and applied by CI. This gives history, reuse, consistency and easy recovery.\n\nClick-ops monitors drift, have no review and are hard to copy across services. Code solves this. A reusable module can create the same set of monitors for every service.\n\n```hcl\n# Terraform (read-only example)\nresource \"datadog_monitor\" \"orders_error_rate\" {\n  name    = \"[orders-api] Error rate high\"\n  type    = \"query alert\"\n  message = <<-EOT\n    Error ratio is {{value}} on {{service.name}}.\n    Runbook: https://wiki.example.com/runbooks/orders-errors\n    @slack-orders-alerts\n  EOT\n\n  query = \"sum(last_10m):sum:trace.http.request.errors{env:prod,service:orders-api}.as_count() / sum:trace.http.request.hits{env:prod,service:orders-api}.as_count() * 100 > 5\"\n\n  monitor_thresholds {\n    warning  = 2\n    critical = 5\n  }\n\n  notify_no_data      = false\n  require_full_window = false\n  tags                = [\"team:orders\", \"service:orders-api\", \"managed-by:terraform\"]\n}\n```\n\nPractices:\n- Review monitors like code: query, threshold, message, runbook link, owner tag.\n- Tag with `managed-by:terraform` so humans know not to edit in the UI.\n- Prototype in the UI, then export the JSON or query and codify it.\n- Use `terraform plan` in CI to show the diff.\n- Keep API and app keys in a secret store.\n\n**Gotcha:** If people also edit in the UI, the next apply reverts their change. Agree one source of truth.\n\n**Interview tip:** Mention a module with sensible defaults, so a new service gets six standard monitors with three lines of code.",
+      "level": "intermediate",
+      "module": "Platform & Leadership",
+      "tags": [
+        "tech-lead",
+        "terraform",
+        "iac"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-029",
+      "question": "[Tech Lead] How do you use Datadog for release safety?",
+      "answer": "**Short answer:** Tag everything with `version`, send deploy events, compare the new version with the old one during rollout, and set automatic or manual rollback signals on error ratio and latency. Datadog's Deployment Tracking and version comparison make this visible.\n\nHow it fits into a release:\n1. **Tag versions.** `DD_VERSION` on every pod, so metrics, traces and logs carry `version`.\n2. **Mark the deploy.** Post an event from CI, so graphs show a vertical marker.\n3. **Canary or progressive rollout.** Send a small percentage to the new version.\n4. **Compare.** In APM, the Deployments view compares error rate and latency between versions. In a dashboard, group by `version`:\n\n```text\nsum:trace.http.request.errors{service:orders-api,env:prod} by {version}.as_count()\n```\n\n5. **Decide.** If the new version has more errors or slower p95 than the baseline for N minutes, stop and roll back.\n6. **Gate in CI.** A pipeline job can call the Datadog API to read a monitor status or run Synthetic tests before promoting.\n\n| Signal | Rollback rule example |\n| --- | --- |\n| Error ratio of canary | Higher than baseline by a set margin for 10 minutes |\n| p95 latency | Higher than baseline by a set percent |\n| SLO burn rate | Fast burn after deploy |\n| Synthetic smoke test | Any failure |\n\nDatadog also has automatic detection of faulty deployments in some APM features (Watchdog). Treat it as a hint, not the only gate.\n\n**Gotcha:** A canary with too little traffic gives no statistical signal. Make sure the sample is large enough.\n\n**Interview tip:** Say that rollback criteria are decided before the deploy, not during the panic.",
+      "level": "intermediate",
+      "module": "Incident Investigation",
+      "tags": [
+        "tech-lead",
+        "deployments",
+        "release"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-030",
+      "question": "[Tech Lead] How do you connect Datadog to on-call and runbooks?",
+      "answer": "**Short answer:** Route monitors to the right team with tags and `@` handles, send pages to the paging tool, put a runbook link and a dashboard link in every alert, and use Datadog Incident Management to track the response and review.\n\nThe chain looks like this:\n\n```mermaid\nflowchart LR\n    M[\"Monitor\"] --> R[\"Route by team tag\"]\n    R --> P[\"Pager: on-call engineer\"]\n    R --> S[\"Slack channel\"]\n    P --> I[\"Declare incident\"]\n    I --> N[\"Notebook: timeline\"]\n    N --> PIR[\"Post-incident review\"]\n```\n\nAn alert becomes a page, then maybe an incident, with notes in a notebook and a review at the end.\n\nPractices:\n- **Ownership.** The Service Catalog holds team, contacts and on-call links. Monitors point to the owner.\n- **Runbook per alert.** What the alert means, 3 checks, how to mitigate, who to escalate to. Keep it short and tested.\n- **Message template.** Include current value, graph snapshot, dashboard, runbook, and the `{{service.name}}` variable.\n- **Severity.** Define severity levels (SEV1 to SEV3) with clear criteria.\n- **After the incident.** Use Incident Management to record timeline and action items, and track follow-ups to completion.\n- **On-call health.** Review pages per shift, night pages and unactioned alerts.\n\n**Gotcha:** A runbook that nobody updates is worse than none. Make updating it part of closing an incident.\n\n**Interview tip:** Say you test the runbook during a game day with someone who has never seen the service.",
+      "level": "intermediate",
+      "module": "Incident Investigation",
+      "tags": [
+        "tech-lead",
+        "on-call",
+        "runbooks"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-031",
+      "question": "[Tech Lead] How would you use RUM and front-end monitoring, and what is its business value?",
+      "answer": "**Short answer:** Real User Monitoring measures what real users experience in the browser: page load, Core Web Vitals, errors, slow resources and user actions. The value is linking technical performance to business outcomes such as conversion, and finding problems that backend metrics cannot see.\n\nBackend dashboards can be green while users see a blank screen, because of a broken bundle, a slow third-party script or a bad CDN. RUM sees that.\n\nWhat I use it for:\n- **Core Web Vitals**: Largest Contentful Paint, Interaction to Next Paint and Cumulative Layout Shift by page and by browser.\n- **Errors**: JavaScript errors grouped into issues, with source maps to read the original code.\n- **User journeys**: where users drop off in checkout.\n- **Frustration signals**: rage clicks and dead clicks show UI problems with no error.\n- **Backend link**: RUM requests are connected to APM traces, so a slow click leads to the slow service call.\n- **Release comparison**: errors per `version` after a front-end deploy.\n\nBusiness value, stated in numbers the business understands: \"p75 LCP on checkout rose from 2.1 to 3.4 seconds after release 4.12, and conversion on mobile fell\". Then you prioritise the fix with evidence.\n\n| Concern | Control |\n| --- | --- |\n| Privacy | Mask user input and text; do not record sensitive pages |\n| Cost | Session sampling rate; replay sampling rate lower |\n| Noise | Ignore known third-party errors |\n\n**Gotcha:** Session Replay can capture sensitive content if privacy settings are loose. Set the privacy level and test it.\n\n**Interview tip:** Say you report front-end performance by percentiles and by segment (device, country), not by averages.",
+      "level": "intermediate",
+      "module": "RUM & Synthetics",
+      "tags": [
+        "tech-lead",
+        "rum",
+        "frontend"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-032",
+      "question": "[Tech Lead] How do you approach OpenTelemetry alongside Datadog, and what about vendor neutrality?",
+      "answer": "**Short answer:** Instrument with open standards where it is practical (OpenTelemetry APIs and W3C trace context), send data to Datadog through the Agent or the OpenTelemetry Collector, and keep Datadog-specific features at the edges. This lowers lock-in without giving up Datadog's analysis features.\n\nOptions:\n\n| Option | What it means | Trade-off |\n| --- | --- | --- |\n| Datadog libraries (`dd-trace-*`) | Native, richest features (profiling, ASM, tuning) | Tied to Datadog |\n| OpenTelemetry SDK to Datadog Agent | Standard instrumentation, Agent accepts OTLP | Some Datadog-only features unavailable or different |\n| OpenTelemetry SDK to Collector to Datadog exporter | Full control, vendor-neutral pipeline | You run and upgrade the Collector |\n\nDecision factors:\n- Do you have many languages and teams? A single standard helps.\n- Do you want the option to move vendor or to dual-send data?\n- Do you depend on Datadog-only features such as the Continuous Profiler or runtime security in the tracer?\n- Who will operate the Collector?\n\nA common mix: use `dd-trace-go` where deep Datadog features matter, and OpenTelemetry in new services or libraries. Make sure trace context interoperates by enabling both `datadog` and `tracecontext` propagation styles.\n\n**Gotchas**\n- Mixed metric naming: OpenTelemetry names differ from Datadog's built-in names. Dashboards need mapping.\n- Treat the semantic conventions as the contract. Custom attribute names are where lock-in sneaks back.\n\n**Interview tip:** Be balanced: neutrality has a cost in effort. Say you choose it where the exit option is worth that cost, and explain why.",
+      "level": "advanced",
+      "module": "Platform & Leadership",
+      "tags": [
+        "tech-lead",
+        "opentelemetry",
+        "vendor-neutrality"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-033",
+      "question": "How do you install and configure the Datadog Agent on Kubernetes with Helm?",
+      "answer": "**Short answer:** Install the official Helm chart (or the Datadog Operator), which deploys the node Agent as a DaemonSet and the Cluster Agent as a Deployment. You set the API key from a Secret, your Datadog site, the cluster name, and turn on the features you need in `values.yaml`.\n\nInstall steps:\n\n```bash\nhelm repo add datadog https://helm.datadoghq.com\nhelm repo update\nkubectl create secret generic datadog-secret --from-literal api-key=\"$DD_API_KEY\" -n datadog\nhelm upgrade --install datadog datadog/datadog -n datadog -f values.yaml\n```\n\n```yaml\n# values.yaml (read-only example, check the chart docs for your chart version)\ndatadog:\n  site: datadoghq.eu\n  apiKeyExistingSecret: datadog-secret\n  clusterName: aks-prod-we\n  tags: [\"team:platform\"]\n  logs:\n    enabled: true\n    containerCollectAll: false   # opt in per pod to control cost\n  apm:\n    portEnabled: false\n    socketEnabled: true\n  dogstatsd:\n    useHostPort: true\n  orchestratorExplorer:\n    enabled: true\n  kubeStateMetricsCore:\n    enabled: true\nclusterAgent:\n  enabled: true\n  admissionController:\n    enabled: true\nagents:\n  tolerations:\n    - operator: Exists          # run on all nodes, including tainted ones\n  containers:\n    agent:\n      resources:\n        requests: {cpu: 200m, memory: 256Mi}\n        limits: {cpu: 500m, memory: 512Mi}\n```\n\nWhat the pieces do:\n- **Node Agent (DaemonSet)**: host and container metrics, logs, traces and DogStatsD for pods on that node.\n- **Cluster Agent**: talks to the API server, runs cluster-level checks, provides external metrics for the HPA, and runs the admission controller that can inject tags and tracing settings into pods.\n- **kube-state-metrics core check**: object state (deployments, pod status) without running a separate kube-state-metrics pod.\n- **Orchestrator Explorer**: a live view of Kubernetes resources in Datadog.\n\nAlternatively the **Datadog Operator** manages the same setup through a `DatadogAgent` custom resource, which is neat for GitOps.\n\n**Gotchas**\n- Tolerations: if you forget them, the Agent will not run on tainted nodes, and you will have blind spots.\n- Resource limits that are too low cause the Agent to be OOM killed on busy nodes.\n- Key names change between chart versions; read the chart's own `values.yaml`.\n\n**Interview tip:** Mention that you pin the chart version and roll the Agent out like any other component, node pool by node pool.",
+      "level": "intermediate",
+      "module": "Agent & Setup",
+      "tags": [
+        "kubernetes",
+        "helm",
+        "agent"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-034",
+      "question": "How do pods send traces and custom metrics to the node Agent in Kubernetes?",
+      "answer": "**Short answer:** Your app talks to the Agent on its own node, not to localhost. You can use a Unix domain socket on a hostPath volume, a host port with the node IP from the downward API, or let the Cluster Agent admission controller inject the settings automatically.\n\nWhy not localhost: the Agent runs in a separate pod. Inside your pod, `localhost` is your own container.\n\n| Method | How | Notes |\n| --- | --- | --- |\n| Unix socket | Mount `/var/run/datadog` from the host, set `DD_TRACE_AGENT_URL=unix:///var/run/datadog/apm.socket` | Efficient, no network hop, needs a hostPath volume |\n| Host port | Agent exposes 8126 and 8125 on the host; app uses the node IP | Simple, needs hostPort allowed by policy |\n| Admission controller | Injects env vars and volumes via a pod label | Least manual work |\n| Cluster-local service | Agent exposed via a Service | Not node-local, so avoid for high volume |\n\nThe node IP approach, in the pod spec:\n\n```yaml\n# Container env (read-only example)\nenv:\n  - name: DD_AGENT_HOST\n    valueFrom:\n      fieldRef:\n        fieldPath: status.hostIP\n  - name: DD_TRACE_AGENT_PORT\n    value: \"8126\"\n  - name: DD_DOGSTATSD_PORT\n    value: \"8125\"\n```\n\nWith the admission controller you add one label, `admission.datadoghq.com/enabled: \"true\"`, and it injects the right variables (and with the right config, even the tracing library for some languages).\n\n**Gotchas**\n- Network policies and Pod Security settings may block hostPort or hostPath. Check with your platform team.\n- If traces are missing, check from inside the app pod that the Agent address responds, and check `agent status` for the APM section.\n\n**Interview tip:** Say you prefer the socket for performance and fewer ports, and that you debug missing data from the application side first.",
+      "level": "intermediate",
+      "module": "Agent & Setup",
+      "tags": [
+        "kubernetes",
+        "apm",
+        "dogstatsd"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-035",
+      "question": "How do you instrument a Go service with dd-trace-go?",
+      "answer": "**Short answer:** Start the tracer in `main` with service, env and version, wrap your HTTP server, client, gRPC and database drivers with the contrib packages, and create manual spans for important business steps using the request context. Always pass `ctx` along, because that is how parent and child spans connect.\n\nThe example uses `dd-trace-go` v1 import paths. Version 2 exists with changed import paths, so check which one you use.\n\n```go\n// read-only example\npackage main\n\nimport (\n\t\"context\"\n\t\"log\"\n\t\"net/http\"\n\n\thttptrace \"gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http\"\n\t\"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer\"\n)\n\nfunc main() {\n\t// 1. start once; reads DD_AGENT_HOST, DD_ENV, DD_SERVICE, DD_VERSION too\n\ttracer.Start(tracer.WithService(\"orders-api\"), tracer.WithEnv(\"prod\"),\n\t\ttracer.WithServiceVersion(\"1.14.2\"))\n\tdefer tracer.Stop() // flushes pending spans on shutdown\n\n\t// 2. automatic span per request, resource = \"METHOD pattern\"\n\tmux := httptrace.NewServeMux()\n\tmux.HandleFunc(\"/orders\", createOrder)\n\tlog.Fatal(http.ListenAndServe(\":8080\", mux))\n}\n\nfunc createOrder(w http.ResponseWriter, r *http.Request) {\n\t// 3. manual child span for a business step\n\tspan, ctx := tracer.StartSpanFromContext(r.Context(), \"orders.validate\",\n\t\ttracer.ResourceName(\"validate-cart\"))\n\terr := validate(ctx)\n\tspan.Finish(tracer.WithError(err)) // marks the span as an error if err != nil\n\tif err != nil {\n\t\thttp.Error(w, \"invalid\", http.StatusBadRequest)\n\t\treturn\n\t}\n\tw.WriteHeader(http.StatusCreated)\n}\n\nfunc validate(ctx context.Context) error { return nil }\n```\n\nContrib packages you will use: `contrib/net/http`, `contrib/go-chi/chi.v5` or `gorilla/mux`, `contrib/google.golang.org/grpc` (client and server interceptors), `contrib/database/sql` (register the driver with `sqltrace.Register` and open with `sqltrace.Open`), `contrib/go-redis/redis`, and Kafka wrappers.\n\nRules:\n- Use the ctx returned by the contrib server span for every outgoing call, so downstream spans attach correctly.\n- Outgoing HTTP: use `httptrace.WrapClient` so headers are injected.\n- Do not add user ids or other unbounded values as the span resource name. Use tags.\n\n**Gotcha:** Forgetting `defer tracer.Stop()` loses the last spans on a short-lived job.\n\n**Interview tip:** Mention that Datadog also offers compile-time automatic instrumentation for Go (Orchestrion), but you should verify its current status before relying on it.",
+      "level": "intermediate",
+      "module": "APM & Tracing",
+      "tags": [
+        "go",
+        "dd-trace-go",
+        "apm"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-036",
+      "question": "How do you instrument Node.js services with dd-trace-js?",
+      "answer": "**Short answer:** Install `dd-trace` and initialise it before any other import, or start Node with `--require dd-trace/init`. It automatically patches Express, HTTP, database drivers and many other libraries, so you get traces without code changes. Add manual spans where you need business detail.\n\nOrder matters. The library must patch modules before your code loads them.\n\n```js\n// tracer.js - load first (read-only example)\nconst tracer = require('dd-trace').init({\n  service: 'web-bff',\n  env: process.env.DD_ENV || 'dev',\n  version: process.env.DD_VERSION,\n  logInjection: true, // adds dd.trace_id and dd.span_id to supported loggers\n});\nmodule.exports = tracer;\n```\n\n```bash\n# start script\nnode --require ./tracer.js server.js\n```\n\nA manual span around a business step:\n\n```js\nconst tracer = require('dd-trace');\n\nasync function priceCart(cart) {\n  return tracer.trace('cart.price', { resource: 'priceCart' }, async (span) => {\n    span.setTag('cart.items', cart.items.length); // bounded values only\n    return await pricingClient.price(cart);\n  });\n}\n```\n\nNestJS and Express work through the Express integration. TypeScript with ES modules needs the loader flags described in the library docs; check the version notes.\n\n**Gotchas**\n- `import 'dd-trace'` in an ES module is hoisted, but may run after other imports. Use the `--require` or `--import` route from the docs for ESM.\n- Bundling the app (webpack, esbuild) can break auto-patching. Mark `dd-trace` as external.\n- Set `service` per deployable. A BFF and a worker should have different names.\n\n**Interview tip:** Say that you validate the instrumentation by checking the service map and one trace per route on a staging environment before production.",
+      "level": "intermediate",
+      "module": "APM & Tracing",
+      "tags": [
+        "nodejs",
+        "dd-trace-js",
+        "apm"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-037",
+      "question": "How do you set up the Datadog browser RUM SDK, session replay and user actions in a React app?",
+      "answer": "**Short answer:** Install `@datadog/browser-rum`, call `datadogRum.init` once at app start with application id, client token, service, env, version and sampling rates, and enable user interaction and resource tracking. Add replay sampling and privacy options carefully, and upload source maps so errors are readable.\n\n```ts\n// src/rum.ts (read-only example)\nimport { datadogRum } from '@datadog/browser-rum';\n\ndatadogRum.init({\n  applicationId: import.meta.env.VITE_DD_APP_ID,\n  clientToken: import.meta.env.VITE_DD_CLIENT_TOKEN, // public by design, rate-limited\n  site: 'datadoghq.eu',\n  service: 'web-shop',\n  env: import.meta.env.MODE,\n  version: import.meta.env.VITE_APP_VERSION,\n  sessionSampleRate: 100,        // percent of sessions tracked\n  sessionReplaySampleRate: 10,   // percent of those with replay\n  trackUserInteractions: true,   // clicks become user actions\n  trackResources: true,\n  trackLongTasks: true,\n  defaultPrivacyLevel: 'mask-user-input',\n  // link browser requests to backend traces:\n  allowedTracingUrls: ['https://api.example.com'],\n});\n\n// once the user is known (do not send sensitive data)\ndatadogRum.setUser({ id: 'u-123', plan: 'pro' });\n```\n\nWhat you get:\n- **Views** (page loads and route changes), **resources**, **long tasks**, **errors** and **user actions**.\n- **Core Web Vitals** on each view: Largest Contentful Paint, Interaction to Next Paint, Cumulative Layout Shift.\n- **Frustration signals**: rage clicks, dead clicks and error clicks, to find UI pain with no error message.\n- **Custom actions** with `datadogRum.addAction('checkout_submit', {...})`.\n- **Session Replay**, a recording of the DOM that you can watch like a video.\n\nFor single-page apps, call the RUM router integration (or manual view tracking) so route changes create views.\n\n**Gotchas**\n- The client token is public. Do not put an API key in the browser.\n- Replay and privacy: mask inputs and text by default. Review what your pages show.\n- Upload source maps with `datadog-ci sourcemaps upload`, using the same `service` and `version` as `init`.\n- Ad blockers can block RUM requests; use a proxy if coverage matters.\n\n**Interview tip:** Say that you start with a low replay rate and increase it only where you need it, because sessions drive cost and privacy risk.",
+      "level": "intermediate",
+      "module": "RUM & Synthetics",
+      "tags": [
+        "rum",
+        "react",
+        "browser"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-038",
+      "question": "How do you instrument Python services with ddtrace?",
+      "answer": "**Short answer:** Install `ddtrace` and run your app with `ddtrace-run`, which patches Flask, Django, FastAPI, requests, database drivers and more automatically. Set `DD_SERVICE`, `DD_ENV` and `DD_VERSION`, and turn on log injection so logs carry trace ids.\n\n```bash\n# Dockerfile CMD or container command (read-only example)\nDD_SERVICE=pricing-api DD_ENV=prod DD_VERSION=2.3.0 \\\nDD_LOGS_INJECTION=true DD_TRACE_SAMPLE_RATE=1.0 \\\nddtrace-run uvicorn app.main:app --host 0.0.0.0 --port 8000\n```\n\nManual spans use the global tracer:\n\n```python\nfrom ddtrace import tracer\n\n@tracer.wrap(name=\"pricing.compute\", resource=\"compute_price\")\ndef compute_price(cart):\n    with tracer.trace(\"pricing.rules\") as span:\n        span.set_tag(\"cart.items\", len(cart.items))\n        return apply_rules(cart)\n```\n\nNotes:\n- Under Gunicorn or uWSGI with several workers, use `ddtrace-run gunicorn ...`, and be careful with pre-fork settings described in the docs.\n- Async code (FastAPI, asyncio) keeps context across `await`, as long as you stay inside the same task context.\n- Celery, Kafka and Redis have integrations. Trace context passes in message headers when supported.\n- `DD_PROFILING_ENABLED=true` turns on the Continuous Profiler.\n\n**Gotchas**\n- Do not set a very high-cardinality resource name, like a raw URL with ids. Frameworks set the route pattern for you.\n- A missing `DD_SERVICE` makes the service name come from the process name, which creates confusing duplicates.\n\n**Interview tip:** Mention that you test auto-instrumentation with a small script that calls each route and then check the trace in Datadog, rather than trusting that it works.",
+      "level": "intermediate",
+      "module": "APM & Tracing",
+      "tags": [
+        "python",
+        "ddtrace",
+        "apm"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-039",
+      "question": "How do log pipelines and processors work, including the grok parser?",
+      "answer": "**Short answer:** A pipeline runs a chain of processors on each matching log. The grok parser extracts fields from text with patterns. Remappers then move those fields to the standard places: date, status, service, message and trace id. JSON logs skip most of the parsing.\n\nCommon processors:\n\n| Processor | What it does |\n| --- | --- |\n| Grok parser | Extracts attributes from a text line using patterns |\n| Date remapper | Uses a field as the official log timestamp |\n| Status remapper | Sets log level from a field such as `severity` |\n| Service remapper | Sets the `service` attribute |\n| Message remapper | Chooses the text shown in the list |\n| Trace id remapper | Links the log to a trace |\n| Attribute remapper | Renames or moves an attribute |\n| Category processor | Adds a category from a query (for example by status code range) |\n| Lookup processor | Enriches from a table |\n\nA grok rule for a legacy line like `2026-03-02 10:15:30 ERROR orders-api payment declined order=8841`:\n\n```text\norders_rule %{date(\"yyyy-MM-dd HH:mm:ss\"):timestamp} %{word:level} %{notSpace:service} %{data:msg} order=%{integer:order_id}\n```\n\nAfter parsing, you add a date remapper on `timestamp` and a status remapper on `level`. The `order_id` can become a facet for searching.\n\nTips:\n- Pipelines apply in order. Use filter queries so a pipeline only sees its source (`source:orders-api`).\n- Use the pipeline's **parsing test** with real sample lines before saving.\n- Use Datadog's built-in pipeline for popular sources and extend only where you need to.\n\n**Gotchas**\n- A grok rule that fails leaves the log unparsed, with only the raw message. Watch for this.\n- Heavy grok rules on high volume are slow to maintain. Fix the format at the source and log JSON.\n\n**Interview tip:** Say that your rule is \"parse in the app, not in the pipeline\": structured logs are cheaper to run and to debug.",
+      "level": "intermediate",
+      "module": "Logs",
+      "tags": [
+        "logs",
+        "pipelines",
+        "grok"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-040",
+      "question": "How do you write JSON logs with correlation ids in a Go service?",
+      "answer": "**Short answer:** Use `log/slog` with a JSON handler, and add `dd.trace_id`, `dd.span_id`, `service`, `env` and `version` from the current span in the request context. Datadog will then parse the JSON and link each log to its trace.\n\n```go\n// read-only example, dd-trace-go v1 API\npackage logging\n\nimport (\n\t\"context\"\n\t\"log/slog\"\n\t\"os\"\n\t\"strconv\"\n\n\t\"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer\"\n)\n\nfunc New() *slog.Logger {\n\tbase := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})\n\treturn slog.New(base).With(\n\t\tslog.String(\"service\", \"orders-api\"),\n\t\tslog.String(\"env\", os.Getenv(\"DD_ENV\")),\n\t\tslog.String(\"version\", os.Getenv(\"DD_VERSION\")),\n\t)\n}\n\n// WithTrace returns a logger carrying the ids of the span in ctx.\nfunc WithTrace(ctx context.Context, l *slog.Logger) *slog.Logger {\n\tspan, ok := tracer.SpanFromContext(ctx)\n\tif !ok {\n\t\treturn l\n\t}\n\tsc := span.Context()\n\treturn l.With(slog.Group(\"dd\",\n\t\tslog.String(\"trace_id\", strconv.FormatUint(sc.TraceID(), 10)),\n\t\tslog.String(\"span_id\", strconv.FormatUint(sc.SpanID(), 10)),\n\t))\n}\n```\n\nUse it in a handler as `WithTrace(r.Context(), logger).Error(\"payment declined\", \"order_id\", id)`.\n\nThe output is one JSON object per line on stdout, with a nested `dd` object. The Agent picks it up from the container logs.\n\nRules:\n- Log to stdout, one event per line, no multi-line stack traces.\n- Use a `level` field Datadog understands (`info`, `warn`, `error`).\n- Keep personal data out of logs, or mask it.\n- Use the same `service` value as in the tracer.\n\n**Gotcha:** If you log from a goroutine without the request context, you lose the trace id. Pass the context along.\n\n**Interview tip:** Mention that the trace-log link is checked by a test or a staging smoke run, because it quietly breaks when a logger is replaced.",
+      "level": "intermediate",
+      "module": "Logs",
+      "tags": [
+        "go",
+        "logging",
+        "correlation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-041",
+      "question": "What are log-based metrics, archives and rehydration, and when do you use them?",
+      "answer": "**Short answer:** Log-based metrics turn log events into cheap numeric metrics, such as errors per endpoint. Archives store all logs, indexed or not, in your own cloud storage. Rehydration brings archived logs back into Datadog for search when you need old data.\n\nThis gives a three-tier approach:\n\n| Tier | Cost | Use |\n| --- | --- | --- |\n| Indexed logs | Highest | Recent, searchable logs you use for debugging and alerts |\n| Generated metrics from logs | Low | Counts and distributions for dashboards and monitors, kept for a long time |\n| Archive | Lowest | Compliance, rare investigations |\n\n**Generate metrics from logs**: define a query (`service:orders-api status:error`), a group-by (for example `@http.route`), and the metric name. The metric counts events even if the logs were excluded from indexing. Group-by fields count toward custom metric series, so keep them bounded.\n\n**Archives**: configure a destination such as an Azure Storage container, with role-based access that Datadog uses to write. Logs are stored as compressed JSON files by time. You can set a retention policy on the container using the cloud's lifecycle rules.\n\n**Rehydration**: pick a time range, a query and an archive, then Datadog loads the matching logs into a temporary index so you can search them. The product page may call this historical views; check the current name. It takes time and has a usage cost, so use narrow filters.\n\nTypical pattern: exclude 90 percent of info logs from the index, keep a log-based metric for their count, and keep everything in the archive.\n\n**Gotcha:** Archive buckets in a region that you do not want data to leave will break compliance. Choose the storage region on purpose.\n\n**Interview tip:** Say that you decide per log type: \"do I need to search it, count it, or just keep it?\"",
+      "level": "intermediate",
+      "module": "Logs",
+      "tags": [
+        "logs",
+        "archives",
+        "cost"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-042",
+      "question": "How do you scrub sensitive data from logs in Datadog?",
+      "answer": "**Short answer:** Protect data in layers: do not log secrets in the first place, mask patterns in the Agent before logs leave your network, and use Datadog's Sensitive Data Scanner or pipeline rules for what remains. Restrict who can see logs with roles.\n\nLayers:\n\n1. **In the application.** Never log passwords, tokens, card numbers or full personal data. Use a logging wrapper that redacts known fields.\n2. **In the Agent.** Log processing rules can mask or drop lines before they leave the node:\n\n```yaml\n# Pod annotation value for logs (read-only example)\nad.datadoghq.com/orders-api.logs: |\n  [{\n    \"source\": \"go\",\n    \"service\": \"orders-api\",\n    \"log_processing_rules\": [\n      {\"type\": \"mask_sequences\", \"name\": \"mask_card\",\n       \"replace_placeholder\": \"[card]\", \"pattern\": \"\\\\b\\\\d{13,16}\\\\b\"},\n      {\"type\": \"exclude_at_match\", \"name\": \"drop_health\",\n       \"pattern\": \"GET /healthz\"}\n    ]\n  }]\n```\n\n3. **In Datadog.** Sensitive Data Scanner applies rules for common patterns (emails, credit cards, keys) on ingested logs, spans and RUM. It can redact or hash.\n4. **Access control.** Use roles and restriction queries, so only some teams can see sensitive indexes. Set short retention for sensitive sources.\n5. **Audit.** Review who queries sensitive logs.\n\nAlso scrub in traces and RUM: avoid putting emails or tokens into span tags or user attributes.\n\n**Gotchas**\n- Masking in the pipeline happens after the data reached Datadog. For strict rules, scrub in the Agent or before.\n- Regexes cause false positives and misses. Test on real samples.\n\n**Interview tip:** Say you treat PII in telemetry as a design topic with security and legal, and that \"do not log it\" beats \"mask it\".",
+      "level": "intermediate",
+      "module": "Logs",
+      "tags": [
+        "logs",
+        "privacy",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-043",
+      "question": "How do metric queries work in depth: aggregation, grouping, rollup and formulas?",
+      "answer": "**Short answer:** A query has a space aggregator, a metric, a filter in braces, an optional `by {tag}` grouping, and functions at the end. Time aggregation (rollup) squeezes points into intervals, and formulas combine named queries with arithmetic.\n\nAnatomy:\n\n```text\nsum:trace.http.request.hits{env:prod,service:orders-api} by {resource_name}.as_count()\n |   |                       |                              |                  |\n |   metric                  filter (scope)                 group by           function\n space aggregator across series\n```\n\n- **Space aggregation** (`sum`, `avg`, `min`, `max`) combines different series (hosts, pods) at the same time.\n- **Time aggregation (rollup)** combines points in time inside one series. The graph picks an interval from the time range. Override it with `.rollup(sum, 60)`.\n- **Scope**: `{env:prod}`, `{*}` for all, `{env:prod,!region:us}` to exclude, and `{service:orders-*}` with wildcards.\n- **Functions**: `.as_count()`, `.as_rate()`, `.fill(zero)`, `diff()`, `derivative()`, `per_second()`, `timeshift(-1w)`, `abs()`, `top(...)`.\n\nFormulas use letters for queries. Query a is errors, query b is hits, and the formula is:\n\n```text\na / b * 100\n```\n\nThis gives an error percentage. Both queries must have the same grouping to align.\n\nOther useful patterns:\n- Compare with last week: `timeshift(-7d)` or the \"week before\" function.\n- Top 5 slowest endpoints: apply `top(5, 'mean', 'desc')` to a grouped query.\n- Ratio across metrics: two metrics from different sources divided in a formula.\n\n**Gotchas**\n- Averaging averages across series hides outliers. Check what the aggregator does.\n- A rollup that is longer than the data resolution can hide spikes. Zoom in.\n\n**Interview tip:** Say you write the query for the question, then check it by grouping with `by {host}` to confirm the numbers add up.",
+      "level": "intermediate",
+      "module": "Metrics",
+      "tags": [
+        "queries",
+        "metrics",
+        "formulas"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-044",
+      "question": "What is the difference between as_count, as_rate, rollup and fill?",
+      "answer": "**Short answer:** `as_count()` shows how many events happened in each interval, `as_rate()` shows events per second, `rollup()` sets the time bucket and how points are combined, and `fill()` decides what to show where there are no points.\n\nCounts and rates confuse many people. A count metric submitted from the Agent is stored as a rate per second internally. Graphs then show it depending on the function.\n\n| Function | Result | Use |\n| --- | --- | --- |\n| `.as_count()` | Total events in each rollup interval | Totals, error counts, ratios |\n| `.as_rate()` | Events per second | Throughput comparison across different windows |\n| `.rollup(sum, 300)` | One point per 5 minutes, summed | Stable graphs for alerts |\n| `.fill(zero)` | Missing points become 0 | Sparse metrics such as errors |\n| `.fill(last, 600)` | Carry the last value for up to 10 min | Gauges that report rarely |\n| `default_zero()` | Same as zero fill for monitors on sparse series | Error counters that are absent when no error |\n\nExample with the three together:\n\n```text\nsum:orders.failed{env:prod}.as_count().rollup(sum, 300).fill(zero)\n```\n\nRead it as: failed orders per 5 minutes, with zeros where nothing happened.\n\nWhy it matters in monitors: if the error metric only exists when an error occurs, the series is missing in quiet minutes. The monitor can go to \"no data\" instead of \"OK\". Use `default_zero()` or the monitor's no-data setting properly.\n\n**Gotchas**\n- A ratio of two `as_rate` queries works, but mixing `as_count` of one with `as_rate` of the other gives wrong numbers.\n- A `rollup` in a monitor replaces its evaluation granularity, which changes alert behaviour.\n\n**Interview tip:** If asked \"how do you compute error percent\", give the exact formula with `as_count` on both queries.",
+      "level": "intermediate",
+      "module": "Metrics",
+      "tags": [
+        "queries",
+        "rollup",
+        "as-count"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-045",
+      "question": "How do you get accurate percentiles with distribution metrics and APM?",
+      "answer": "**Short answer:** For fleet-wide percentiles, send the metric as a distribution (or use the latency distributions that APM computes) and query the percentile aggregation. Never average per-host percentiles, since an average of p95 values is not the p95 of all requests.\n\nWhy averages of percentiles are wrong: imagine pod A with 10 slow requests and pod B with 1 000 fast ones. The average of their p95s is a poor guess. The real p95 over 1 010 requests needs the raw distribution.\n\nA distribution metric keeps a compact sketch of all values on the Datadog side. You can then ask for any percentile, by any tag.\n\n```go\n// Go (read-only example): send latency as a distribution\n_ = client.Distribution(\"orders.checkout.duration_ms\", float64(elapsed.Milliseconds()),\n\t[]string{\"region:we\", \"payment:card\"}, 1)\n```\n\nQuery percentile aggregations in the metric explorer or a dashboard (after you enable percentiles on that metric in its settings, which is an explicit step with its own cost):\n\n```text\np95:orders.checkout.duration_ms{env:prod} by {region}\np99:orders.checkout.duration_ms{env:prod}\n```\n\nFor service latency, APM already provides latency distributions per service and resource. You can use APM monitors or dashboards widgets to show p50, p95 and p99 without creating your own metric.\n\n| Source | When to use |\n| --- | --- |\n| APM trace latency | Request latency of a traced service |\n| Distribution metric | Business timings (checkout, queue wait), non-HTTP work |\n| Histogram metric | Per-host stats where global percentiles are not needed |\n\n**Gotchas**\n- Percentile aggregations on distributions add cost, per metric and tag set. Turn them on only where needed.\n- Alerting on p99 of low-traffic endpoints is noisy. Use a minimum request count in a composite monitor.\n\n**Interview tip:** Say \"average hides the pain; I look at p95 and p99, and I look at them from a distribution\".",
+      "level": "intermediate",
+      "module": "Metrics",
+      "tags": [
+        "percentiles",
+        "distribution",
+        "latency"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-046",
+      "question": "How do you configure monitors well: no data, recovery, renotify and downtime?",
+      "answer": "**Short answer:** Good monitors decide what happens in four special situations: when data is missing, when the value recovers, when the problem continues, and when you expect noise. These are the no-data setting, recovery thresholds, renotification and downtimes.\n\n| Setting | What it controls | Good default |\n| --- | --- | --- |\n| Notify on no data | Alert when the series stops reporting | On for always-on services, off for sparse metrics |\n| No data timeframe | How long without data before the no-data state | At least 2x the window |\n| Recovery threshold | Value at which the alert clears | A bit below the alert threshold, to stop flapping |\n| Renotify | Re-send while still alerting | 30 to 60 minutes for pages, off for tickets |\n| Evaluation delay | Wait before evaluating, for delayed data | 300 seconds or more for cloud metrics |\n| Require full window | Only evaluate when the whole window has data | Off for sparse metrics, on for steady ones |\n| New group delay | Grace for new hosts or pods | 5 to 10 minutes in Kubernetes |\n\n**No data** is the tricky one. If a service dies, its metrics stop. A threshold monitor sees nothing and stays quiet, unless you notify on no data. For error counters that exist only when errors occur, \"no data\" is normal. Use `default_zero()` in the query, or turn no-data notifications off.\n\n**Downtime** mutes notifications for a scope and schedule, for example during a planned migration. Scope it narrowly with tags, and give it an end time. A downtime on `env:prod` forever is a hidden outage.\n\n**Tags and scope**: the `{env:prod,service:orders-api}` part of the query is the scope. Use `by {pod_name}` carefully, since each group is evaluated separately and can alert separately.\n\n**Gotchas**\n- Cloud metrics (such as Azure Monitor) arrive late. Without an evaluation delay, you alert on partial data.\n- Pods that autoscale up and down create short-lived groups that trigger no-data alerts. Use the new group delay and group retention settings.\n\n**Interview tip:** Say that your review of any noisy monitor starts with these four settings, because most noise is configuration, not reality.",
+      "level": "intermediate",
+      "module": "Dashboards & Monitors",
+      "tags": [
+        "monitors",
+        "no-data",
+        "downtime"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-047",
+      "question": "What are multi-alert monitors, composite monitors and templated messages?",
+      "answer": "**Short answer:** A multi-alert monitor evaluates each group (service, pod, region) separately and sends one alert per group. A composite monitor combines other monitors with AND, OR and NOT. Templated messages use variables and conditions to send the right text to the right channel.\n\n**Multi-alert**: add `by {service}` to the query. One monitor definition covers all services, and each service alerts on its own. Group names are available in the message, for example `{{service.name}}`.\n\n```text\nsum(last_10m):sum:trace.http.request.errors{env:prod} by {service}.as_count()\n/ sum:trace.http.request.hits{env:prod} by {service}.as_count() * 100 > 5\n```\n\n**Composite**: combine monitor ids with boolean logic. For example, page only when the error ratio is high and traffic is above a minimum:\n\n```text\n12345678 && 87654321\n```\n\nEach number is the id of an existing monitor. The composite alerts only when both are alerting for the same group. This is a good tool for removing low-traffic noise.\n\n**Templated messages** use conditional blocks and variables:\n\n```text\n{{#is_alert}}\n:red_circle: {{service.name}} error ratio {{value}} percent\nDashboard: https://app.datadoghq.eu/dashboard/abc-123\n@pagerduty-orders-prod\n{{/is_alert}}\n\n{{#is_warning}}\n:warning: {{service.name}} warning @slack-orders-alerts\n{{/is_warning}}\n\n{{#is_no_data}}No data from {{service.name}}{{/is_no_data}}\n{{#is_recovery}}Recovered{{/is_recovery}}\n```\n\nYou can route by group value with `{{#is_match \"env.name\" \"prod\"}}@pagerduty-prod{{/is_match}}`, so staging never pages.\n\n**Gotchas**\n- Too many groups means too many alerts in a storm. Group by a bounded tag, and use notification grouping options when available.\n- Composite monitors hide their parts. Document them in the message.\n\n**Interview tip:** Mention that you route severity through the message template, so one monitor can warn in chat and page the pager at critical.",
+      "level": "intermediate",
+      "module": "Dashboards & Monitors",
+      "tags": [
+        "monitors",
+        "composite",
+        "notifications"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-048",
+      "question": "When do you use anomaly, outlier and forecast monitors?",
+      "answer": "**Short answer:** Use anomaly monitors for metrics with daily or weekly patterns where a fixed number does not fit, outlier monitors to find the odd one among similar things, and forecast monitors to warn before a limit is reached, such as disk space or quota.\n\n| Monitor | Question | Example |\n| --- | --- | --- |\n| Anomaly | Is this unusual for this time? | Orders per minute far below a normal Monday 10:00 |\n| Outlier | Does one member behave differently from peers? | One pod with high latency, others fine |\n| Forecast | Will it cross a limit soon? | Persistent volume full in 4 days |\n\nQuery shapes (read-only examples; the arguments differ by algorithm and version):\n\n```text\navg(last_4h):anomalies(avg:orders.placed{env:prod}.as_count(), 'agile', 2, direction='below', seasonality='weekly') >= 1\navg(last_30m):outliers(avg:trace.http.request.duration{env:prod} by {pod_name}, 'dbscan', 2) > 0\nmax(next_1w):forecast(avg:kubernetes.kubelet.volume.stats.used_bytes{env:prod} by {persistentvolumeclaim}, 'linear', 1) >= 50000000000\n```\n\nPractical guidance:\n- Anomaly detection needs enough history. Weekly seasonality needs a few weeks of data.\n- Pick the direction. Many metrics matter only on one side (a drop in orders, not a rise).\n- Pods being replaced often give weak signals for outlier monitors. Use stable groups.\n- Forecast is good for slow trends (disk, certificate counts, queue growth). It is not for sudden failures.\n\n**Gotchas**\n- Anomaly alerts are hard to explain to others. Add a graph link and the expected range in the message.\n- After a campaign, a holiday or a migration, the model needs time to adapt.\n\n**Interview tip:** Say that you use anomaly detection as a secondary signal. The page comes from SLO burn or a clear symptom.",
+      "level": "intermediate",
+      "module": "Dashboards & Monitors",
+      "tags": [
+        "monitors",
+        "anomaly",
+        "forecast"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-049",
+      "question": "How do you use Synthetic Monitoring: API tests, browser tests and CI?",
+      "answer": "**Short answer:** Synthetic tests run scripted checks against your app from outside, on a schedule and from many locations. API tests check endpoints, multistep API tests check a flow, and browser tests drive a real browser through a user journey. You can also run them in CI.\n\n| Test type | What it does | Example |\n| --- | --- | --- |\n| API test | One HTTP, gRPC, TCP, DNS or SSL check with assertions | `GET /health` returns 200 under 500 ms |\n| Multistep API test | Several calls, passing values between them | Login, create order, read order |\n| Browser test | Records clicks in a real browser | Search, add to cart, check out |\n| Mobile app test | Runs on real or emulated devices | Login on Android |\n\nLocations can be managed (public regions run by Datadog) or **private locations**, a worker container you run inside your network or cluster to test internal endpoints.\n\nUse cases:\n- Catch outages before users, in the quiet hours.\n- Measure availability and latency from the user's side, including DNS, TLS and CDN.\n- Check certificates and domain expiry.\n- Smoke test after each deploy.\n\nRun tests from a pipeline with the `datadog-ci` tool:\n\n```bash\n# GitLab CI job script (read-only example)\nnpx @datadog/datadog-ci synthetics run-tests \\\n  --search 'tag:smoke env:staging' \\\n  --failOnTimeout\n```\n\nThe `DATADOG_API_KEY` and `DATADOG_APP_KEY` are read from the environment. Results show in the pipeline and in Datadog.\n\n**Gotchas**\n- Browser tests are brittle when selectors change. Use stable test ids, and keep them few and focused.\n- Do not run Synthetic tests with real customer accounts or real payments. Use test accounts.\n- A test that runs every minute from 10 locations is a lot of runs. Check what you need.\n\n**Interview tip:** Say that Synthetics tell you a flow is broken, while RUM tells you how real users experience it. You want both.",
+      "level": "intermediate",
+      "module": "RUM & Synthetics",
+      "tags": [
+        "synthetics",
+        "testing",
+        "ci"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-050",
+      "question": "What do Network Performance Monitoring and DNS monitoring give you?",
+      "answer": "**Short answer:** Network Performance Monitoring shows traffic between services, hosts, containers and zones: volume, retransmits, latency and failed connections. It helps you find network problems that look like application problems, such as DNS failures or a blocked path.\n\nConcept-level view:\n- The Agent uses eBPF on the host to see connections at the network level, without changing your application.\n- You get a map of who talks to whom, tagged with service, pod, namespace or availability zone.\n- Metrics include bytes, packets, TCP retransmits and round-trip time, per flow.\n- **DNS monitoring** shows slow or failing DNS queries per client and per domain.\n\nTypical questions it answers:\n\n| Symptom | What you check |\n| --- | --- |\n| Intermittent timeouts to a service | TCP retransmits and RTT on that flow |\n| Random slow first request | DNS resolution time and failures |\n| Unexpected cross-zone traffic | Flows between availability zones (also a cost topic) |\n| New dependency appears | Flow map shows an unplanned connection |\n| Blocked connection after a policy change | Failed connections on the path |\n\nIn Kubernetes, the classic DNS issue is the `ndots:5` default, which makes a lookup try several search domains before the real one, adding latency and load on CoreDNS. NPM and DNS monitoring make this visible.\n\n**Gotchas**\n- It needs a recent Linux kernel and extra Agent permissions (system-probe). Security teams will ask why.\n- Flow data is large. Check the cost model before enabling it on every node.\n\n**Interview tip:** Say that you reach for network tools only after traces show time spent in connect or DNS, not before.",
+      "level": "intermediate",
+      "module": "Incident Investigation",
+      "tags": [
+        "network",
+        "npm",
+        "dns"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-051",
+      "question": "What does Database Monitoring add beyond APM spans?",
+      "answer": "**Short answer:** Database Monitoring (DBM) looks inside the database. It collects query metrics, normalised query samples, execution plans, waits and blocking sessions. APM shows that the database call was slow. DBM shows why.\n\nHow it works at concept level: the Agent connects to the database with a read-only monitoring user, and collects statistics (for Postgres, from `pg_stat_statements` and activity views), samples running queries and gets explain plans. It supports common engines such as PostgreSQL, MySQL, SQL Server and others; check the current list, including managed services on Azure.\n\nA sketch of a Postgres check configuration:\n\n```yaml\n# conf.d/postgres.d/conf.yaml (read-only example)\ninit_config:\ninstances:\n  - host: orders-db.example.internal\n    port: 5432\n    username: datadog\n    password: ENC[pg_monitor_password]\n    dbm: true\n    tags:\n      - env:prod\n      - service:orders-db\n```\n\nWhat you do with it:\n- Find the **top queries by total time**, and see the p95 per query.\n- Open an **explain plan** and spot a sequential scan, or a plan that changed.\n- See **waits and locks**: which session blocks which.\n- Jump from an APM span to the exact query and its plan.\n- Detect missing indexes and sudden plan regressions after a deploy or a statistics change.\n\n**Gotchas**\n- Plans and samples can contain query values. Use obfuscation settings so literals are masked.\n- The monitoring user needs careful permissions and should not be a superuser.\n- `pg_stat_statements` must be enabled on the server.\n\n**Interview tip:** Walk through one story: \"APM showed 300 ms in a SELECT, DBM showed a sequential scan after statistics changed, we added an index\".",
+      "level": "intermediate",
+      "module": "Incident Investigation",
+      "tags": [
+        "database",
+        "dbm",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-052",
+      "question": "How do you use the Continuous Profiler?",
+      "answer": "**Short answer:** The Continuous Profiler samples CPU, memory and other resources of your running service all the time, at low overhead, and shows flame graphs by version and endpoint. It finds the code that costs CPU or allocates memory in production, where load tests fail to reproduce problems.\n\nEnable it per language:\n\n```go\n// Go (read-only example)\nimport \"gopkg.in/DataDog/dd-trace-go.v1/profiler\"\n\nerr := profiler.Start(\n\tprofiler.WithService(\"orders-api\"),\n\tprofiler.WithEnv(\"prod\"),\n\tprofiler.WithVersion(\"1.14.2\"),\n\tprofiler.WithProfileTypes(\n\t\tprofiler.CPUProfile,\n\t\tprofiler.HeapProfile,\n\t\tprofiler.GoroutineProfile,\n\t),\n)\nif err != nil {\n\tlog.Printf(\"profiler: %v\", err)\n}\ndefer profiler.Stop()\n```\n\nIn Python set `DD_PROFILING_ENABLED=true` with `ddtrace-run`. In Node use `DD_PROFILING_ENABLED=true` with the tracer.\n\nWhat you see:\n- **CPU flame graph**: wide boxes mean functions that use the most CPU.\n- **Heap and allocation profiles**: which code holds or allocates memory.\n- **Goroutine and lock profiles** (Go): leaks, blocking, contention.\n- **Compare by version**: a flame graph before and after a deploy, so regressions are visible.\n- **Code hotspots in traces**: for a slow span, see the CPU time within it.\n\nTypical wins: a JSON encoder in a hot path, regex compiled in a loop, large allocations causing GC pressure, and goroutines piling up.\n\n**Gotchas**\n- Overhead is small but not zero, and profile types differ in cost. Start with CPU and heap.\n- A flame graph shows where time goes, not why it is called so often. Combine with traces.\n\n**Interview tip:** Say that you use the profiler after a metric shows high CPU or GC time, and you compare versions before blaming the infrastructure.",
+      "level": "intermediate",
+      "module": "APM & Tracing",
+      "tags": [
+        "profiling",
+        "go",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-053",
+      "question": "How does Error Tracking group errors, and how do you use it?",
+      "answer": "**Short answer:** Error Tracking groups similar errors from APM, logs and RUM into issues using the stack trace and message. Instead of thousands of events you see a short list of issues with counts, first seen and last seen, affected versions and users.\n\nHow grouping works: Datadog creates a fingerprint from the error type, message pattern and the main frames of the stack trace. Same fingerprint, same issue. Different values in the message (ids, numbers) should not split the issue, but they sometimes do.\n\nWhat an issue gives you:\n- First seen and last seen, and the **version** where it appeared.\n- Trend graph, to see if a deploy caused it.\n- Number of impacted users or sessions (for RUM).\n- Sample events with a link to the trace, the logs and the replay.\n- States such as for review, ongoing and resolved, and regression detection if a resolved issue returns.\n\nFor front-end errors you must upload **source maps**, or stack traces point to minified code:\n\n```bash\n# CI step after the build (read-only example)\nnpx @datadog/datadog-ci sourcemaps upload ./build/static/js \\\n  --service web-shop \\\n  --release-version \"$APP_VERSION\" \\\n  --minified-path-prefix https://app.example.com/static/js\n```\n\nThe `service` and `release-version` must match the RUM init, or Datadog cannot find the map.\n\nGood practice for a team: review new issues after each release, assign owners, and link issues to tickets. Use it as a triage inbox.\n\n**Gotchas**\n- Logging errors without a stack trace (or as plain strings) gives poor grouping. Log the error type and stack in structured fields.\n- Do not catch and hide errors only to avoid noise. Fix or filter them deliberately.\n\n**Interview tip:** Say that \"new issue after this version\" is one of your release checks.",
+      "level": "intermediate",
+      "module": "APM & Tracing",
+      "tags": [
+        "error-tracking",
+        "errors",
+        "frontend"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-054",
+      "question": "How do trace ingestion controls, retention filters and trace metrics work?",
+      "answer": "**Short answer:** Ingestion controls decide how many spans are sent to Datadog. Retention filters decide which ingested spans stay searchable for the retention period. Trace metrics (hits, errors, latency) are computed from all traced traffic and are not affected by sampling.\n\nThink of three layers:\n\n```mermaid\nflowchart LR\n    A[\"Tracer: sampling rules\"] --> B[\"Agent: rate limits and error sampling\"]\n    B --> C[\"Ingestion: live search window\"]\n    C --> D[\"Retention filters: kept for analysis\"]\n    A -. all requests .-> E[\"Trace metrics\"]\n```\n\nRead it left to right: the tracer decides, the Agent limits, Datadog ingests, and retention filters keep a subset. Metrics are computed from all requests before sampling.\n\nControls you set:\n- **Tracer sampling rate** per service and per resource, with `DD_TRACE_SAMPLE_RATE` or `DD_TRACE_SAMPLING_RULES`.\n- **Agent limits**: by default the Agent also limits the number of traces per second it keeps, and still tries to keep error and rare traces. Check the current defaults in the docs.\n- **Ingestion Control page**: shows ingested volume by service and why traces were kept or dropped.\n- **Retention filters**: for example keep all traces with errors, keep all traces for the `checkout` resource, and keep a small random share of everything. Datadog also offers an intelligent default filter that keeps a diverse set.\n- **Custom metrics from spans**: create metrics from span tags before spans are dropped by retention.\n\n```bash\n# Per-resource sampling rules (read-only example)\nDD_TRACE_SAMPLING_RULES='[{\"service\":\"orders-api\",\"resource\":\"GET /healthz\",\"sample_rate\":0},\n                          {\"service\":\"orders-api\",\"sample_rate\":0.2}]'\n```\n\nThis drops health checks entirely and keeps 20 percent of other traces.\n\n**Gotchas**\n- Dropping health check traces is a classic easy saving.\n- Retention is billed separately from ingestion, so check both.\n\n**Interview tip:** Say \"metrics from everything, traces from a smart sample, errors and slow ones always\".",
+      "level": "intermediate",
+      "module": "APM & Tracing",
+      "tags": [
+        "apm",
+        "sampling",
+        "retention"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-055",
+      "question": "What is the Service Catalog and how do you use ownership metadata?",
+      "answer": "**Short answer:** The Service Catalog is Datadog's inventory of services with their owners, links, tiers and dependencies. You define metadata in a file in each service's repo, and Datadog shows who owns it and how healthy it is. During an incident this answers \"who do I call?\"\n\nProduct names change: it may appear as Software Catalog in current UIs. The idea stays the same.\n\nA service definition file kept next to the code:\n\n```yaml\n# service.datadog.yaml (read-only example)\nschema-version: v2.2\ndd-service: orders-api\nteam: orders\napplication: shop\ntier: \"1\"\nlifecycle: production\ndescription: Creates and reads customer orders.\ncontacts:\n  - type: slack\n    contact: https://example.slack.com/archives/C0ORDERS\n  - type: email\n    contact: orders-team@example.com\nlinks:\n  - name: Runbook\n    type: runbook\n    url: https://wiki.example.com/runbooks/orders-api\n  - name: Repository\n    type: repo\n    url: https://git.example.com/shop/orders-api\ntags:\n  - team:orders\n```\n\nWhat you gain:\n- **Ownership** for alert routing, tags and reports.\n- **Scorecards**: checks such as \"has an on-call\", \"has a runbook\", \"has an SLO\". They create a gentle push toward standards.\n- **Dependencies** from traces, visible with the service map.\n- **Cost by team**, when metrics and logs carry the same `team` tag.\n\nAutomate it: CI validates the file and registers it with the API, or use the Terraform resource or a GitHub/GitLab integration.\n\n**Gotchas**\n- Stale metadata is worse than none. Add the catalog check to your service template and review it in incident follow-ups.\n- Services in traces that are not defined appear as unowned. Make an effort to clear that list.\n\n**Interview tip:** Say that ownership metadata is the base for good routing, and that you track the share of services with owner, runbook and SLO as a team metric.",
+      "level": "intermediate",
+      "module": "Platform & Leadership",
+      "tags": [
+        "service-catalog",
+        "ownership",
+        "metadata"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-056",
+      "question": "How do you use Datadog metrics for Kubernetes autoscaling, and how does it connect to Azure?",
+      "answer": "**Short answer:** The Cluster Agent can act as an external metrics provider, so a Horizontal Pod Autoscaler can scale on any Datadog query, such as queue depth or requests per second. For Azure, the Datadog Azure integration reads Azure Monitor metrics, while the Agent in the cluster gives deeper AKS data.\n\n**HPA with Datadog metrics.** You enable the metrics provider in the Helm values and define a `DatadogMetric` resource with a query. The HPA references it as an external metric.\n\n```yaml\n# DatadogMetric and HPA (read-only example)\napiVersion: datadoghq.com/v1alpha1\nkind: DatadogMetric\nmetadata:\n  name: orders-queue-depth\n  namespace: shop\nspec:\n  query: avg:orders.queue.depth{env:prod,service:orders-worker}.rollup(avg, 60)\n---\napiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: orders-worker\n  namespace: shop\nspec:\n  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: orders-worker}\n  minReplicas: 2\n  maxReplicas: 20\n  metrics:\n    - type: External\n      external:\n        metric:\n          name: datadogmetric@shop:orders-queue-depth\n        target: {type: AverageValue, averageValue: \"100\"}\n```\n\nPoints to remember: the metric has delay of a minute or more, so scale on a smoothed value. Autoscaling that depends on a SaaS metric has a dependency on Datadog; consider KEDA or CPU as a fallback for critical paths.\n\n**Azure.** There are two data paths:\n\n| Path | What it provides |\n| --- | --- |\n| Azure integration (App Registration with a Monitoring Reader role, or the Azure native Datadog resource) | `azure.*` platform metrics, tags and logs from Azure resources such as SQL, Service Bus, Storage |\n| Agent in AKS | Node, pod and container metrics, logs, APM, Kubernetes object state |\n\nAzure metrics are polled, so they arrive later than Agent metrics. Tags such as subscription, resource group and region help in grouping.\n\n**Gotcha:** Scaling on a metric with gaps (no data) can cause the HPA to hold or behave unexpectedly. Test the \"no data\" case.\n\n**Interview tip:** Say you would use Datadog metrics for HPA only when the metric is business-relevant and you can tolerate the delay.",
+      "level": "intermediate",
+      "module": "Agent & Setup",
+      "tags": [
+        "hpa",
+        "azure",
+        "kubernetes"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-057",
+      "question": "What security products does Datadog offer, in short?",
+      "answer": "**Short answer:** Datadog has security products that reuse its agent and tracing data: Cloud Security (misconfigurations and threats in cloud and Kubernetes), application and API protection (formerly ASM), runtime workload protection, Cloud SIEM, and Sensitive Data Scanner. Names change, so check the current list.\n\n| Area | What it does |\n| --- | --- |\n| Cloud security (posture) | Finds misconfigurations in cloud accounts and Kubernetes against benchmarks |\n| Vulnerability management | Finds vulnerable libraries and images in running services |\n| Application and API protection | Detects attacks like injection in traced services, using the tracing library |\n| Workload protection | Detects suspicious runtime behaviour on hosts and containers |\n| Cloud SIEM | Detection rules over logs for security events |\n| Sensitive Data Scanner | Finds and redacts sensitive data in telemetry |\n\nWhy a tech lead cares:\n- The same tracing library can provide application protection, so enabling is often an environment variable and a rollout, not a new agent.\n- Findings carry service, env and team tags, so you can route them like alerts.\n- Security data adds to cost and to the permissions the Agent needs, so review with your security team.\n\n**Gotchas**\n- Do not treat these tools as a replacement for secure code and a dependency policy. They detect, they do not prevent mistakes.\n- Check licensing and data residency before enabling.\n\n**Interview tip:** Keep it short and honest: \"we use Datadog for security signals alongside our scanner, and I would involve security before enabling more\".",
+      "level": "intermediate",
+      "module": "Platform & Leadership",
+      "tags": [
+        "security",
+        "asm",
+        "cloud-security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-058",
+      "question": "How do you work with the Datadog API, Terraform provider and dashboards as code?",
+      "answer": "**Short answer:** Everything in the UI is also available through the REST API and the Terraform provider. Authenticate with an API key and an application key (scoped to a service account where possible), keep definitions in git, and apply them from CI.\n\n**API.** Two keys: the API key identifies your org for sending data, and the application key authorises reading and managing resources.\n\n```bash\n# List monitors for a team (read-only example)\ncurl -s \"https://api.datadoghq.com/api/v1/monitor?monitor_tags=team:orders\" \\\n  -H \"DD-API-KEY: ${DD_API_KEY}\" \\\n  -H \"DD-APPLICATION-KEY: ${DD_APP_KEY}\"\n```\n\n**Terraform provider.** Configure once, then declare resources. Dashboards can be written with the typed resource or as JSON.\n\n```hcl\nterraform {\n  required_providers {\n    datadog = { source = \"DataDog/datadog\" }\n  }\n}\n\nprovider \"datadog\" {\n  api_key = var.datadog_api_key\n  app_key = var.datadog_app_key\n  api_url = \"https://api.datadoghq.eu/\"\n}\n\nresource \"datadog_dashboard_json\" \"orders_overview\" {\n  # Export JSON from the UI, then keep the file in git\n  dashboard = file(\"${path.module}/dashboards/orders-overview.json\")\n}\n```\n\nWorkflow that works:\n1. Design the dashboard in the UI.\n2. Export its JSON (or use the Terraform export option).\n3. Replace environment-specific values with template variables or Terraform variables.\n4. Commit, review, and apply in CI.\n\nOther resources worth managing as code: SLOs, synthetic tests, log pipelines and indexes, metric tag configurations, service definitions and downtimes.\n\n**Gotchas**\n- Keys in state files are sensitive. Use remote state with access control.\n- Dashboard JSON from the UI contains ids that change. Clean it before storing.\n- Rate limits exist on the API. Do not poll it in a tight loop.\n\n**Interview tip:** Say that you read from the API for reports, for example monitors without owners or without a runbook link, and use that as a quality metric.",
+      "level": "intermediate",
+      "module": "Platform & Leadership",
+      "tags": [
+        "api",
+        "terraform",
+        "dashboards"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-059",
+      "question": "How do traces propagate across services and queues, and what breaks them?",
+      "answer": "**Short answer:** The caller injects the trace context into the request headers (or message headers), and the callee extracts it and creates its spans as children. Datadog uses its own headers and the W3C `traceparent` standard. Traces break when a hop does not inject, extract, or pass the context object.\n\n```mermaid\nsequenceDiagram\n    participant W as web\n    participant O as orders-api\n    participant K as Kafka\n    participant P as payments-worker\n    W->>O: HTTP with trace headers\n    O->>K: produce with headers in message\n    K->>P: consume, extract context\n    P-->>K: ack\n    O-->>W: response\n```\n\nRead it top down: the same trace id travels in HTTP headers and then in Kafka message headers, so the worker's spans join the original trace.\n\nHeaders in use:\n\n| Style | Headers |\n| --- | --- |\n| Datadog | `x-datadog-trace-id`, `x-datadog-parent-id`, `x-datadog-sampling-priority`, `x-datadog-tags` |\n| W3C Trace Context | `traceparent`, `tracestate` |\n| B3 (Zipkin) | `b3` or `X-B3-*` |\n\nChoose styles with `DD_TRACE_PROPAGATION_STYLE`, for example `datadog,tracecontext`, so you work with both Datadog and OpenTelemetry services. Baggage (key/value data that travels with the request) is supported by newer libraries; check the version.\n\nWhy traces break:\n- A service without a tracer, or a proxy that strips unknown headers.\n- Code that starts a new context (`context.Background()` in Go) instead of using the request one.\n- Async work: goroutines, thread pools, and background jobs that lose the context object.\n- Message queues where headers are not injected. Use the integration for Kafka, RabbitMQ or SQS, or inject and extract manually.\n- Different sampling decisions: the priority flag travels with the context so all services agree.\n\nFor queues, a consumer span is usually linked to the producer by a parent relationship or by a span link, and long delays in the queue show as a gap.\n\n**Gotchas**\n- Mixed propagation formats between teams give two half traces instead of one.\n- A trace id logged in decimal in one language and hex in another confuses searches. Use library helpers.\n\n**Interview tip:** When a trace has a hole, ask \"which hop did not carry the context?\" and check the headers at that hop first.",
+      "level": "advanced",
+      "module": "APM & Tracing",
+      "tags": [
+        "tracing",
+        "propagation",
+        "w3c"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-060",
+      "question": "How do you design tagging and metric naming conventions at scale?",
+      "answer": "**Short answer:** Define a small, written convention for metric names and tags, make it machine-checkable, and give teams templates that follow it. Names should say what is measured and the unit. Tags should be bounded, lowercase and shared across all signals.\n\nMetric naming rules:\n- Dot-separated, lowercase, hierarchical: `<domain>.<component>.<measure>`. Example: `orders.checkout.duration`.\n- Include the unit in the name or metadata for non-obvious units: `.bytes`, `.seconds`, `.ms`. Pick one unit for time across the company.\n- Counters are nouns of events (`orders.placed`), gauges are states (`orders.queue.depth`).\n- No tag values in the name. Do not create `orders.region.we.placed`; use a `region` tag.\n- Prefix business metrics with the domain, not the team, because teams change.\n\nTag rules:\n\n| Rule | Example |\n| --- | --- |\n| Lowercase keys, snake_case or kebab-case, one choice | `payment_method` |\n| Reserved tags stay consistent | `env`, `service`, `version`, `team` |\n| Bounded values only | `status_class:5xx`, not `status:503` for every code if not needed |\n| Avoid free-text and ids | No `user_id`, `order_id`, `url` |\n| Same key, same meaning everywhere | `region` is always the cloud region |\n\nMake it enforceable:\n- A shared metrics wrapper library in each language that adds standard tags and rejects unknown ones.\n- A CI check or review checklist.\n- Metadata for each custom metric (description, unit) filled in, so the metric explorer is self-explanatory.\n- Allowlist for tags via tag configuration, so unexpected tags do not become series.\n\n**Gotchas**\n- Changing a name later breaks every dashboard and monitor. Treat names as an API.\n- Different teams using `env:production` and `env:prod` split data and silently break monitors.\n\n**Interview tip:** Say that the convention is short on purpose (one page), because a long standard is not followed.",
+      "level": "advanced",
+      "module": "Cost & Governance",
+      "tags": [
+        "naming",
+        "tagging",
+        "governance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-061",
+      "question": "How do you find and fix high-cardinality metrics?",
+      "answer": "**Short answer:** Look at the Metrics Summary and usage pages to find the metrics with the most unique tag combinations, check which tag explodes, and then remove it from the code, move it to logs and traces, or limit which tags are indexed with Metrics without Limits.\n\nDiagnosis steps:\n1. **Find the biggest metrics.** In Plan and Usage, check custom metrics by name. The metrics summary shows for each metric its tags and the number of distinct values.\n2. **Find the exploding tag.** Open the metric and view the tag list. A tag with thousands of values is the culprit, for example `pod_name` with restarts, `customer_id` or `path`.\n3. **Trace to code.** Search the repo for the metric name and the place that adds the tag.\n4. **Estimate.** Series count is roughly the product of the number of values of each tag. Three tags with 100 values each can make a million series.\n5. **Fix at the source.** Replace the value with a bounded one:\n\n```go\n// ❌ bad: one series per URL path, including ids\n_ = client.Incr(\"http.requests\", []string{\"path:\" + r.URL.Path}, 1)\n\n// ✅ good: the route template, a bounded set\n_ = client.Incr(\"http.requests\", []string{\"route:\" + routePattern}, 1)\n```\n\n6. **Reduce without code changes.** Use tag configuration (Metrics without Limits) to keep only the tags you really query. You still send the data, but Datadog indexes fewer combinations for querying.\n7. **Prevent.** Add a monitor on estimated custom metric usage, and a review rule.\n\n| Common source | Fix |\n| --- | --- |\n| Ids as tags (user, order, session) | Put them in logs or span tags |\n| Raw URLs | Use route templates |\n| Pod name on a metric | Use `deployment` and `namespace`; keep pod only where needed |\n| Timestamps or versions as tags on many metrics | Remove or limit |\n\n**Gotcha:** Percentile aggregations and distributions multiply the cost per tag set. Be strict there.\n\n**Interview tip:** Tell a short story: \"one tag change cut custom metrics by a large share and dashboards still worked\".",
+      "level": "advanced",
+      "module": "Cost & Governance",
+      "tags": [
+        "cardinality",
+        "metrics",
+        "cost"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-062",
+      "question": "Explain trace sampling in depth: head-based, tail-based and priority sampling.",
+      "answer": "**Short answer:** Head-based sampling decides at the start of a trace, which is cheap but blind to the outcome. Tail-based sampling decides after the trace is complete, so it can keep all errors and slow traces, but needs a place that holds spans until the decision. Datadog uses priority sampling, a head decision that travels with the trace, and adds Agent-side rules to keep rare and error traces.\n\n| Approach | Decision point | Strength | Weakness |\n| --- | --- | --- | --- |\n| Head-based | Root span start | Cheap, simple, consistent across services | May drop the one trace with the bug |\n| Tail-based | After the trace completes | Keeps errors and slow traces | Needs buffering, memory, and all spans in one place |\n| Rule-based head | Start, by service/resource rules | Control per endpoint | Still blind to outcome |\n\n**Priority sampling.** The tracer sets a priority on the trace and sends it in the `x-datadog-sampling-priority` header, so all downstream services follow. Values: -1 (user reject), 0 (auto reject), 1 (auto keep), 2 (user keep). A rule or code can force \"keep\" (for example when an error occurs, a service can mark the trace as keep).\n\n**What Datadog does around it.**\n- Trace metrics come from all requests, so they are accurate.\n- The Agent has additional samplers for errors and rare traces, and limits per second.\n- Retention filters then select what is stored for search.\n- Some setups use the OpenTelemetry Collector with a tail sampling processor in front of Datadog. That gives true tail-based decisions, at the cost of running and scaling it. All spans of a trace must reach the same collector instance.\n\nStatistical note: when you sample at rate p, each kept trace represents 1/p traces. Counts from retained traces must be scaled; trace metrics already are.\n\n```mermaid\nflowchart LR\n    A[\"Request starts\"] --> B{\"Head decision<br/>rate and rules\"}\n    B -- keep --> C[\"Spans sent with priority 1 or 2\"]\n    B -- drop --> D[\"Priority 0 or -1<br/>metrics still counted\"]\n    C --> E[\"Agent: error and rare samplers\"]\n    E --> F[\"Retention filters\"]\n```\n\n**Gotchas**\n- Partial traces if one service decides differently. Keep the propagation consistent.\n- Tail sampling with several collectors needs load balancing by trace id.\n\n**Interview tip:** Say that you accept head-based sampling for volume, then protect the important traces: errors, high latency and key business flows.",
+      "level": "advanced",
+      "module": "APM & Tracing",
+      "tags": [
+        "sampling",
+        "tail-based",
+        "priority"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-063",
+      "question": "How would you build a golden-signals dashboard and SLO monitors for a Go service end to end?",
+      "answer": "**Short answer:** Instrument with `dd-trace-go` and unified tags, build a dashboard from trace metrics for traffic, errors and latency plus saturation metrics from the runtime and Kubernetes, define an SLO on request success and latency, and alert on burn rate.\n\nSetup for `orders-api` in `env:prod`:\n\n1. **Tracing and tags**: tracer started with service, env and version; HTTP router wrapped.\n2. **Dashboard widgets**, with template variables `$env` and `$service`:\n\n| Widget | Query |\n| --- | --- |\n| Traffic | `sum:trace.http.request.hits{env:$env,service:$service}.as_rate()` |\n| Error ratio | `a / b * 100`, where a is `sum:trace.http.request.errors{env:$env,service:$service}.as_count()` and b is `sum:trace.http.request.hits{env:$env,service:$service}.as_count()` |\n| Latency p95 | APM latency widget for the service, or `p95:trace.http.request{env:$env,service:$service}` |\n| Top slow resources | Top list of latency by `resource_name` |\n| CPU throttling | `avg:kubernetes.cpu.cfs.throttled.seconds{kube_deployment:$service}` (check the exact metric name in your setup) |\n| Memory vs limit | `avg:kubernetes.memory.usage{...}` / `avg:kubernetes.memory.limits{...}` |\n| Go runtime | goroutines and GC pause from the runtime metrics integration |\n| DB pool | `avg:orders.db.pool.in_use{...}` (custom gauge) |\n| Deploy markers | Overlay of deployment events |\n\n3. **SLO**: metric-based. Good events: `sum:trace.http.request.hits{service:orders-api,env:prod}.as_count() - sum:trace.http.request.errors{service:orders-api,env:prod}.as_count()`. Total events: the hits query. Target 99.9 percent over 30 days. A second latency SLO can use a time slice or a monitor on p95 under a threshold.\n\n4. **Alerts**: fast burn (page) and slow burn (ticket):\n\n```text\nburn_rate(\"<slo-id>\").over(\"30d\").long_window(\"1h\").short_window(\"5m\") > 14.4\nburn_rate(\"<slo-id>\").over(\"30d\").long_window(\"6h\").short_window(\"30m\") > 6\n```\n\n5. **Link everything**: dashboard link and runbook link in the monitor message; the SLO widget on the dashboard top row.\n\n6. **Codify** in Terraform: a module that takes the service name and creates dashboard, SLO and monitors.\n\n**Gotchas**\n- Trace metric names depend on the integration. For `net/http` the operation is `http.request`, but a chi or gRPC integration has other names. Check in the metrics explorer.\n- Health check traffic inflates success rate. Exclude it from the SLO scope or drop those traces.\n\n**Interview tip:** Walk the list in order and end with \"I would run a game day to see if the alert fires when I break the service on purpose\".",
+      "level": "advanced",
+      "module": "SLOs & Alerting",
+      "tags": [
+        "go",
+        "slo",
+        "dashboards"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-064",
+      "question": "How would you find the cause of a latency regression: a deploy, a dependency or the database?",
+      "answer": "**Short answer:** Scope the regression, line it up with changes, then use traces to see which span grew. The widest growing span tells you whether the time is in your code, in a dependency, or in the database. Confirm with a version comparison, DBM and profiles, then act.\n\nA worked example: p95 of `POST /orders` rose from 300 ms to 1.2 s at 14:05.\n\n1. **Scope.** Graph p95 `by {resource_name}`. Only `POST /orders` is slow, other routes are fine, so it is not a global problem like CPU or the network.\n2. **Time alignment.** Overlay deployment events and feature flag changes. A deploy of `orders-api 1.14.2` happened at 14:03. Suspect, not proof.\n3. **Version split.** Group p95 `by {version}`:\n\n```text\np95:trace.http.request{service:orders-api,env:prod,resource_name:post_/orders} by {version}\n```\n\n   Both old and new pods are serving, and both are slow. So it is probably not the code in the new version.\n\n4. **Trace compare.** In APM, compare slow traces with typical ones before 14:05. The new slow part is one `postgres.query` span: `SELECT ... FROM orders WHERE customer_id = ?`, now 900 ms.\n5. **Database.** Open Database Monitoring for that query. The plan changed to a sequential scan, and calls per minute are normal. A table grew past a size where the planner switched plan after a statistics update.\n6. **Rule out others.** Check dependency spans (payments API) are unchanged and that pod CPU throttling is not up.\n7. **Mitigate.** Add the missing index (or run an analyze) after review, with a plan ready for rollback.\n8. **Verify.** p95 returns, and the SLO burn rate falls.\n9. **Follow-up.** Add a monitor on query duration, and a test with production-sized data.\n\n```mermaid\nflowchart TD\n    A[\"p95 up on POST /orders\"] --> B{\"All versions slow?\"}\n    B -- \"only new version\" --> C[\"Diff code and config, profile new version\"]\n    B -- \"all versions\" --> D[\"Compare slow traces to baseline\"]\n    D --> E{\"Which span grew?\"}\n    E -- \"db query\" --> F[\"DBM: plan, waits, locks\"]\n    E -- \"downstream call\" --> G[\"Check dependency service\"]\n    E -- \"own code\" --> H[\"Profiler flame graph\"]\n```\n\n**Gotcha:** A deploy near the start time is a correlation. Prove it by splitting by version.\n\n**Interview tip:** Narrate the elimination out loud: scope, change, split, compare, confirm. Interviewers want the method more than the answer.",
+      "level": "advanced",
+      "module": "Incident Investigation",
+      "tags": [
+        "latency",
+        "investigation",
+        "troubleshooting"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-065",
+      "question": "How do the Agent, the OpenTelemetry Collector and Observability Pipelines fit together, and how do you handle privacy and data residency?",
+      "answer": "**Short answer:** The Agent collects and forwards data from each node. The OpenTelemetry Collector is a vendor-neutral pipeline you can run as an agent or a gateway. Datadog Observability Pipelines (built on Vector) is a managed-config pipeline you run in your network to route, filter and redact data before it leaves. Choose a central step when you need control before the data goes out.\n\n```mermaid\nflowchart LR\n    A[\"Apps with tracers\"] --> B[\"Node Agent or OTel Collector\"]\n    B --> C[\"Gateway: collector or Observability Pipelines Worker\"]\n    C --> D[\"Datadog\"]\n    C --> E[\"Archive storage\"]\n    C --> F[\"Other destinations\"]\n```\n\nRead it left to right: apps send to a local agent, then optionally to a gateway that filters, redacts and fans out, and finally to Datadog and other targets.\n\n| Component | Role | Use when |\n| --- | --- | --- |\n| Datadog Agent | Collect and send, with deep Datadog integrations | Default choice |\n| OpenTelemetry Collector (`datadog` exporter) | Receive OTLP, process, export | OTel-first, multi-backend |\n| Observability Pipelines Worker | Route, sample, redact logs and metrics before egress | Control cost and compliance centrally |\n\nPrivacy and residency:\n- **Site choice.** Datadog runs in several regions (sites such as US and EU). Pick the site that satisfies your data residency needs, and set `DD_SITE` consistently.\n- **Redaction before egress.** Scrub personal data in the Agent, in a gateway, or both. Do not rely only on cloud-side scrubbing.\n- **Least data.** Do not tag with personal data; avoid request bodies in spans.\n- **Access control.** Roles, restricted indexes, audit trail, and short retention for sensitive sources.\n- **Archives in your region.** Keep archive storage in the region you control.\n- **Legal.** Check DPA and subprocessors with your legal team. I am not giving legal advice here.\n\n**Gotchas**\n- Adding a gateway adds a component that can fail and needs scaling and buffering. It must not become a single point of failure.\n- Two systems sampling differently (collector and Agent) can make traces incomplete.\n\n**Interview tip:** Say that you add the central pipeline only when a requirement (cost control, redaction, multi-destination) justifies the extra moving part.",
+      "level": "advanced",
+      "module": "Platform & Leadership",
+      "tags": [
+        "opentelemetry",
+        "pipelines",
+        "privacy"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-066",
+      "question": "How do you reduce MTTD and MTTR in practice?",
+      "answer": "**Short answer:** Reduce time to detect with good symptom alerts and SLO burn rate. Reduce time to repair with linked dashboards, runbooks, easy rollbacks and practice. Learn from every incident with blameless reviews that produce tracked actions.\n\n**Detect faster (MTTD)**\n- Alerts on user-visible symptoms: error ratio, latency, synthetic checks, RUM errors.\n- Burn-rate alerts that fire early on fast burns.\n- Coverage checks: every tier-1 service has an SLO and a synthetic test.\n- Watch the alert quality: missed incidents found by customers are the signal to fix.\n\n**Repair faster (MTTR)**\n- Alert message links to dashboard, trace search and runbook.\n- Deploy markers and version tags to see what changed.\n- Fast, safe rollback or feature flag, practised often.\n- Clear ownership and escalation, in the Service Catalog.\n- Incident roles: incident commander, communications, and investigators.\n\n**Practise**\n- **Game days:** break something on purpose in staging (kill a dependency, add latency) and check that alerts fire and people find the cause. Measure the time.\n- **Runbook drills:** have a new teammate follow a runbook.\n- **Post-incident review:** timeline from Datadog, contributing factors, what went well, and actions with owners and dates. Blameless.\n\n| Metric | How to measure |\n| --- | --- |\n| MTTD | Time from start of impact to first alert (use SLO data) |\n| MTTR | Time from alert to recovery, from incident records |\n| Alert quality | Pages that needed action divided by all pages |\n| Action completion | Share of review actions finished on time |\n\n**Gotchas**\n- Averages hide long incidents. Look at the median and the worst few.\n- Improving MTTR by hiding incidents (not declaring them) is a bad trap.\n\n**Interview tip:** Mention one concrete improvement you would measure, for example \"alert includes a trace search link, so first-ten-minutes time dropped\".",
+      "level": "advanced",
+      "module": "Incident Investigation",
+      "tags": [
+        "mttr",
+        "mttd",
+        "incidents"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-067",
+      "question": "Walk me through a Datadog cost optimisation case study.",
+      "answer": "**Short answer:** Find the top cost drivers with usage data, change the largest sources at their origin, protect the signals you need for incidents, verify nothing important broke, and put guardrails in place so the savings last. Numbers below are illustrative, not real prices.\n\nScenario: usage grew faster than traffic for three months. You are asked to reduce cost without losing debuggability.\n\n1. **Measure.** In Plan and Usage and the estimated usage metrics, rank by product. Suppose logs and custom metrics dominate. Break down by `team` and `service` tags.\n2. **Logs.**\n   - One chatty service logs every request at info level and prints full request bodies. Move to sampled info logs, drop bodies.\n   - Add exclusion filters for health checks and debug logs, with 100 percent kept for errors.\n   - Create log-based metrics for counts people actually graph.\n   - Send all logs to the archive for compliance.\n   - Shorten retention for low-value indexes.\n3. **Custom metrics.**\n   - Find a metric with a `path` tag containing raw URLs. Switch to the route template.\n   - Use Metrics without Limits to index only the tags used in dashboards and monitors.\n   - Delete unused metrics (check dashboards and monitors that reference them first).\n4. **APM.**\n   - Drop health check traces by sampling rule.\n   - Keep the intelligent retention for errors and slow traces. Reduce the custom retention filters that were created \"just in case\".\n5. **Infrastructure.** Remove stale hosts and containers, decide which clusters need which products.\n6. **RUM and Synthetics.** Lower replay sample rate, reduce synthetic frequency off-hours where acceptable.\n7. **Verify.** Run a game day or review the last three incidents: could we still diagnose them?\n8. **Guardrails.** Daily index quotas, monitors on estimated usage, a monthly cost review per team, and tagging rules in templates.\n\nReport the result as share reduced per area and what trade-off you accepted.\n\n**Gotchas**\n- Savings from a one-off clean-up come back as the system grows. The guardrails are what make it last.\n- Cutting telemetry before an audit or a big launch is risky. Plan timing.\n\n**Interview tip:** Always end with how you checked that diagnosability was still intact.",
+      "level": "advanced",
+      "module": "Cost & Governance",
+      "tags": [
+        "cost",
+        "case-study",
+        "optimisation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-068",
+      "question": "How do you set up Datadog across multiple clusters, clouds and teams?",
+      "answer": "**Short answer:** Give every cluster a unique name and the same tagging standard, deploy the Agent the same way everywhere with GitOps, keep one Datadog organisation where cross-service tracing matters, and use roles, teams and tag-based access for separation. Use extra organisations only for hard isolation needs.\n\nPractical points:\n\n| Topic | Approach |\n| --- | --- |\n| Cluster identity | `datadog.clusterName` unique, plus tags `cloud`, `region`, `env` |\n| Consistency | Same Helm chart and values layout, differences only in overlay files |\n| Cross-cloud tracing | Same propagation styles everywhere, same `env` and `service` naming |\n| Cloud integrations | Azure and other cloud integrations at subscription level, tagged with the owner |\n| Teams | Datadog Teams plus a `team` tag; dashboards, monitors and cost reports per team |\n| Access | Roles with least privilege; restrict sensitive log indexes by query |\n| Keys | One API key per environment or cluster, rotated, stored in a secret manager |\n| Org structure | One org for most cases. Separate orgs for strict tenant isolation or separate legal entities |\n| Network | Outbound HTTPS to the right site, proxy settings where needed |\n\nOperational patterns:\n- A central platform team owns the Agent chart and the standards. Product teams own their dashboards and monitors.\n- Fleet-wide upgrades roll out by cluster: dev, then staging, then prod, watching the Agent's own health metrics.\n- Use a \"fleet\" dashboard showing Agent versions, hosts not reporting, and clusters missing Cluster Agent.\n\n**Gotchas**\n- Two clusters named `prod` mix their data. Names must be unique.\n- Multiple orgs make cross-service traces and shared dashboards impossible. Choose carefully.\n- Different Datadog sites for different regions split your view.\n\n**Interview tip:** Say what you would standardise first: cluster name, `env` values and propagation style.",
+      "level": "advanced",
+      "module": "Agent & Setup",
+      "tags": [
+        "multi-cluster",
+        "multi-cloud",
+        "organisation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-069",
+      "question": "How do you use Synthetic tests to gate releases in CI/CD?",
+      "answer": "**Short answer:** After deploying to a staging or canary environment, the pipeline runs selected Synthetic tests with `datadog-ci`. If critical tests fail, the pipeline stops or rolls back. Use a small, stable set of smoke tests for gating, and the bigger set for scheduled monitoring.\n\nPipeline shape:\n\n```yaml\n# .gitlab-ci.yml (read-only example)\nstages: [deploy, verify, promote]\n\nverify-staging:\n  stage: verify\n  image: node:20\n  script:\n    - npx @datadog/datadog-ci synthetics run-tests\n        --search 'tag:release-gate env:staging'\n        --failOnCriticalErrors\n        --failOnTimeout\n  variables:\n    DATADOG_SITE: datadoghq.eu\n  # DATADOG_API_KEY and DATADOG_APP_KEY come from masked CI variables\n\npromote-prod:\n  stage: promote\n  needs: [verify-staging]\n  script: [\"./promote.sh\"]\n  when: on_success\n```\n\nDesign rules:\n- **Tag tests** with `release-gate` and run only those.\n- **Local or tunnelled targets.** The `datadog-ci` tunnel lets cloud locations reach a private or ephemeral environment. Alternatively use a private location.\n- **Override variables** such as the base URL per run, so the same test works for review apps, staging and production.\n- **Stability.** A flaky gate gets ignored or bypassed. Keep tests short, retry only once, and fix flakes quickly.\n- **Time budget.** Gate tests should finish in a few minutes.\n- **After production deploy**, run the same tests against production with a read-only user, and tie the result to an automatic rollback if you have one.\n\n| Gate | Tests |\n| --- | --- |\n| Pre-promote | API smoke tests, login, one core browser flow |\n| Post-deploy | Same, in production, plus certificate and DNS checks |\n| Scheduled | Wider coverage, many locations |\n\n**Gotchas**\n- Tests that write data in production need cleanup. Use dedicated test accounts and tenants.\n- The gate checks happy paths. It does not replace canary metrics.\n\n**Interview tip:** Say that gating tests are owned like production code, with someone responsible for their health.",
+      "level": "advanced",
+      "module": "RUM & Synthetics",
+      "tags": [
+        "synthetics",
+        "ci-cd",
+        "release"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-070",
+      "question": "How does Datadog compare with Prometheus and Grafana, New Relic, Dynatrace and Azure Monitor?",
+      "answer": "**Short answer:** Datadog is a hosted, all-in-one platform with strong integrations and fast onboarding, at a usage-based price that needs management. Open-source stacks give control and lower licence cost but need people to run them. Other commercial tools overlap, and the best choice depends on team skills, scale, compliance and budget.\n\n| Option | Strengths | Trade-offs | Often chosen when |\n| --- | --- | --- | --- |\n| Datadog | Single UI for metrics, logs, traces, RUM, security; many integrations; fast to start | Cost grows with cardinality and volume; vendor lock-in; SaaS data residency questions | You want speed and breadth, small platform team |\n| Prometheus + Grafana + Loki + Tempo | Open source, flexible, no per-unit fee, Kubernetes native | You operate storage, scaling, upgrades and long-term retention; fewer built-in product features | Strong platform team, cost sensitivity, open standards |\n| New Relic | Full-stack platform with usage-based pricing and query language | Different pricing model and tooling to learn; migration effort | Existing investment or pricing fit |\n| Dynatrace | Automatic discovery and AI-assisted root cause analysis | Heavier agent model, enterprise orientation, different concepts | Large enterprises with complex estates |\n| Azure Monitor and Application Insights | Native to Azure, easy for Azure PaaS, good cost control for Azure-only | Less cross-cloud, UI and correlation less smooth across stacks | Mostly Azure, wants minimal extra vendors |\n| Grafana Cloud | Managed open source stack | Still assembling pieces | You want OSS compatibility without hosting |\n\nHow I would decide:\n1. List the questions you need to answer in an incident and who answers them.\n2. Count the people who can run an observability stack well.\n3. Estimate volume (series, log GB, spans) and ask each vendor for a quote on that shape.\n4. Check compliance, residency and exit plan (OpenTelemetry helps).\n5. Run a time-boxed pilot on one real service and measure time-to-diagnose.\n\nPrices and features change often, so verify current plans before a decision.\n\n**Gotchas**\n- \"Free\" open source has a people cost, and often a pager cost.\n- Mixed tools mean mixed alerting and no single trace-to-log flow. Keep the number of tools low.\n\n**Interview tip:** Give a balanced answer and avoid vendor tribalism. Say what you would pick for a small team and for a large platform team.",
+      "level": "advanced",
+      "module": "Platform & Leadership",
+      "tags": [
+        "comparison",
+        "prometheus",
+        "alternatives"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-071",
+      "question": "Interview scenario: \"The API got slow after a deploy.\" Walk me through it.",
+      "answer": "**Short answer:** Confirm the impact, compare before and after the deploy, split by version, find the span that grew in traces, check the database and dependencies, and roll back if impact is serious while you investigate. Speak in steps and explain what each tells you.\n\nA good spoken answer:\n\n1. **Confirm and size it.** \"First I check the monitor and the SLO burn rate. How many users, which endpoints, which regions?\" Graph p95 and error ratio `by {resource_name}`.\n2. **Check the change.** \"I look for the deploy marker and any flag or config change near the start time.\" Compare `by {version}`.\n3. **Decide on mitigation early.** If the new version is clearly worse and impact is high, roll back first. \"Mitigate first, analyse after.\"\n4. **Find the slow span.** Open slow traces for the affected route and compare with a healthy baseline from before the deploy. Which child span is wider?\n5. **Branch by finding.**\n   - A database span: look at Database Monitoring for plans, locks and calls per request (an N+1 shows as many small queries).\n   - A downstream service: check its own dashboard and dependency latency.\n   - Own code: use the profiler flame graph for the new version.\n   - Infrastructure: pod restarts, CPU throttling, HPA, node pressure.\n6. **Read the logs** for the trace ids of the slow requests.\n7. **Fix and verify.** Confirm that p95 and the SLO recover. Keep the monitor for the new failure mode.\n8. **Review.** Why did the staging checks and the canary not catch it? Add a test or a canary rule.\n\nWhat the interviewer listens for: structure, rollback before root cause, use of version splits, and a follow-up that prevents a repeat.\n\n**Gotchas**\n- Blaming the deploy without proof. Another change (a dependency, a data growth) may have the same timing.\n- Fixing in production without recording a timeline.\n\n**Interview tip:** Start with \"mitigate, then understand\", and name the three tools by purpose: dashboards to scope, traces to locate, logs to explain.",
+      "level": "advanced",
+      "module": "Incident Investigation",
+      "tags": [
+        "scenario",
+        "incidents",
+        "interview"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-072",
+      "question": "How would you design alerting for the checkout flow in an interview scenario?",
+      "answer": "**Short answer:** Define what a successful checkout means for the user, set an SLO on it, page on fast SLO burn and on synthetic failures, add cause-oriented warnings as tickets, and make every alert point to a dashboard and a runbook.\n\nDesign:\n\n**1. Define success.** A checkout is good if the order is created, the payment is authorised, and the response takes under a set time. Emit a business metric for attempts and successes, plus trace-based request metrics.\n\n**2. SLOs.**\n- Availability: ratio of successful checkouts to attempts, 99.9 percent over 30 days.\n- Latency: share of checkouts under 2 seconds, for example 95 percent.\n\n**3. Pages (symptoms).**\n- Fast burn on the availability SLO.\n- Synthetic multistep test (login, add to cart, pay with test card) failing from two or more locations.\n- Payment provider error ratio above a threshold, with a minimum volume (composite monitor).\n- Sudden drop in successful checkouts versus the same time last week (anomaly or change monitor), because a silent failure gives no errors.\n\n**4. Tickets or chat (causes).**\n- Slow burn on the SLO.\n- Database connection pool saturation, queue lag, pod restarts and CPU throttling.\n- Certificate expiry in 14 days, using forecast or a synthetic SSL check.\n- RUM: checkout page JavaScript error rate and Largest Contentful Paint regressions.\n\n**5. Message content.** Impact in words, the current value, a dashboard link, a link to a trace search for failures, the runbook, owner and escalation.\n\n**6. Dependencies.** Alert separately on third-party payment latency, so on-call can say \"provider issue\" fast. Add a status page process.\n\n**7. Testing.** Fire test alerts, and run a game day by blocking the payment provider in staging.\n\n| Layer | Signal | Route |\n| --- | --- | --- |\n| User outcome | SLO burn, synthetic | Page |\n| Service symptom | Error ratio, p95 | Page or ticket by severity |\n| Cause | Pool, lag, restarts | Ticket |\n| Business | Drop in orders | Page during business hours rules |\n\n**Gotchas**\n- Alerting only on errors misses a checkout that silently stops (for example a broken button). The business metric and RUM cover that.\n- Night pages for a small traffic drop at 3 am. Use the volume minimum.\n\n**Interview tip:** Start with the user outcome, then list the layers. Finish with how you test and tune the alerts.",
+      "level": "advanced",
+      "module": "SLOs & Alerting",
+      "tags": [
+        "scenario",
+        "alerting",
+        "slo"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "datadog-073",
+      "question": "How do you investigate a Datadog bill spike in an interview scenario?",
+      "answer": "**Short answer:** Find which product and which team grew, look for a change that matches the date (a new tag, a log level change, a new service, a sampling change), fix the source, and add guardrails so it is caught early next time.\n\nInvestigation, step by step:\n\n1. **Which product?** Open Plan and Usage and compare this month with last month: infrastructure hosts, custom metrics, indexed logs, ingested spans, RUM sessions, synthetic runs. Usually one line explains most of the jump.\n2. **When?** Use the usage graphs and `datadog.estimated_usage.*` metrics to find the day the slope changed.\n3. **Who?** Break down by `team`, `service` or `env` tags. For metrics, use the Metrics Summary sorted by number of series. For logs, use the Log Explorer top services by volume. For APM, the Ingestion Control page.\n4. **What changed that day?** Look at deploys, config changes and feature flags: a debug log level left on, a new metric with an id tag, autoscaling that created many short-lived hosts or pods, a newly enabled product, a traffic event, a retry storm creating huge error logs.\n5. **Confirm** by testing the suspect: query the metric's tag values, or the log source count.\n6. **Fix.**\n   - Logs: exclusion filter or sampling now, then change the log level in code.\n   - Metrics: remove the tag, or limit tags in the metric configuration.\n   - APM: sampling rule for the noisy route.\n   - Infrastructure: clean stale hosts, review autoscaling.\n7. **Talk to the owner.** Share the data and the cost effect.\n8. **Guardrails.** Monitors on estimated usage with thresholds per team, daily quotas on indexes, review checklist for new metrics and log sources.\n\n| Symptom | Likely cause |\n| --- | --- |\n| Custom metrics jump | New high-cardinality tag |\n| Indexed logs jump | Level change, retry loop, new verbose service |\n| Ingested spans jump | New service without sampling, health checks traced |\n| Hosts jump | Autoscaling, ephemeral nodes, duplicated Agents |\n| RUM sessions jump | Campaign traffic, bots, higher sampling rate |\n\n**Gotchas**\n- Do not respond only by cutting the big line item without knowing why it grew.\n- A short spike can be billed on peak or percentile rules for some products. Check how each product is measured in your contract.\n\n**Interview tip:** Say the order: product, date, owner, cause, fix, guardrail. Interviewers want a calm method, not a blame.",
+      "level": "advanced",
+      "module": "Cost & Governance",
+      "tags": [
+        "scenario",
+        "cost",
+        "interview"
+      ],
+      "favorite": false
+    }
+  ]
+}

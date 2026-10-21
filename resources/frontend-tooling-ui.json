@@ -1,0 +1,130 @@
+[
+  {
+    "title": "Nx documentation",
+    "url": "https://nx.dev/getting-started/intro",
+    "type": "official-docs",
+    "description": "Projects, tasks, caching, affected and module boundaries.",
+    "level": "beginner",
+    "module": "Monorepo & Nx"
+  },
+  {
+    "title": "Nx: Enforce module boundaries",
+    "url": "https://nx.dev/features/enforce-module-boundaries",
+    "type": "official-docs",
+    "description": "Tags and lint rules that keep a monorepo healthy.",
+    "level": "intermediate",
+    "module": "Monorepo & Nx"
+  },
+  {
+    "title": "Vite guide",
+    "url": "https://vite.dev/guide/",
+    "type": "official-docs",
+    "description": "Dev server, pre-bundling, env variables and builds.",
+    "level": "beginner",
+    "module": "Build Tools"
+  },
+  {
+    "title": "webpack concepts",
+    "url": "https://webpack.js.org/concepts/",
+    "type": "official-docs",
+    "description": "Entry, output, loaders, plugins and code splitting.",
+    "level": "intermediate",
+    "module": "Build Tools"
+  },
+  {
+    "title": "MDN: CSS layout",
+    "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout",
+    "type": "tutorial",
+    "description": "Flexbox, grid, positioning and responsive design.",
+    "level": "beginner",
+    "module": "CSS Fundamentals"
+  },
+  {
+    "title": "MDN: Specificity",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascade/Specificity",
+    "type": "official-docs",
+    "description": "How the cascade decides which rule wins.",
+    "level": "beginner",
+    "module": "CSS Fundamentals"
+  },
+  {
+    "title": "Tailwind CSS documentation",
+    "url": "https://tailwindcss.com/docs",
+    "type": "official-docs",
+    "description": "Utilities, variants, theme and configuration.",
+    "level": "beginner",
+    "module": "Tailwind CSS"
+  },
+  {
+    "title": "MUI: Theming",
+    "url": "https://mui.com/material-ui/customization/theming/",
+    "type": "official-docs",
+    "description": "Palette, typography, component overrides and dark mode.",
+    "level": "intermediate",
+    "module": "MUI & Component Libraries"
+  },
+  {
+    "title": "Redux Toolkit",
+    "url": "https://redux-toolkit.js.org/",
+    "type": "official-docs",
+    "description": "createSlice, configureStore, createAsyncThunk and RTK Query.",
+    "level": "beginner",
+    "module": "State Management"
+  },
+  {
+    "title": "Redux Style Guide",
+    "url": "https://redux.js.org/style-guide/",
+    "type": "article",
+    "description": "Official recommendations for structuring Redux code.",
+    "level": "intermediate",
+    "module": "State Management"
+  },
+  {
+    "title": "Storybook documentation",
+    "url": "https://storybook.js.org/docs",
+    "type": "official-docs",
+    "description": "Stories, args, docs, interaction and visual tests.",
+    "level": "beginner",
+    "module": "Design Systems & Storybook"
+  },
+  {
+    "title": "ESLint: Configuration files",
+    "url": "https://eslint.org/docs/latest/use/configure/configuration-files",
+    "type": "official-docs",
+    "description": "Flat config and how rules are combined.",
+    "level": "intermediate",
+    "module": "Package Management & Quality"
+  },
+  {
+    "title": "pnpm workspaces",
+    "url": "https://pnpm.io/workspaces",
+    "type": "official-docs",
+    "description": "Workspaces, the store and strict dependency resolution.",
+    "level": "intermediate",
+    "module": "Package Management & Quality"
+  },
+  {
+    "title": "web.dev: Learn Performance",
+    "url": "https://web.dev/learn/performance",
+    "type": "course",
+    "description": "Loading, rendering and Core Web Vitals.",
+    "level": "intermediate",
+    "module": "Performance & Bundling"
+  },
+  {
+    "title": "WAI-ARIA Authoring Practices",
+    "url": "https://www.w3.org/WAI/ARIA/apg/",
+    "type": "reference",
+    "description": "Accessible patterns for dialogs, menus, tabs and more.",
+    "level": "advanced",
+    "module": "Accessibility & i18n"
+  },
+  {
+    "title": "Module Federation",
+    "url": "https://module-federation.io/",
+    "type": "official-docs",
+    "description": "Runtime sharing of modules between builds (micro-frontends).",
+    "level": "advanced",
+    "module": "Architecture & Leadership"
+  }
+]

@@ -1,0 +1,1085 @@
+{
+  "name": "Software Testing",
+  "group": "Quality & Testing",
+  "questions": [
+    {
+      "id": "software-testing-001",
+      "question": "Why do we test software, and what exactly is a test?",
+      "answer": "**Short answer:** We test to find out, quickly and cheaply, whether the code does what we think it does, and to be able to change it later without fear. A test is a small program that runs the code with a known input and checks that the result matches an expected result.\n\nTesting does not prove that software has no bugs. It gives evidence. Each passing test says \"for this input, the behaviour is still right\". A good suite turns fear into confidence: you refactor, run the tests, and know within minutes if you broke something.\n\nA test has three parts: a known starting state, an action, and a check. If the check fails, the test fails and the team gets a signal.\n\nTests give you four things:\n- **Fast feedback** while you write code, before a user sees the bug.\n- **A safety net** for refactoring and upgrades.\n- **Living documentation** of what the code is supposed to do.\n- **A design pressure**: code that is hard to test is usually too tightly coupled.\n\n```js\nimport { test } from 'node:test';\nimport assert from 'node:assert/strict';\n\nconst total = (prices) => prices.reduce((a, b) => a + b, 0);\n\ntest('total adds all prices', () => {\n  assert.equal(total([10, 20, 5]), 35); // known input, expected result\n});\n// prints: ✔ total adds all prices\n```\n\n**Gotcha:** A test that cannot fail is worse than no test, because it gives false comfort. When you write a test, make it fail once on purpose (break the code or the expectation) to see that it really checks something.\n\n**Interview tip:** Say that tests are about confidence and speed of change, not about hitting a number. A senior answer also names the cost: tests are code, and they need maintenance, so every test must earn its place.",
+      "level": "basic",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "fundamentals",
+        "testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-002",
+      "question": "What are the test pyramid and the testing trophy?",
+      "answer": "**Short answer:** The test pyramid says: write many small fast unit tests, fewer integration tests, and very few slow end-to-end tests. The testing trophy is a front-end variation that puts most of the weight on integration tests, with static analysis at the base and a few end-to-end tests on top.\n\nThe pyramid is about cost and speed. A unit test runs in milliseconds and points at one function. An end-to-end test runs in seconds or minutes, needs a browser and a deployed system, and fails for many reasons. So you want most of your confidence from the cheap layers.\n\n```mermaid\nflowchart TD\n    E[\"End-to-end: few, slow, high realism\"] --> I[\"Integration and API: some\"]\n    I --> U[\"Unit: many, fast, cheap\"]\n```\n\nThe trophy comes from the front-end world. Its argument is that for UI code, a test that renders a whole component with its children and fake network tells you more than a unit test of one helper. So it asks for:\n- **Static checks** at the bottom: TypeScript, ESLint.\n- **A few unit tests** for pure logic.\n- **Most tests as integration tests**: render the screen, click, assert on what the user sees.\n- **A few end-to-end tests** on the top for critical journeys.\n\nThe shapes are guides, not laws. What matters is the idea behind both: put each check at the cheapest level that can still catch the bug, and keep the slow, flaky layer small.\n\n**Gotcha:** Teams often draw an \"ice cream cone\" by accident: lots of manual and UI tests, few unit tests. It is slow and brittle.\n\n**Interview tip:** Do not defend one shape. Say \"I pick the layer by where the risk is and what the feedback cost is\", then give an example, such as pricing rules in unit tests and the checkout journey in two end-to-end tests.",
+      "level": "basic",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "test-pyramid",
+        "strategy"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-003",
+      "question": "What is the difference between unit, integration, end-to-end, contract, smoke, regression and acceptance tests?",
+      "answer": "**Short answer:** The names describe different things. Unit, integration, end-to-end and contract describe the scope of a test. Smoke, regression and acceptance describe the purpose. A single test can have both a scope and a purpose, for example \"a regression test written as an integration test\".\n\n| Type | What it checks | Typical speed |\n| --- | --- | --- |\n| Unit | One function or class in isolation | Milliseconds |\n| Integration | Several parts working together, such as service plus database | Seconds |\n| End-to-end (E2E) | A whole user journey through the real system | Seconds to minutes |\n| Contract | That a consumer and a provider agree on the API shape | Seconds |\n| Smoke | A tiny set of checks that the build is alive at all | Seconds |\n| Regression | That something that worked before still works | Varies |\n| Acceptance | That the feature meets the business requirement | Varies |\n\nSome more detail on the purpose-based ones:\n- **Smoke tests** run right after a deploy. If login or the health endpoint fails, you stop. They answer \"is it worth testing further?\".\n- **Regression tests** protect old behaviour. Every fixed bug should leave behind a test that would have caught it.\n- **Acceptance tests** are written from the business view, often in given, when, then style, and are agreed with the product owner.\n\n**Common mistakes**\n- Calling a test \"unit\" when it needs a database or the network. It is an integration test, and it will be slow and flaky.\n- Treating E2E as the only \"real\" testing. It is the most realistic but the most expensive.\n\n**Interview tip:** If asked to define them, give one concrete example per type from your own project. For a lead, add which team owns each type and where in the pipeline it runs.",
+      "level": "basic",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "test-types",
+        "terminology"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-004",
+      "question": "What makes a good unit test? Explain FIRST and Arrange-Act-Assert.",
+      "answer": "**Short answer:** A good unit test is fast, independent, repeatable, self-checking and written in time. It has one clear reason to fail, and it is easy to read in the Arrange, Act, Assert shape.\n\nFIRST stands for:\n- **Fast**: milliseconds, so people run it all the time.\n- **Isolated** (or independent): no test depends on another test or on run order.\n- **Repeatable**: same result on every machine and every run, no clock or network.\n- **Self-validating**: it passes or fails by itself, with no human reading logs.\n- **Timely**: written close to the code, ideally just before or just after.\n\nArrange-Act-Assert gives the body a clear shape: set up the data, run one action, check the outcome.\n\n```js\nimport { test } from 'node:test';\nimport assert from 'node:assert/strict';\n\nfunction applyDiscount(price, percent) {\n  if (price < 0 || percent < 0 || percent > 100) throw new RangeError('invalid input');\n  return Math.round(price * (100 - percent)) / 100;\n}\n\ntest('applies a 10 percent discount', () => {\n  const price = 200;                         // Arrange\n  const result = applyDiscount(price, 10);   // Act\n  assert.equal(result, 180);                 // Assert\n});\n// prints: ✔ applies a 10 percent discount\n```\n\n\"One reason to fail\" means a test checks one behaviour. It can have several asserts if they describe the same behaviour, but it should not check pricing, email and logging together. When it fails you want the name alone to tell you what broke.\n\n**Gotcha:** Putting logic (loops, ifs) inside a test. Then the test itself can have bugs. Keep tests flat and boring.\n\n**Interview tip:** Mention that tests should check behaviour, not implementation. A test that breaks every time you refactor, without any real bug, is a cost, not an asset.",
+      "level": "basic",
+      "module": "Unit Testing",
+      "tags": [
+        "unit-testing",
+        "best-practices"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-005",
+      "question": "What are test doubles? Explain dummy, stub, spy, mock and fake.",
+      "answer": "**Short answer:** A test double is a stand-in for a real dependency during a test. The five kinds are dummy (only fills a parameter), stub (returns canned answers), spy (records how it was called), mock (has built-in expectations that fail the test) and fake (a simple working version, like an in-memory database).\n\n| Double | What it does | Example |\n| --- | --- | --- |\n| Dummy | Is passed but never used | A logger object that is never called |\n| Stub | Returns fixed data | Payment service that always says \"approved\" |\n| Spy | Stub plus a record of calls | Mailer that remembers who was emailed |\n| Mock | Verifies expected calls itself | \"send must be called once with these args\" |\n| Fake | Real logic, simplified | In-memory user repository |\n\nPeople often say \"mock\" for all of them. Be precise in interviews: the difference is whether you check **state** (what the result is) or **interaction** (which calls were made).\n\n```js\nimport { test, mock } from 'node:test';\nimport assert from 'node:assert/strict';\n\nclass OrderService {\n  constructor(payments, mailer) { this.payments = payments; this.mailer = mailer; }\n  async checkout(order) {\n    const r = await this.payments.charge(order.total);\n    if (!r.ok) return { status: 'failed' };\n    await this.mailer.send(order.email, 'Paid');\n    return { status: 'paid' };\n  }\n}\n\ntest('paid order sends one email', async () => {\n  const payments = { charge: async () => ({ ok: true }) }; // stub\n  const mailer = { send: mock.fn(async () => {}) };        // spy\n  const res = await new OrderService(payments, mailer).checkout({ total: 50, email: 'a@x.com' });\n  assert.equal(res.status, 'paid');\n  assert.equal(mailer.send.mock.callCount(), 1);\n  // prints: ✔ paid order sends one email\n});\n```\n\n**Gotcha:** Over-checking interactions locks the test to the current implementation. Prefer stubs and fakes, and verify calls only for real side effects such as \"an email left the system\".\n\n**Interview tip:** Mention that you only double things you do not own or that are slow: network, clock, payment gateway. You do not mock the class under test or simple value objects.",
+      "level": "basic",
+      "module": "Test Doubles & Design",
+      "tags": [
+        "test-doubles",
+        "mocking"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-006",
+      "question": "What is TDD, and how is it different from BDD?",
+      "answer": "**Short answer:** TDD, test-driven development, is a coding loop: write a failing test (red), write the least code to pass (green), then clean up (refactor). BDD, behaviour-driven development, is a way to describe behaviour in business language, usually as Given, When, Then, so that product, QA and developers share the same examples.\n\n```mermaid\nflowchart LR\n    R[\"Red: write a failing test\"] --> G[\"Green: make it pass\"]\n    G --> F[\"Refactor: clean up\"]\n    F --> R\n```\n\nIn TDD the test comes first, so you design the API from the caller's side. Small steps keep you honest and leave a regression suite as a by-product. The refactor step is where the design improves, protected by the green tests.\n\nIn BDD the focus is conversation. A scenario reads like this:\n- **Given** a customer with an empty cart,\n- **When** they add a book priced at 20,\n- **Then** the cart total is 20.\n\nTools like Cucumber turn such text into runnable tests, but the real value is the shared language. Many teams do the workshop part (example mapping) and write the tests in plain code.\n\n| | TDD | BDD |\n| --- | --- | --- |\n| Main audience | Developers | Whole team |\n| Level | Usually unit | Feature or acceptance |\n| Output | Code and tests | Shared examples and tests |\n\n**Gotcha:** BDD tools used only by testers, with long scripts, become a second slow codebase that nobody reads.\n\n**Interview tip:** Be honest that you use TDD where the rules are clear (pricing, parsing, state machines) and not for exploratory UI work. Pragmatism sounds more senior than dogma.",
+      "level": "basic",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "tdd",
+        "bdd"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-007",
+      "question": "How do you test pure functions compared with code that has side effects?",
+      "answer": "**Short answer:** A pure function depends only on its inputs and returns a result, so you just call it and assert. Code with side effects, such as database writes, network calls, clock or random, needs its dependencies passed in, so tests can replace them.\n\nPure functions are the easiest thing to test: no setup, no cleanup, no doubles. That is why a good design pushes decisions into pure functions and keeps side effects at the edge.\n\n```js\n// ❌ hard to test: reads the clock and writes to the database inside\nasync function closeOrder(id) {\n  const o = await db.find(id);\n  o.closedAt = new Date();\n  await db.save(o);\n}\n\n// ✅ easy to test: decision is pure, effects are injected\nfunction closeOrderData(order, now) {\n  return { ...order, closedAt: now };\n}\nasync function closeOrder(id, { db, clock }) {\n  const o = await db.find(id);\n  await db.save(closeOrderData(o, clock.now()));\n}\n```\n\nWith the second shape you unit test `closeOrderData` with plain values, and test `closeOrder` once with a fake database and a fixed clock.\n\nThis is often called \"functional core, imperative shell\". The core holds the logic and has many fast tests. The shell is thin glue and has a few integration tests.\n\n**Remember:** Passing dependencies as parameters or constructor arguments (dependency injection) is the main trick. It needs no framework.\n\n**Interview tip:** Link testability to design. Saying \"when a class is hard to test I treat it as a design smell, usually too many responsibilities or hidden dependencies\" is a strong senior line.",
+      "level": "basic",
+      "module": "Unit Testing",
+      "tags": [
+        "unit-testing",
+        "design"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-008",
+      "question": "How do you test asynchronous code and code that depends on time?",
+      "answer": "**Short answer:** For async code, return or await the promise so the test runner waits for it. For time, never really wait: pass in a clock or use fake timers, so a five-second timeout becomes an instant, controlled step.\n\nA common bug is forgetting to `await`. The test finishes before the promise settles, passes by mistake, and the failure shows up later as a random error in another test.\n\n```js\nimport { test } from 'node:test';\nimport assert from 'node:assert/strict';\n\ntest('rejects with a clear error', async () => {\n  await assert.rejects(async () => { throw new Error('boom'); }, /boom/);\n});\n\ntest('timer fires after 5 seconds, without waiting', (t) => {\n  t.mock.timers.enable({ apis: ['setTimeout'] });\n  let fired = false;\n  setTimeout(() => { fired = true; }, 5000);\n  assert.equal(fired, false);\n  t.mock.timers.tick(5000);   // move the fake clock\n  assert.equal(fired, true);\n});\n// prints: ✔ rejects with a clear error\n// prints: ✔ timer fires after 5 seconds, without waiting\n```\n\nOptions for time:\n- **Inject a clock** (`clock.now()`) so the code never calls `Date.now()` directly.\n- **Fake timers** in the test framework (Jest, Vitest and the Node runner all have them).\n- **Poll with a timeout** when you must wait for a real event: check a condition every few milliseconds, fail after a limit.\n\n**Gotchas**\n- `sleep(2000)` in a test is slow when the system is fast and flaky when it is slow.\n- Fake timers do not move `Date` unless you enable that too. Check your tool's options.\n\n**Interview tip:** Say \"I never use fixed sleeps. I either control the clock or wait for an observable condition.\" Interviewers listen for exactly this.",
+      "level": "basic",
+      "module": "Unit Testing",
+      "tags": [
+        "async",
+        "time",
+        "unit-testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-009",
+      "question": "What is code coverage, and why is 100 percent not the goal?",
+      "answer": "**Short answer:** Code coverage is the share of your code that ran while the tests ran. It shows which code is definitely not tested, but it cannot show that the tested code is checked well. Chasing 100 percent leads to weak tests that run code without asserting anything.\n\nCommon kinds of coverage:\n- **Line or statement**: was this line executed?\n- **Branch**: was each side of every `if` taken?\n- **Function**: was each function called?\n- **Condition/path**: stricter forms, rarely used in web teams.\n\nCoverage can only prove absence of testing. A test with no assertion still gives coverage.\n\n```js\nconst isAdult = (age) => age >= 18;\n\n// ✅ 100% coverage, and a real check at the boundary\n// assert.equal(isAdult(18), true); assert.equal(isAdult(17), false);\n\n// ❌ 100% coverage of the line, but it would also pass if >= became >\n// assert.equal(isAdult(30), true); assert.equal(isAdult(5), false);\n```\n\nUseful ways to use coverage:\n- Look at the **uncovered lines** of a change, not the global number.\n- Set a modest gate on **new code** (for example, 80 percent), so it cannot only go down.\n- Combine with **mutation testing** to find tests that run code but do not check it.\n\n**Gotcha:** When coverage becomes a target, people write tests for getters and skip the hard logic. The number goes up and quality does not.\n\n**Interview tip:** A good sentence: \"Coverage is a smoke detector for untested code, not a measure of test quality.\"",
+      "level": "basic",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "coverage",
+        "metrics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-010",
+      "question": "How should you name and structure tests so they are easy to read?",
+      "answer": "**Short answer:** Name a test after the behaviour and the condition, so a failure message reads like a sentence. Keep files next to the code they test, group tests with `describe` or subtests, and keep each test short and independent.\n\nGood names say what, when and the result:\n- `rejects a discount above 100 percent`\n- `returns an empty list when the user has no orders`\n- `retries twice then gives up when the gateway times out`\n\nWeak names are `test1`, `works`, `testApplyDiscount`. When CI shows a red test called `works`, someone has to open the code to learn what broke.\n\n```js\nimport { describe, it } from 'node:test';\nimport assert from 'node:assert/strict';\n\ndescribe('applyDiscount', () => {\n  it('returns the same price for 0 percent', () => assert.equal(applyDiscount(100, 0), 100));\n  it('returns 0 for 100 percent', () => assert.equal(applyDiscount(100, 100), 0));\n  it('throws for a percentage above 100', () => assert.throws(() => applyDiscount(100, 101), RangeError));\n});\n```\n\nStructure tips:\n- **One behaviour per test**, one scenario per name.\n- **Order tests simple to complex**: happy path, edge cases, errors.\n- **Hide noise in helpers** (builders, factories), but keep the important values visible in the test.\n- **Do not share mutable state** between tests.\n\n**Gotcha:** Over-clever shared setup. If a reader must scroll to a 100-line `beforeEach` to understand a three-line test, the test is not readable.\n\n**Interview tip:** Mention that tests are documentation. A new joiner should learn the rules of the module by reading test names alone.",
+      "level": "basic",
+      "module": "Unit Testing",
+      "tags": [
+        "naming",
+        "readability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-011",
+      "question": "How do you manage test data and fixtures?",
+      "answer": "**Short answer:** Create the data each test needs inside the test or through a small builder, keep it minimal, and make every value that matters visible. Avoid big shared fixtures and production data copies, because they hide intent and cause hidden coupling between tests.\n\nOptions, from the best default down:\n- **Inline values** for tiny cases.\n- **Builders or factories** with sensible defaults: `anOrder({ total: 0 })` overrides only what the test cares about.\n- **Fixtures files** (JSON, SQL) for large read-only inputs like a sample invoice.\n- **Seeded random data** for volume, with the seed printed so a failure can be replayed.\n\n```ts\ntype Order = { id: string; total: number; country: string; vip: boolean };\n\n// builder: defaults are valid, tests override only what matters\nconst anOrder = (over: Partial<Order> = {}): Order =>\n  ({ id: 'o-1', total: 100, country: 'IN', vip: false, ...over });\n\n// the test shows the only important fact: the order is VIP\nconst vipOrder = anOrder({ vip: true });\n```\n\nRules that save pain:\n- **Each test owns its data.** No test should need another to run first.\n- **Never use real personal data.** Use synthetic values, or masked copies if you must.\n- **Clean up** or isolate: transaction rollback, unique ids per test, or a fresh database.\n\n**Gotcha:** A giant shared fixture that \"has every case\". Change one field to fix one test and ten others fail in strange ways.\n\n**Interview tip:** Say you prefer data created through the same public API the product uses. It keeps fixtures valid when the schema evolves.",
+      "level": "basic",
+      "module": "Unit Testing",
+      "tags": [
+        "test-data",
+        "fixtures"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-012",
+      "question": "Which edge cases should you always test?",
+      "answer": "**Short answer:** Test the boundaries and the unusual inputs: empty, one item, the largest and smallest values, null or missing, wrong types, duplicates, and error paths. Most production bugs live at these edges, not in the happy path.\n\nA checklist you can say aloud:\n- **Boundaries**: just below, on, and just above every limit (17, 18, 19 for an age rule).\n- **Empty and single**: empty string, empty list, list with one element.\n- **Null, undefined, missing fields** and wrong types.\n- **Duplicates and ordering**: same id twice, unsorted input.\n- **Large input**: very long string, huge number, big list.\n- **Special values**: zero, negative, decimals, NaN, unicode, emoji, time zones.\n- **Failures**: the dependency throws, times out, returns garbage.\n\n```js\nimport { test } from 'node:test';\nimport assert from 'node:assert/strict';\n\nconst average = (nums) => {\n  if (nums.length === 0) throw new Error('no numbers');\n  return nums.reduce((a, b) => a + b, 0) / nums.length;\n};\n\ntest('average edge cases', () => {\n  assert.equal(average([5]), 5);            // single element\n  assert.equal(average([-2, 2]), 0);        // negatives cancel\n  assert.throws(() => average([]), /no numbers/); // empty: defined behaviour\n});\n// prints: ✔ average edge cases\n```\n\nWithout the empty-list case, the function would return `NaN` silently, and the bug would appear far away.\n\n**Gotcha:** Testing only inputs the author already thought about. Ask \"what would a tired user, a hostile user or a slow network do here?\".\n\n**Interview tip:** When asked to test a function in an interview, spend the first minute listing edge cases aloud. It shows method before typing.",
+      "level": "basic",
+      "module": "Unit Testing",
+      "tags": [
+        "edge-cases",
+        "unit-testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-013",
+      "question": "What are equivalence partitioning and boundary value analysis?",
+      "answer": "**Short answer:** Equivalence partitioning splits all possible inputs into groups that the code treats the same way, then tests one value from each group. Boundary value analysis adds tests at the edges of those groups, because off-by-one mistakes cluster there.\n\nTake a rule: \"ages 18 to 60 can apply, others cannot\". There are three groups:\n- below 18: invalid\n- 18 to 60: valid\n- above 60: invalid\n\nOne value from each group is enough to represent it, for example 10, 30 and 70. That is far better than trying every age.\n\nThen add the boundaries: 17, 18, 60 and 61. These are where a `>` that should be `>=` shows up.\n\n| Technique | Question it answers | Values for the age rule |\n| --- | --- | --- |\n| Equivalence partitioning | Which groups behave differently? | 10, 30, 70 |\n| Boundary value analysis | Where do groups meet? | 17, 18, 60, 61 |\n\nAlso include invalid kinds of input as their own groups: negative, not a number, missing.\n\n**Why it matters:** these two ideas give you a small, justified set of tests. You can explain why each test exists and what you skipped on purpose.\n\n**Gotcha:** Boundaries hide in places other than numbers: dates (month end, leap day, daylight saving change), string length limits, page sizes, and list sizes of 0, 1 and many.\n\n**Interview tip:** In a \"test this form field\" question, name both techniques and apply them. It turns a random list into a structured answer.",
+      "level": "basic",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "test-design",
+        "techniques"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-014",
+      "question": "What should you not test?",
+      "answer": "**Short answer:** Do not test code you do not own, trivial code with no logic, and private implementation details. Test your own behaviour through the public interface, and spend effort where failure is costly or likely.\n\nThings that usually are not worth a dedicated test:\n- **Framework and library behaviour**: you do not need a test that `Array.sort` sorts. Test your use of it.\n- **Plain getters, setters and constants** with no logic.\n- **Private methods directly.** Reach them through the public method. If a private method is complex enough to need its own tests, it may want to be its own class.\n- **Generated code** and pure configuration that is checked by the compiler.\n- **Exact wording and styling** in many places. It makes tests brittle.\n- **Things better checked by other tools**: types, linters, schema validators.\n\nThe test of a test is the cost-benefit question: how likely is this to break, how bad is it if it does, and how cheap is the test to keep? A pricing rule is high on all three. A button colour is low on all three.\n\n**Gotcha:** \"Do not test private methods\" does not mean \"do not test their cases\". It means the cases are covered via public behaviour, so you can refactor internals freely.\n\n**Interview tip:** This question checks judgement. Show that you test by risk, not by count, and that you see maintenance cost as real.",
+      "level": "basic",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "strategy",
+        "best-practices"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-015",
+      "question": "What is a flaky test, and why do flaky tests happen?",
+      "answer": "**Short answer:** A flaky test sometimes passes and sometimes fails on the same code. The usual causes are timing, shared state, test order, random or time-based data, and uncontrolled external services. They are harmful because the team stops trusting red builds.\n\nCommon causes:\n- **Timing and async**: fixed sleeps, race conditions, an assertion before the UI or message has settled.\n- **Shared state**: a database, file or global variable changed by another test.\n- **Order dependence**: test B only passes because test A ran first.\n- **Time, locale and randomness**: \"today\", time zones, random ids.\n- **External dependencies**: real network calls, third-party sandbox down.\n- **Environment**: slow CI machine, parallel runs fighting over a port.\n\nA flaky test is a bug in the test or in the code. Sometimes it has found a real race condition in production code, so do not treat all flakiness as noise.\n\nWhat to do first:\n- **Reproduce**: run the test many times, in parallel, in random order.\n- **Do not just rerun** until green. Retries hide the problem and slow the pipeline.\n- **Quarantine** a proven-flaky test so it stops blocking, but keep a ticket and an owner.\n\n**Gotcha:** Adding `sleep(5000)` \"to make it stable\". It lowers the failure rate for a week, then it returns, and the suite is slower for ever.\n\n**Interview tip:** Mention that you treat flakiness as a defect with an owner and a deadline. The detailed process is in the Tech Lead part of this topic.",
+      "level": "basic",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "flaky-tests",
+        "reliability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-016",
+      "question": "What is the difference between manual, automated and exploratory testing?",
+      "answer": "**Short answer:** Automated tests are scripts that run the same checks every time. Manual testing is a person following steps. Exploratory testing is a person learning the product and designing tests while doing them. A healthy team uses all three, for different jobs.\n\n| Approach | Best for | Weak at |\n| --- | --- | --- |\n| Automated | Repeated checks, regression, fast feedback, many data variations | Judging look and feel, finding unknown problems |\n| Scripted manual | Rare, hard-to-automate checks, audits | Slow, human error, does not scale |\n| Exploratory | New features, risky areas, finding surprises | Not repeatable by design, depends on skill |\n\nMachines are good at checking what you already know. People are good at noticing what you did not think of: a confusing label, a strange state after pressing back, a slow screen.\n\nExploratory testing is not random clicking. The tester follows a **charter**, such as \"explore the checkout with expired cards and slow network, for 45 minutes\", takes notes, and turns findings into bugs or new automated tests.\n\nA good rule: if you do the same manual check twice and it is stable and valuable, automate it. If you have not seen the feature before, explore it first and automate later.\n\n**Gotcha:** Automating everything, including unstable features, creates maintenance work and still misses the experience problems.\n\n**Interview tip:** Say that automation frees people to do exploratory work, not that it replaces them.",
+      "level": "basic",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "manual-testing",
+        "exploratory-testing",
+        "automation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-017",
+      "question": "What is the bug life cycle, and how do you write a good bug report?",
+      "answer": "**Short answer:** A bug moves from new, to assigned, to fixed, to verified and closed, with side exits for rejected, duplicate and reopened. A good report lets a stranger reproduce the problem in two minutes: clear title, steps, expected result, actual result, environment and evidence.\n\n```mermaid\nstateDiagram-v2\n    [*] --> New\n    New --> Triaged\n    Triaged --> InProgress\n    InProgress --> Fixed\n    Fixed --> Verified\n    Verified --> Closed\n    Verified --> Reopened: \"still fails\"\n    Reopened --> InProgress\n    Triaged --> Rejected: \"not a bug or duplicate\"\n    Closed --> [*]\n```\n\nRead it left to right. Triage decides severity and priority. Severity is the impact on the user. Priority is how soon the team will fix it. A typo on the home page is low severity but may be high priority.\n\nA good report has:\n- **Title** that states the symptom: \"Checkout button disabled after applying a coupon on mobile\".\n- **Steps to reproduce**, numbered, from a known start.\n- **Expected** and **actual** result.\n- **Environment**: build or commit, browser and version, device, user role, data used.\n- **Evidence**: screenshot, short video, console or network log, request id.\n- **Frequency**: always, or one in five times.\n\n**Gotcha:** \"It does not work\" or bundling three problems in one ticket. One bug per ticket keeps triage and verification clean.\n\n**Interview tip:** Add that you turn each fixed bug into an automated regression test, so the same bug cannot return quietly.",
+      "level": "basic",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "bug-reporting",
+        "process"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-018",
+      "question": "When do tests run in a CI pipeline?",
+      "answer": "**Short answer:** Fast tests run on every commit or merge request, slower ones run after merge or on a schedule, and a few smoke checks run after each deploy. The goal is the fastest possible feedback with the strongest checks you can afford at each step.\n\n```mermaid\nflowchart LR\n    A[\"Commit\"] --> B[\"Lint and unit tests\"]\n    B --> C[\"Integration and contract tests\"]\n    C --> D[\"Deploy to test env\"]\n    D --> E[\"E2E and smoke tests\"]\n    E --> F[\"Release\"]\n    F --> G[\"Post-deploy smoke and monitoring\"]\n```\n\nRead the picture as a funnel. Each stage is slower and more expensive than the one before, so a cheap failure stops the pipeline early.\n\nTypical placement:\n- **On every merge request**: lint, type check, unit tests, quick integration tests, contract checks. Keep it under about ten minutes.\n- **After merge to main**: the full integration set and the main E2E journeys.\n- **Nightly**: long suites, cross-browser matrix, load and security scans.\n- **After deploy**: smoke tests against the real environment.\n\nThe pipeline should block the merge when required checks fail, and it should publish reports (test results, coverage) so people can see why.\n\n**Gotcha:** One huge job that does everything. When it is red, nobody knows where, and when it is slow, people stop waiting for it.\n\n**Interview tip:** If you can say \"my merge request pipeline is ten minutes and I fail on the cheapest checks first\", you show you care about developer experience, not only about coverage.",
+      "level": "basic",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "ci",
+        "pipeline"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-019",
+      "question": "How do you test floating-point numbers and money?",
+      "answer": "**Short answer:** Never compare floating-point results with exact equality when rounding is involved. Compare with a small tolerance, or avoid floats for money by storing integer minor units such as paise or cents.\n\nComputers store most decimals in binary, so some values are only close. The classic example is that adding 0.1 and 0.2 gives 0.30000000000000004. A test that expects exactly 0.3 fails, and a rounding rule can also flip at a half cent.\n\n```js\nimport { test } from 'node:test';\nimport assert from 'node:assert/strict';\n\ntest('float traps', () => {\n  assert.equal(0.1 + 0.2 === 0.3, false);              // exact compare fails\n  assert.ok(Math.abs(0.1 + 0.2 - 0.3) < 1e-9);         // ✅ tolerance\n  // price 19.99 with 50 percent off: 19.99 * 50 is 999.4999..., rounds to 999\n  assert.equal(Math.round(19.99 * 50) / 100, 9.99);     // not 10, a surprise\n});\n// prints: ✔ float traps\n```\n\nThe last line shows why money is special. I first expected 10, and the real result was 9.99 because the product is just below the half-way point. Only a test with such a value finds it.\n\nGood practice:\n- **Store money as integers** (1999 for 19.99) and format at the edge.\n- **Test rounding rules explicitly** at the half-way values and with negative amounts.\n- Use a **decimal library** if you must handle fractions.\n- In assertions use a **tolerance** (`assert.closeTo` style helpers, or your own).\n\n**Interview tip:** Mentioning that you test the rounding rule at exact half values, and that the business must define it, shows real-world experience.",
+      "level": "basic",
+      "module": "Unit Testing",
+      "tags": [
+        "edge-cases",
+        "numbers"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-020",
+      "question": "What is the difference between black-box, white-box and static testing?",
+      "answer": "**Short answer:** Black-box testing checks behaviour from the outside, without looking at the code. White-box testing designs tests using knowledge of the code structure. Static testing finds problems without running the code at all, through reviews, linters and type checks.\n\n| Approach | Looks at | Example |\n| --- | --- | --- |\n| Black-box | Inputs and outputs only | Testing an API against its spec |\n| White-box | Branches, paths, internals | Writing a test so each `if` side is taken |\n| Grey-box | Mostly outside, some inside knowledge | Using database access to check data after an API call |\n| Static | Code or documents, not running | ESLint, TypeScript, code review, SAST |\n\nBlack-box tests are less tied to the implementation, so they survive refactoring. They can miss paths that the spec did not mention. White-box tests reach those paths and are the basis of coverage, but they can lock in the internals.\n\nStatic checks are the cheapest layer. A type error caught in the editor costs seconds, the same bug in production costs hours. That is why the testing trophy puts static analysis at the base.\n\nMost real suites mix them: unit tests are written with knowledge of the code (white-box), and acceptance tests from the requirement (black-box).\n\n**Gotcha:** Treating static checks as optional style. Strict TypeScript and a clean linter remove a whole class of tests you no longer have to write.\n\n**Interview tip:** Give one example of each from your project, and say which layer catches bugs the cheapest.",
+      "level": "basic",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "test-design",
+        "terminology"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-021",
+      "question": "[Tech Lead] How do you design a test strategy for a product?",
+      "answer": "**Short answer:** I start from risk, not from tools. I list the user journeys and failure modes that would hurt the business most, decide the cheapest layer that can catch each one, agree owners and quality gates, and review the strategy every quarter using real defect data.\n\nMy process:\n- **Understand the product and the risk.** Which flows make money or are legally sensitive (payments, login, data export)? What has broken before? Which parts change most?\n- **Map risks to layers.** Business rules go to unit tests, service and database behaviour to integration tests, service boundaries to contract tests, and only the critical journeys to end-to-end tests.\n- **Define non-functional checks.** Performance, security, accessibility, and cross-browser needs, each with a trigger (every merge, nightly, before release).\n- **Decide ownership.** Developers own unit, integration and contract tests. QA or SDET engineers help design them, own the E2E framework and exploratory work.\n- **Set gates and metrics.** What blocks a merge, what blocks a release.\n- **Plan environments and data.**\n\n```mermaid\nflowchart TD\n    R[\"Risk list\"] --> L[\"Pick cheapest layer per risk\"]\n    L --> U[\"Unit: business rules\"]\n    L --> I[\"Integration and API: data, services\"]\n    L --> C[\"Contract: service boundaries\"]\n    L --> E[\"E2E: 5 to 10 critical journeys\"]\n    L --> N[\"Non-functional: load, security, a11y\"]\n    U --> G[\"Quality gates in CI\"]\n    I --> G\n    C --> G\n    E --> G\n    N --> G\n```\n\nRead it as: every risk is assigned a layer, and the layers feed one set of pipeline gates.\n\nWrite the strategy in one or two pages that the team can actually read: what we test where, who owns it, what blocks a release, and what we deliberately do not test.\n\n**Gotcha:** A strategy made of tool names (\"we use Cypress and Jest\") is not a strategy. Tools are the last decision.\n\n**Interview tip:** Open with \"risk first, cheapest layer second, tools last\". Then give a real example with numbers: for instance how many E2E tests you kept and why.",
+      "level": "intermediate",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "tech-lead",
+        "strategy",
+        "test-pyramid"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-022",
+      "question": "[Tech Lead] How do you shift quality left and make it the whole team's job?",
+      "answer": "**Short answer:** Shifting left means finding problems earlier, when they are cheap: in requirements, design and code review, not in a final test phase. Quality becomes a team responsibility when developers write and own tests, and QA engineers act as coaches and risk thinkers, not as a gate at the end.\n\nConcrete practices:\n- **Three amigos** before work starts: product, developer and tester agree examples and edge cases, and write acceptance criteria in testable form.\n- **Definition of ready**: a story is not started until it has clear acceptance criteria.\n- **Developers write tests with the code**, in the same merge request. No \"tests later\" tickets.\n- **QA joins design and review**: they ask \"how will we know it works, and what could go wrong?\" early.\n- **Fast feedback**: static checks and unit tests in the editor and pre-commit, pipeline results within minutes.\n- **Shared dashboards** for escaped defects and flaky tests, discussed in the team retro.\n\n| Old model | Shifted-left model |\n| --- | --- |\n| Dev builds, then QA tests | Dev and QA work on the same story from day one |\n| QA owns quality | The whole team owns it, QA brings expertise |\n| Bugs found at the end | Bugs prevented in design and found in minutes |\n| Test phase before release | Continuous testing, release when green |\n\n**Gotcha:** \"Shift left\" without leaving the right side. You still need exploratory testing and monitoring in production, because some failures only appear there.\n\n**Interview tip:** Tell a short story: a bug caught in a refinement meeting because the tester asked \"what happens at midnight in another time zone?\". It makes the idea concrete.",
+      "level": "intermediate",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "tech-lead",
+        "shift-left",
+        "quality"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-023",
+      "question": "[Tech Lead] How does the test pyramid change in a microservices system?",
+      "answer": "**Short answer:** In microservices the risky part is between services, so you add a contract-testing layer and keep full end-to-end tests very few. Each service gets strong unit and component tests, contract tests guard the boundaries, and production monitoring covers what cannot be tested before release.\n\nLayers I use for one service:\n- **Unit tests** for business rules.\n- **Component tests**: the service runs for real with its own database in a container, and its neighbours are stubbed.\n- **Contract tests**: consumer-driven contracts (Pact) or OpenAPI checks, so a provider knows who depends on which field.\n- **A few cross-service E2E or synthetic tests** for the top journeys.\n- **Observability and canary release** as the last safety layer.\n\n```mermaid\nflowchart LR\n    subgraph SvcA[\"Service A\"]\n        UA[\"Unit\"] --> CA[\"Component\"]\n    end\n    subgraph SvcB[\"Service B\"]\n        UB[\"Unit\"] --> CB[\"Component\"]\n    end\n    CA -. contract .-> CB\n    CA --> E[\"Few E2E journeys\"]\n    CB --> E\n```\n\nRead it as: each service is tested alone, contracts connect them, and only a thin E2E layer spans all of them.\n\nWhy not many E2E tests? A full environment needs every service in a compatible version. It is slow, shared by many teams, and one broken neighbour fails everyone's pipeline. Contract tests give most of the integration confidence without deploying everything together.\n\n**Trade-off:** contracts do not check behaviour across a whole business flow, such as an order moving through five services. That is the job of the few E2E tests and production monitoring.\n\n**Interview tip:** Mention \"can I deploy this service now?\" as the question that contract tests and a broker answer, and say it replaces the old \"release train\" with shared test environments.",
+      "level": "intermediate",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "tech-lead",
+        "microservices",
+        "test-pyramid"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-024",
+      "question": "[Tech Lead] What quality gates and definition of done would you set?",
+      "answer": "**Short answer:** A quality gate is an automatic rule that blocks a merge or release when a measurable check fails. I keep gates few, fast and meaningful: build and tests green, lint and types clean, coverage on new code, no critical security findings, and agreed performance budgets. The definition of done adds the human parts.\n\nGates per stage:\n- **Merge request**: compile, type check, lint, unit and component tests pass; coverage on the changed lines is at least a set level (say 80 percent); no new critical or high vulnerability in dependencies and static analysis; at least one review.\n- **Before release**: contract checks pass (`can-i-deploy`), main E2E journeys pass, no open blocker bugs, performance within budget.\n- **After deploy**: smoke tests pass, error rate and latency stay within the SLO during canary.\n\nDefinition of done, beyond the gates:\n- Acceptance criteria met and demoed.\n- Tests added for new behaviour and for bug fixes.\n- Docs, runbook and dashboards or alerts updated if behaviour changed.\n- Feature flag and rollback plan agreed for risky changes.\n\n| Gate | Good signal | Weak signal |\n| --- | --- | --- |\n| Coverage on new code | Stops regressions in fresh code | Global percentage target |\n| Mutation score (optional, on core modules) | Shows tests that check something | Used on the whole repo |\n| Security scan | New critical findings block | Old findings block everyone |\n\n**Gotcha:** Too many strict gates mean people bypass them. Start with a few, make them reliable, and tighten with the team's agreement.\n\n**Interview tip:** Say that a gate must be trusted. A flaky gate is worse than none, because the team learns to ignore red.",
+      "level": "intermediate",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "tech-lead",
+        "quality-gates",
+        "definition-of-done"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-025",
+      "question": "[Tech Lead] How do you handle flaky tests as a team?",
+      "answer": "**Short answer:** Detect them with data, quarantine them quickly so they stop blocking others, assign an owner and a deadline to fix them, and track the flake rate as a team metric. Retries are only a temporary bandage, never the fix.\n\nA simple process:\n- **Detect.** CI stores results per test. A test that fails and then passes on the same commit, or that fails on main without code change, is flagged automatically. Run suspected tests 50 to 100 times in a loop to confirm.\n- **Quarantine.** Move the confirmed flaky test to a separate non-blocking job, with a ticket. The suite stays trustworthy, and the problem stays visible.\n- **Diagnose.** Group by cause: timing, shared state, order, environment, real bug. Use traces, videos and logs captured on failure.\n- **Fix or delete.** If the test is low value and costly, delete it. If it guards something important, fix the root cause, then return it to the main job.\n- **Prevent.** Review checklist (no sleeps, isolated data), random test order in CI, and a rule that a new test must pass many repeated runs before merge.\n\nMetrics worth publishing:\n- **Flake rate**: share of pipeline runs that failed and passed on retry.\n- **Time to fix** quarantined tests, and the size of the quarantine.\n- **Pipeline re-run count** per week.\n\n**Trade-off:** automatic retry (for example once, only for E2E) keeps work moving but hides problems. If you use it, report every retried test, so it still gets fixed.\n\n**Interview tip:** Say that flakiness is a trust problem. When developers say \"just re-run it\", the suite is already losing its value.",
+      "level": "intermediate",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "tech-lead",
+        "flaky-tests",
+        "ci"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-026",
+      "question": "[Tech Lead] How do you make a test suite fast?",
+      "answer": "**Short answer:** Measure first, then attack the biggest costs: run tests in parallel and shard them across machines, run only the tests affected by a change, replace slow dependencies with fakes where the realism is not needed, and reuse expensive setup such as containers and caches.\n\nSteps in the order I would do them:\n- **Measure**: get the slowest 20 tests and the time per stage from CI reports. Often a few tests or a slow setup dominate.\n- **Parallelise**: run test files in parallel workers, and split the suite across CI jobs (sharding), balanced by past duration.\n- **Test selection**: run only tests affected by the changed files on merge requests (Nx affected, Jest `--onlyChanged`), and the full set on main or nightly.\n- **Push down the pyramid**: move checks from E2E to integration or unit when the browser adds nothing.\n- **Cheaper dependencies**: in-memory fakes for slow, non-critical dependencies. Use real databases in containers where the behaviour matters, started once per run, not once per test.\n- **Cache** dependencies and build outputs.\n- **Faster hardware** is often cheaper than engineer time.\n\n| Technique | Gain | Cost or risk |\n| --- | --- | --- |\n| Parallel workers | Big | Needs isolated data |\n| Sharding | Big | Needs good balancing |\n| Affected-only | Big in monorepos | A wrong dependency graph skips tests |\n| Fakes instead of real DB | Medium | Fake can drift from reality |\n\n**Gotcha:** Speeding up by skipping tests silently. Always run the complete suite somewhere, for example on main, and alert on failures.\n\n**Interview tip:** Give a number: \"we went from 35 to 9 minutes by sharding E2E into 8 jobs and moving 40 checks down to API level\". Concrete results are convincing.",
+      "level": "intermediate",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "tech-lead",
+        "performance",
+        "ci"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-027",
+      "question": "[Tech Lead] How do you manage test data and test environments?",
+      "answer": "**Short answer:** I make each test create the data it needs through an API or a builder, give every pipeline run an isolated environment where possible, and keep shared environments for a narrow purpose. Production data is never copied raw. If it is needed, it is masked or synthetic.\n\nPrinciples:\n- **Tests own their data.** They create what they need, with unique ids, and do not depend on a \"golden\" shared database state.\n- **Ephemeral environments** per merge request or per run (containers, namespaces), so there are no fights over a shared test server.\n- **Seed only reference data** (countries, plans, roles) through migrations or seed scripts.\n- **Synthetic and masked data** only. Personal data in lower environments is a compliance risk.\n- **Environment parity**: same container images, same configuration shape, same database version as production.\n- **Third parties**: use sandboxes, or stubs recorded and replayed for stable runs, plus a few scheduled tests against the real sandbox.\n\n| Environment | Purpose | Data |\n| --- | --- | --- |\n| Local / CI ephemeral | Fast feedback per change | Created by tests |\n| Shared integration (dev) | Cross-team integration | Seeded reference data |\n| Staging / pre-prod | Final check, performance | Masked or synthetic copy |\n| Production | Smoke tests, synthetic monitoring | Special test accounts |\n\n**Gotcha:** One long-lived shared QA environment that everyone deploys to. Tests fail because somebody else's build is half deployed, and nobody can tell if the failure is real.\n\n**Interview tip:** Mention test data as code: versioned, reviewed and cleaned up. Also mention the cost, because ephemeral environments need good automation to be worth it.",
+      "level": "intermediate",
+      "module": "Integration & API Testing",
+      "tags": [
+        "tech-lead",
+        "test-data",
+        "environments"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-028",
+      "question": "[Tech Lead] How do you measure whether your tests are effective?",
+      "answer": "**Short answer:** I measure outcomes, not activity: how many defects escape to production, how often deployments cause failures, how fast we recover, and how well the tests would catch a deliberate bug. I avoid vanity numbers like test count or global coverage.\n\nUseful measures:\n- **Defect escape rate**: bugs found in production divided by all bugs found, for a period. Falling is good.\n- **Change failure rate**: share of deployments that cause an incident or rollback. It is one of the DORA delivery metrics.\n- **Time to restore** and **lead time for changes**: the other DORA metrics. Good tests shorten both.\n- **Mutation score** on core modules: the share of small code changes (mutants) that the tests catch.\n- **Flake rate** and **pipeline duration**: the health of the feedback loop.\n- **Escaped bug analysis**: for each production bug, ask \"which test should have caught it, and why did it not?\". This is the most useful measure of all.\n\nVanity or risky measures:\n- Number of tests, or tests per developer.\n- Global coverage percentage as a target.\n- Bugs found per tester, which rewards the wrong behaviour.\n\n**Gotcha:** Metrics get gamed when they become targets. Use them to start conversations and find weak spots, not to rank people.\n\n**Interview tip:** Pair every metric with the decision it supports. \"Escape rate is rising in billing, so we add contract tests and mutation checks there\" is the senior answer.",
+      "level": "intermediate",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "tech-lead",
+        "metrics",
+        "quality"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-029",
+      "question": "[Tech Lead] What do you automate and what do you leave manual?",
+      "answer": "**Short answer:** I automate checks that are repeated, stable, important and deterministic. I leave manual the checks that need human judgement, change often, or run rarely. Before automating, I estimate the cost of writing and maintaining the test against the cost of running it by hand.\n\nGood candidates to automate:\n- Regression of critical flows (login, payment, core CRUD).\n- Business rules with many input combinations.\n- API and contract checks.\n- Cross-browser smoke checks.\n- Anything run on every release.\n\nBetter left manual, at least for now:\n- Brand new or fast-changing UI.\n- Visual quality, usability and feel (though visual diff tools help with layout drift).\n- One-off migration checks.\n- Complex setups that cost more to automate than to run.\n- Exploratory testing, by definition.\n\nA quick scoring helps decide: how often will it run, how stable is the feature, how costly is a miss, how hard is it to automate. A high-frequency, stable, high-risk, easy-to-automate check is an obvious yes.\n\nAlso decide the **level**: automate at the lowest layer that gives the confidence. Many UI checks can be API or component tests.\n\n**Gotcha:** An automation target such as \"90 percent automated\" encourages many low-value UI tests. Aim at risk coverage instead.\n\n**Interview tip:** Say you track automation as an investment with return, and delete tests whose maintenance cost exceeds their value.",
+      "level": "intermediate",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "tech-lead",
+        "automation",
+        "strategy"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-030",
+      "question": "[Tech Lead] How do you bring tests to a legacy codebase that has none?",
+      "answer": "**Short answer:** Do not try to cover everything. Add characterisation tests that pin down what the code does today, around the areas you must change, then refactor safely under that net. Grow coverage from the edges where bugs and change happen.\n\nSteps:\n- **Pick the hot spots.** Use version history and bug reports to find files that change often and break often.\n- **Write characterisation tests.** Call the code with realistic inputs, record what it returns now, and assert exactly that. You are not judging correctness yet, you are freezing behaviour.\n- **Find seams.** A seam is a place where you can change behaviour without editing the code under test: pass a dependency in, extract a method, wrap a global.\n- **Refactor in small steps** with the tests green, then improve the tests.\n- **Add the \"boy scout\" rule**: every touched file leaves with more tests than before. Every bug fix starts with a failing test.\n- **Add a few end-to-end smoke tests** first if the code cannot be unit tested at all. They are a rough net while you create seams.\n\n```js\n// characterisation test: records today's behaviour, even if it looks odd\nimport { test } from 'node:test';\nimport assert from 'node:assert/strict';\nconst legacyPrice = (q) => (q > 10 ? q * 9 : q * 10) + (q === 7 ? 1 : 0);\n\ntest('pins current behaviour', () => {\n  assert.equal(legacyPrice(7), 71);  // odd rule, but production depends on it\n  assert.equal(legacyPrice(11), 99);\n});\n// prints: ✔ pins current behaviour\n```\n\n**Gotcha:** Fixing \"obvious bugs\" while writing characterisation tests. Ask the business first, because someone may rely on the odd behaviour.\n\n**Interview tip:** Mention Michael Feathers' book \"Working Effectively with Legacy Code\" as the source of the seam idea, and say you sell the work to management as risk reduction on the next features, not as \"adding tests\".",
+      "level": "intermediate",
+      "module": "Advanced Techniques",
+      "tags": [
+        "tech-lead",
+        "legacy",
+        "characterisation-tests"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-031",
+      "question": "[Tech Lead] How do you build release confidence: canary releases, feature flags and testing in production?",
+      "answer": "**Short answer:** Pre-release tests cannot catch everything, so I combine them with safe release practices: ship behind feature flags, roll out gradually with a canary, watch error rate and latency against the SLO, and roll back automatically. Testing in production is safe when exposure is small, reversible and observable.\n\nThe layers of confidence:\n- **Before merge**: automated tests and review.\n- **Before release**: contract checks, E2E journeys, performance check.\n- **At release**: canary to a small share of traffic (say 5 percent), with automatic comparison to the old version.\n- **After release**: synthetic checks and dashboards, then widen the rollout.\n\n```mermaid\nflowchart LR\n    D[\"Deploy new version\"] --> C[\"Canary 5 percent\"]\n    C --> M{\"Error rate and latency OK?\"}\n    M -- yes --> W[\"Widen to 50, then 100 percent\"]\n    M -- no --> R[\"Automatic rollback\"]\n```\n\nSafe production testing techniques:\n- **Feature flags** separate deploy from release. Turn on for staff first, then a small group.\n- **Dark launch / shadow traffic**: send a copy of real requests to the new version and compare, without returning its answer.\n- **Synthetic monitoring**: scripted checks with test accounts run every minute.\n- **Kill switch** that does not need a deploy.\n\n**Trade-offs:** flags add code paths that must be tested and cleaned up. Canary needs good metrics and enough traffic to detect a problem in minutes.\n\n**Gotcha:** Test accounts and data in production polluting reports or payments. Mark them clearly and exclude them from analytics.\n\n**Interview tip:** Say \"confidence is the sum of pre-release tests and fast, safe rollback\". It shows you understand that not all risk can be removed.",
+      "level": "advanced",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "tech-lead",
+        "release",
+        "feature-flags",
+        "canary"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-032",
+      "question": "[Tech Lead] How do you run tests in a large front-end monorepo with affected-only testing?",
+      "answer": "**Short answer:** Build a dependency graph of the projects, and on each merge request run tests only for the projects affected by the changed files, plus use caching so unchanged work is never repeated. Keep a full run on main or nightly as a safety net.\n\nHow it works with a tool like Nx (Turborepo and Bazel are similar):\n- The tool knows that `checkout-ui` depends on `shared-ui` and `api-client`.\n- When `shared-ui` changes, everything that depends on it is \"affected\".\n- The command compares your branch with the base branch and runs only those targets.\n- **Remote cache**: if the same inputs were already tested on another machine, the result is reused.\n- **Distribution**: the work is split across CI agents, or sharded by test file.\n\n```bash\n# run unit tests only for projects touched since main\nnpx nx affected -t test --base=origin/main\n\n# split a long Jest or Playwright suite across 4 CI jobs (job 2 of 4)\nnpx jest --shard=2/4\n```\n\nThings to get right:\n- **Correct inputs.** If a config file, lockfile or a shared script is not part of the graph, changes there skip tests wrongly. Treat them as \"affects everything\".\n- **Full run on main** and nightly, so graph mistakes are caught.\n- **E2E affected tests**: map journeys to the apps they exercise.\n- **Shared lib ownership**: a change to a core library triggers many tests, so keep its API small and stable.\n\n**Gotcha:** A shallow git clone in CI makes \"changed since base\" wrong. Fetch enough history.\n\n**Interview tip:** Give the trade-off clearly: speed from selection against the risk of a missed dependency, covered by a periodic full run.",
+      "level": "advanced",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "tech-lead",
+        "monorepo",
+        "nx",
+        "ci"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-033",
+      "question": "[Tech Lead] How do you hire and grow QA and SDET skills, and set testing standards?",
+      "answer": "**Short answer:** I hire for testing mindset and engineering skill: curiosity about how things fail, ability to code, and clear communication. I then grow people with pairing, shared standards, and a path that values quality engineering as much as feature work.\n\nWhat I look for in an SDET or QA engineer:\n- **Risk thinking**: can they break a simple feature on paper (a login form) and prioritise what to test?\n- **Coding ability**: they can write maintainable automation, not just record scripts.\n- **Understanding of the stack**: HTTP, databases, browsers, CI.\n- **Communication**: a clear bug report and the courage to say \"this is not ready\".\n\nGrowing the team:\n- **Pair** developers with QA on test design, and QA with developers on code.\n- **Shared standards document** (short): naming, selectors, no sleeps, data rules, how to review tests. Update it from retro lessons.\n- **Guilds or a testing chapter** across squads for tools and patterns.\n- **Learning goals**: contract testing, performance, accessibility, security basics.\n- **Career path**: SDET and quality engineering as a real technical track, with the same seniority levels as developers.\n\nStandards to set early:\n- Tests are reviewed like production code.\n- Every bug fix includes a regression test.\n- A flaky test is a defect with an owner.\n- Page objects or helpers have a defined structure.\n\n**Gotcha:** Treating QA as a separate service team that receives work over the wall. It keeps feedback slow and ownership unclear.\n\n**Interview tip:** Mention that you measure the team by outcomes (escape rate, pipeline health), not by tickets closed.",
+      "level": "intermediate",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "tech-lead",
+        "hiring",
+        "team-practices"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-034",
+      "question": "[Tech Lead] What is on your code review checklist for tests?",
+      "answer": "**Short answer:** I review tests as carefully as production code. I check that they test behaviour, that they would fail if the code were wrong, that they are independent and deterministic, and that they are readable and cheap to maintain.\n\nMy checklist:\n- **Does it test the right thing?** Behaviour through the public interface, not private details or the mock itself.\n- **Would it fail for the right reason?** Is there an assertion, and is it specific? Try breaking the code in your head, or actually.\n- **Edge cases and errors** covered, not just the happy path.\n- **Independent**: no order dependence, no shared mutable state, unique data.\n- **Deterministic**: no sleeps, no real clock, no randomness without a seed, no real network.\n- **Level is right**: could this be a unit test instead of E2E?\n- **Readable**: clear name, Arrange-Act-Assert, the important values visible.\n- **Not over-mocked**: if the test only verifies that mocks were called, it proves little.\n- **Cleanup and speed**: closes resources, runs fast.\n- **Bug fix?** A test that failed before the fix.\n\n| Smell | Meaning |\n| --- | --- |\n| No assertion | Test only gives coverage |\n| `sleep` or retries | Flaky waiting |\n| Many mocks, one assert | Tests the wiring, not the behaviour |\n| Copy-paste blocks | Needs a helper or table |\n| Commented-out tests | Delete or fix |\n\n**Interview tip:** Say \"the most useful review question is: what bug would make this test fail?\". If you cannot answer, the test is weak.",
+      "level": "intermediate",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "tech-lead",
+        "code-review",
+        "best-practices"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-035",
+      "question": "[Tech Lead] How do you report quality to stakeholders?",
+      "answer": "**Short answer:** I report in business terms: risk, trend and decision needed. I show a small set of stable indicators, explain what they mean for release and customers, and avoid raw test counts.\n\nWhat I include, on one page or dashboard:\n- **Release readiness**: green, amber or red with the reason, and the open risks in plain words.\n- **Customer impact**: production incidents, escaped defects by severity, and the trend.\n- **Delivery health**: change failure rate, lead time, pipeline duration and flake rate.\n- **Coverage of risk**: which critical journeys are automated, which are manual, which have gaps.\n- **Quality debt**: quarantined tests, known issues, and the plan to pay them down.\n- **Asks**: a decision or a resource I need, such as time for a framework upgrade.\n\nHow I present:\n- **Trend, not snapshot**: a number alone means little.\n- **Different audiences**: executives want risk and cost, product wants readiness per feature, engineers want details and links.\n- **Honest about uncertainty**: \"we have not tested on older Android\" is better than silence.\n- **Regular rhythm**: a short weekly note, and a go or no-go summary before each release.\n\n**Gotcha:** A report of 4,200 passing tests. It sounds impressive and says nothing about risk.\n\n**Interview tip:** Tell the interviewer you phrase a release risk as \"if we ship now, this is what could go wrong, how likely, and how we would detect and undo it\".",
+      "level": "intermediate",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "tech-lead",
+        "reporting",
+        "communication"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-036",
+      "question": "How do you write unit tests in JavaScript with Jest or Vitest?",
+      "answer": "**Short answer:** Jest and Vitest share almost the same API: `describe`, `it` or `test`, `expect(...).toBe(...)`, plus built-in mocks, spies, fake timers and snapshots. Vitest is Vite-native and fast, and keeps a Jest-compatible API, so most tests move across with few changes.\n\nCore pieces:\n- **Matchers**: `toBe` for primitives (same value), `toEqual` for deep equality, `toThrow`, `toContain`, `toHaveBeenCalledWith`, `resolves` and `rejects` for promises.\n- **Mocks**: `jest.fn()` or `vi.fn()` creates a function that records calls. `mockReturnValue` sets what it returns.\n- **Spies**: `jest.spyOn(obj, 'method')` wraps a real method so you can watch it, and restore it later.\n- **Module mocks**: `jest.mock('./mailer')` or `vi.mock('./mailer')` replaces a whole module.\n- **Fake timers**: `jest.useFakeTimers()` then `jest.advanceTimersByTime(5000)`.\n\n```js\n// read-only example: needs Jest 29+ (Vitest uses vi instead of jest)\nimport { sendWelcome } from './welcome';\n\ntest('sends one welcome mail', async () => {\n  const mailer = { send: jest.fn().mockResolvedValue(undefined) };\n  await sendWelcome({ email: 'a@x.com' }, mailer);\n  expect(mailer.send).toHaveBeenCalledTimes(1);\n  expect(mailer.send).toHaveBeenCalledWith('a@x.com', expect.stringContaining('Welcome'));\n});\n\ntest('debounce waits 300 ms', () => {\n  jest.useFakeTimers();\n  const fn = jest.fn();\n  const d = debounce(fn, 300);\n  d(); d();\n  jest.advanceTimersByTime(300);\n  expect(fn).toHaveBeenCalledTimes(1);\n  jest.useRealTimers();\n});\n```\n\n**Snapshots** store the output the first time and compare later. They are cheap to write and easy to misuse: huge snapshots get approved without reading, and any change breaks them. Use small, inline snapshots (`toMatchInlineSnapshot`) for stable output such as error messages, and assert on specific values for the rest.\n\n**Gotchas**\n- Forgetting to reset mocks between tests (`clearMocks`, `restoreMocks` in config) leaks state.\n- `toBe` on objects compares references, not content.\n\n**Interview tip:** Mention that you pick Vitest for Vite projects and Jest for older React or Node codebases, and that the habits (AAA, no sleeps, small snapshots) matter more than the tool.",
+      "level": "intermediate",
+      "module": "Unit Testing",
+      "tags": [
+        "jest",
+        "vitest",
+        "javascript"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-037",
+      "question": "What does the built-in Node.js test runner offer?",
+      "answer": "**Short answer:** Node ships `node:test` and `node:assert`, so you can write and run tests with no extra package. It supports `describe` and `it`, hooks, mocks, fake timers, subtests, a watch mode and coverage, which is enough for libraries and many services.\n\nIt is stable in current Node versions. Run it with `node --test`, which finds files named `*.test.js` and similar.\n\n```js\nimport { test, mock } from 'node:test';\nimport assert from 'node:assert/strict';\n\ntest('table of cases', async (t) => {\n  for (const [price, pct, want] of [[100, 10, 90], [20, 50, 10], [0, 20, 0]]) {\n    await t.test(`${price} at ${pct}%`, () => {\n      assert.equal(Math.round(price * (100 - pct)) / 100, want);\n    });\n  }\n});\n\ntest('spy counts calls', () => {\n  const send = mock.fn();\n  send('a'); send('b');\n  assert.equal(send.mock.callCount(), 2);\n});\n// prints: ✔ table of cases, ✔ spy counts calls\n```\n\nCommands:\n- `node --test` runs everything.\n- `node --test --watch` re-runs on change.\n- `node --experimental-test-coverage --test` prints a coverage report.\n- With TypeScript files you can use `--experimental-strip-types` (Node 22.6 and later; on by default from 23.6).\n\n| | `node:test` | Jest or Vitest |\n| --- | --- | --- |\n| Install | None | Dev dependency |\n| Module mocking | Limited, still evolving | Rich |\n| Snapshots, JSDOM | Basic or missing | Built in or plugin |\n| Best for | Libraries, small services, scripts | Front-end and large apps |\n\n**Gotcha:** Use `node:assert/strict`, otherwise `assert.equal` uses loose `==`.\n\n**Interview tip:** Saying \"zero dependencies, fewer supply-chain risks and faster install\" is a good reason to choose it for backend packages.",
+      "level": "intermediate",
+      "module": "Unit Testing",
+      "tags": [
+        "nodejs",
+        "node-test",
+        "tooling"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-038",
+      "question": "How do you test React components with React Testing Library?",
+      "answer": "**Short answer:** React Testing Library renders a component into a test DOM and lets you interact with it the way a user does: find things by role and visible text, click and type with `user-event`, and assert on what appears. It deliberately gives no access to state or implementation.\n\nQuery priority, best first:\n- `getByRole('button', { name: /save/i })`: what screen readers see.\n- `getByLabelText` for form fields.\n- `getByText` and `getByPlaceholderText` next.\n- `getByTestId` only as a last resort.\n\nQuery families: `getBy` throws if missing, `queryBy` returns null (use it to assert absence), and `findBy` waits for the element to appear (it is async).\n\n```tsx\n// read-only example: React Testing Library 14+, user-event 14, Vitest or Jest with jest-dom\nimport { render, screen } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\nimport { Counter } from './Counter';\n\ntest('increments when the button is clicked', async () => {\n  const user = userEvent.setup();\n  render(<Counter />);\n  await user.click(screen.getByRole('button', { name: /add/i }));\n  expect(screen.getByText('Count: 1')).toBeInTheDocument();\n});\n\ntest('shows data after loading', async () => {\n  render(<OrderList />);\n  expect(await screen.findByText('Order #1001')).toBeInTheDocument(); // waits\n});\n```\n\nWhat to avoid:\n- Testing state, props or hook internals. Test what the user sees.\n- Snapshots of whole components.\n- `waitFor` wrapped around a single `getBy`: use `findBy`.\n- Wrapping every call in `act` by hand. The library already does it.\n- Shallow rendering. Render real children and fake the network.\n\n**Gotcha:** A test that passes because it queried a test id, while the real button has no accessible name. Role queries also check accessibility for free.\n\n**Interview tip:** Quote the guiding idea: \"the more your tests resemble the way your software is used, the more confidence they give\". It is the library's own principle.",
+      "level": "intermediate",
+      "module": "Unit Testing",
+      "tags": [
+        "react",
+        "react-testing-library",
+        "frontend"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-039",
+      "question": "How do you test custom React hooks?",
+      "answer": "**Short answer:** Use `renderHook` from React Testing Library to run the hook inside a small test component, call its returned functions inside `act`, and check the result. If the hook only exists for one component, it is often simpler to test the component instead.\n\n`renderHook` returns `result.current`, which always holds the latest returned value, and `rerender` to change props. Updates that change state go inside `act` so React finishes rendering before you assert.\n\n```tsx\n// read-only example: @testing-library/react 13.1+ (renderHook is built in)\nimport { renderHook, act } from '@testing-library/react';\nimport { useCounter } from './useCounter';\n\ntest('counts up and resets', () => {\n  const { result } = renderHook(() => useCounter(5));\n  expect(result.current.count).toBe(5);\n\n  act(() => result.current.increment());\n  expect(result.current.count).toBe(6);\n\n  act(() => result.current.reset());\n  expect(result.current.count).toBe(5);\n});\n\ntest('works with a provider', () => {\n  const wrapper = ({ children }) => <ThemeProvider>{children}</ThemeProvider>;\n  const { result } = renderHook(() => useTheme(), { wrapper });\n  expect(result.current.mode).toBe('light');\n});\n```\n\nTips:\n- For hooks that fetch data, mock the network (see MSW) and use `waitFor` on `result.current`.\n- For timers, use fake timers and advance them inside `act`.\n- Pass context through the `wrapper` option, the same way the app does.\n\n| Test the hook directly when | Test through a component when |\n| --- | --- |\n| It is a shared, reusable hook | It is used by one component |\n| It has tricky logic (debounce, reducers) | The behaviour is about what the user sees |\n\n**Gotcha:** Asserting on the old `result.current` captured in a variable. Always read `result.current` after the update.\n\n**Interview tip:** Say you prefer user-level tests, and use `renderHook` for library-style hooks where the contract is the return value.",
+      "level": "intermediate",
+      "module": "Unit Testing",
+      "tags": [
+        "react",
+        "hooks",
+        "testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-040",
+      "question": "How do you mock network calls in tests with MSW?",
+      "answer": "**Short answer:** MSW, Mock Service Worker, intercepts HTTP requests at the network level and answers them with handlers you write. The application code uses the real `fetch` or axios, so tests are closer to reality than mocking the client function. The same handlers work in tests, Storybook and the browser.\n\nIn Node tests it patches the request layer through `setupServer`. In the browser it uses a Service Worker. Because the code under test is unchanged, you do not mock your own API module, and you can test loading, error and empty states easily.\n\n```ts\n// read-only example: msw 2.x (the v2 API with http and HttpResponse)\nimport { http, HttpResponse } from 'msw';\nimport { setupServer } from 'msw/node';\n\nconst server = setupServer(\n  http.get('/api/orders', () => HttpResponse.json([{ id: 1, total: 40 }])),\n);\n\nbeforeAll(() => server.listen({ onUnhandledRequest: 'error' }));\nafterEach(() => server.resetHandlers());\nafterAll(() => server.close());\n\ntest('shows an error when the API fails', async () => {\n  server.use(http.get('/api/orders', () => new HttpResponse(null, { status: 500 })));\n  render(<OrderList />);\n  expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();\n});\n```\n\nWhy it helps:\n- **Realistic**: your client code, headers and parsing all run.\n- **Reusable** handlers for tests, local development and Storybook.\n- **Per-test overrides** with `server.use` for errors, slow responses, odd payloads.\n- `onUnhandledRequest: 'error'` fails loudly if a test hits a URL you did not mock.\n\n**Gotchas**\n- MSW v1 used `rest.get` and `res(ctx.json())`. The v2 API is different, so check your version.\n- Handlers can drift from the real API. Keep them honest with contract tests or shared OpenAPI types.\n\n**Interview tip:** Explain the trade-off: MSW is a stub of the server, not a replacement for a contract or integration test against the real API.",
+      "level": "intermediate",
+      "module": "Integration & API Testing",
+      "tags": [
+        "msw",
+        "mocking",
+        "network"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-041",
+      "question": "How do you write unit tests in Go: table-driven tests, subtests and httptest?",
+      "answer": "**Short answer:** Go has testing built in. The standard style is table-driven tests: a slice of cases, run each as a named subtest with `t.Run`. For HTTP handlers you use `net/http/httptest`, and for dependencies you write small hand-made fakes against an interface.\n\nTest files end in `_test.go` and live next to the code. Run them with `go test ./...`. Add `-race` to detect data races and `-cover` for coverage.\n\n```go\nfunc TestDivide(t *testing.T) {\n\ttests := []struct {\n\t\tname    string\n\t\ta, b    int\n\t\twant    int\n\t\twantErr bool\n\t}{\n\t\t{\"normal\", 10, 2, 5, false},\n\t\t{\"truncates\", 7, 2, 3, false},\n\t\t{\"zero divisor\", 1, 0, 0, true},\n\t}\n\tfor _, tc := range tests {\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\tgot, err := Divide(tc.a, tc.b)\n\t\t\tif (err != nil) != tc.wantErr {\n\t\t\t\tt.Fatalf(\"err = %v, wantErr %v\", err, tc.wantErr)\n\t\t\t}\n\t\t\tif got != tc.want {\n\t\t\t\tt.Errorf(\"got %d, want %d\", got, tc.want)\n\t\t\t}\n\t\t})\n\t}\n}\n\nfunc TestHealth(t *testing.T) {\n\trec := httptest.NewRecorder()\n\tHealth(rec, httptest.NewRequest(http.MethodGet, \"/health\", nil))\n\tif rec.Code != 200 {\n\t\tt.Fatalf(\"status %d\", rec.Code)\n\t}\n}\n// go test -v prints: --- PASS: TestDivide/zero_divisor, --- PASS: TestHealth, ok\n```\n\nI ran this with Go 1.22. The table makes adding a case a one-line change, and each subtest has its own name in the output, so `go test -run TestDivide/zero` runs just one case.\n\nPractical tips:\n- Define small interfaces where you use them, so a fake is easy.\n- Use `t.Helper()` in helpers, `t.Cleanup` for teardown, `t.TempDir()` for files.\n- Use `httptest.NewServer` to test a real HTTP client against a local server.\n- Libraries like testify give nicer assertions, but the standard library is enough.\n\n**Gotcha:** In Go before 1.22 the loop variable was shared, so parallel subtests needed `tc := tc`. From Go 1.22 each iteration has its own copy.\n\n**Interview tip:** Mention `-race` in CI as a cheap way to catch concurrency bugs, and `go test -count=1` to bypass the test cache.",
+      "level": "intermediate",
+      "module": "Unit Testing",
+      "tags": [
+        "golang",
+        "unit-testing",
+        "table-driven"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-042",
+      "question": "How do you write unit tests in Python with unittest and pytest?",
+      "answer": "**Short answer:** `unittest` is in the standard library and uses classes with `assert` methods. pytest is a popular third-party runner with plain `assert`, fixtures and parametrisation, and it also runs unittest tests. Both use `unittest.mock` for doubles.\n\nStandard library example (I ran this with Python 3.11):\n\n```python\nimport unittest\nfrom unittest import mock\n\ndef is_leap(y):\n    return y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)\n\ndef total(items, tax_client):\n    return round(sum(items) * (1 + tax_client.rate(\"IN\")), 2)\n\nclass LeapTests(unittest.TestCase):\n    def test_years(self):\n        for year, want in [(2024, True), (1900, False), (2000, True), (2023, False)]:\n            with self.subTest(year=year):          # each case reported separately\n                self.assertEqual(is_leap(year), want)\n\nclass TotalTests(unittest.TestCase):\n    def test_total_uses_rate(self):\n        tax = mock.Mock()\n        tax.rate.return_value = 0.18               # stub\n        self.assertEqual(total([100, 50], tax), 177.0)\n        tax.rate.assert_called_once_with(\"IN\")     # interaction check\n\n# python3.11 -m unittest -v  -> Ran 3 tests ... OK\n```\n\nWhat pytest adds (read-only here, not installed):\n- Plain `assert x == y`, with detailed failure output.\n- **Fixtures**: `@pytest.fixture` gives reusable setup with scopes (function, module, session) and teardown after `yield`.\n- **Parametrize**: `@pytest.mark.parametrize(\"year,want\", [(2024, True), (1900, False)])`.\n- Built-in fixtures such as `tmp_path` and `monkeypatch`.\n- A large plugin ecosystem, for example `pytest-cov` and `pytest-xdist` for parallel runs.\n\n**Gotcha:** `mock.patch` must target where the name is looked up, not where it is defined. Patch `mymodule.requests`, not `requests`, if `mymodule` imported it.\n\n**Interview tip:** Say you use pytest on new projects for readability and fixtures, and you can explain the unittest equivalents, because many companies still have unittest suites.",
+      "level": "intermediate",
+      "module": "Unit Testing",
+      "tags": [
+        "python",
+        "unittest",
+        "pytest"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-043",
+      "question": "How do you write unit tests in .NET with xUnit, NUnit and Moq?",
+      "answer": "**Short answer:** In .NET the common runners are xUnit and NUnit. Tests are methods marked with attributes, and data-driven tests use `[Theory]` with `[InlineData]` in xUnit or `[TestCase]` in NUnit. Moq, or NSubstitute, creates test doubles for interfaces.\n\nThis is a read-only example (xUnit 2.x, Moq 4.x), written from the API:\n\n```csharp\npublic class PriceServiceTests\n{\n    [Theory]\n    [InlineData(100, 10, 90)]\n    [InlineData(100, 0, 100)]\n    [InlineData(0, 50, 0)]\n    public void ApplyDiscount_returns_expected(decimal price, int pct, decimal expected)\n    {\n        var sut = new PriceService(Mock.Of<ILogger<PriceService>>());\n        Assert.Equal(expected, sut.ApplyDiscount(price, pct));\n    }\n\n    [Fact]\n    public async Task Checkout_sends_one_email_when_payment_succeeds()\n    {\n        var payments = new Mock<IPaymentGateway>();\n        payments.Setup(p => p.ChargeAsync(50m)).ReturnsAsync(true);   // stub\n        var mailer = new Mock<IMailer>();\n\n        var sut = new OrderService(payments.Object, mailer.Object);\n        await sut.CheckoutAsync(new Order(50m, \"a@x.com\"));\n\n        mailer.Verify(m => m.SendAsync(\"a@x.com\", It.IsAny<string>()), Times.Once);\n    }\n}\n```\n\nKey points:\n- **xUnit** creates a new test class instance per test, so there is no shared state by accident. Setup goes in the constructor, cleanup in `IDisposable`.\n- **NUnit** has `[SetUp]`, `[TearDown]` and a richer constraint syntax (`Assert.That(x, Is.EqualTo(y))`).\n- **Integration tests** for ASP.NET Core use `WebApplicationFactory<Program>` to host the app in memory.\n- **FluentAssertions** (check its licence for your version) or Shouldly give readable asserts.\n- Use `decimal`, not `double`, for money.\n\n**Gotcha:** Mocking concrete classes or too many dependencies. If the constructor needs eight mocks, the class has too many responsibilities.\n\n**Interview tip:** Name one tool in each role (runner, mocking, assertions) and explain how you would test an ASP.NET controller with `WebApplicationFactory` against a test database.",
+      "level": "intermediate",
+      "module": "Unit Testing",
+      "tags": [
+        "dotnet",
+        "xunit",
+        "moq"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-044",
+      "question": "How do you test REST APIs, and what should you assert?",
+      "answer": "**Short answer:** Call the API over HTTP (or in-process), and assert more than the status code: the response body shape, headers, error format, side effects in the data store, and behaviour such as idempotency and authorisation. Tools include supertest in Node, Postman with Newman in CI, and REST Assured in Java.\n\nWhat to assert, as a checklist:\n- **Status code**: 200, 201 with `Location`, 204, 400, 401, 403, 404, 409, 422.\n- **Body**: required fields, types and values, validated against a schema (JSON Schema or OpenAPI).\n- **Headers**: `Content-Type`, caching headers, security headers, rate-limit headers.\n- **Error contract**: a stable error shape with a code and message, and no stack traces.\n- **Side effects**: the record was created, the event was published.\n- **Idempotency**: repeating a `PUT`, `DELETE` or a `POST` with an idempotency key does not change the result a second time.\n- **Authorisation**: user A cannot read user B's order (test this explicitly).\n- **Pagination, filtering, sorting** with edge cases.\n- **Performance sanity**: a response-time budget on key calls.\n\n```js\n// read-only example: supertest with an Express app, Node test runner or Jest\nimport request from 'supertest';\nimport { app } from './app';\n\ntest('creates an order', async () => {\n  const res = await request(app)\n    .post('/orders')\n    .set('Authorization', 'Bearer test-token')\n    .send({ sku: 'BOOK-1', qty: 2 })\n    .expect(201)\n    .expect('Content-Type', /json/);\n  expect(res.body).toMatchObject({ sku: 'BOOK-1', qty: 2 });\n  expect(res.headers.location).toMatch(/\\/orders\\/\\w+/);\n});\n```\n\n| Tool | Style | Good for |\n| --- | --- | --- |\n| supertest | Code, in-process | Node services |\n| Postman and Newman | Collections, CLI in CI | Shared exploratory plus regression |\n| REST Assured | Java DSL | Java teams |\n\n**Gotcha:** Only the happy path with status 200. The bugs are in 4xx handling and authorisation.\n\n**Interview tip:** Add that API tests are the best value layer in the pyramid for most back-end teams: faster and steadier than UI, closer to the user than unit tests.",
+      "level": "intermediate",
+      "module": "Integration & API Testing",
+      "tags": [
+        "api-testing",
+        "rest",
+        "supertest"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-045",
+      "question": "How does contract testing with Pact work?",
+      "answer": "**Short answer:** In consumer-driven contract testing the consumer writes down what it needs from a provider API (a pact file). The provider replays those requests against its real code to prove it still honours them. A Pact Broker stores the contracts and answers \"can I deploy?\" before a release.\n\n```mermaid\nsequenceDiagram\n    participant C as Consumer tests\n    participant M as Pact mock server\n    participant B as Pact Broker\n    participant P as Provider verification\n    C->>M: define request and expected response\n    M-->>C: replies with the expected response\n    C->>B: publish pact file\n    P->>B: fetch pacts for this provider\n    P->>P: replay requests against real provider\n    P->>B: publish verification result\n    B-->>C: can-i-deploy answer\n```\n\nRead it as two halves. First the consumer's own unit tests run against a mock server, which records the contract. Then the provider's pipeline replays that contract against real code and publishes the result.\n\nRead-only sketch with pact-js (PactV3):\n\n```ts\nconst provider = new PactV3({ consumer: 'web-ui', provider: 'orders-api' });\n\nprovider\n  .given('order 42 exists')\n  .uponReceiving('a request for order 42')\n  .withRequest({ method: 'GET', path: '/orders/42' })\n  .willRespondWith({ status: 200, body: { id: MatchersV3.integer(42), total: MatchersV3.decimal(19.99) } });\n\nawait provider.executeTest(async (mock) => {\n  const order = await new OrdersClient(mock.url).get(42); // real client code\n  expect(order.id).toBe(42);\n});\n```\n\nKey terms:\n- **Provider state** (`given`) prepares data on the provider side before replay.\n- **Matchers** check types and shapes, not exact values.\n- **`can-i-deploy`** asks the broker whether this version is compatible with what is in the target environment.\n- **Pending pacts** stop a new consumer contract from failing the provider build before the provider has seen it.\n\n**Gotcha:** Pact checks the contract the consumer uses, not all of the provider behaviour, and not business flows. Keep contracts to what the consumer really depends on.\n\n**Interview tip:** Say it replaces most cross-service E2E tests, and give the benefit: a provider team learns before merging that removing a field breaks a named consumer.",
+      "level": "intermediate",
+      "module": "Contract Testing",
+      "tags": [
+        "pact",
+        "contract-testing",
+        "microservices"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-046",
+      "question": "What are schema-based and OpenAPI contract tests, and when do you choose them over Pact?",
+      "answer": "**Short answer:** Schema-based contract tests use an OpenAPI or JSON Schema document as the contract. You check that the provider's real responses match the spec, and that the consumer's calls and mocks follow it. This works well when the provider team publishes a public spec, while Pact is stronger when you need to know exactly which consumer uses which field.\n\nTypical ways to use an OpenAPI spec:\n- **Provider conformance**: run requests against the real service and validate responses against the spec (Schemathesis, Dredd, or a validator in your supertest tests).\n- **Consumer-side mocks** generated from the spec (Prism), so front-end tests use shapes that match the spec.\n- **Breaking-change detection** in CI: compare the new spec with the old one (tools like oasdiff or openapi-diff) and fail on removed fields or tightened types.\n- **Generated types and clients**, so the compiler catches drift.\n\n| | Pact (consumer-driven) | OpenAPI (provider-driven) |\n| --- | --- | --- |\n| Contract written by | Each consumer | The provider |\n| Knows who uses what | Yes | No, only the whole spec |\n| Good for | Internal services with a few known consumers | Public or many-consumer APIs |\n| Effort | Per-consumer tests and broker | One spec, tooling in CI |\n| Finds | \"Removing this field breaks service X\" | \"Response does not match the documented shape\" |\n\nYou can combine them: the spec is the public contract and the source of generated types, and Pact covers the critical internal consumers.\n\n**Gotcha:** A spec that is out of date is worse than none. Validate real responses against it in CI so the spec cannot drift.\n\n**Interview tip:** A clear answer states that OpenAPI describes what the provider offers, and Pact captures what consumers actually need, so each answers a different question.",
+      "level": "intermediate",
+      "module": "Contract Testing",
+      "tags": [
+        "openapi",
+        "contract-testing",
+        "api"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-047",
+      "question": "How do you write integration tests with real databases?",
+      "answer": "**Short answer:** Run the same database engine as production in a container (Testcontainers), apply the real migrations, and isolate each test with a transaction rollback, unique data, or a separate schema or database per parallel worker. This catches SQL, constraint and migration bugs that in-memory fakes cannot.\n\nWhy not an in-memory database such as SQLite in place of PostgreSQL? Different SQL dialect, types, locking and index behaviour. Tests pass and production fails.\n\nWays to isolate tests:\n- **Transaction per test**: begin in setup, roll back in teardown. Fast, but cannot test code that commits by itself.\n- **Truncate tables** between tests. Simple, slower.\n- **Database or schema per worker** so parallel test workers do not collide.\n- **Template database**: create once with migrations, copy per test (fast in PostgreSQL).\n\n```ts\n// read-only example: @testcontainers/postgresql with node:test, run once for the whole file\nimport { PostgreSqlContainer } from '@testcontainers/postgresql';\nimport { Client } from 'pg';\n\nlet container, db;\nbefore(async () => {\n  container = await new PostgreSqlContainer('postgres:16').start(); // needs Docker\n  db = new Client({ connectionString: container.getConnectionUri() });\n  await db.connect();\n  await migrate(db);                        // real migrations\n});\nafter(async () => { await db.end(); await container.stop(); });\n\ntest('unique email constraint is enforced', async () => {\n  await db.query(\"insert into users(email) values ('a@x.com')\");\n  await assert.rejects(db.query(\"insert into users(email) values ('a@x.com')\"), /unique/);\n});\n```\n\nTips:\n- Start the container **once per suite**, not per test.\n- In GitLab CI use the `services:` keyword or Docker-in-Docker for Testcontainers.\n- Test migrations: apply to an empty database and to a copy of the previous schema with data.\n- Keep a few such tests per repository class, focused on queries, constraints and transactions.\n\n**Gotcha:** Tests that depend on row order without `ORDER BY`, or on auto-increment ids. They pass locally and fail in parallel.\n\n**Interview tip:** Mention the trade-off: slower than fakes, so use them for the data layer only and keep unit tests fast.",
+      "level": "intermediate",
+      "module": "Integration & API Testing",
+      "tags": [
+        "integration-testing",
+        "database",
+        "testcontainers"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-048",
+      "question": "How do you test message-driven systems such as Kafka or RabbitMQ consumers?",
+      "answer": "**Short answer:** Test the handler logic as a plain function with unit tests, then test the real wiring with a broker in a container. Because delivery is asynchronous and can repeat, assert with polling and timeouts instead of sleeps, and test idempotency and failure paths explicitly.\n\nLayers:\n- **Unit**: the handler takes a message and returns a result or calls a port. No broker.\n- **Integration**: start Kafka or RabbitMQ with Testcontainers, publish a message, and wait until the effect appears (a row in the database, a follow-up event).\n- **Contract**: the message schema is a contract between producer and consumer (schema registry, Pact message pacts).\n\nWhat to cover:\n- **Idempotency**: the same message delivered twice changes state once. At-least-once delivery makes duplicates normal.\n- **Ordering**: events for one key stay in order.\n- **Poison messages**: a bad payload goes to a dead-letter queue instead of blocking the partition.\n- **Retries and backoff**.\n- **Eventual consistency**: the result is not immediate, so wait for it.\n\n```ts\n// idempotent consumer, verified with node --experimental-strip-types --test\nconst seen = new Set<string>(); let balance = 0;\nconst handle = (msg: { id: string; amount: number }) => {\n  if (seen.has(msg.id)) return;           // duplicate: ignore\n  seen.add(msg.id); balance += msg.amount;\n};\nhandle({ id: 'm1', amount: 10 }); handle({ id: 'm1', amount: 10 });\n// balance is 10, not 20\n```\n\nWaiting without sleeps: write a small `waitFor(condition, timeout)` helper that checks every few milliseconds and fails with a clear message when time runs out (Java teams use Awaitility). The test is as fast as the system and never longer than the limit.\n\n**Gotcha:** `sleep(5000)` after publishing. It is slow on a good day and flaky on a bad day.\n\n**Interview tip:** Say that you assert on the observable outcome, not on \"message was sent\", and always include a duplicate-delivery test.",
+      "level": "intermediate",
+      "module": "Integration & API Testing",
+      "tags": [
+        "kafka",
+        "messaging",
+        "integration-testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-049",
+      "question": "When should you use mocks and when should you use fakes? What is over-mocking?",
+      "answer": "**Short answer:** Use a fake, a lightweight working version, when the dependency has real behaviour that your logic relies on (a repository, a queue). Use a stub or mock for simple one-way effects (send an email). Over-mocking is when tests mirror the implementation with mocks, so they break on every refactor and prove little.\n\n| Double | Strength | Weakness |\n| --- | --- | --- |\n| Mock with call checks | Easy; proves a side effect happened | Tied to implementation, brittle |\n| Stub | Simple canned data | No behaviour |\n| Fake | Realistic behaviour; tests state, not calls | Takes effort; can drift from the real thing |\n\nA fake repository is a good example. It keeps rows in a map, so the test saves a user, renames it, and reads it back. It does not care how many times `find` was called.\n\n```ts\nclass InMemoryUserRepo {\n  private rows = new Map<string, { id: string; name: string }>();\n  async save(u: { id: string; name: string }) { this.rows.set(u.id, u); }\n  async find(id: string) { return this.rows.get(id); }\n}\n// test: save u1, call rename(repo, 'u1', 'Asha K'), then find('u1') has the new name.\n// A missing id rejects with \"not found\". Checked by state, no mocks at all.\n```\n\nSigns of over-mocking:\n- Many mocks and a single assert that the mocks were called.\n- A refactor that keeps behaviour but breaks ten tests.\n- Mocking things you own deep inside the same module.\n- The test passes while the real integration is broken.\n\nRemedies: use fakes for owned dependencies, mock only at the system boundary (network, clock, payment provider), and add a few integration tests with the real thing.\n\n**Gotcha:** A fake that is wrong. Run the same contract tests against the fake and the real implementation so they stay equal.\n\n**Interview tip:** Quote the idea \"mock roles, not objects\": test the behaviour the collaborator has to provide, and keep the checks at the edges of the system.",
+      "level": "intermediate",
+      "module": "Test Doubles & Design",
+      "tags": [
+        "mocking",
+        "test-doubles",
+        "design"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-050",
+      "question": "How do you test time, randomness and concurrency?",
+      "answer": "**Short answer:** Make them inputs. Pass a clock and a random generator into the code so tests control them, seed random data and print the seed, and test concurrency with deterministic hooks, small timeouts and race detectors rather than hoping a race shows up.\n\n**Time.** Inject a clock (`clock.now()`), or use fake timers. Test the boundaries: exactly at expiry, one millisecond before, midnight, month end, daylight saving change, and different time zones. Never depend on the machine's date.\n\n```ts\ntype Clock = { now(): number };\nexport const isExpired = (expiresAt: number, clock: Clock) => clock.now() >= expiresAt;\n\n// test: with a fixed clock returning 1000\n// isExpired(1000, clock) is true  (boundary)\n// isExpired(1001, clock) is false\n```\n\n**Randomness.** Use a seeded generator in tests. If a random test fails, the printed seed reproduces it exactly. Property-based tools do this for you.\n\n**Concurrency.** Races depend on timing, so a single green run proves little.\n- Run with a race detector (`go test -race`, ThreadSanitizer).\n- Run the test many times in parallel (`go test -count=100`).\n- Replace sleeps with synchronisation: latches, channels, or a waitFor helper.\n- Make shared code testable by injecting the scheduler, or by testing the logic without threads and the thread-safety with a stress test.\n- In Node, order of async events is deterministic if you await correctly. Unawaited promises are the usual bug.\n\n| Source of flakiness | Fix |\n| --- | --- |\n| `Date.now()` in code | Inject clock |\n| `Math.random()` | Inject seeded generator |\n| Sleep for async | Wait for condition with timeout |\n| Shared global state | Reset in hooks, avoid globals |\n| Parallel tests on one port | Port zero (OS picks a free port) |\n\n**Interview tip:** Say that you remove nondeterminism at the source instead of adding retries.",
+      "level": "intermediate",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "determinism",
+        "concurrency",
+        "flaky-tests"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-051",
+      "question": "How does Selenium WebDriver work with JavaScript: locators, waits, page objects and Grid?",
+      "answer": "**Short answer:** Selenium WebDriver drives a real browser through a driver (ChromeDriver, GeckoDriver) using the W3C WebDriver protocol. Your script finds elements with locators, interacts with them, and must wait for the page with explicit waits. The page object pattern keeps locators in one place, and Selenium Grid runs many browsers in parallel.\n\nFlow: test script, then the WebDriver client library, then the browser driver over HTTP, then the browser.\n\n**Locators**, best first: `By.id`, then a stable `By.css` (preferably a `data-testid` or role-style attribute), then link text. Use XPath only when CSS cannot express it. Avoid long chains tied to layout.\n\n**Waits.** An **implicit wait** is a global polling time for finding elements. An **explicit wait** waits for a specific condition. Use explicit waits, and do not mix the two, because the timeouts can add up in confusing ways.\n\n```js\n// read-only example: selenium-webdriver 4.x for Node\nconst { Builder, By, until } = require('selenium-webdriver');\n\nclass LoginPage {\n  constructor(driver) { this.driver = driver; }\n  async open() { await this.driver.get('https://staging.example.com/login'); }\n  async login(user, pass) {\n    await this.driver.findElement(By.css('[data-testid=\"email\"]')).sendKeys(user);\n    await this.driver.findElement(By.css('[data-testid=\"password\"]')).sendKeys(pass);\n    await this.driver.findElement(By.css('[data-testid=\"submit\"]')).click();\n  }\n}\n\n(async () => {\n  const driver = await new Builder().forBrowser('chrome').build();\n  try {\n    const page = new LoginPage(driver);\n    await page.open();\n    await page.login('qa@example.com', process.env.QA_PASSWORD);\n    await driver.wait(until.elementLocated(By.css('[data-testid=\"dashboard\"]')), 5000);\n  } finally {\n    await driver.quit();   // always release the browser\n  }\n})();\n```\n\n**Page Object Model:** one class per page or component, exposing actions (`login`) and not raw elements. When the UI changes, you fix one file.\n\n**Selenium Grid 4:** a hub or router sends sessions to nodes with different browsers and operating systems. Use `usingServer(url)` on the builder to point at it. Cloud grids such as BrowserStack provide the same idea as a service.\n\n**Gotcha:** `Thread.sleep` style delays, and stale element errors after the page re-renders. Re-find the element, or wait for a condition.\n\n**Interview tip:** Say you would choose Selenium for wide browser and language support, and Playwright or Cypress for faster, less flaky authoring in modern JavaScript projects.",
+      "level": "intermediate",
+      "module": "End-to-End & Browser Testing",
+      "tags": [
+        "selenium",
+        "e2e",
+        "javascript"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-052",
+      "question": "How does Cypress work, and what are its strengths and limits?",
+      "answer": "**Short answer:** Cypress runs the test code inside the browser, next to your app, which gives fast feedback, automatic waiting through retry-ability, a time-travel debugger, and easy network control with `cy.intercept`. Its limits are around multiple tabs, a narrower browser range than Selenium, and the fact that tests are written in JavaScript or TypeScript only.\n\nArchitecture in one line: a Node process (the Cypress runner) controls the browser, while the spec runs in the same browser as the application under test. That is why it can observe and stub network traffic and DOM changes directly.\n\n**Commands are queued and retried.** `cy.get('button')` does not return the element. It enqueues a command. Queries and assertions are retried until they pass or time out (default about four seconds), so you usually write no explicit waits.\n\n```js\n// read-only example: Cypress 12 or later\ndescribe('orders page', () => {\n  it('shows orders returned by the API', () => {\n    cy.intercept('GET', '/api/orders', { fixture: 'orders.json' }).as('getOrders');\n    cy.visit('/orders');\n    cy.wait('@getOrders');                       // waits for the request, not a timer\n    cy.findByRole('row').should('have.length.greaterThan', 1);\n    cy.contains('Order #1001').should('be.visible');\n  });\n\n  it('shows an error on a server failure', () => {\n    cy.intercept('GET', '/api/orders', { statusCode: 500 });\n    cy.visit('/orders');\n    cy.contains(/something went wrong/i).should('be.visible');\n  });\n});\n```\n\n| Strength | Limit to know |\n| --- | --- |\n| Auto-retry, clear errors, screenshots and video | No multi-tab; one browser window per test |\n| Great network stubbing | Cross-origin steps need `cy.origin` (Cypress 9.6 and later) |\n| Component testing mode | Commands are not real promises, so `async/await` does not work the usual way |\n| Easy local setup | Parallel runs need the paid Cloud or your own sharding |\n\n**Gotchas**\n- Mixing `await` with `cy` commands. Use `.then()` or chain commands.\n- Using `cy.wait(3000)` as a delay.\n- Logging in through the UI before every test. Log in through the API with `cy.session` instead.\n\n**Interview tip:** Name retry-ability as the key idea, and say you keep the suite small, with API setup and network stubs for speed.",
+      "level": "intermediate",
+      "module": "End-to-End & Browser Testing",
+      "tags": [
+        "cypress",
+        "e2e",
+        "frontend"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-053",
+      "question": "How does Playwright work: auto-waiting, tracing and parallel contexts?",
+      "answer": "**Short answer:** Playwright controls Chromium, Firefox and WebKit through one API. It auto-waits for elements to be actionable before each action, isolates every test in its own browser context, runs test files in parallel workers, and records traces you can replay after a failure.\n\nKey ideas:\n- **Auto-waiting.** Before a click, Playwright checks that the element is attached, visible, stable, enabled and not covered. Web-first assertions such as `expect(locator).toBeVisible()` retry until the timeout.\n- **Locators** by user-facing meaning: `getByRole`, `getByLabel`, `getByText`, then `getByTestId`.\n- **Browser contexts**: a context is like a fresh incognito profile, cheap to create. Each test gets one, so cookies and storage never leak between tests, and you can simulate two users in one test.\n- **Parallelism**: workers run files in parallel; `--shard=1/4` splits the suite across CI machines.\n- **Trace viewer**: a recording of every step with DOM snapshots, network and console. Enable `trace: 'on-first-retry'` and open the trace from CI artifacts.\n\n```ts\n// read-only example: @playwright/test 1.4x\nimport { test, expect } from '@playwright/test';\n\ntest('user can add a book to the cart', async ({ page }) => {\n  await page.route('**/api/recommendations', r => r.fulfill({ json: [] })); // stub noise\n  await page.goto('/books/clean-code');\n  await page.getByRole('button', { name: 'Add to cart' }).click();\n  await expect(page.getByTestId('cart-count')).toHaveText('1');\n});\n```\n\nPlaywright also offers API testing (`request` fixture), component testing (experimental), device emulation, and codegen to record a first draft.\n\n| Playwright | Compared with Cypress |\n| --- | --- |\n| Multi-tab and multi-user in one test | Not possible in Cypress |\n| WebKit and Firefox supported | Firefox supported, WebKit experimental |\n| Any async code works with `await` | Command queue style |\n| Built-in sharding and trace | Time-travel UI is its own strength |\n\n**Gotcha:** Using `page.waitForTimeout`. It is a sleep. Wait for a locator or a response instead.\n\n**Interview tip:** Say that auto-waiting plus isolated contexts remove most of the flakiness that older Selenium suites had.",
+      "level": "intermediate",
+      "module": "End-to-End & Browser Testing",
+      "tags": [
+        "playwright",
+        "e2e",
+        "frontend"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-054",
+      "question": "How do you choose between Selenium, Cypress and Playwright?",
+      "answer": "**Short answer:** Choose by constraints: browser and language needs, team skills, existing investment, debugging experience and CI cost. For a new JavaScript or TypeScript project, Playwright is usually the best default. Cypress suits front-end teams that value its developer experience. Selenium is right when you need many languages, real devices or an existing grid.\n\n| Need | Selenium | Cypress | Playwright |\n| --- | --- | --- | --- |\n| Languages | Java, JS, Python, C#, Ruby and more | JS and TS | JS/TS, Python, Java, .NET |\n| Browsers | Everything with a driver, via grids and clouds | Chromium family, Firefox, WebKit experimental | Chromium, Firefox, WebKit |\n| Auto-wait | Manual explicit waits | Built-in retries | Built-in actionability checks |\n| Multi-tab and multi-user | Yes | No | Yes |\n| Speed and parallelism | Depends on grid | Needs dashboard or custom sharding | Built-in workers and shards |\n| Debugging | Logs, screenshots | Time-travel runner | Trace viewer, UI mode |\n| Real mobile devices | Via Appium and clouds | Limited | Emulation; real devices via clouds |\n\nDecision steps I use:\n- **What must we cover?** Safari on real iPhones points to a cloud grid such as BrowserStack. Only modern desktop browsers points to Playwright.\n- **Who writes the tests?** If QA engineers know Java, Selenium or Playwright for Java keeps skills reusable.\n- **What exists today?** Migrating a stable 800-test Selenium suite has a real cost. Move new tests first, if at all.\n- **Stability record:** run a proof of concept with ten real tests and measure flake rate, duration and debug time.\n\n**Gotcha:** Picking by popularity or a blog post. A tool change does not fix badly designed tests, such as shared data and UI-driven setup.\n\n**Interview tip:** Show you decided by evidence: \"we ran a two-week spike on three tools with the same ten journeys and compared flake rate and time to debug\".",
+      "level": "intermediate",
+      "module": "End-to-End & Browser Testing",
+      "tags": [
+        "selenium",
+        "cypress",
+        "playwright",
+        "tool-choice"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-055",
+      "question": "How do you do cross-browser and device testing with BrowserStack Automate?",
+      "answer": "**Short answer:** BrowserStack Automate gives you a cloud Selenium (and Playwright, Cypress) grid with real browsers, operating systems and real mobile devices. You connect with your credentials, send capabilities that say which browser and device you want, run several sessions in parallel, and use BrowserStack Local to test an app that is not on the public internet.\n\nHow it works with Selenium:\n- Point the driver at BrowserStack's hub URL and send `bstack:options` with your username, access key and the build or session names.\n- Each test opens one session on the requested browser, OS and version. The dashboard shows video, logs and screenshots per session.\n- **Parallel sessions** are limited by your plan, so shard tests to match.\n- **Local testing**: start the BrowserStack Local binary, set `local: true` in the options, and the cloud browser reaches your localhost or staging behind a firewall.\n- Mark each session passed or failed through the API so the dashboard is correct.\n\n```js\n// read-only example: selenium-webdriver with W3C capabilities; check current BrowserStack docs for option names\nconst { Builder } = require('selenium-webdriver');\n\nconst caps = {\n  browserName: 'Safari',\n  browserVersion: 'latest',\n  'bstack:options': {\n    os: 'OS X', osVersion: 'Sonoma',\n    projectName: 'storefront', buildName: `ci-${process.env.CI_PIPELINE_ID}`,\n    sessionName: 'checkout smoke',\n    local: 'false',\n    userName: process.env.BROWSERSTACK_USERNAME,\n    accessKey: process.env.BROWSERSTACK_ACCESS_KEY,\n  },\n};\nconst driver = await new Builder()\n  .usingServer('https://hub-cloud.browserstack.com/wd/hub')\n  .withCapabilities(caps).build();\n```\n\nPractical strategy:\n- Run the **full suite on one fast browser** in every merge request.\n- Run a **small smoke set across the browser matrix** (Chrome, Safari, Firefox, Edge, a few real devices) nightly or before release.\n- Choose the matrix from **analytics** of real users, not from a guess.\n- Keep credentials in CI secrets, never in the repo.\n\n**Gotcha:** Running the whole suite on every browser on every commit. It is slow and expensive, and most failures are the same bug repeated.\n\n**Interview tip:** Mention that real devices find touch, keyboard and Safari-specific bugs that emulators miss, and that cloud sessions add network latency, so use generous explicit waits.",
+      "level": "intermediate",
+      "module": "End-to-End & Browser Testing",
+      "tags": [
+        "browserstack",
+        "cross-browser",
+        "selenium"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-056",
+      "question": "How does visual regression testing work with Percy or Chromatic?",
+      "answer": "**Short answer:** Visual regression tools take snapshots of pages or components, compare them with an approved baseline, and show the pixel differences for a person to approve or reject. Percy (from BrowserStack) works with your E2E tests, and Chromatic works with Storybook components. They catch layout and styling bugs that functional assertions miss.\n\nHow the flow works with Percy:\n- Your existing test calls a snapshot function at the right moment.\n- Percy captures the DOM and assets, then renders them in its own browsers and widths. This is more stable than comparing screenshots taken on your CI machine.\n- The first approved build becomes the **baseline**. Later builds are compared against the baseline of the target branch.\n- Changes appear in a review UI. A person approves intended changes, which update the baseline, or rejects them as bugs.\n\n```js\n// read-only example: @percy/cli with @percy/selenium-webdriver; run with: npx percy exec -- node test.js\nconst percySnapshot = require('@percy/selenium-webdriver');\n\nawait driver.get('https://staging.example.com/pricing');\nawait percySnapshot(driver, 'Pricing page', { widths: [375, 1280] });\n// PERCY_TOKEN must be set in the environment\n```\n\nChromatic does the same per Storybook story, so every state of a component (empty, loading, error) is checked without a full browser journey.\n\n**Common sources of false differences, and fixes**\n- **Animations and transitions**: disable them in test mode, or wait until finished.\n- **Dynamic data**: dates, random ids, ads. Mock them or hide them with Percy CSS.\n- **Fonts and images loading late**: wait for fonts, use local fonts in tests.\n- **Carousels, videos, cursors blinking**: freeze or hide them.\n- **Different rendering between machines**: use the cloud rendering of the tool, not local screenshots.\n\n| Strengths | Weaknesses |\n| --- | --- |\n| Finds CSS regressions, overlapped text, broken responsive layouts | Needs human review of diffs |\n| Covers many widths and browsers cheaply | Noise if the page is not deterministic |\n\n**Interview tip:** Say that approval is part of the workflow, so assign a reviewer (often design plus developer) and keep the snapshot set focused on key pages and components.",
+      "level": "intermediate",
+      "module": "Visual & Accessibility Testing",
+      "tags": [
+        "percy",
+        "chromatic",
+        "visual-testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-057",
+      "question": "How do you test accessibility?",
+      "answer": "**Short answer:** Combine automated checks (axe-core), keyboard testing, screen reader checks and design review. Automation finds only part of the problems, mostly the machine-detectable ones like missing labels and low contrast, so manual testing is still needed.\n\nLayers:\n- **Static linting**: `eslint-plugin-jsx-a11y` catches missing alt text and bad ARIA while coding.\n- **Automated scans in tests**: run axe on a rendered page or component. Packages exist for Playwright (`@axe-core/playwright`), Cypress (`cypress-axe`) and Jest (`jest-axe`). Fail the build on new serious violations.\n- **Keyboard testing**: can you reach and use everything with Tab, Shift+Tab, Enter, Space and Escape? Is the focus order logical and the focus ring visible? Does a modal trap focus and return it on close?\n- **Screen reader checks** with VoiceOver on macOS, NVDA on Windows, TalkBack on Android. Check names, roles and announcements for dynamic updates.\n- **Visual checks**: contrast, zoom to 200 percent, reduced motion, no information by colour alone.\n\n```ts\n// read-only example: @axe-core/playwright\nimport AxeBuilder from '@axe-core/playwright';\ntest('home page has no serious a11y violations', async ({ page }) => {\n  await page.goto('/');\n  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();\n  expect(results.violations).toEqual([]);\n});\n```\n\nUsing role-based queries in React Testing Library gives some accessibility checking for free: if you cannot find the button by role and name, a screen reader user cannot either.\n\nThe standard to quote is WCAG 2.1 or 2.2, level AA. Say that automated tools detect only a minority of issues, so do not claim a page is accessible because axe passed.\n\n**Gotcha:** Adding ARIA attributes to fix a div that should have been a button. Prefer native elements first.\n\n**Interview tip:** Mention you make a11y part of the definition of done and the component library, so it is fixed once and reused.",
+      "level": "intermediate",
+      "module": "Visual & Accessibility Testing",
+      "tags": [
+        "accessibility",
+        "a11y",
+        "axe"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-058",
+      "question": "How do you do performance and load testing with tools like k6, JMeter and Gatling?",
+      "answer": "**Short answer:** Load testing sends realistic traffic to a system and measures latency percentiles, throughput and errors against agreed targets. The main variants are load, stress, soak and spike tests. Tools include k6 (JavaScript scripts), JMeter (GUI and XML) and Gatling (Scala, Java or Kotlin DSL).\n\n| Test | Question it answers | Shape |\n| --- | --- | --- |\n| Load | Does it meet the target at expected traffic? | Steady expected level |\n| Stress | Where does it break, and how does it fail? | Ramp beyond capacity |\n| Soak (endurance) | Are there leaks or slow degradation over hours? | Moderate load, long time |\n| Spike | Does it survive a sudden jump and recover? | Sharp rise and drop |\n\nMeasure with **percentiles**, not averages. An average of 200 ms can hide that 1 in 20 requests takes 3 seconds. Track p95 and p99, error rate, and throughput, plus server-side CPU, memory, database and queue depth.\n\nRealism matters: model **think time** (users pause), realistic data variety, caches warm and cold, and the real mix of endpoints. Prefer an **open model** (a fixed arrival rate) over a closed model for web traffic, otherwise a slow server hides its own problems by slowing the test clients.\n\n```js\n// read-only example: k6 script, run with: k6 run script.js\nimport http from 'k6/http';\nimport { check, sleep } from 'k6';\n\nexport const options = {\n  stages: [{ duration: '2m', target: 50 }, { duration: '5m', target: 50 }, { duration: '1m', target: 0 }],\n  thresholds: { http_req_duration: ['p(95)<500'], http_req_failed: ['rate<0.01'] },\n};\n\nexport default function () {\n  const res = http.get('https://staging.example.com/api/products');\n  check(res, { 'status is 200': (r) => r.status === 200 });\n  sleep(1); // think time\n}\n```\n\nThresholds make the test pass or fail, so it can run in CI as a gate on a small scale, with the big runs scheduled.\n\n**Gotcha:** Testing a tiny environment and extrapolating, or testing from one laptop whose network is the limit. Use a production-like system and distributed load generators.\n\n**Interview tip:** Mention you set targets from the SLO first (for example p95 under 500 ms at 300 requests a second) and test against them.",
+      "level": "intermediate",
+      "module": "Performance & Security Testing",
+      "tags": [
+        "performance",
+        "load-testing",
+        "k6"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-059",
+      "question": "What are the basics of security testing: SAST, DAST, dependency scanning and fuzzing?",
+      "answer": "**Short answer:** Security testing mixes several automated checks: SAST scans your source code, DAST attacks the running app from outside, dependency and container scanning finds known vulnerable libraries, secret scanning finds leaked keys, and fuzzing feeds odd inputs to find crashes. Manual review and penetration tests cover what tools miss.\n\n| Technique | What it checks | Examples |\n| --- | --- | --- |\n| SAST | Source code patterns (injection, unsafe functions) | Semgrep, CodeQL, GitLab SAST |\n| DAST | A running app, as an attacker (XSS, missing headers) | OWASP ZAP |\n| Dependency scanning (SCA) | Known CVEs in libraries | npm audit, Dependabot, Trivy, Snyk |\n| Container and IaC scanning | Image and config issues | Trivy, Checkov |\n| Secret scanning | Keys and tokens in the repo | Gitleaks, platform scanners |\n| Fuzzing | Crashes from random or mutated input | Go native fuzzing (1.18+), libFuzzer |\n\nWhere they fit in the pipeline:\n- **Merge request**: SAST, secret scan, dependency scan with a gate on new critical findings.\n- **Nightly**: full DAST against a test environment, container scans.\n- **Release**: penetration test for major changes.\n\nAlso write ordinary tests for security rules: user A cannot read user B's data, expired tokens are rejected, rate limits work, input with quotes and script tags is handled.\n\n```go\n// read-only: a Go fuzz test (Go 1.18 and later), run with: go test -fuzz=FuzzParse\nfunc FuzzParse(f *testing.F) {\n\tf.Add(\"2024-02-29\")\n\tf.Fuzz(func(t *testing.T, s string) {\n\t\t_, _ = ParseDate(s) // must never panic, whatever the input\n\t})\n}\n```\n\n**Gotchas**\n- Tool noise: hundreds of old findings make people ignore the report. Gate on new issues and triage the rest.\n- DAST against production can cause harm. Use a test environment.\n\n**Interview tip:** Link it to the OWASP Top 10 as a checklist for what to test, and say security is shared between developers and the security team.",
+      "level": "intermediate",
+      "module": "Performance & Security Testing",
+      "tags": [
+        "security",
+        "sast",
+        "dast"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-060",
+      "question": "What is mutation testing, and what does it tell you?",
+      "answer": "**Short answer:** Mutation testing checks the quality of your tests. A tool makes small changes to your code (mutants), like changing `>=` to `>`, and runs the tests. If the tests still pass, the mutant survived, which shows a gap. The mutation score is the share of mutants the tests killed.\n\nCoverage only says a line ran. Mutation testing says whether a test would notice if the line were wrong.\n\n```js\nconst isAdult = (age) => age >= 18;\n\n// weak tests: pass for both >= and >, so the mutant (age > 18) survives\n//   isAdult(30) is true,  isAdult(5) is false\n// boundary tests kill it:\n//   isAdult(18) is true,  isAdult(17) is false\n```\n\nI ran both sets: the weak pair passes with the original code and would also pass with `>`, while the boundary pair would fail on the mutant. That is exactly what a mutation tool automates.\n\nTools: Stryker (JavaScript, TypeScript, .NET), PIT (Java), mutmut (Python), and go-mutesting for Go.\n\nHow to use it well:\n- **Run on core modules** (pricing, permissions), not on the whole repo, because it is slow: the tests run once per mutant.\n- **Run incrementally** on changed files in CI, or nightly.\n- **Look at survivors** one by one. Some are equivalent mutants (a change that does not alter behaviour) and can be ignored.\n- **Set a threshold** for important packages, such as 70 percent, rather than 100.\n\n| Metric | Tells you |\n| --- | --- |\n| Line coverage | Which code ran |\n| Mutation score | Which code is actually checked |\n\n**Gotcha:** Using mutation score as a company-wide target. It becomes a game, and time is wasted on trivial mutants.\n\n**Interview tip:** Say it is a diagnostic for critical logic, and a great way to show a team why \"100 percent coverage\" is not enough.",
+      "level": "intermediate",
+      "module": "Advanced Techniques",
+      "tags": [
+        "mutation-testing",
+        "test-quality",
+        "stryker"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-061",
+      "question": "What is property-based testing?",
+      "answer": "**Short answer:** Instead of writing specific examples, you state a property that must hold for all inputs, and the tool generates many random inputs to try to break it. When it finds a failure, it shrinks the input to the smallest counter-example. It finds edge cases you would not think of.\n\nExamples of properties:\n- **Round trip**: decoding an encoded value gives the original.\n- **Idempotence**: sorting a sorted list changes nothing.\n- **Invariant**: the sorted output has the same length and each item is not smaller than the previous one.\n- **Oracle**: a fast implementation equals a slow, obviously correct one.\n\nLibraries: fast-check (JavaScript and TypeScript), Hypothesis (Python), jqwik (Java), FsCheck (.NET), and `testing/quick` or native fuzzing in Go.\n\nHere is a hand-rolled version using a seeded random generator (it ran with the Node test runner):\n\n```ts\nconst sortNums = (a: number[]) => [...a].sort((x, y) => x - y);\n\nfor (let i = 0; i < 200; i++) {\n  const arr = randomArray(rnd);                 // seeded generator, seed 42\n  const out = sortNums(arr);\n  assert.equal(out.length, arr.length);                          // same size\n  for (let j = 1; j < out.length; j++) assert.ok(out[j - 1] <= out[j]); // ordered\n  assert.deepEqual(sortNums(out), out);                           // idempotent\n}\n```\n\nWith fast-check (read-only), the same idea is shorter and adds shrinking:\n\n```ts\nfc.assert(fc.property(fc.array(fc.integer()), (a) => {\n  const out = sortNums(a);\n  return out.length === a.length && out.every((v, i) => i === 0 || out[i - 1] <= v);\n}));\n```\n\n**When it fits:** parsers, serialisers, algorithms, state machines, and pricing rules. **When it does not:** UI flows and code with heavy external effects.\n\n**Gotcha:** A property that merely repeats the implementation proves nothing. Choose properties that describe results from a different angle.\n\n**Interview tip:** Say that you keep a few example tests for documentation and add property tests for the tricky parts. Always print the seed so failures can be replayed.",
+      "level": "intermediate",
+      "module": "Advanced Techniques",
+      "tags": [
+        "property-based-testing",
+        "fast-check",
+        "hypothesis"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-062",
+      "question": "What are test pyramid anti-patterns such as the ice cream cone and the hourglass?",
+      "answer": "**Short answer:** The ice cream cone has many slow UI and manual tests and few unit tests. The hourglass has many unit and E2E tests but almost nothing in the middle. Both give slow feedback and hard debugging. The fix is to move checks down to the cheapest layer that can catch the bug.\n\n```mermaid\nflowchart TD\n    subgraph Cone[\"Ice cream cone\"]\n        M1[\"Many manual tests\"] --> E1[\"Many UI tests\"] --> I1[\"Few integration\"] --> U1[\"Few unit\"]\n    end\n```\n\nAnti-patterns and their symptoms:\n- **Ice cream cone**: the suite takes hours, is flaky, and nobody can tell which layer broke. Usually born where QA tests through the UI because developers do not write tests.\n- **Hourglass**: unit tests of tiny pieces plus E2E, but nobody tests that the service, database and queue work together. Bugs in wiring, SQL and serialisation reach staging.\n- **Inverted by tools**: a team that chose Selenium first and now tests business rules through the browser.\n- **Duplicate coverage**: the same rule tested at unit, API and UI level. Three places to update.\n- **Test per method**: unit tests that mirror the class structure, so refactoring breaks them.\n\nHow to fix, step by step:\n- Pick the 5 to 10 critical journeys and keep those as E2E. Delete or move the rest.\n- Move rule checks to unit tests and data checks to integration tests with a real database.\n- Add contract tests at service boundaries.\n- Track where bugs are found, and add tests at the cheapest layer that would have caught them.\n\n**Gotcha:** Moving tests down just to hit a shape. If a UI behaviour only appears in a real browser, it needs a browser test.\n\n**Interview tip:** Say that the pyramid is a description of cost, not a rule, and that you review the shape with escaped-defect data.",
+      "level": "intermediate",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "test-pyramid",
+        "anti-patterns",
+        "strategy"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-063",
+      "question": "How do you run tests in GitLab CI: reports, artifacts, parallelism and retries?",
+      "answer": "**Short answer:** In GitLab CI you split tests into jobs and stages, publish JUnit reports so failures show in the merge request, keep logs and traces as artifacts, run a job on several machines with `parallel`, and use `retry` only for infrastructure failures. Caches speed up installs.\n\n```yaml\n# .gitlab-ci.yml (read-only; the GitLab keywords are standard, adjust images and scripts)\nstages: [test, e2e]\n\nunit:\n  stage: test\n  image: node:22\n  cache:\n    key: { files: [package-lock.json] }\n    paths: [node_modules/]\n  script:\n    - npm ci\n    - npm test -- --reporters=default --reporters=jest-junit\n  coverage: '/All files[^|]*\\|[^|]*\\s+([\\d.]+)/'\n  artifacts:\n    when: always\n    reports:\n      junit: junit.xml\n\ne2e:\n  stage: e2e\n  image: mcr.microsoft.com/playwright:v1.47.0-jammy\n  parallel: 4                                   # 4 jobs, each gets CI_NODE_INDEX / CI_NODE_TOTAL\n  script:\n    - npm ci\n    - npx playwright test --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL\n  retry:\n    max: 1\n    when: [runner_system_failure, stuck_or_timeout_failure]   # not for test failures\n  artifacts:\n    when: always\n    expire_in: 7 days\n    paths: [playwright-report/, test-results/]\n    reports: { junit: results.xml }\n```\n\nWhy these pieces matter:\n- **JUnit report**: failed tests are listed in the merge request widget, with history.\n- **`artifacts: when: always`** keeps traces and screenshots from failed runs.\n- **`parallel` and sharding** divide the work. Balance shards by duration if you can.\n- **`coverage` regex or a Cobertura report** shows coverage in the merge request.\n- **`rules` and `only: changes`** run jobs only when relevant files change.\n- **`needs`** lets jobs start as soon as their dependencies finish, instead of waiting for the whole stage.\n- **Services** (`services: [postgres:16]`) provide databases for integration tests.\n\n**Retry policy:** retry infrastructure failures automatically. Do not retry test failures silently. If you do, record them and treat retried passes as flaky.\n\n**Interview tip:** Mention the pipeline budget: unit and lint under ten minutes, full pipeline under thirty, and what you do when it grows.",
+      "level": "intermediate",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "gitlab-ci",
+        "ci",
+        "reports"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-064",
+      "question": "How do you manage test environments, test data and feature flags together?",
+      "answer": "**Short answer:** Use a small set of well-defined environments, make each test create its own data, and control feature flags explicitly in tests so results do not depend on flag state in a shared system. Flags let you test new code paths early but they also multiply the combinations you must cover.\n\nEnvironment practice:\n- **Ephemeral per merge request** for integration and E2E where you can. Deploy the branch to a namespace, run tests, destroy it.\n- **A stable shared staging** for pre-release checks, with data reset on a schedule.\n- **Configuration through environment variables** and the same images across environments.\n\nFlag practice in tests:\n- **Set flags in the test**, not by hoping the environment has the right value. A local or file-based flag provider for tests, or the flag service API to set the value for the test user.\n- **Test both states** of a new flag when the old path is still live. After rollout, delete the flag and the old tests.\n- **Name an owner and a removal date** for every flag. Stale flags are hidden complexity.\n- **Combination control**: you cannot test all combinations of ten flags. Test the production defaults and each flag alone against the defaults.\n\n```ts\n// idea: the test decides the flag, so it never depends on the environment\nconst flags = new InMemoryFlags({ 'new-checkout': true });\nconst app = buildApp({ flags });\n// run checkout tests against app, then again with { 'new-checkout': false }\n```\n\n**Data practice:** create data through APIs with unique prefixes (`qa-${runId}-...`), clean it up after, and have a job that removes leftovers older than a day.\n\n**Gotcha:** E2E tests on a shared environment where someone toggles a flag in the dashboard mid-run. The failure is random and unexplainable.\n\n**Interview tip:** Say that deploy and release are separate, flags carry the release, and tests must state the flags they assume.",
+      "level": "intermediate",
+      "module": "Integration & API Testing",
+      "tags": [
+        "environments",
+        "feature-flags",
+        "test-data"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-065",
+      "question": "How do you test configuration and infrastructure such as Helm charts, Kubernetes manifests and Terraform?",
+      "answer": "**Short answer:** Test infrastructure as code in layers: lint and validate files, render templates and check the output against schemas and policies, then deploy to a throwaway cluster or account and run smoke checks. The cheap static layers catch most mistakes.\n\nLayers for Kubernetes and Helm:\n- **Lint**: `helm lint` checks chart structure.\n- **Render and validate**: `helm template ./chart -f values-prod.yaml` outputs manifests. Pass them to a schema validator like kubeconform to catch wrong fields and API versions.\n- **Policy checks**: Conftest (OPA) or Kyverno tests for rules such as \"every container has resource limits, no `latest` tag, no root user\".\n- **Server-side dry run**: `kubectl apply --dry-run=server` asks the real API server to validate.\n- **Deploy tests**: install the chart into a kind or ephemeral cluster, wait for rollout, then run smoke tests. Helm has `helm test` hooks for in-cluster checks.\n\n```bash\nhelm lint ./charts/orders\nhelm template orders ./charts/orders -f values-prod.yaml | kubeconform -strict -summary\nhelm template orders ./charts/orders | conftest test -p policy/ -\n# kubeconform prints a summary such as: Summary: 7 resources found - Valid: 7, Invalid: 0\n```\n\nTerraform and cloud IaC:\n- `terraform validate` and `terraform fmt -check`.\n- `terraform plan` reviewed in the merge request, and checked by policy tools (Checkov, Trivy config scanning, OPA).\n- Native `terraform test` (Terraform 1.6 and later) or Terratest (Go) for real deployments in a sandbox account.\n\nAlso test **application configuration**: a unit test that loads each environment's config file and checks that required keys exist and values have the right types, so a missing variable fails in CI instead of at startup in production.\n\n**Gotcha:** A chart that renders fine with default values and breaks with the production values file. Always render with every real values file.\n\n**Interview tip:** Say that these checks belong in the same pipeline as application tests, and that policy as code replaces long review checklists.",
+      "level": "intermediate",
+      "module": "Integration & API Testing",
+      "tags": [
+        "iac",
+        "helm",
+        "kubernetes",
+        "terraform"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-066",
+      "question": "How do you design a robust end-to-end test framework?",
+      "answer": "**Short answer:** A robust E2E framework keeps tests short and readable, hides browser details in a thin layer, creates data through APIs instead of the UI, isolates every test, and gives clear failure evidence. It is designed for stability and diagnosis first, speed second.\n\n```mermaid\nflowchart TD\n    T[\"Tests: user journeys\"] --> P[\"Page objects or screenplay tasks\"]\n    P --> D[\"Driver layer: Playwright, Selenium\"]\n    T --> A[\"API helpers: create users and data\"]\n    T --> F[\"Fixtures: auth, config, cleanup\"]\n    D --> R[\"Reports: trace, video, logs\"]\n    A --> R\n```\n\nRead it as: tests talk to a business-level layer, not to selectors, and set up state through APIs.\n\nDesign decisions:\n- **Abstraction.** Page objects group locators and actions per page or component: `checkout.payWithCard()`. The Screenplay pattern models actors, tasks and questions, and scales better when many roles and flows exist. Either way, assertions belong in the test, not hidden in the page.\n- **Selectors strategy.** Agree on stable hooks with developers: roles and labels first, `data-testid` where needed. Never rely on layout, generated class names or text that marketing edits.\n- **Data setup via API.** Log in by token and create orders through the back end. Use the UI only for the journey under test. This is faster and removes shared failure points.\n- **Isolation.** Each test uses its own user and data, no ordering, safe to run in parallel.\n- **Parallelism and sharding** from day one, so the data rules are respected.\n- **Retries policy.** At most one retry in CI, with the retried test reported as flaky. Locally, none.\n- **Reporting.** Trace, video and screenshot on failure, plus network and console logs, attached to the CI job. Add a request id to every call so a failure maps to server logs.\n- **Config.** Environment, base URL and credentials from variables.\n\n**Trade-off:** the page layer must stay thin. A page object that grows business logic becomes a second application.\n\n**Gotcha:** Giant \"God\" page objects and tests that call each other. Prefer small components and composition.\n\n**Interview tip:** Lead with \"stable selectors, API setup, isolation\". These three remove most flakiness.",
+      "level": "advanced",
+      "module": "End-to-End & Browser Testing",
+      "tags": [
+        "e2e",
+        "framework-design",
+        "page-object"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-067",
+      "question": "How do you make tests deterministic by controlling time, randomness, network and ordering?",
+      "answer": "**Short answer:** A deterministic test gives the same result every run because every uncontrolled input has been turned into a controlled one. You inject or fake the clock, seed randomness, stub the network, avoid shared state, and make ordering explicit.\n\nSources of non-determinism and how I control them:\n- **Time**: inject a clock, or use fake timers. For browsers, Playwright can set a fixed clock, and Cypress has `cy.clock()`. Test time zones by setting the zone in the test process, for example `TZ=Asia/Kolkata` and `TZ=America/Los_Angeles`.\n- **Randomness**: pass a seeded generator. Log the seed on failure. For ids, inject an id generator.\n- **Network**: stub third parties (MSW, WireMock, route interception). Allow only your own services. Fail on unexpected outbound calls.\n- **Ordering**: do not rely on object key order, unordered query results, or async tasks finishing in a given order. Sort before comparing, or compare sets.\n- **Shared state**: unique data per test, reset caches, no global singletons surviving between tests. Run the suite in random order in CI to expose hidden dependencies.\n- **Environment**: pin versions of browsers, runtime and fonts using containers. Use the same locale.\n- **Concurrency**: replace sleeps with waits on events, and use the race detector.\n\n```js\n// order dependence caught by running tests in isolation: B fails when A ran first\nlet counter = 0;\nconst next = () => ++counter;\ntest('A', () => assert.equal(next(), 1));  // passes\ntest('B', () => assert.equal(next(), 1));  // fails: 2 !== 1 (verified with node --test)\n// fix: create a fresh counter inside each test\n```\n\nA useful check: run each new test 20 times, and the whole suite in random order, before it joins the main branch.\n\n**Gotcha:** Freezing time globally and forgetting that some libraries use their own timers or `performance.now`. Verify the fake covers what the code uses.\n\n**Interview tip:** Say you treat nondeterminism as a design problem: make dependencies explicit and the tests follow.",
+      "level": "advanced",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "determinism",
+        "flaky-tests",
+        "test-design"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-068",
+      "question": "How do you test distributed systems: chaos engineering, fault injection and game days?",
+      "answer": "**Short answer:** Unit and integration tests prove the happy path. For distributed systems you also need to test failure: slow networks, crashed nodes, partial outages, duplicate messages. Fault injection in tests, chaos experiments in production-like environments, and rehearsed game days show whether timeouts, retries and fallbacks really work.\n\nTechniques from small to large:\n- **Fault injection in tests.** Use a proxy such as Toxiproxy between your service and its dependency to add latency, drop connections or cut off a response. Assert that timeouts fire, retries back off, and a circuit breaker opens.\n- **Dependency failure tests.** Stub a dependency to return 500, to hang, to return malformed data. Check the user-facing behaviour: a fallback, a clear error, no data loss.\n- **Chaos experiments.** Follow the scientific loop: define the steady state (for example error rate under 1 percent), form a hypothesis (\"we survive losing one pod\"), inject the failure with a small blast radius, observe, and fix. Tools include Chaos Mesh, Litmus and Azure Chaos Studio.\n- **Game days.** A planned session where the team simulates an outage (database failover, region loss) and practises detection, communication and recovery. They test people and runbooks as much as software.\n- **Jepsen-style testing.** Jepsen tests databases and queues under network partitions and clock skew, then checks the recorded history for consistency violations. Use the idea for your own critical stores.\n- **Contracts plus synthetic monitoring.** Contract tests catch interface drift, and synthetic checks in production catch what only real environments show.\n\nWhat to verify:\n- Idempotency under retries, so duplicate delivery is safe.\n- No lost writes after failover.\n- Graceful degradation: the product page loads without the recommendation service.\n\n**Gotcha:** Running chaos in production without observability, an abort button and agreement from the owners. Start in staging, then limit the blast radius.\n\n**Interview tip:** Say that you start with one hypothesis and one dependency, and that success is a learning, either \"it held\" or \"we found a gap before customers did\".",
+      "level": "advanced",
+      "module": "Advanced Techniques",
+      "tags": [
+        "chaos-engineering",
+        "distributed-systems",
+        "resilience"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-069",
+      "question": "How do you test event-driven and eventually consistent systems?",
+      "answer": "**Short answer:** Assert on the final observable state with polling and a timeout, not on immediate results. Test each handler with duplicates, reordering and failures, and test the flow across services with correlation ids and a small number of end-to-end checks.\n\nPrinciples:\n- **Eventually means \"within a bound\".** Replace \"assert immediately\" with \"wait until true, up to N seconds\". Choose N from your SLO.\n- **Design for testability.** Include a correlation id in every event, so a test can follow one business flow through logs and read models.\n- **Handlers as pure as possible.** Given state and event, return new state. Test these exhaustively without a broker.\n- **Test the hard cases on purpose.**\n  - Duplicate delivery gives the same result (idempotency).\n  - Out-of-order events: the read model ignores older versions.\n  - A failing handler retries and then goes to a dead-letter queue.\n  - A saga step failing triggers the compensating action.\n- **Schema evolution.** Old consumers must tolerate new optional fields. Test with samples of old and new messages.\n- **Replay.** Rebuilding a read model from the event log gives the same result.\n\n```ts\n// poll for the outcome instead of sleeping (verified with node --experimental-strip-types)\nasync function waitFor(check: () => boolean, timeoutMs = 500, stepMs = 10) {\n  const end = Date.now() + timeoutMs;\n  while (Date.now() < end) { if (check()) return; await new Promise(r => setTimeout(r, stepMs)); }\n  throw new Error('condition not met in time');\n}\n// test: publish an event, then await waitFor(() => readModel.has('order-1'))\n```\n\n| Layer | What it proves |\n| --- | --- |\n| Handler unit tests | Logic, idempotency, ordering rules |\n| Broker integration tests | Wiring, serialisation, retry and DLQ |\n| Contract or schema tests | Producers and consumers agree on events |\n| Few E2E flows plus tracing | The saga completes end to end |\n\n**Gotcha:** Making the test fast by calling the handler directly, and never testing the real broker configuration, such as consumer group or retry settings.\n\n**Interview tip:** Mention that production observability, such as lag and DLQ alerts, is part of the test strategy for async flows.",
+      "level": "advanced",
+      "module": "Advanced Techniques",
+      "tags": [
+        "event-driven",
+        "eventual-consistency",
+        "testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-070",
+      "question": "How do you design test architecture for a monorepo: affected testing, caching and sharding?",
+      "answer": "**Short answer:** Model the monorepo as a graph of projects with declared dependencies, test only what a change affects, cache results by input hash, and spread long suites across machines. Keep a periodic full run as a safety net. The architecture matters as much as the tool.\n\nBuilding blocks:\n- **Project graph.** Each app and library declares its dependencies (Nx, Turborepo, Bazel). Enforce module boundaries with lint rules, so the graph reflects reality and shared libraries do not become tangled.\n- **Affected selection.** On a merge request, compute changed files against the base, find affected projects, and run `test`, `lint` and `build` only for them.\n- **Computation cache.** The task hash covers source, dependencies, config and tool versions. A hit replays logs and outputs. A remote cache shares hits between developers and CI.\n- **Sharding and distribution.** Split slow suites (Jest, Playwright, Cypress) across CI agents using `--shard=n/m`, balanced by past duration. Some tools distribute tasks across agents for you.\n- **Test layering per project.** Libraries have unit tests, apps have component tests and a few E2E journeys, and a shared E2E project covers cross-app flows.\n- **Ownership.** A CODEOWNERS file maps projects to teams, and failures are routed to the owner.\n\n```bash\nnpx nx affected -t lint test build --base=origin/main --parallel=3\nnpx playwright test --shard=3/8            # CI job 3 of 8\n```\n\nSafety and trade-offs:\n- Files outside the graph (root config, lockfile, CI scripts) must be marked as \"affects all\".\n- Nightly or main-branch full runs catch graph mistakes and cache poisoning.\n- Remote caches need trust: make sure only CI writes to them.\n- Flaky tests are worse in a monorepo because one flake blocks many teams; keep quarantine tooling.\n\n**Gotcha:** A shallow git clone makes the changed-file list wrong. Fetch the base branch history.\n\n**Interview tip:** Quantify: \"merge request pipelines dropped from 40 to 12 minutes, and a nightly full run keeps us honest\".",
+      "level": "advanced",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "monorepo",
+        "nx",
+        "caching",
+        "sharding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-071",
+      "question": "What are synthetic monitoring and production verification?",
+      "answer": "**Short answer:** Synthetic monitoring runs scripted user journeys against production on a schedule, from several locations, and alerts when they fail or become slow. Production verification, or post-deploy smoke tests, checks right after a release that the key paths work. Both complement pre-release tests, because production has real data, config and dependencies.\n\nWhat they cover:\n- **Availability and journey checks**: login, search, add to cart, with a dedicated test account.\n- **API checks**: key endpoints with expected status, latency and payload fields.\n- **Third-party health**: payment sandbox, identity provider.\n- **Certificates and DNS** expiry.\n- **Performance from the outside**: page load time by region.\n\nTools: Datadog Synthetic Monitoring, Azure Application Insights availability tests, Checkly, or Playwright scripts run from a scheduler.\n\nHow they connect with the pipeline and observability:\n- After each deploy, the pipeline runs a **small smoke suite** against the new version. If it fails, the canary stops or rolls back.\n- The same scripts run **every minute or five** in production as monitors, and page the on-call person.\n- Results link to traces and logs, using a header that marks synthetic traffic, so you can jump from a failed check to the exact request in your observability tool.\n- They feed the **SLO**: a synthetic availability check is one data source for the error budget.\n\n| Aspect | Pre-release E2E | Synthetic monitoring |\n| --- | --- | --- |\n| Environment | Test or staging | Production |\n| Frequency | Per change | Continuous |\n| Goal | Block a bad release | Detect real-world breakage fast |\n| Data | Created for the test | Dedicated test accounts |\n\n**Gotchas**\n- Synthetic orders and users polluting business reports. Tag them and exclude them.\n- Checks that are flaky cause alert fatigue. Make them few, stable, and retried once before alerting.\n\n**Interview tip:** Say that synthetic checks answer \"is the product working for users right now\" while unit tests answer \"is the code correct\".",
+      "level": "advanced",
+      "module": "Performance & Security Testing",
+      "tags": [
+        "synthetic-monitoring",
+        "observability",
+        "smoke-tests"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-072",
+      "question": "How do you scale consumer-driven contracts and handle versioning?",
+      "answer": "**Short answer:** At scale, automate everything around the broker: publish contracts and verification results from CI with the git commit and branch, tag environments, gate deployments with can-i-deploy, and use pending and work-in-progress pacts so new contracts do not break a provider's build. Evolve APIs by adding, not removing, and retire fields with data from the contracts.\n\nPractices:\n- **Version by git commit.** Each consumer publishes pacts with the commit sha and branch. The broker keeps the matrix of which consumer version works with which provider version.\n- **Record deployments.** Tell the broker which version is live in each environment (`record-deployment`), so `can-i-deploy` compares with what is really running.\n- **Can-I-Deploy as a gate** in both pipelines, before deploying to each environment.\n- **Pending pacts**: a new consumer contract that the provider has not verified yet does not fail the provider build. **Work-in-progress pacts** do the same for contracts on feature branches, so provider teams hear about them early without being blocked.\n- **Webhooks**: when a consumer publishes a changed pact, trigger the provider's verification job automatically.\n- **Provider states** managed through a shared helper, not copied per team.\n- **Message pacts** for events and queues, not only HTTP.\n\nEvolving an API without breaking consumers (expand and contract):\n- Add new fields as optional. Old consumers ignore them.\n- Never rename or remove a field in one step. Add the new field, move consumers (verified by contracts), then remove the old one when no pact uses it.\n- Use the broker to answer \"which consumers still read `legacyId`?\".\n\n```mermaid\nflowchart LR\n    C[\"Consumer CI\"] -->|\"publish pact with sha\"| B[\"Pact Broker\"]\n    B -->|\"webhook\"| P[\"Provider CI verification\"]\n    P -->|\"publish result\"| B\n    B -->|\"can-i-deploy\"| D[\"Deploy gate\"]\n```\n\n**Trade-off:** many consumers mean many contracts to verify. Keep contracts small, and test only what consumers rely on.\n\n**Gotcha:** Over-specific matchers, such as exact values and ordering. Contracts then fail for harmless changes. Match types and shapes.\n\n**Interview tip:** Show you see it as a collaboration tool: it makes breaking changes visible to the right team before merge.",
+      "level": "advanced",
+      "module": "Contract Testing",
+      "tags": [
+        "pact",
+        "contract-testing",
+        "versioning"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-073",
+      "question": "How do you test machine-learning or LLM-based features?",
+      "answer": "**Short answer:** Outputs are not deterministic or exactly right, so test with evaluation sets instead of single assertions. Build a golden dataset of inputs with expected qualities, score outputs automatically (rules, similarity or an LLM judge, calibrated by humans), track the score over time, and keep ordinary tests for the code around the model.\n\nLayers:\n- **Normal software tests** for everything that is not the model: parsing, prompt building, tool calls, retries, validation of structured output, error handling. Use a fake model client that returns fixed answers.\n- **Golden sets / evals.** A versioned set of cases: input, what a good answer must contain or must not contain, plus tricky and adversarial cases. Run it on every change to the prompt, model or retrieval settings.\n- **Scoring.** Cheap checks first: JSON schema valid, required facts present, banned content absent, length limits. Then semantic checks, and an LLM as judge for fuzzy qualities, with the judge itself spot-checked by humans.\n- **Regression tracking.** Store scores per version. A drop on a key slice blocks the change.\n- **Safety and robustness**: prompt injection attempts, personal data leakage, off-topic requests.\n- **Non-functional**: latency percentiles, cost per request, token limits.\n- **Online monitoring**: sampled production outputs reviewed, user feedback and thumbs-down rates.\n\n| Kind of check | Example |\n| --- | --- |\n| Deterministic | Output parses as the JSON schema |\n| Rule-based | Answer cites at least one source id |\n| Model-graded | Is the answer faithful to the retrieved text? |\n| Human review | Weekly sample of 50 answers |\n\n**Gotcha:** Testing with one example that happens to pass. Quality is a rate over many cases, and a changed model version can shift it silently.\n\n**Interview tip:** Keep it general and honest: \"I treat prompts as code, with evals in CI, and I never rely only on an LLM judge\".",
+      "level": "advanced",
+      "module": "Advanced Techniques",
+      "tags": [
+        "llm",
+        "evals",
+        "ml-testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-074",
+      "question": "How do you analyse flaky tests with data?",
+      "answer": "**Short answer:** Store every test result with its commit, job, shard, duration, retry and error message, then query for tests that flip between pass and fail on the same code. Group flakes by root cause, show them in a dashboard with owners, and use the trends to decide where to invest.\n\nData to collect from CI (JUnit XML is enough to start):\n- Test id, result, duration, error text and stack.\n- Commit sha, branch, job and shard, runner type, date and time.\n- Retry count and whether the retry passed.\n\nSignals of flakiness:\n- **Same commit, different results**: a retry passes, or a rerun passes.\n- **Failing on main** with no relevant change.\n- **High variance in duration**, which hints at timing issues.\n- **Failures cluster by runner, shard or time of day**, which points to environment or resource problems.\n\nA simple root-cause taxonomy for labelling:\n- Timing or race in the test\n- Shared state or order dependence\n- Test data collision\n- Environment or infrastructure (out of memory, port in use)\n- External dependency\n- Real product bug (a race in production code)\n- Test code defect (wrong selector or assertion)\n\nDashboard ideas:\n- Top 10 flaky tests by failure count, with owner.\n- Flake rate per week, and per suite.\n- Quarantine size and age. Alert when a test stays quarantined for more than two weeks.\n- Share of pipelines that needed a rerun, and the minutes wasted.\n\nMany CI vendors and open-source tools provide flaky-test detection, and you can build a first version with a script and a spreadsheet.\n\n**Trade-off:** perfect classification costs more than it returns. Label the top offenders by hand, and let the data show the dominant cause.\n\n**Gotcha:** Using automatic retries without recording them. You lose the data that finds the problems.\n\n**Interview tip:** Say that when the biggest bucket is \"timing in tests\" you fix helpers and rules, not 50 individual tests.",
+      "level": "advanced",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "flaky-tests",
+        "metrics",
+        "root-cause"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-075",
+      "question": "How do you prioritise tests and testing effort with a risk-based approach?",
+      "answer": "**Short answer:** Rate each feature or change by the likelihood of failure and the impact if it fails, then spend testing effort in proportion. High-risk areas get deeper, more automated and more frequent testing. Low-risk areas get light checks. The same idea orders tests in a pipeline: run the ones most likely to catch bugs first.\n\nScoring risk:\n- **Impact**: money, safety, legal exposure, number of users, reputation.\n- **Likelihood**: how complex the code is, how new it is, how often it changes, past defect history, number of integrations, team experience.\n\n| | Low impact | High impact |\n| --- | --- | --- |\n| High likelihood | Medium effort | Most effort, automate and explore |\n| Low likelihood | Minimal | Targeted checks plus monitoring |\n\nPractices:\n- Run a short **risk workshop** at the start of a feature. List what could go wrong and rank it.\n- **Change-based risk**: a large diff in a payment module raises effort. A copy change lowers it.\n- **Test impact analysis**: run the tests that cover the changed code first, then the rest.\n- **Historical prioritisation**: run tests that failed recently or that often catch bugs first, to fail fast.\n- **Release decision**: list the known untested areas openly. Risk accepted by the product owner is a decision, not an oversight.\n\nFor a regulated or safety-critical domain, such as avionics software, the required rigor is set by standards and criticality levels, so effort is not a free choice. For normal products, a light risk register and judgement are enough.\n\n**Gotcha:** Risk assessed once and forgotten. Update it after incidents and large changes.\n\n**Interview tip:** Give a worked example: \"payment capture: high impact, medium likelihood, so unit, API, contract, one E2E and synthetic monitoring. Settings page colour: one visual snapshot.\"",
+      "level": "advanced",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "risk-based-testing",
+        "prioritisation",
+        "strategy"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-076",
+      "question": "What are state-transition testing, decision tables and pairwise testing?",
+      "answer": "**Short answer:** These are structured ways to design tests when behaviour has states or many rule combinations. State-transition testing walks a state machine. Decision tables list every combination of conditions and the expected action. Pairwise testing covers every pair of parameter values with far fewer cases than all combinations.\n\n**State-transition testing.** Draw the states and the allowed events. Test each valid transition, and try invalid ones too.\n\n```mermaid\nstateDiagram-v2\n    [*] --> Created\n    Created --> Paid: \"pay\"\n    Paid --> Shipped: \"ship\"\n    Shipped --> Delivered: \"deliver\"\n    Created --> Cancelled: \"cancel\"\n    Paid --> Refunded: \"refund\"\n```\n\nTests: every arrow works. Negative tests: shipping a cancelled order must be rejected, refund after delivery follows the rule, paying twice does not charge twice.\n\n**Decision table.** For a discount rule with conditions \"member\", \"order over 100\" and \"coupon\":\n\n| Member | Over 100 | Coupon | Result |\n| --- | --- | --- | --- |\n| yes | yes | yes | 15 percent (best applies) |\n| yes | yes | no | 10 percent |\n| no | yes | no | 5 percent |\n| no | no | no | none |\n\nEach row becomes a test, and gaps in the table reveal rules nobody defined.\n\n**Pairwise (all-pairs).** With four parameters of three values each (browser, OS, language, plan), all combinations are 81 tests. A pairwise set covers every pair of values in about 9 to 10 tests, because most bugs come from the interaction of two parameters. Tools such as PICT or AllPairs generate the set.\n\n| Technique | Use when |\n| --- | --- |\n| State-transition | Workflows, order status, connection lifecycle |\n| Decision table | Business rules with several conditions |\n| Pairwise | Configuration matrices with many options |\n\n**Gotcha:** Pairwise misses bugs that need three values to interact. For high-risk combinations, add them by hand.\n\n**Interview tip:** Pick the technique by the shape of the problem and say why. It shows method.",
+      "level": "advanced",
+      "module": "Advanced Techniques",
+      "tags": [
+        "test-design",
+        "techniques",
+        "pairwise"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-077",
+      "question": "How do you practise TDD in real projects, and when does it hurt?",
+      "answer": "**Short answer:** In practice I use TDD where the rules are clear and the design is still open, such as business logic, parsers and algorithms. I do not force it on exploratory UI, throwaway spikes or glue code. Done well it gives small steps and a testable design. Done badly it creates brittle, mock-heavy tests.\n\nHow I do it:\n- **Start with a list** of behaviours, pick the simplest, write one failing test, make it pass with the least code, refactor.\n- **Small steps.** If a step takes more than ten minutes, the test was too big.\n- **Triangulate.** Use a second example to force a general solution instead of a hard-coded return.\n- **Refactor with green tests**, including the tests themselves.\n- **Two styles:** the classic or Chicago style uses real collaborators and checks state. The London or mockist style mocks collaborators and checks interactions, and drives the design outside-in. The classic style gives less brittle tests, the mockist style is good for discovering roles and boundaries.\n\nWhere it helps:\n- Pricing, tax, validation, scheduling, state machines.\n- Bug fixes: first a failing test that reproduces the bug.\n- Learning a new code area: tests as a safety net.\n\nWhere it hurts:\n- **Exploring unknown APIs or UI layouts** where the shape changes every hour.\n- **Highly coupled legacy code** that needs seams first.\n- **Mock-heavy tests** that mirror the implementation and slow refactoring.\n- **Dogmatic coverage of trivial code.**\n- **Teams without the habit**: forced TDD gives poor tests and resentment. Start with pairing and katas.\n\nThe evidence is mixed on productivity, but strong on design feedback. Be honest about it.\n\n**Gotcha:** Writing the test after the code and calling it TDD. Test-after is fine, just do not claim the design benefits.\n\n**Interview tip:** Say \"TDD is a design tool first and a regression tool second\". It sounds experienced and balanced.",
+      "level": "advanced",
+      "module": "Test Doubles & Design",
+      "tags": [
+        "tdd",
+        "design",
+        "trade-offs"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-078",
+      "question": "How do you test legacy code with seams and approval tests?",
+      "answer": "**Short answer:** A seam is a place where you can change behaviour without editing the code you want to test, so you can get it under test. An approval (golden master) test records the current output of a complex piece of code and compares future runs to that approved output. Together they let you refactor code nobody understands.\n\nKinds of seams:\n- **Object seam**: pass a dependency through the constructor or a setter, then substitute it in the test.\n- **Parameterise the function**: add a parameter with the old behaviour as the default.\n- **Extract and override**: pull a hard call (clock, file, network) into a small method and override it in a test subclass.\n- **Link or module seam**: replace a module at import time (module mock, dependency injection container).\n- **Wrap a global or static** in an adapter you can swap.\n\n```js\n// before: hidden dependency on the clock\nfunction isHappyHour() { return new Date().getHours() === 17; }\n// after: a seam with a default, behaviour unchanged for callers\nfunction isHappyHour(now = () => new Date()) { return now().getHours() === 17; }\n```\n\n**Approval tests.** Run the legacy code over many representative inputs, capture the output (text, JSON, a rendered report) in a file, and review it once. Save it as the approved file. After every refactoring step, run again and diff against the approved file. A diff means behaviour changed, so either you made a mistake or you found something to discuss. Tools: ApprovalTests libraries, or Jest and Vitest snapshots used carefully.\n\nApproach:\n- Add a seam with a tiny, safe change.\n- Capture a golden master over a wide set of inputs, including real anonymised samples.\n- Refactor in small steps, diffing each time.\n- Replace the golden master with proper unit tests for the new structure.\n- Keep the approved file small enough to review.\n\n**Gotcha:** Approving output you did not read. The golden master may include existing bugs, which is fine as a start, but write them down.\n\n**Interview tip:** Name \"characterisation tests\" and \"seams\", and tell a short story of untangling a function this way.",
+      "level": "advanced",
+      "module": "Advanced Techniques",
+      "tags": [
+        "legacy",
+        "seams",
+        "approval-testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-079",
+      "question": "How would you review and refactor a bad test suite?",
+      "answer": "**Short answer:** First measure what is wrong: speed, flakiness, failures that are not real bugs, and bugs that escape. Then fix the cheapest, highest-impact problems in small steps: delete useless tests, make slow ones faster, stabilise flaky ones, and move checks to the right layer. Do not rewrite everything.\n\nAssessment, with data:\n- **Time per stage** and the slowest 20 tests.\n- **Flake rate** and the most unstable tests.\n- **False-failure rate**: how many red builds are not product bugs.\n- **Escaped defects**: which production bugs had no test, and which tests exist that never fail.\n- **Shape**: count of tests per layer, to see an ice cream cone.\n- **Smells** found by reading a sample: no assertions, many mocks, huge setups, copy-paste, sleeps, commented-out tests, shared fixtures.\n\nPlan, in order of return:\n- **Delete** tests that duplicate others, test nothing, or cost more than they protect. Fewer, trusted tests beat many ignored ones.\n- **Stabilise** the top flaky tests. Fix helpers once (waiting, data creation).\n- **Speed up**: parallelise, shard, replace sleeps, share expensive setup.\n- **Fix the shape** gradually: for each E2E that checks a rule, add a unit test and remove the E2E.\n- **Introduce standards** and a review checklist, so new tests are good.\n- **Use mutation testing** on core modules to find tests that do not check anything.\n- **Protect the gains**: a flake budget, a duration budget in CI, and a rule that bug fixes include tests.\n\nRules for refactoring tests:\n- Keep the suite green while changing it, in small commits.\n- Refactor tests and production code in separate commits.\n- Never change both and trust the result.\n\n**Gotcha:** A \"big rewrite\" of the suite. It stops feature work, loses hidden knowledge in old tests, and often repeats the same mistakes.\n\n**Interview tip:** Say you \"make it visible, then fix the top three causes\". Leaders are judged on focus.",
+      "level": "advanced",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "refactoring",
+        "test-quality",
+        "tech-lead"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-080",
+      "question": "How do you plan and run exploratory testing sessions with charters?",
+      "answer": "**Short answer:** Exploratory testing is simultaneous learning, test design and execution. To keep it focused and reportable, use session-based test management: a time-boxed session guided by a charter, followed by notes and a short debrief.\n\nA charter is a one-sentence mission. A common template: **Explore** a target, **with** resources or conditions, **to discover** information. Examples:\n- Explore the checkout flow with expired and international cards to discover payment error handling problems.\n- Explore the search page with very slow network and large result sets to discover loading and pagination problems.\n- Explore the role editor with a limited user to discover permission leaks.\n\nRunning a session:\n- **Time-box** it, 60 to 90 minutes, with no interruptions.\n- **Take notes** as you go: what you tried, what you saw, questions, bugs, ideas for new tests.\n- **Use heuristics** to generate ideas. Examples are tour types (feature tour, data tour, interruption tour), boundaries, \"CRUD\" for each entity, changing sequence, using the browser back button, multiple tabs, offline, different time zone and locale.\n- **Pair** a tester with a developer or product person for fresh viewpoints.\n- **Debrief** for ten minutes: bugs, risks, coverage, what to automate.\n\nWhat you get:\n- Bugs that scripted tests cannot find, such as confusing flows or inconsistent states.\n- A list of candidates for automation.\n- Information about product risk for release decisions.\n\nWhere in the process: after a feature is first working in a test environment, before a major release, and after incidents in that area.\n\n**Gotcha:** Exploring without notes. Nothing is reproducible, and you cannot tell the team what was covered.\n\n**Interview tip:** Say that exploratory testing is a skill with technique, not random clicking, and that you ask developers to join sessions for their own features.",
+      "level": "advanced",
+      "module": "Testing Fundamentals",
+      "tags": [
+        "exploratory-testing",
+        "charters",
+        "session-based"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-081",
+      "question": "How do SLOs and error budgets shape your testing approach?",
+      "answer": "**Short answer:** An SLO is a reliability target, for example 99.9 percent of requests succeed in under 500 ms. The error budget is the allowed failure, so it tells you how much risk you can take. Testing effort is set by the SLO: tighter targets need stronger pre-release checks and faster detection, and an exhausted budget shifts work from features to reliability.\n\nHow SLOs drive tests:\n- **Performance tests use SLO numbers** as thresholds. A load test passes only if p95 stays under the target at the planned traffic.\n- **Canary analysis** compares the new version with the baseline on the SLI metrics, and rolls back on a regression.\n- **Synthetic monitors** produce SLI data for critical journeys.\n- **Resilience tests and game days** verify that the system meets the SLO even when a dependency fails.\n- **Alerting on burn rate** (how fast the budget is being spent) catches problems earlier than static thresholds.\n\nError budget policy:\n- Budget healthy: ship, experiment, take reasonable risk.\n- Budget burning fast: slow down releases, add testing in the weak area, review recent changes.\n- Budget exhausted: freeze risky changes until reliability work is done. This must be agreed in advance with product, or it will not be respected.\n\nA tiny example: SLO 99.9 percent over 30 days allows about 43 minutes of unavailability. If last month's incident used 30 minutes, the team decides whether a risky migration is acceptable this month.\n\n| Question | How SLO helps |\n| --- | --- |\n| How much testing is enough? | Enough to protect the target, not more |\n| Release or hold? | Look at the remaining budget |\n| Which tests to add after an incident? | Those that would have detected the burn |\n\n**Gotcha:** Choosing SLOs that nobody measures or that do not reflect user experience. Start with a few user-facing SLIs, such as availability and latency of key journeys.\n\n**Interview tip:** Say that SLOs make quality a shared, numeric conversation with product instead of an argument.",
+      "level": "advanced",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "slo",
+        "error-budget",
+        "reliability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-082",
+      "question": "Interview exercise: how would you write tests for a given function?",
+      "answer": "**Short answer:** Clarify the behaviour, list the equivalence classes and edge cases aloud, write the simplest happy-path test first, then cover boundaries, errors and side effects. Say what you leave out and why. Below are three worked examples, all of which I ran with the Node test runner.\n\n**Example 1: `slugify(text)`.** Ask: what about accents, repeated spaces, symbols, empty input? Then test each.\n\n```js\ntest('slugify', () => {\n  assert.equal(slugify('Hello World'), 'hello-world');       // happy path\n  assert.equal(slugify('  Café   au lait!  '), 'cafe-au-lait'); // accents, spaces, symbols\n  assert.equal(slugify(''), '');                              // empty\n  assert.equal(slugify('---'), '');                           // only separators\n  assert.equal(slugify('A_B C'), 'a-b-c');                    // underscore becomes dash\n});\n```\n\n**Example 2: `mergeIntervals(list)`.** Cases: empty, single, overlapping, touching, contained, unsorted, and that the input is not mutated.\n\n```js\nassert.deepEqual(mergeIntervals([]), []);\nassert.deepEqual(mergeIntervals([[1, 3], [2, 6], [8, 10]]), [[1, 6], [8, 10]]);\nassert.deepEqual(mergeIntervals([[1, 4], [4, 5]]), [[1, 5]]);   // touching merges (a decision to confirm)\nassert.deepEqual(mergeIntervals([[1, 10], [2, 3]]), [[1, 10]]); // contained\n```\n\n**Example 3: a rate limiter that allows 2 calls per 1000 ms.** The trick is the clock. Inject it, then control it.\n\n```js\nlet t = 0; const limiter = new Limiter(2, 1000, () => t);\nassert.equal(limiter.allow(), true);\nassert.equal(limiter.allow(), true);\nassert.equal(limiter.allow(), false);   // third call in the window\nt = 999;  assert.equal(limiter.allow(), false);  // still inside\nt = 1000; assert.equal(limiter.allow(), true);   // window moved on: boundary\n```\n\nA good flow to say aloud:\n- Restate the requirement and confirm ambiguous rules.\n- Name the groups of input, then the boundaries.\n- Test behaviour through the public interface.\n- Mention what is not covered (performance, concurrency) and how you would cover it.\n\n**Gotcha:** Writing the code and tests silently. The interviewer wants to hear your reasoning.\n\n**Interview tip:** Ask one clarifying question before you test, such as \"do touching intervals merge?\". It shows you find rules, not only bugs.",
+      "level": "advanced",
+      "module": "Advanced Techniques",
+      "tags": [
+        "interview-exercise",
+        "unit-testing",
+        "edge-cases"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-083",
+      "question": "Interview exercise: how would you design a test plan for login, search or checkout?",
+      "answer": "**Short answer:** State the scope and risks, then cover functional cases, negative and edge cases, security, usability and accessibility, performance, compatibility and monitoring. Assign each group to a test layer, and say what you automate. Keep it organised, not a random list.\n\nA structure that works for any feature:\n- **Clarify**: users, platforms, business rules, dependencies.\n- **Risks**: money, security, data loss, drop-off.\n- **Test ideas by group**, then **layer and automation** for each.\n\n**Login**\n- Happy path, remember me, logout, session expiry.\n- Wrong password, unknown user, locked account after repeated failures, error messages that do not reveal whether the user exists.\n- Password reset links expire and work once.\n- Security: rate limiting, SQL injection and script input, session fixation, secure cookies, multi-factor flow.\n- Accessibility: labels, keyboard, screen reader messages.\n- Compatibility: password managers, mobile browsers.\n- Layers: unit for validation, API tests for auth rules, a few E2E, synthetic monitor.\n\n**Search**\n- Exact, partial, case, accents, multiple words, empty query, special characters, very long query.\n- Ranking, filters, sorting, pagination edges (last page, page beyond range).\n- Zero results message, typo tolerance, language.\n- Performance: p95 latency with a large index, concurrency.\n- Data freshness: a new item appears after indexing delay.\n- Layers: API tests for relevance on a fixed data set, E2E for the main flow.\n\n**Checkout**\n- Cart changes, coupons, tax and shipping rules, rounding, multiple currencies.\n- Payment success, declined card, timeout, double click, back button, retry without double charge (idempotency).\n- Stock running out during checkout, price change mid-session.\n- Order emails, confirmation, inventory and payment events.\n- Security and compliance: no card data stored, authorisation checks.\n- Layers: unit for pricing, contract tests with the payment provider, E2E happy path and one failure path, canary and monitoring.\n\n**Gotcha:** Listing only UI clicks. Strong plans include data, security, failure and monitoring.\n\n**Interview tip:** Offer a priority order. Say \"if I only had an hour, I would run these five first\".",
+      "level": "advanced",
+      "module": "Test Strategy & Leadership",
+      "tags": [
+        "interview-exercise",
+        "test-plan",
+        "strategy"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "software-testing-084",
+      "question": "Interview exercise: how do you find the bug in a flaky test?",
+      "answer": "**Short answer:** Reproduce it first by running it many times, alone and with the full suite, in random order and in parallel. Then look for the usual suspects: shared state, order dependence, time, randomness, waiting by sleep, and external services. Fix the cause, not the symptom.\n\nHere is a small example that fails only when it runs after another test. I ran it with `node --test`:\n\n```js\nlet counter = 0;\nconst next = () => ++counter;                       // shared module-level state\n\ntest('A uses the counter', () => assert.equal(next(), 1)); // passes\ntest('B assumes a fresh counter', () => assert.equal(next(), 1));\n// ✖ B: 2 !== 1   (passes when B runs alone, fails after A)\n```\n\nThe test is flaky in the sense that its result depends on what ran before it. The cure is to remove the shared state:\n\n```js\nfunction makeCounter() { let n = 0; return () => ++n; }\ntest('B with its own counter', () => assert.equal(makeCounter()(), 1)); // ✅ independent\n```\n\nA method to follow aloud:\n- **Reproduce.** Loop it 100 times. Run it alone, then with the whole file, then with the whole suite. If it fails only in the suite, suspect order or shared state. If it fails only in CI, suspect timing, resources or environment.\n- **Read the failure.** Is it a timeout, a wrong value, or an element not found? Look at traces, screenshots and logs.\n- **Check the checklist.**\n  - Sleeps or tight timeouts?\n  - Assertions before the async work finished (missing `await`)?\n  - Shared data, fixed ids, fixed ports?\n  - Clock, time zone, random values?\n  - Third-party network?\n  - Parallel workers touching the same resource?\n- **Isolate and prove.** Make the test fail reliably by adding a delay or forcing the order, then show the fix removes the failure.\n- **Check if it is a real bug.** A race condition in the product code is a defect, not a test problem.\n- **Add a guard.** Run the repaired test many times in CI once, and add a rule or helper that stops the same mistake.\n\n**Gotcha:** Adding a retry or a longer timeout and calling it fixed. The failure rate just moves.\n\n**Interview tip:** Talk through the method before guessing the cause. Interviewers score the process more than the answer.",
+      "level": "advanced",
+      "module": "Flaky Tests & CI",
+      "tags": [
+        "interview-exercise",
+        "flaky-tests",
+        "debugging"
+      ],
+      "favorite": false
+    }
+  ]
+}

@@ -1,0 +1,898 @@
+{
+  "name": "WebSockets & Real-time",
+  "group": "Web & Security",
+  "questions": [
+    {
+      "id": "websockets-real-time-001",
+      "question": "Why do we need real-time communication, and what are the options?",
+      "answer": "**Short answer:** Plain HTTP is request and response: the client must ask before the server can answer. Real-time features (chat, live status, notifications) need the server to push data the moment it changes. The main options are polling, long polling, Server-Sent Events, WebSockets and, newer, WebTransport.\n\nThink of a restaurant. Polling is you asking the waiter every minute \"is my food ready?\". Long polling is the waiter saying \"wait here, I will tell you when it is ready\", then you ask again. SSE is a one-way speaker that announces orders. A WebSocket is a phone line where both sides can talk at any time.\n\n| Option | How it works | Direction | Good for | Cost |\n| --- | --- | --- | --- | --- |\n| Polling | Client asks every N seconds | Client to server | Rare updates, simple | Wasted requests, delay up to N seconds |\n| Long polling | Server holds the request until there is news | Server to client | Fallback, old proxies | One request per event, reconnect gap |\n| SSE | One open HTTP response streams events | Server to client | Notifications, live feeds | Text only, one direction |\n| WebSocket | HTTP upgrade, then framed messages | Both ways | Chat, games, collaboration | You build reconnect, auth, scaling |\n| WebTransport | Streams and datagrams over HTTP/3 (QUIC) | Both ways | Low latency, unreliable data | Newer, limited support, needs HTTP/3 |\n\n**Remember:** WebTransport is a concept to mention, not the default. Browser and server support is still uneven, so most teams use WebSockets or SSE today.\n\n**Rules of thumb**\n- If only the server talks, start with SSE.\n- If both sides talk often and latency matters, use WebSockets.\n- If updates are rare (once a minute), polling is fine and the simplest to run.\n\n**Interview tip:** Do not say \"WebSockets are always better\". Say you pick the simplest transport that meets the need, because every long-lived connection costs memory, deploy care and monitoring.",
+      "level": "basic",
+      "module": "Real-time Basics",
+      "tags": [
+        "websockets",
+        "real-time",
+        "sse"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-002",
+      "question": "How does the WebSocket handshake work?",
+      "answer": "**Short answer:** A WebSocket starts as a normal HTTP/1.1 GET request with `Upgrade: websocket`. If the server agrees, it replies `101 Switching Protocols`, and the same TCP connection then carries WebSocket frames instead of HTTP.\n\n```mermaid\nsequenceDiagram\n    participant C as Browser\n    participant S as Server\n    C->>S: GET /chat with Upgrade websocket and Sec-WebSocket-Key\n    S-->>C: 101 Switching Protocols with Sec-WebSocket-Accept\n    C->>S: Text frame (masked)\n    S-->>C: Text frame\n    C->>S: Close frame 1000\n    S-->>C: Close frame 1000\n```\n\nThe key parts of the request:\n- `Upgrade: websocket` and `Connection: Upgrade` ask to switch protocol.\n- `Sec-WebSocket-Version: 13` is the only version in use.\n- `Sec-WebSocket-Key` is a random base64 value from the client.\n- `Origin` is added by browsers. `Sec-WebSocket-Protocol` is optional (subprotocols).\n\nThe server proves it understood the upgrade. It appends a fixed GUID (`258EAFA5-E914-47DA-95CA-C5AB0DC85B11`) to the key, hashes it with SHA-1 and sends it base64-encoded as `Sec-WebSocket-Accept`. This is not security. It only stops a normal HTTP server or cache from being tricked into thinking it is a WebSocket server.\n\nI ran a tiny Node server with only `http` and `crypto`. For the sample key from the RFC the answer was:\n\n```text\n[raw] status 101 accept s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n```\n\n```js\nimport crypto from 'node:crypto';\nconst GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';\nconst accept = (key) => crypto.createHash('sha1').update(key + GUID).digest('base64');\nconsole.log(accept('dGhlIHNhbXBsZSBub25jZQ=='));\n// prints: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n```\n\n**Gotcha:** Proxies must pass the `Upgrade` and `Connection` headers. Many \"WebSocket works locally but not in production\" bugs are a proxy that drops them.\n\n**Interview tip:** Mention that the handshake is also your best place to authenticate and check `Origin`, because after the 101 you are no longer in HTTP.",
+      "level": "basic",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "http-upgrade",
+        "handshake"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-003",
+      "question": "What is the difference between ws:// and wss://?",
+      "answer": "**Short answer:** `ws://` is WebSocket over plain TCP, like `http://`. `wss://` is WebSocket over TLS, like `https://`. Use `wss://` in production, always.\n\nThe URL scheme only changes the transport underneath. With `wss://` the client first does a TLS handshake, then sends the HTTP upgrade request inside the encrypted channel. Default ports match HTTP: 80 for `ws://` and 443 for `wss://`.\n\n| Point | `ws://` | `wss://` |\n| --- | --- | --- |\n| Encrypted | No | Yes (TLS) |\n| Default port | 80 | 443 |\n| Works from an https page | Blocked by browsers (mixed content) | Yes |\n| Passes corporate proxies | Often broken by inspecting proxies | Much more reliable |\n| Use | Local development | Everything else |\n\nTwo practical reasons beyond privacy:\n- A page loaded over `https://` cannot open `ws://` (mixed content rule).\n- Some old proxies mangle unknown upgrade traffic on port 80. Inside TLS they cannot see it, so it just works.\n\nIn Kubernetes you normally terminate TLS at the ingress or gateway. The pod then speaks plain `ws` inside the cluster, and the client still uses `wss://`. If you need encryption inside the cluster too, use mTLS from a service mesh.\n\n```ts\n// Build the URL from the page so you never hard-code the wrong scheme\nconst scheme = location.protocol === 'https:' ? 'wss' : 'ws';\nconst socket = new WebSocket(`${scheme}://${location.host}/ws`);\n```\n\n**Interview tip:** Say that TLS termination at the ingress costs CPU per new connection but almost nothing per message, which matters in capacity planning.",
+      "level": "basic",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "tls",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-004",
+      "question": "What are WebSocket frames, opcodes, and message types?",
+      "answer": "**Short answer:** After the handshake, data travels in frames. Each frame has an opcode that says what it is: text, binary, continuation, close, ping or pong. A message can be split across several frames (fragmentation), and the last one has the FIN bit set.\n\n| Opcode | Meaning |\n| --- | --- |\n| 0x0 | Continuation of a fragmented message |\n| 0x1 | Text frame (UTF-8) |\n| 0x2 | Binary frame |\n| 0x8 | Close |\n| 0x9 | Ping |\n| 0xA | Pong |\n\nThe frame header is small: 2 bytes for payloads up to 125 bytes, 4 bytes up to 65,535 bytes, and 10 bytes for bigger ones. Compare that with hundreds of bytes of HTTP headers on every request. That is why WebSockets are cheap for many small messages.\n\nText frames must be valid UTF-8. Binary frames can carry anything (protobuf, images, audio). In the browser, `event.data` is a string for text and a `Blob` or `ArrayBuffer` for binary, depending on `binaryType`.\n\nFragmentation lets a sender start a large message before it knows the whole size. Control frames (ping, pong, close) can be sent in between the fragments, but they cannot be fragmented themselves and have at most 125 bytes of payload. Most application code never sees fragments: libraries reassemble them into one message.\n\nMy demo server printed what it saw for a client message `hello`:\n\n```text\n[server] frame op=1 fin=true masked=true len=5\n[server] message: hello\n```\n\n**Gotcha:** Servers set a maximum message size. If you send a 50 MB message you will usually get close code 1009 (message too big), not an error you can see in the payload.\n\n**Interview tip:** Say that WebSocket is message-oriented, unlike raw TCP which is a byte stream. You send and receive whole messages, not arbitrary chunks.",
+      "level": "basic",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "frames",
+        "opcodes"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-005",
+      "question": "Why are client-to-server WebSocket frames masked?",
+      "answer": "**Short answer:** Every frame from client to server is XORed with a random 4-byte key that is sent in the frame. This is not encryption. It protects badly written proxies and caches from being fooled by attacker-chosen bytes that look like HTTP.\n\nWithout masking, a malicious page could craft WebSocket data that looks like an HTTP request. A transparent proxy that does not understand the upgrade might treat it as a real request and poison its cache. Masking with a fresh unpredictable key stops the attacker from controlling the exact bytes on the wire.\n\nRules:\n- Client to server frames must be masked. A server must close the connection (code 1002) if they are not.\n- Server to client frames must not be masked.\n- The key is random for every frame.\n\nThe masking is simple: byte `i` of the payload is XORed with byte `i mod 4` of the key. Doing it twice gives the original back. I ran this with the RFC example key:\n\n```js\nconst mask = Buffer.from([0x37, 0xfa, 0x21, 0x3d]);\nconst payload = Buffer.from('Hello');\nconst masked = Buffer.from(payload.map((b, i) => b ^ mask[i % 4]));\nconsole.log(masked.toString('hex'));\n// prints: 7f9f4d5158\nconsole.log(Buffer.from(masked.map((b, i) => b ^ mask[i % 4])).toString());\n// prints: Hello\n```\n\n**Common mistakes**\n- Thinking masking gives confidentiality. It does not. Use `wss://`.\n- Forgetting that a hand-written client (Go, Python) must mask. Libraries do this for you.\n\n**Interview tip:** A good one-liner is \"masking is about protecting intermediaries, not hiding data\". It shows you know the reason, not just the rule.",
+      "level": "basic",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "masking",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-006",
+      "question": "How do ping and pong frames detect dead connections?",
+      "answer": "**Short answer:** Ping and pong are control frames. One side sends a ping, and the peer must answer with a pong carrying the same payload. If no pong arrives in time, you treat the connection as dead and close it. This also keeps idle timeouts on proxies from firing.\n\nA connection can die silently. If a phone leaves Wi-Fi or a NAT drops its entry, no FIN or RST reaches you, and TCP may take minutes or hours to notice. A heartbeat finds this in seconds.\n\n```mermaid\nsequenceDiagram\n    participant S as Server\n    participant C as Client\n    S->>C: ping\n    C-->>S: pong\n    Note over S: alive, reset the timer\n    S->>C: ping\n    Note over S: no pong in 10 seconds\n    Note over S: terminate connection\n```\n\nIn my local test the server sent a ping with payload `hb`, and the built-in Node client answered automatically:\n\n```text\n[server] pong received payload= hb\n```\n\nBrowsers answer pings for you, but JavaScript in the page cannot send protocol-level pings or see them. So for browser clients the server does the pinging, and if you want the client to detect a dead server, you add an application-level heartbeat message.\n\n```js\n// Server-side pattern with the ws library (read-only sketch)\n// wss.on('connection', (ws) => { ws.isAlive = true; ws.on('pong', () => (ws.isAlive = true)); });\n// setInterval(() => wss.clients.forEach((ws) => {\n//   if (!ws.isAlive) return ws.terminate();   // dead: free the resources\n//   ws.isAlive = false; ws.ping();\n// }), 30000);\n```\n\n**Gotchas**\n- Heartbeat interval must be shorter than the smallest idle timeout in the path (load balancer, ingress). 25 to 30 seconds is common.\n- Ping every client at the same instant and you create a spike. Add jitter.\n\n**Interview tip:** Mention both layers: protocol ping/pong from server, plus an app-level \"ping\" message from the client so it can detect a stuck server.",
+      "level": "basic",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "heartbeat",
+        "ping-pong"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-007",
+      "question": "What are WebSocket close codes and how do you close a connection cleanly?",
+      "answer": "**Short answer:** A clean close is a handshake: one side sends a close frame with a 2-byte status code and an optional reason, the other echoes a close frame, and then TCP is closed. The code tells the peer why, so it can decide whether to reconnect.\n\n| Code | Meaning | Client should |\n| --- | --- | --- |\n| 1000 | Normal closure | Not reconnect (or reconnect if needed) |\n| 1001 | Going away (server shutdown, page navigation) | Reconnect with backoff |\n| 1002 | Protocol error | Fix the bug |\n| 1006 | Abnormal, no close frame (never sent on the wire) | Reconnect with backoff |\n| 1008 | Policy violation (for example auth failed) | Re-authenticate, do not loop |\n| 1009 | Message too big | Fix the message |\n| 1011 | Server internal error | Reconnect with backoff |\n| 1012, 1013 | Service restart, try again later | Reconnect after a delay |\n| 4000 to 4999 | Private use by your app | Your own rules |\n\n1005 and 1006 are reserved: they are only reported locally (\"no status\" and \"abnormal\") and are never sent in a frame. A 1006 means the connection broke without a close handshake, for example a network drop or a proxy timeout.\n\nMy demo server closed with 1000 and the reason `done`. The built-in client reported:\n\n```text\n[client] close code 1000 reason done wasClean true readyState 3\n```\n\n```ts\n// Use app-specific codes so the client knows what to do\nconst AUTH_EXPIRED = 4401;\nsocket.onclose = (e) => {\n  if (e.code === AUTH_EXPIRED) return refreshTokenThenReconnect();\n  if (e.code === 1008) return showLoginScreen();\n  scheduleReconnectWithBackoff();\n};\n```\n\n**Gotcha:** The close reason is limited to 123 bytes, and browsers throw if you pass a code outside 1000 or 3000 to 4999 to `close()`.\n\n**Interview tip:** Say you define a small table of 4xxx codes (token expired, kicked, rate limited) so the client can react correctly instead of reconnecting blindly.",
+      "level": "basic",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "close-codes",
+        "shutdown"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-008",
+      "question": "How does the browser WebSocket API work?",
+      "answer": "**Short answer:** You create `new WebSocket(url)`, then react to four events: `open`, `message`, `error` and `close`. You send with `send()`, close with `close()`, and check `readyState` and `bufferedAmount` to know the state and how much data is waiting to be sent.\n\n```ts\nconst ws = new WebSocket('wss://api.example.com/ws');\nws.binaryType = 'arraybuffer';          // binary frames arrive as ArrayBuffer\n\nws.addEventListener('open', () => ws.send(JSON.stringify({ type: 'hello' })));\nws.addEventListener('message', (e) => console.log(JSON.parse(e.data)));\nws.addEventListener('close', (e) => console.log(e.code, e.reason, e.wasClean));\nws.addEventListener('error', () => { /* no details by design */ });\n```\n\n| `readyState` | Name | Meaning |\n| --- | --- | --- |\n| 0 | CONNECTING | Handshake in progress |\n| 1 | OPEN | You can send |\n| 2 | CLOSING | Close started |\n| 3 | CLOSED | Done or failed |\n\nImportant details:\n- `send()` while CONNECTING throws. While CLOSING or CLOSED it silently drops the data.\n- `send()` does not wait. It queues the data. `bufferedAmount` is the number of bytes queued but not yet sent to the network. If it keeps growing, the connection is slower than you produce data.\n- The `error` event gives no reason, for security reasons. Look at the `close` event code instead.\n- There is no built-in reconnect, no heartbeat you can control, and no custom headers. You cannot set an `Authorization` header from the browser API.\n- Binary data can be `ArrayBuffer`, `Blob` or typed arrays.\n\nThe same API exists in Node 22 and later as a global client, which I used to test my server. That is handy for integration tests.\n\n**Common mistakes**\n- Calling `send()` right after construction (it throws, wait for `open`).\n- Using `onmessage =` in two places, so one overwrites the other. Use `addEventListener`.\n\n**Interview tip:** The two facts interviewers like: \"no custom headers from the browser\" and \"bufferedAmount is how you see backpressure\".",
+      "level": "basic",
+      "module": "Client Patterns",
+      "tags": [
+        "websockets",
+        "browser-api",
+        "react"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-009",
+      "question": "What are subprotocols and which message formats do real-time systems use?",
+      "answer": "**Short answer:** WebSocket only moves frames; it does not say what is inside. A subprotocol, negotiated in the handshake with `Sec-WebSocket-Protocol`, names the message rules both sides agree on. The payload format is your choice: JSON for simplicity, or a binary format like Protocol Buffers or MessagePack for size and speed.\n\nThe client lists protocols it supports, and the server picks one:\n\n```text\nGET /ws HTTP/1.1\nSec-WebSocket-Protocol: orders.v2, orders.v1\n\nHTTP/1.1 101 Switching Protocols\nSec-WebSocket-Protocol: orders.v2\n```\n\nIn JavaScript, `new WebSocket(url, ['orders.v2', 'orders.v1'])` and then `ws.protocol` tells you which one was selected. If the server picks none that you offered, the browser fails the connection. Subprotocols are also a place to version your protocol.\n\n| Format | Size | Speed | Human readable | Schema | Notes |\n| --- | --- | --- | --- | --- | --- |\n| JSON | Large | OK | Yes | Optional | Easy to debug in devtools |\n| MessagePack | Smaller | Fast | No | None | Like JSON, but binary |\n| Protobuf | Smallest | Fast | No | Required (`.proto`) | Safe evolution with field numbers |\n| Custom binary | Smallest | Fastest | No | Yours | Hard to maintain |\n\nStandard subprotocols also exist, such as `graphql-transport-ws` for GraphQL subscriptions and `mqtt` for MQTT over WebSocket.\n\nWhatever the format, use an envelope: `{ \"type\": \"order.updated\", \"id\": \"...\", \"seq\": 42, \"data\": { } }`. A `type` field lets you route, an `id` lets you de-duplicate, and `seq` lets you resume.\n\n**Gotcha:** Choosing protobuf for a small internal dashboard costs you debuggability for little gain. Choose binary when message volume or battery life makes size matter.\n\n**Interview tip:** Say you would start with JSON plus a version in the subprotocol, and move hot paths to binary only when you measured a problem.",
+      "level": "basic",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "subprotocol",
+        "protobuf",
+        "json"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-010",
+      "question": "How should a client reconnect after a WebSocket drops?",
+      "answer": "**Short answer:** Reconnect automatically with exponential backoff and jitter (random delay), then re-authenticate, resubscribe, and ask the server to resume from the last message you saw. Never reconnect in a tight loop.\n\nWebSockets do not reconnect by themselves (SSE does). Networks fail all the time, so reconnect logic is part of the feature, not an extra.\n\nSteps for a good client:\n1. Detect the drop: the `close` event, or a missed heartbeat.\n2. Wait: base delay doubled each attempt, capped (for example 30 seconds), with randomness.\n3. Open a new connection and authenticate (with a fresh token).\n4. Resubscribe to the channels you had.\n5. Send the last received sequence number so the server can replay, or fetch a snapshot.\n6. On success, reset the attempt counter.\n\n\"Full jitter\" picks a random delay between zero and the cap. Without it, 100,000 clients that lost the same server retry at the same instants and flatten it again. I ran full jitter with a base of 500 ms and a 30 s cap:\n\n```js\nconst delay = (n) => Math.floor(Math.random() * Math.min(30000, 500 * 2 ** n));\n// attempts 0..8 gave (one run, seeded): 0 131 1511 1834 4262 3503 1411 20365 20378   (ms)\n```\n\nDo not retry for every close code. A 1008 or a 4401 (auth) needs a new token or a login, not a retry. Also stop retrying while the tab is hidden for a long time, or while `navigator.onLine` is false, and retry when the `online` event fires.\n\n**Common mistakes**\n- Fixed 1 second retry (a reconnect storm after a deploy).\n- Not resetting the counter after a stable connection.\n- Resubscribing but forgetting to resync missed data.\n\n**Interview tip:** Mention \"jitter\" and \"resume from the last sequence number\" in the same breath. Those two ideas mark the difference between a demo and a production client.",
+      "level": "basic",
+      "module": "Client Patterns",
+      "tags": [
+        "websockets",
+        "reconnect",
+        "backoff"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-011",
+      "question": "How do Server-Sent Events (SSE) work?",
+      "answer": "**Short answer:** SSE is a long-lived HTTP response with `Content-Type: text/event-stream`. The server writes events as text, and the browser's `EventSource` parses them, reconnects automatically after a drop, and sends the `Last-Event-ID` header so the server can continue where it stopped.\n\nThe wire format is plain text. Each event is a few lines ending with a blank line:\n\n```text\nid: 4\nevent: tick\ndata: {\"n\":4}\n\n```\n\nFields: `data` (the payload, can repeat for multiple lines), `event` (a name, default is `message`), `id` (sets the last event id), `retry` (milliseconds before reconnecting). A line starting with `:` is a comment, often used as a heartbeat.\n\n```ts\nconst es = new EventSource('/api/orders/stream', { withCredentials: true });\nes.addEventListener('tick', (e) => console.log(JSON.parse((e as MessageEvent).data)));\nes.onerror = () => { /* browser retries by itself while readyState is CONNECTING */ };\n```\n\nI ran a Node `http` server that streams ticks. A client reconnecting with `Last-Event-ID: 3` received events 4, 5 and 6, and the server ended the response:\n\n```text\n[sse] content-type text/event-stream\nid: 4\nevent: tick\ndata: {\"n\":4}\n```\n\nWhy teams like SSE: it is plain HTTP, so it works with normal auth cookies, proxies, HTTP/2 and logging. Reconnect and resume come free.\n\nLimits:\n- One direction only. The client sends data with normal `fetch` calls.\n- Text only (use base64 for binary, or pick WebSockets).\n- `EventSource` cannot set custom headers, so use cookies or fetch-based libraries.\n- On HTTP/1.1 browsers allow about 6 connections per host, so many tabs can block each other. HTTP/2 fixes this.\n\n**Gotcha:** Proxies that buffer responses will hold your events back. Send `Cache-Control: no-cache` and disable buffering on the proxy (for NGINX, `proxy_buffering off`).\n\n**Interview tip:** Say \"for notifications and live dashboards I would try SSE first, because reconnect and resume are built into the standard\".",
+      "level": "basic",
+      "module": "SSE & Alternatives",
+      "tags": [
+        "sse",
+        "eventsource",
+        "http"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-012",
+      "question": "How does long polling work, and when is it still useful?",
+      "answer": "**Short answer:** In long polling, the client sends a normal HTTP request, and the server does not answer until it has new data or a timeout passes. When the client gets the answer, it immediately sends the next request. It works everywhere because it is just HTTP.\n\n```mermaid\nsequenceDiagram\n    participant C as Client\n    participant S as Server\n    C->>S: GET /events?after=41\n    Note over S: holds the request open\n    S-->>C: 200 event 42\n    C->>S: GET /events?after=42\n    Note over S: holds again, up to 25 seconds\n    S-->>C: 204 no news\n    C->>S: GET /events?after=42\n```\n\nI ran a local server that waits 200 ms before answering. The client call returned after the wait with the event:\n\n```text\n[poll] { event: 'order-shipped' } after>=200ms: true\n```\n\nA good long polling endpoint:\n- Takes a cursor (`after=42`) so no event is lost between two requests.\n- Times out before any proxy does (20 to 30 seconds), returning an empty answer.\n- Returns many events at once if several arrived.\n\n| Point | Long polling | WebSocket |\n| --- | --- | --- |\n| Setup | Any HTTP stack | Needs upgrade support |\n| Overhead | Full HTTP headers per event | Tiny frames |\n| Latency | Gap between response and next request | Immediate |\n| Server cost | Many short-lived requests | Many long-lived connections |\n\nWhen it is still useful: strict corporate proxies that block upgrades, serverless functions that cannot hold a socket, and as the fallback inside libraries like Socket.IO. For anything with frequent events, it is wasteful.\n\n**Gotcha:** Without a cursor, events that arrive between two polls are lost.\n\n**Interview tip:** Call it \"the fallback that works everywhere\", and explain the cursor. That shows you know the real failure case.",
+      "level": "basic",
+      "module": "SSE & Alternatives",
+      "tags": [
+        "long-polling",
+        "http",
+        "fallback"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-013",
+      "question": "How do WebSockets compare with HTTP/2 streams and gRPC streaming?",
+      "answer": "**Short answer:** HTTP/2 multiplexes many request and response streams on one connection, and gRPC builds typed streaming RPC on top of it. WebSockets are a separate message channel on one connection. The browser can use WebSockets directly, but not gRPC streaming without a proxy (gRPC-Web supports only server streaming).\n\n| Point | WebSocket | gRPC streaming | SSE over HTTP/2 |\n| --- | --- | --- | --- |\n| Transport | Upgraded HTTP/1.1 connection | HTTP/2 | HTTP/1.1 or HTTP/2 |\n| Direction | Both ways | Server, client or both | Server to client |\n| Message format | Anything (text or binary) | Protobuf with a schema | Text |\n| Browser support | Native | Needs gRPC-Web and a proxy (Envoy) | Native |\n| Typing and codegen | None | Strong | None |\n| Best for | Browser real-time, chat | Service to service, mobile, devices | Notifications |\n\nPoints to explain in an interview:\n- gRPC gives you contracts, deadlines, cancellation, status codes and load-balancing hooks. With WebSockets you build these yourself.\n- gRPC runs well in Go services, where bidirectional streaming is a first-class feature.\n- A browser cannot do bidirectional gRPC streaming. If your front end is React in the browser, WebSockets or SSE are the practical choices.\n- HTTP/2 streams are cheap, but a stream is still attached to a long-lived connection, so deploys and load balancing have the same issues.\n\nA common architecture: browsers use WebSockets or SSE to a gateway service, and inside the cluster services talk with gRPC streams or a message broker.\n\n**Gotcha:** Layer 7 load balancers must understand HTTP/2 to balance gRPC streams. A layer 4 balancer pins all streams of one client to one pod.\n\n**Interview tip:** Say \"WebSocket for the browser edge, gRPC between services\". It is a simple rule that is usually right.",
+      "level": "basic",
+      "module": "Real-time Basics",
+      "tags": [
+        "websockets",
+        "grpc",
+        "http2"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-014",
+      "question": "What does Socket.IO add on top of WebSockets, and what does it cost?",
+      "answer": "**Short answer:** Socket.IO is a library with its own protocol on top of WebSocket (and long polling). It adds named events, rooms, acknowledgements, automatic reconnection and fallback. The cost is a custom protocol: a plain WebSocket client cannot talk to a Socket.IO server, and you carry extra overhead and a library dependency.\n\nWhat you get:\n- Named events with payloads, instead of parsing your own envelope.\n- Rooms and namespaces to group clients, and `io.to(room).emit(...)`.\n- Acknowledgements: `socket.emit('save', data, (reply) => { ... })`.\n- Automatic reconnection with backoff, and heartbeat built in.\n- Fallback to HTTP long polling if the upgrade fails, then upgrade later.\n- An adapter model (for example Redis) to broadcast across several servers.\n- Optional \"connection state recovery\" to resume after a short disconnect (Socket.IO v4.6 and later).\n\nWhat it costs:\n- It is not the WebSocket protocol. Go clients, mobile apps and gateways need a Socket.IO client library for their language.\n- Every packet has extra framing, and the polling start adds requests.\n- With polling enabled, a load balancer needs sticky sessions, because the polling requests must reach the same server. Setting `transports: ['websocket']` removes this need.\n- A big client library in the bundle.\n\n| Need | Plain `ws` | Socket.IO |\n| --- | --- | --- |\n| Quick chat or prototype | More work | Fast |\n| Interop with Go, devices, other clients | Easy | Painful |\n| Strict control of protocol and size | Yes | No |\n| Rooms and acks out of the box | No | Yes |\n\n**Common mistakes**\n- Running several Socket.IO pods behind a balancer without sticky sessions or the adapter, then seeing random \"session ID unknown\" errors.\n\n**Interview tip:** Be balanced: \"I would use it for a fast start in a Node-only stack, but choose plain WebSockets or a managed service when other languages or devices must connect.\"",
+      "level": "basic",
+      "module": "Client Patterns",
+      "tags": [
+        "socket-io",
+        "websockets",
+        "libraries"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-015",
+      "question": "When should you use WebSockets, and when should you not?",
+      "answer": "**Short answer:** Use WebSockets when both sides send messages often and low latency matters: chat, collaborative editing, multiplayer, live trading screens, device control. Do not use them for occasional updates, simple downloads, or when SSE or plain polling is enough.\n\nGood fits:\n- Chat and presence.\n- Collaborative editing (cursors, changes).\n- Live operational dashboards with commands back (control rooms, fleet screens).\n- Multiplayer games.\n- Device and aircraft telemetry gateways where the gateway keeps a session.\n\nPoor fits:\n- A notification badge that changes a few times a day (SSE or push notifications).\n- Status of a long job (polling the job, or SSE).\n- File upload and download (plain HTTP handles ranges, caching and resume).\n- Public read-only data that a CDN can cache.\n- Very constrained or flaky links where a message broker with store-and-forward (such as MQTT) fits better.\n\n| Question to ask | If yes | If no |\n| --- | --- | --- |\n| Does the client send frequent messages? | WebSocket | SSE plus normal HTTP |\n| Is update rate under once per 30 seconds? | Polling or SSE | WebSocket or SSE |\n| Do you need caching or CDN? | HTTP | WebSocket possible |\n| Can the network drop for minutes? | Broker with queues | Either |\n\nThe hidden cost: a WebSocket is a stateful connection. You must handle auth expiry, reconnect, deploys, load balancer timeouts, backpressure and monitoring. HTTP requests give you these almost for free.\n\n**Gotcha:** \"We might need it later\" is not a reason. Moving from SSE to WebSockets is easier than operating WebSockets you did not need.\n\n**Interview tip:** Answer with a decision rule and one example on each side. It sounds like judgement, not a feature list.",
+      "level": "basic",
+      "module": "Real-time Basics",
+      "tags": [
+        "websockets",
+        "use-cases",
+        "trade-offs"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-016",
+      "question": "Do the same-origin policy and CORS apply to WebSockets?",
+      "answer": "**Short answer:** No. Browsers do not apply CORS to WebSocket handshakes, and the same-origin policy does not block a page from opening a WebSocket to any host. The browser sends an `Origin` header, and it is the server's job to check it. Without that check, cross-site WebSocket hijacking is possible.\n\nWith `fetch`, the browser blocks reading a cross-origin response unless the server allows it with CORS headers. A WebSocket handshake is different. Any page on any site can run `new WebSocket('wss://bank.example.com/ws')`. The browser will attach the user's cookies for that host, just like a normal request. The handshake is not blocked, and the page can read and write messages if the server accepts.\n\nSo the defence is on the server:\n- Check `Origin` against an allow-list during the upgrade, and reject others with `403`.\n- Do not rely only on cookies. Use a token or a one-time ticket that an attacker's page cannot get.\n- Treat a missing `Origin` as non-browser (a script or device) and apply your normal token rules.\n\n```js\n// Node, in the http 'upgrade' event\nconst allowed = new Set(['https://app.example.com']);\nconst ok = (origin) => allowed.has(origin);\nconsole.log(ok('https://app.example.com'), ok('https://evil.example.net'), ok(undefined));\n// prints: true false false\n```\n\n`Origin` can be forged by non-browser clients, so it only protects against browser-based attacks. It does not replace authentication.\n\n**Gotcha:** `SameSite=Lax` or `Strict` cookies reduce the risk, but do not rely on them alone. Some setups use `SameSite=None`, and subdomains count as same-site.\n\n**Interview tip:** Say \"CORS does not protect WebSockets, so I verify Origin and I never rely on cookies alone\". This is a very common security question.",
+      "level": "basic",
+      "module": "Security",
+      "tags": [
+        "websockets",
+        "cors",
+        "origin",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-017",
+      "question": "[Tech Lead] How do you choose the transport for a real-time feature?",
+      "answer": "**Short answer:** I choose by the data flow, the client types, the network and the operations cost, not by fashion. I start from the simplest option that meets the latency need: plain HTTP polling, then SSE, then WebSockets, then a broker protocol like MQTT for unreliable links.\n\nMy decision framework, as questions:\n1. **Direction.** Does the client send frequent messages, or only receive? Receive-only points to SSE.\n2. **Frequency and latency.** Once a minute is polling. Under a second and bursty is SSE or WebSockets.\n3. **Payload.** Binary or very small messages at high rate point to WebSockets.\n4. **Clients.** Browsers only (SSE or WebSockets), or devices and mobile (MQTT, gRPC, WebSockets)?\n5. **Network.** Stable data centre links, or intermittent links such as aircraft and satellite, where store-and-forward matters?\n6. **Infrastructure.** Does the platform (ingress, gateway, WAF, corporate proxies) support upgrades and long idle times?\n7. **Delivery needs.** Must messages survive disconnects? Then you need sequence numbers, replay or a broker with queues.\n8. **Team and cost.** Who will run it at 3 am? Is a managed service cheaper than the on-call load?\n\n```mermaid\nflowchart TD\n    A[\"New real-time feature\"] --> B{\"Client sends often?\"}\n    B -- \"No\" --> C{\"Updates faster than 30 s?\"}\n    C -- \"No\" --> P[\"Polling\"]\n    C -- \"Yes\" --> E[\"SSE\"]\n    B -- \"Yes\" --> D{\"Link unreliable or devices?\"}\n    D -- \"Yes\" --> M[\"MQTT or broker\"]\n    D -- \"No\" --> W[\"WebSocket\"]\n```\n\nRead it from the top: most features end at polling or SSE, and only the two-way, high-frequency ones need WebSockets.\n\nI write the decision down as a short design note with the rejected options and the reasons. In a review, that stops a debate about technology preferences and lets us reverse the decision later with evidence.\n\n**Common mistakes**\n- Choosing WebSockets \"for real-time\" when the feature is a notification badge.\n- Ignoring the corporate proxy or ingress that will cut idle connections.\n\n**Interview tip:** Tell a short story: \"We replaced a WebSocket status feed with SSE and removed our custom reconnect code, and the on-call pages for stuck connections stopped.\"",
+      "level": "intermediate",
+      "module": "Real-time Design",
+      "tags": [
+        "tech-lead",
+        "websockets",
+        "sse",
+        "decision"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-018",
+      "question": "[Tech Lead] How do you design a real-time feature end to end, such as chat or live status?",
+      "answer": "**Short answer:** I split it into a connection layer that only holds sockets, a message layer that decides who receives what, and a durable layer that stores truth. The connection layer is stateless enough to scale and restart. The database or event log is the source of truth, and the socket is only a fast delivery path.\n\n```mermaid\nflowchart LR\n    U[\"React client\"] --> G[\"Gateway pods (WebSocket)\"]\n    G --> A[\"Auth and ticket service\"]\n    G --> B[(\"Pub/sub backplane\")]\n    S[\"Domain service\"] --> D[(\"Database\")]\n    S --> B\n    B --> G\n    G --> U\n```\n\nThe client connects to the gateway, which checks a short-lived ticket. A domain service writes to the database first, then publishes an event to the backplane. Gateways subscribed to that channel push it to their connected clients.\n\nDecisions to make for each feature:\n\n| Feature | Delivery | Needs history | Notes |\n| --- | --- | --- | --- |\n| Chat | At-least-once, ordered per room | Yes | Store messages, ids, read receipts |\n| Live status | Latest value wins | No | Send snapshot, then changes |\n| Notifications | At-least-once | Yes, short | Unread count from the database |\n| Collaborative editing | Ordered, convergent | Yes | OT or CRDT |\n\nPrinciples I apply:\n- **Write first, publish second.** If the socket dies, the user still sees the data on reload.\n- **Snapshot plus deltas.** On connect, the client fetches the current state over HTTP, then applies live events with a sequence number. This handles gaps.\n- **Subscriptions are explicit.** The client asks for channels, and the server checks permission for each.\n- **Bounded everything.** Message size, queue per connection, rate per user.\n- **Fallback.** If the socket is down, the screen still works with polling.\n\n**Gotcha:** Publishing before the database commit lets users see events for data that then rolls back. Use an outbox pattern when you need strict consistency.\n\n**Interview tip:** Walk through \"what happens when the client is offline for two minutes\" to show you designed for gaps, not only for the happy path.",
+      "level": "intermediate",
+      "module": "Real-time Design",
+      "tags": [
+        "tech-lead",
+        "design",
+        "chat",
+        "notifications"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-019",
+      "question": "[Tech Lead] How do you scale WebSocket servers horizontally?",
+      "answer": "**Short answer:** One server holds a limited number of connections, so you run many and connect them with a pub/sub backplane (Redis, NATS or Kafka). Any service publishes an event to a channel, and every gateway that has a subscriber for it forwards it. You do not need sticky sessions for raw WebSockets, because one connection stays on one server for its whole life.\n\n```mermaid\nflowchart LR\n    C1[\"Client A\"] --> LB[\"Load balancer\"]\n    C2[\"Client B\"] --> LB\n    LB --> G1[\"Gateway 1\"]\n    LB --> G2[\"Gateway 2\"]\n    P[\"Publisher service\"] --> BUS[(\"Redis or NATS\")]\n    BUS --> G1\n    BUS --> G2\n```\n\nClient A may be on Gateway 1 and client B on Gateway 2. When a service publishes to `room:42`, both gateways receive it and each forwards it to its own local members.\n\n| Backplane | Strength | Weakness | Use for |\n| --- | --- | --- | --- |\n| Redis pub/sub | Simple, fast | No persistence, at-most-once | Presence, chat fan-out, live status |\n| Redis Streams | Persistence, replay | More work | Resume after reconnect |\n| NATS | Very fast, light | Core NATS is at-most-once (JetStream adds persistence) | Many small messages |\n| Kafka | Durable, replayable | Heavy, high latency for tiny messages | Event sourcing, analytics, not per-socket fan-out |\n\nKey design points:\n- **Fan-out cost.** A message to a room of 10,000 means 10,000 socket writes. Batch, and avoid per-message JSON encoding for each client (encode once, send the same bytes).\n- **Subscribe per channel, not per connection.** A gateway subscribes to `room:42` once if it has at least one local member, and unsubscribes when the last one leaves.\n- **Sticky sessions** are needed only for transports that use several requests (Socket.IO with polling, SockJS). Plain WebSockets do not need them.\n- **Sharding.** To go bigger, shard channels or users across backplane nodes with consistent hashing.\n- **Direct messages.** Keep a registry (user id to gateway) in Redis with a TTL to route one-to-one messages.\n\n**Gotcha:** Redis pub/sub drops messages for subscribers that are disconnected. Pair it with a sequence number and a replay store.\n\n**Interview tip:** Ask about the delivery guarantee you need before choosing the backplane. That question alone shows seniority.",
+      "level": "intermediate",
+      "module": "Scaling & Operations",
+      "tags": [
+        "tech-lead",
+        "scaling",
+        "pub-sub",
+        "redis"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-020",
+      "question": "[Tech Lead] How do load balancers, proxies and ingress affect WebSockets, and how do you tune idle timeouts?",
+      "answer": "**Short answer:** Every hop between client and pod can close an idle connection. The lowest idle timeout in the path wins. You need each hop to allow the upgrade, set the timeouts above your heartbeat interval, and not buffer or retry the stream.\n\nThe classic production bug: connections drop after exactly 60 seconds. NGINX closes a proxied connection when no data flows for `proxy_read_timeout`, whose default is 60 seconds. Browser, ingress, cloud gateway, service mesh and pod each add their own timer.\n\nNGINX configuration for WebSockets:\n\n```nginx\nmap $http_upgrade $connection_upgrade {\n    default upgrade;\n    ''      close;\n}\nserver {\n    location /ws {\n        proxy_pass http://gateway:8080;\n        proxy_http_version 1.1;                       # upgrade needs HTTP/1.1 to the upstream\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection $connection_upgrade;\n        proxy_read_timeout 3600s;                     # longer than your heartbeat gap\n        proxy_send_timeout 3600s;\n    }\n}\n```\n\nThe same ideas in Kubernetes with the community NGINX ingress controller, using annotations (check the version you run, since the project has announced retirement and many teams are moving to the Gateway API):\n\n```yaml\nmetadata:\n  annotations:\n    nginx.ingress.kubernetes.io/proxy-read-timeout: \"3600\"\n    nginx.ingress.kubernetes.io/proxy-send-timeout: \"3600\"\n```\n\n| Hop | What to check |\n| --- | --- |\n| CDN or WAF | Does it proxy WebSockets? Does it have a maximum duration? |\n| Cloud load balancer (Azure Application Gateway, Azure Load Balancer) | Idle timeout setting, WebSocket support enabled |\n| Ingress | Read and send timeouts, upgrade headers |\n| Service mesh sidecar | Route timeout, idle timeout, retries off |\n| App | Ping interval below the smallest timeout |\n\nI design with a rule: heartbeat every 25 to 30 seconds, and every timeout above 2 times that. Then I test with a connection that sends nothing for 10 minutes.\n\n**Gotcha:** Retries and \"max request duration\" settings on a mesh or gateway can cut a healthy WebSocket without any log line on your app.\n\n**Interview tip:** Say \"I list every hop and its timeout in a table in the runbook\". It is simple and it fixes this class of incident for good.",
+      "level": "intermediate",
+      "module": "Scaling & Operations",
+      "tags": [
+        "tech-lead",
+        "nginx",
+        "ingress",
+        "timeouts"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-021",
+      "question": "[Tech Lead] How do you do capacity planning for WebSocket connections?",
+      "answer": "**Short answer:** I measure instead of guessing. I load test one pod to find memory per connection, CPU per message and file descriptor limits, then multiply by peak connections plus headroom for a reconnect storm. The numbers depend heavily on runtime and message rate.\n\nWhat limits connections on one machine:\n- **File descriptors.** Each socket is one. Raise `ulimit -n` (and the container limits), far above your target.\n- **Memory.** Per connection you pay for kernel socket buffers, library buffers, and per-connection state (user, subscriptions, queues). Go stacks start small, and Node objects are on the heap. Typical idle connections cost from a few KB to tens of KB, but your queues and message buffers can cost much more. Measure.\n- **CPU.** TLS handshakes are the heavy part when many clients connect at once. Steady-state messages are cheap, but fan-out multiplies it.\n- **Garbage collection.** Many small allocations per message cause GC pauses that delay heartbeats. Reuse buffers, and encode a broadcast once.\n- **Ports.** A load balancer talking to one backend IP is limited by ephemeral ports (about 28,000 by default per destination), so watch it at high scale.\n- **Network.** Bandwidth is messages per second times fan-out times size.\n\nA simple sizing method:\n1. Define peak concurrent connections, messages per second per connection, and the average fan-out.\n2. Load test one pod at 10%, 50%, 100% of a target, and record RSS memory, CPU, event loop lag (Node) or goroutines (Go), and p99 delivery latency.\n3. Pick a safe per-pod number at 60% of the point where latency degrades.\n4. Pods needed = peak connections divided by the safe number, plus one extra for rolling deploys and N+1 for failure.\n5. Plan for a reconnect storm: after a deploy, every client reconnects within seconds, so TLS CPU can be 10 times the steady load.\n\n**Rules of thumb**\n- Set pod memory limits with room for slow-consumer queues.\n- Set a connection limit per pod and stop accepting (readiness fails) above it.\n- Autoscale on connections and memory, not only CPU.\n\n**Interview tip:** Quote your method, not a magic number. \"I do not know yet, I would measure memory per connection at three load levels\" is a strong answer.",
+      "level": "intermediate",
+      "module": "Scaling & Operations",
+      "tags": [
+        "tech-lead",
+        "capacity",
+        "performance",
+        "memory"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-022",
+      "question": "[Tech Lead] How do you do rolling deployments without dropping every connection?",
+      "answer": "**Short answer:** Drain connections gradually. On shutdown the pod stops accepting new connections, tells clients to reconnect elsewhere with jittered delays, waits a bounded time, then exits. A rollout that restarts pods one batch at a time, with enough surge capacity, prevents a reconnect storm.\n\n```mermaid\nsequenceDiagram\n    participant K as Kubernetes\n    participant P as Old pod\n    participant C as Clients\n    participant N as New pod\n    K->>P: SIGTERM, readiness fails\n    P->>C: close 1012 with random delay\n    C->>N: reconnect after jitter\n    P->>P: wait until drained or timeout\n    K->>P: SIGKILL after grace period\n```\n\nThe steps in the pod:\n1. **Readiness fails first** so the load balancer sends no new connections. A `preStop` sleep of a few seconds gives endpoints time to update.\n2. **Send close frames in batches**, not all at once. For example close 5% of connections each second, using code 1012 (service restart) or an app code. Add random jitter so clients do not reconnect together.\n3. **Keep serving** while draining, and finish in-flight writes.\n4. **Exit** when connections reach zero or at the deadline.\n\nKubernetes settings that matter:\n\n```yaml\nspec:\n  terminationGracePeriodSeconds: 120   # long enough for the drain\n  containers:\n    - name: gateway\n      lifecycle:\n        preStop:\n          exec:\n            command: [\"sleep\", \"5\"]    # let endpoints update first\n  # Deployment strategy:\n  # maxUnavailable: 0, maxSurge: 25%\n```\n\nOther rules:\n- `maxUnavailable: 0` with surge keeps capacity during the rollout.\n- Roll slowly enough that the new pods are not overwhelmed. If you have 20 pods, roll one or two at a time and watch the connect rate.\n- Clients must tolerate it: backoff with jitter, and resume from the last sequence number so users do not see gaps.\n\n**Gotcha:** If the grace period is shorter than your drain, Kubernetes sends SIGKILL and clients get 1006 without a close frame.\n\n**Interview tip:** Mention a pod disruption budget and node drains too. Cluster upgrades cause the same drain events as your deploys.",
+      "level": "intermediate",
+      "module": "Scaling & Operations",
+      "tags": [
+        "tech-lead",
+        "deployments",
+        "kubernetes",
+        "drain"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-023",
+      "question": "[Tech Lead] What do you monitor in a real-time system?",
+      "answer": "**Short answer:** I monitor connection health, message flow, delivery latency and client experience. CPU and memory alone tell you little, because a real-time system can look healthy while users see stale data.\n\nCore signals:\n\n| Area | Metric | Why |\n| --- | --- | --- |\n| Connections | Current open, connect and disconnect rate, by close code | Spot drops, deploy effects, auth failures |\n| Connections | Handshake failures by status | Origin or auth rejections, proxy trouble |\n| Reconnects | Reconnect rate and attempts per client | Storms, flaky network |\n| Messages | In and out per second, per type, bytes | Load, fan-out size |\n| Latency | End-to-end delivery p50, p95, p99 | The user-visible number |\n| Backpressure | Queue depth, bytes buffered, dropped messages, slow consumers closed | Memory risk |\n| Backplane | Publish lag, Redis or NATS latency, subscription count | Fan-out health |\n| Runtime | Goroutines, event loop lag, GC pause, heap, file descriptors | Capacity |\n| Business | Active users, delivery failures | Product view |\n\nHow I get delivery latency: the publisher adds a timestamp to the event, and the gateway records the difference when it writes to the socket. For true end-to-end, a synthetic client in each region sends a probe message and measures the round trip.\n\nPractical rules:\n- Log with a connection id and a correlation id on every message, and a user id hash, never the payload.\n- Keep metric labels low-cardinality: close code, message type, region. Never user id.\n- Alert on symptoms: disconnect rate spike, p99 latency, queue growth, synthetic probe failure. Page on user impact, not on a single pod.\n- Dashboards show the deploy markers, so you can link a reconnect spike to a rollout.\n\n**Common mistakes**\n- Counting only open connections. A stable count can hide a loop of disconnect and reconnect.\n- Tracing every message. Sample instead.\n\n**Interview tip:** Name the synthetic probe. It catches broken proxies and expired certificates that no server metric shows.",
+      "level": "intermediate",
+      "module": "Scaling & Operations",
+      "tags": [
+        "tech-lead",
+        "observability",
+        "metrics",
+        "datadog"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-024",
+      "question": "[Tech Lead] What is your security review checklist for a WebSocket service?",
+      "answer": "**Short answer:** I review who can connect, what they can see, how much they can send, and what happens when the connection lives longer than the login. The goal is to apply the same controls as for an HTTP API, because a WebSocket skips many of the protections HTTP gives for free.\n\nChecklist:\n1. **Transport.** `wss://` only, modern TLS, no plain `ws` outside local development.\n2. **Authentication at connect.** A short-lived token or one-time ticket, not a long-lived token in the URL.\n3. **Origin check.** An allow-list on the upgrade request to stop cross-site WebSocket hijacking.\n4. **Authorisation per action.** Check permission when subscribing to a channel and when handling each command, not only at connect.\n5. **Token expiry.** Close or refresh when the token expires (for example code 4401). Revoke on logout.\n6. **Input validation.** Parse and validate every message with a schema. Reject unknown types. Never trust client-supplied user ids.\n7. **Limits.** Maximum message size, messages per second per connection, connections per user and per IP, subscriptions per connection, queue size per connection.\n8. **Handshake timeouts.** Close connections that do not authenticate within a few seconds, to resist slow-open abuse.\n9. **Privacy.** No PII in URLs or logs. Minimise personal data in broadcast messages.\n10. **Output safety.** Escape user content in the UI (XSS applies to chat messages).\n11. **Dependencies.** Keep the WebSocket library updated and pin versions.\n12. **Operations.** Alerts on auth failures and rate-limit hits, and a way to kick a user or block a client quickly.\n\nFor the review itself I run a short threat model: \"what can a logged-in user do to another user, what can an anonymous user do to the server, and what can a malicious website do through a victim's browser?\".\n\n**Gotcha:** The most common finding is authorisation checked at connect but not on each message. A user who loses access to a room still receives messages until they disconnect.\n\n**Interview tip:** Use the phrase \"defence in depth\": edge limits, app limits, and per-user limits all active together.",
+      "level": "intermediate",
+      "module": "Security",
+      "tags": [
+        "tech-lead",
+        "security",
+        "review",
+        "checklist"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-025",
+      "question": "[Tech Lead] How do you test real-time features?",
+      "answer": "**Short answer:** I test in layers: unit tests for message handling logic, integration tests with real sockets, load tests for capacity, and chaos tests for failure behaviour. Real-time bugs live in timing, ordering and reconnects, so these must be tested on purpose.\n\n| Layer | What it checks | How |\n| --- | --- | --- |\n| Unit | Reducers, protocol parsing, sequence and de-duplication logic | Plain functions, no sockets |\n| Component | React hook behaviour with a fake WebSocket | Mock class that you control with fake timers |\n| Integration | Handshake, auth, authorisation, message flow, close codes | Start the server on a random port, use a real client |\n| Contract | Message schema compatibility between versions | Shared schema, golden files |\n| Load | Connections, message rate, latency, memory | k6, Artillery, custom Go client |\n| Chaos | Kill a pod, drop the network, delay the backplane | Chaos tools, tc/netem, manual deploys |\n| Soak | Leaks over hours | Long run, watch memory |\n\nA fake socket for front-end tests keeps them fast and deterministic:\n\n```ts\nclass FakeSocket {\n  static last: FakeSocket;\n  onmessage: ((e: { data: string }) => void) | null = null;\n  onclose: ((e: { code: number }) => void) | null = null;\n  constructor(public url: string) { FakeSocket.last = this; }\n  send = (_: string) => {};\n  close = () => {};\n  emit = (obj: unknown) => this.onmessage?.({ data: JSON.stringify(obj) });\n}\n// in a test: vi.stubGlobal('WebSocket', FakeSocket); FakeSocket.last.emit({ type: 'order.updated' });\n```\n\nKey scenarios to automate:\n- Reconnect after a close code, with backoff using fake timers.\n- Messages arriving out of order or duplicated.\n- Auth expiry in the middle of a session.\n- A slow client that does not read.\n- Rolling restart while clients are connected: no more than N seconds of missing data.\n\n**Interview tip:** Say you run the integration tests against a real server in CI on a random port. Mocks hide the very bugs real-time systems have.",
+      "level": "intermediate",
+      "module": "Reliability & Delivery",
+      "tags": [
+        "tech-lead",
+        "testing",
+        "load-testing",
+        "chaos"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-026",
+      "question": "[Tech Lead] What are the cost and operations trade-offs, and when would you buy a managed service?",
+      "answer": "**Short answer:** Running WebSockets yourself gives control and low per-message cost, but you take on scaling, deploys, security and on-call. Managed services (Azure Web PubSub or SignalR Service, Ably, Pusher) remove the connection layer for a fee per connection and message. I buy when real-time is not my product's core and my team is small.\n\n| Option | You run | Strengths | Weaknesses |\n| --- | --- | --- | --- |\n| Self-hosted gateway (Go or Node) | Everything | Full control, cheapest at scale, fits Kubernetes | Operations burden, build all reliability |\n| Azure SignalR Service or Web PubSub | Business logic only | Fits Azure, scales, managed auth | Pricing per unit, vendor protocol, limits |\n| Ably or Pusher | Business logic only | Global edge, history, presence, SDKs | Cost at high volume, data leaves your cloud |\n| Broker (MQTT, NATS) with WebSocket | Broker | Good for devices | Still need a gateway for browsers |\n\nHow I decide:\n- **Team and time.** A small team shipping a product feature in a quarter should buy.\n- **Scale and unit cost.** Work out cost per million messages and per connection-hour at your forecast, and compare it to the engineering time for the DIY version.\n- **Data rules.** Aircraft, health or customer data may not be allowed to pass through a third party. This can decide it.\n- **Lock-in.** Hide the vendor behind a small interface (publish, subscribe, presence) so you can move.\n- **Reliability.** Check the SLA, regional coverage and how reconnect and history work.\n- **Skills.** Do we want to be experts in connection scaling?\n\nA hybrid works well: managed service for browser clients, self-hosted broker for device traffic, with a bridge.\n\n**Gotcha:** Costs of managed services are often dominated by message count with large fan-out, such as broadcasting to 100,000 viewers. Model fan-out before you sign.\n\n**Interview tip:** End with how you would reduce risk: a time-boxed prototype on the managed service, with the vendor behind an interface.",
+      "level": "intermediate",
+      "module": "Real-time Design",
+      "tags": [
+        "tech-lead",
+        "build-vs-buy",
+        "managed-services"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-027",
+      "question": "How do you authenticate a WebSocket connection?",
+      "answer": "**Short answer:** Authenticate during the handshake or immediately after it. The best patterns are a session cookie (with an Origin check) or a short-lived, single-use ticket that the client gets from your normal HTTP API and sends once. Avoid long-lived tokens in the URL.\n\nThe browser WebSocket API cannot set an `Authorization` header. That limits your choices:\n\n| Pattern | How | Pros | Cons |\n| --- | --- | --- | --- |\n| Session cookie | Browser sends the cookie on the handshake | Simple, HttpOnly | Needs Origin check (CSWSH), same-site setups |\n| Token in query string | `wss://host/ws?token=...` | Easy | URLs end up in proxy and access logs and history |\n| First-message auth | Connect, then send `{type:\"auth\", token}` within 5 seconds | No token in URL | Unauthenticated sockets exist briefly |\n| Short-lived ticket | `POST /ws-ticket` returns a random id valid 30 seconds and single use | Safe in URL, easy to revoke | One more request and a ticket store |\n| Subprotocol trick | Token in `Sec-WebSocket-Protocol` | Works from browsers | Abuses a header, can be logged |\n\nMy default is the ticket:\n\n```mermaid\nsequenceDiagram\n    participant C as Client\n    participant A as API\n    participant G as Gateway\n    C->>A: POST ws-ticket with session\n    A-->>C: ticket valid 30 seconds\n    C->>G: wss connect with ticket in URL\n    G->>A: redeem ticket once\n    A-->>G: user id and permissions\n    G-->>C: connected\n```\n\nThe ticket is useless after one use or 30 seconds, so a leaked URL in a log is harmless.\n\nAlso handle the life of the session. Tokens expire while sockets stay open, so store the expiry in the connection state. Either close with a code like 4401 when it expires, or accept a `{type:\"refresh\", token}` message and swap the identity. Close the socket on logout.\n\n**Common mistakes**\n- Putting the long-lived access token in the URL.\n- Authenticating once and never again.\n- Letting unauthenticated sockets stay open forever. Close them after a short deadline.\n\n**Interview tip:** Mention \"no custom headers from browsers\" first, then the ticket pattern. It shows you know why the problem exists.",
+      "level": "intermediate",
+      "module": "Security",
+      "tags": [
+        "websockets",
+        "authentication",
+        "tokens"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-028",
+      "question": "How do you authorise actions and channel access over a WebSocket?",
+      "answer": "**Short answer:** Authentication says who the user is. Authorisation says what they may do. Check it on every subscribe and every command, using the identity stored on the server for that connection, never an id sent by the client. Re-check when permissions change.\n\nA socket is one long conversation, so there is no request boundary where middleware runs automatically. You must build the checkpoint yourself.\n\n```ts\n// Server-side handler (sketch)\ntype Conn = { userId: string; roles: Set<string>; subs: Set<string> };\n\nasync function onMessage(conn: Conn, msg: { type: string; channel?: string }) {\n  if (msg.type === 'subscribe') {\n    // ❌ bad: trusting a userId sent in the message\n    // ✅ good: decide with conn.userId stored at authentication time\n    if (!(await canRead(conn.userId, msg.channel!))) return send(conn, { type: 'error', code: 'forbidden' });\n    conn.subs.add(msg.channel!);\n  }\n}\n```\n\nPractical rules:\n- **Channel names are not secrets.** `orders:123` must be checked for this user. Better, derive channels on the server (`user:<id>`) so the client cannot ask for others.\n- **Check on publish too.** Can this user send to this channel, and with this message type?\n- **Permission changes.** When a user is removed from a room, push the change to the gateway so it drops their subscription. Use a short permission cache TTL or an event.\n- **Least data.** Send only the fields this user may see. Do not broadcast a full record and rely on the client to hide fields.\n- **Deny by default.** Unknown message types return an error and count against a rate limit.\n- **Multi-tenant.** Include the tenant id in every channel name, and enforce it at the subscribe check.\n\n| Check | When |\n| --- | --- |\n| Identity | Handshake (and on refresh) |\n| Channel read | On subscribe, and on permission change events |\n| Command | On each message |\n| Tenant boundary | Everywhere |\n\n**Gotcha:** Checking at connect only, then sending everything to that socket, is the top finding in WebSocket reviews. A removed user keeps receiving data until they disconnect.\n\n**Interview tip:** Say that IDOR (insecure direct object reference) happens on sockets as easily as on REST, via channel names and ids.",
+      "level": "intermediate",
+      "module": "Security",
+      "tags": [
+        "websockets",
+        "authorization",
+        "channels"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-029",
+      "question": "What is cross-site WebSocket hijacking and how do you prevent it?",
+      "answer": "**Short answer:** Cross-site WebSocket hijacking (CSWSH) is CSRF for WebSockets. A malicious page opens a WebSocket to your server from the victim's browser, the browser attaches the victim's cookies, and if the server only checks the cookie, the attacker's page can read and send messages as the victim. Prevent it with an Origin allow-list and by not relying on cookies alone.\n\n```mermaid\nsequenceDiagram\n    participant V as Victim browser\n    participant E as Evil page\n    participant S as Your server\n    V->>E: opens evil page\n    E->>S: new WebSocket to your host\n    Note over V,S: browser adds your cookies\n    S-->>E: accepts, if no Origin check\n```\n\nWhy it works: WebSocket handshakes are not covered by CORS. The browser sends `Origin: https://evil.example.net` but does not block the connection.\n\nDefences, in order of strength:\n1. **Check `Origin`** in the upgrade handler against an exact allow-list. Reject with 403.\n2. **Use a ticket or token** obtained through a normal authenticated, CORS-protected request. An attacker's page cannot read it.\n3. **Cookie attributes.** `SameSite=Lax` or `Strict` stops the cookie being sent from a cross-site page in most browsers. Treat it as a second layer.\n4. **CSRF token** sent in the first message.\n\n```js\n// Node http 'upgrade' handler (sketch)\nserver.on('upgrade', (req, socket) => {\n  const origin = req.headers.origin;\n  if (!ALLOWED_ORIGINS.has(origin)) {\n    socket.write('HTTP/1.1 403 Forbidden\\r\\n\\r\\n');\n    return socket.destroy();\n  }\n  // ...continue with ticket check and the upgrade\n});\n```\n\n**Common mistakes**\n- Checking with `origin.includes('example.com')`, which accepts `example.com.evil.net`. Compare exact values.\n- Allowing `null` or missing origins for browser traffic. A missing origin should only be allowed for known non-browser clients that use their own credentials.\n\n**Interview tip:** The phrase \"CSWSH is CSRF without CORS protection\" is short and correct.",
+      "level": "intermediate",
+      "module": "Security",
+      "tags": [
+        "websockets",
+        "cswsh",
+        "origin",
+        "csrf"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-030",
+      "question": "How do you rate limit and protect a WebSocket service from abuse?",
+      "answer": "**Short answer:** Limit at three levels: the connection (how many and how fast they open), the message (size and rate per connection), and the user (total across connections). Close abusive connections with a clear code, and put the first line of defence at the edge.\n\n| Level | Limit | Typical action |\n| --- | --- | --- |\n| Handshake | New connections per IP and per user per minute | 429 on upgrade |\n| Concurrent | Open connections per user and per IP | Reject or close oldest |\n| Message size | Maximum bytes per message | Close 1009 |\n| Message rate | Messages per second per connection (token bucket) | Drop, then close 1008 or 4429 |\n| Subscriptions | Maximum channels per connection | Error message |\n| Pre-auth | Seconds allowed before authenticating | Close |\n| Queue | Maximum bytes waiting to send | Close slow consumer |\n\nA token bucket is the usual tool. It allows short bursts, but limits the average:\n\n```ts\nclass Bucket {\n  private tokens: number;\n  private last = Date.now();\n  constructor(private rate: number, private burst: number) { this.tokens = burst; }\n  take(): boolean {\n    const now = Date.now();\n    this.tokens = Math.min(this.burst, this.tokens + ((now - this.last) / 1000) * this.rate);\n    this.last = now;\n    if (this.tokens < 1) return false;\n    this.tokens -= 1;\n    return true;\n  }\n}\n// const b = new Bucket(10, 20);   10 messages per second, burst of 20\n// if (!b.take()) close(conn, 4429, 'rate limited');\n```\n\nBehind many pods, keep the per-user count in Redis, or accept that each pod enforces its own share.\n\nEdge protection:\n- A WAF or API gateway for handshake rate and IP reputation.\n- Short deadlines for the handshake, header size limits and a maximum number of pending upgrades (slowloris style attacks hold connections open without finishing).\n- Cheap work first: check the size and the token before parsing JSON or hitting the database.\n\n**Gotcha:** Limiting only by IP punishes users behind one corporate NAT, and does not stop an attacker with many IPs. Combine IP and user limits.\n\n**Interview tip:** Say that the limit must be cheap to evaluate, because the attack target is your CPU.",
+      "level": "intermediate",
+      "module": "Security",
+      "tags": [
+        "websockets",
+        "rate-limiting",
+        "abuse",
+        "dos"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-031",
+      "question": "How do you handle backpressure and slow consumers in WebSockets?",
+      "answer": "**Short answer:** If you send faster than a client can receive, data piles up in memory. You need a bounded buffer per connection and a policy: drop old messages, collapse updates, or disconnect the slow client. Never let a queue grow without a limit.\n\nWriting to a socket does not wait for the client. The data goes into the library's buffer and the kernel's send buffer. A phone on a bad network reads slowly, and your process keeps the backlog. With 10,000 slow clients, that becomes a memory leak that ends in an out-of-memory kill.\n\nWhere to look:\n- Browser: `ws.bufferedAmount` shows bytes not yet sent. Pause sending when it is high.\n- Node `ws`: `ws.bufferedAmount` on the server, and the send callback.\n- Go: a slow `Write` blocks, so use a per-connection channel with a fixed size.\n\n```js\n// Node, server side: drop or close slow consumers (sketch)\nconst MAX_BUFFERED = 1_000_000;     // 1 MB\nfunction sendSafe(ws, data) {\n  if (ws.bufferedAmount > MAX_BUFFERED) {\n    ws.close(1013, 'slow consumer');    // try again later\n    return false;\n  }\n  ws.send(data);\n  return true;\n}\n```\n\nPolicies, depending on the data:\n\n| Data | Policy |\n| --- | --- |\n| Latest value (price, status) | Keep only the newest, drop older (conflation) |\n| Event stream with order (chat) | Bounded queue, then disconnect, client resyncs on reconnect |\n| Telemetry | Drop oldest samples, count the drops |\n| Commands | Reject with an error to the sender |\n\nI ran the \"bounded queue, drop oldest\" idea with a limit of 3 and the inputs 1 to 5. The queue kept `3,4,5`.\n\nDisconnecting is acceptable only if resume works. The client reconnects, sends its last sequence number, and gets a snapshot or a replay.\n\n**Gotcha:** One slow client must not slow the others. In a broadcast loop, never `await` each client in order. Use per-client queues.\n\n**Interview tip:** Give the three words: bound, drop, disconnect. And add that you export a \"slow consumer\" metric.",
+      "level": "intermediate",
+      "module": "Reliability & Delivery",
+      "tags": [
+        "websockets",
+        "backpressure",
+        "slow-consumer",
+        "memory"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-032",
+      "question": "What delivery guarantees do WebSockets give, and how do you handle ordering?",
+      "answer": "**Short answer:** A single WebSocket connection is TCP, so messages arrive in order and without gaps while the connection lives. But there is no guarantee across connections, and when the connection drops, messages in flight are lost. So the application must add sequence numbers and acknowledgements to get at-least-once delivery.\n\n| Guarantee | Meaning | How |\n| --- | --- | --- |\n| At-most-once | Send once, may be lost | Plain `send()` |\n| At-least-once | Retry until acknowledged, may duplicate | Ack, resend, client de-duplicates |\n| Exactly-once | Processed one time | Really at-least-once plus idempotent handling |\n\nWhere order breaks:\n- **Reconnect.** The new connection can overtake or miss messages from the old one.\n- **Multiple servers.** Two gateways deliver two events to the same user at slightly different times.\n- **Multiple publishers.** Without one writer per entity, the order at the backplane is undefined.\n- **Async handlers.** `await` in a message handler can let message 2 finish before message 1.\n\nFixes:\n- Give each message a per-stream **sequence number** (`seq`) assigned by one writer, such as the database or a partition leader.\n- The client keeps `lastSeq`. If it sees `seq` greater than `lastSeq + 1`, there is a gap, so it asks for a replay. If it sees a number it has already seen, it ignores it.\n- For \"latest value\" data, ordering matters less: send a version number and ignore older versions.\n- Process messages for one connection or one entity in a single queue, in order.\n\n```ts\nfunction apply(state: { lastSeq: number }, m: { seq: number }) {\n  if (m.seq <= state.lastSeq) return 'duplicate';\n  if (m.seq > state.lastSeq + 1) return 'gap: request replay';\n  state.lastSeq = m.seq;\n  return 'ok';\n}\n```\n\n**Interview tip:** Say \"TCP orders bytes on one connection, it does not give delivery across reconnects\". That sentence separates seniors from juniors.",
+      "level": "intermediate",
+      "module": "Reliability & Delivery",
+      "tags": [
+        "websockets",
+        "delivery",
+        "ordering",
+        "at-least-once"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-033",
+      "question": "How do acknowledgements, idempotency and de-duplication work in real-time messaging?",
+      "answer": "**Short answer:** An acknowledgement (ack) tells the sender that a message was received, so it can stop resending. Because acks can be lost, the same message can arrive twice. Give each message a unique id, and make the receiver idempotent: handling it twice has the same effect as once.\n\nTypical flow for a client command, such as \"send chat message\":\n1. Client creates a message with a client-generated id (a UUID) and sends it.\n2. Server stores it, using the id as a unique key, and replies `{type:\"ack\", id}`.\n3. If no ack arrives within a timeout, the client resends with the same id.\n4. If the server sees an id twice, it returns the earlier result and does not insert again.\n\n```mermaid\nsequenceDiagram\n    participant C as Client\n    participant S as Server\n    C->>S: send m1\n    S-->>C: ack m1 lost\n    Note over C: timeout\n    C->>S: send m1 again\n    S-->>C: ack m1 (duplicate ignored)\n```\n\nServer de-duplication, in order of strength:\n- A database unique constraint on `(user_id, client_message_id)`.\n- A Redis key with a TTL (`SET key 1 NX EX 600`) for short windows.\n- An in-memory set per connection for the receiving client, limited in size.\n\nI ran a small receiver that remembers ids:\n\n```js\nconst seen = new Set();\nconst handle = (m) => (seen.has(m.id) ? 'duplicate ignored' : (seen.add(m.id), 'processed'));\nconsole.log(handle({ id: 'm1' }), handle({ id: 'm1' }));\n// prints: processed duplicate ignored\n```\n\nDirection matters:\n- **Client to server:** client retries with the same id.\n- **Server to client:** the server cannot know what the browser rendered. Usually the client sends the last received `seq` (a cumulative ack), and the server resends from there.\n\n| Ack style | Detail | Cost |\n| --- | --- | --- |\n| Per message | Ack each id | Chatty |\n| Cumulative | \"I have everything up to 42\" | Cheap, common |\n| Batched | Ack every N messages or ms | Balanced |\n\n**Gotcha:** Idempotency must also cover side effects such as sending an email or charging a card. Pass the same id downstream.\n\n**Interview tip:** Say \"exactly-once delivery does not exist, exactly-once effect does, through at-least-once plus idempotency\".",
+      "level": "intermediate",
+      "module": "Reliability & Delivery",
+      "tags": [
+        "websockets",
+        "idempotency",
+        "acknowledgements",
+        "deduplication"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-034",
+      "question": "How do you resume after a reconnect without losing or repeating messages?",
+      "answer": "**Short answer:** Give every message a sequence number per stream, keep a replay buffer on the server, and let the client send its last seen number when it reconnects. If the gap is too old for the buffer, the server tells the client to reload a snapshot and continue with deltas.\n\n```mermaid\nsequenceDiagram\n    participant C as Client\n    participant S as Server\n    C->>S: connect, lastSeq 41\n    alt gap is in the buffer\n        S-->>C: replay 42, 43, 44\n    else gap too old\n        S-->>C: resync required\n        C->>S: GET snapshot\n        S-->>C: state at seq 60\n    end\n    S-->>C: live events 61, 62\n```\n\nReplay buffer choices:\n\n| Store | Good for | Notes |\n| --- | --- | --- |\n| In memory ring buffer | Short gaps (seconds to minutes) | Lost on pod restart, so the client reconnects to another pod with no history |\n| Redis Streams | Shared across pods | Trim by length or time |\n| Database or event log | Long gaps, audit, chat history | Query by `seq > lastSeq` |\n| Snapshot only | Dashboards where only latest matters | Simplest |\n\nI ran a ring buffer that keeps the last 3 messages after 5 pushes. A client asking since seq 3 got messages 4 and 5. A client asking since seq 1 got `resync: true` because seq 2 was already trimmed:\n\n```js\n// {\"resync\":false,\"msgs\":[{\"seq\":4,\"d\":\"d\"},{\"seq\":5,\"d\":\"e\"}]}\n// {\"resync\":true}\n```\n\nDesign points:\n- **Snapshot plus deltas.** Always be able to build the full state from a snapshot that carries its own `seq`. Then apply events with a higher `seq`.\n- **Subscribe before you snapshot** (or buffer live events during the snapshot) so nothing falls into the gap.\n- The sequence must come from one writer per stream. Do not use each gateway's own counter.\n- **Client side.** Keep `lastSeq` in memory (and in storage if you want resume after a page reload).\n\nSSE does this natively with `Last-Event-ID`. With WebSockets you build it.\n\n**Gotcha:** If a pod restart loses the in-memory buffer, clients get a full resync at once, a thundering herd on your snapshot endpoint. Cache snapshots and add jitter.\n\n**Interview tip:** The line \"snapshot plus deltas with a sequence number\" answers most \"how do you not lose updates\" questions.",
+      "level": "intermediate",
+      "module": "Reliability & Delivery",
+      "tags": [
+        "websockets",
+        "resume",
+        "sequence-numbers",
+        "replay"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-035",
+      "question": "How do you build presence and typing indicators?",
+      "answer": "**Short answer:** Presence (\"who is online\") is soft state with an expiry. Each connection refreshes a short TTL key while it is alive, and the key vanishes by itself if the client disappears. Typing indicators are even lighter: they are ephemeral events, never stored, with a timeout on the client.\n\nWhy not just use connect and disconnect events? Disconnects are not reliable. A crashed pod or a dropped network sends no close frame, so users stay \"online\" forever. A TTL fixes this: no heartbeat, no presence.\n\nA common design with Redis:\n1. On connect, the gateway sets `presence:user:42 = <gateway id>` with a 60 second TTL.\n2. Every 20 to 30 seconds the gateway refreshes the TTL for each active user (use pipelines or batch refresh).\n3. When the last connection of a user closes cleanly, delete the key. If it does not, the TTL expires.\n4. To tell friends, publish a `presence.changed` event only when the state really changes, and debounce it so a quick reconnect does not flicker.\n\nA user can have several devices. Keep a count or a set of connection ids, and say \"online\" while the set is non-empty.\n\nTyping indicators:\n- Client sends `{type:\"typing\", room}` at most once every 2 to 3 seconds while typing.\n- The server forwards it to the room without storing it.\n- The receiving UI shows \"Asha is typing\" and clears it after about 5 seconds without a new event, or when the message arrives.\n\n| Item | Stored? | Delivery | Expiry |\n| --- | --- | --- | --- |\n| Presence | Yes, in a fast store | At-most-once events, truth in the store | TTL |\n| Typing | No | Fire and forget | Client timer |\n| Read position | Yes, in the database | At-least-once | None |\n\n**Gotcha:** Broadcasting presence to everyone in a big room multiplies traffic. Send presence only for the visible list, or sample it.\n\n**Interview tip:** Use the phrase \"presence is a lease, not an event\". It makes the TTL idea easy to remember.",
+      "level": "intermediate",
+      "module": "Real-time Design",
+      "tags": [
+        "websockets",
+        "presence",
+        "heartbeat",
+        "ttl"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-036",
+      "question": "How do rooms, channels and subscriptions work?",
+      "answer": "**Short answer:** A channel (or room) is a named group. The server keeps a map from channel name to the set of connections subscribed. A publish to the channel loops over that set. Across several servers, each server subscribes to the channel on the backplane only while it has local members.\n\n```js\n// In-memory registry (sketch, one process)\nconst rooms = new Map();                       // channel -> Set of connections\n\nfunction join(conn, channel) {\n  if (!rooms.has(channel)) rooms.set(channel, new Set());\n  rooms.get(channel).add(conn);\n  conn.channels.add(channel);                  // so we can clean up on close\n}\nfunction leave(conn, channel) {\n  const set = rooms.get(channel);\n  set?.delete(conn);\n  if (set && set.size === 0) rooms.delete(channel);   // free memory, unsubscribe backplane\n}\nfunction onClose(conn) { for (const ch of conn.channels) leave(conn, ch); }\n```\n\nDesign decisions:\n- **Naming.** Use a clear scheme: `tenant:<id>:order:<id>`, `user:<id>`. Easy to authorise, easy to shard.\n- **Who decides subscriptions?** Server-driven (the server subscribes you to `user:<id>`) is safest. Client-driven needs a permission check.\n- **Limits.** A maximum number of channels per connection, and a maximum channel name length.\n- **Cleanup.** Always remove the connection from all sets on close. Forgotten entries are a classic memory leak.\n- **Wildcards.** `orders.*` patterns are useful but expensive to match at scale. Avoid them on hot paths.\n\n| Scope | Where the map lives | Note |\n| --- | --- | --- |\n| One process | A Map in memory | Fast, simplest |\n| Many gateways | Local map plus backplane subscription | Standard pattern |\n| Huge rooms | Sharded channels, such as `room:42:shard:3` | Spread fan-out |\n\nSubscription management also means keeping the client's view in sync. On reconnect the client sends its list of channels (or the server restores it from the session), and the replay logic from the resume question applies per channel.\n\n**Gotcha:** Per-connection subscription state is lost when a pod dies. The client must resubscribe after every reconnect.\n\n**Interview tip:** Say you track \"channel to connections\" and \"connection to channels\" together, so both publish and cleanup are fast.",
+      "level": "intermediate",
+      "module": "Server Implementation",
+      "tags": [
+        "websockets",
+        "rooms",
+        "pub-sub",
+        "subscriptions"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-037",
+      "question": "How do you broadcast efficiently to many connections?",
+      "answer": "**Short answer:** Serialise the message once, send the same bytes to every subscriber, write without waiting for each client, and use per-connection queues so slow clients do not block the loop. For very large rooms, shard the fan-out across workers or servers.\n\nCommon waste in a broadcast loop:\n- Calling `JSON.stringify` for every client. Do it once.\n- Awaiting each send in sequence. One slow client delays everyone.\n- Copying the payload per client. Share the buffer.\n- Sending tiny messages individually. Batch updates in a short window.\n\n```js\n// Node (sketch): encode once, send to all open sockets\nfunction broadcast(clients, event) {\n  const payload = JSON.stringify(event);            // 1. one encode\n  for (const ws of clients) {\n    if (ws.readyState !== 1) continue;              // 2. skip closed sockets\n    if (ws.bufferedAmount > 1_000_000) { ws.terminate(); continue; }   // 3. protect memory\n    ws.send(payload);                               // 4. no await, same string\n  }\n}\n```\n\nOther techniques:\n\n| Technique | What it does | When |\n| --- | --- | --- |\n| Batching | Combine events in 20 to 100 ms windows | High-rate updates (cursors, prices) |\n| Conflation | Keep only the latest value per key | State feeds |\n| Delta updates | Send changes, not full objects | Big objects |\n| Compression | Compress once for all (see permessage-deflate trade-offs) | Large text |\n| Sharding | Several workers each own part of the room | Rooms with 100,000 or more members |\n| Per-user views | Group users by what they may see, encode once per group | Mixed permissions |\n\nIn Go, give every connection a buffered channel and one writer goroutine. The broadcast loop does a non-blocking send (`select` with `default`) and treats a full channel as a slow consumer.\n\nKeep your main loop short. In Node, a 50 ms broadcast loop blocks the event loop for 50 ms and delays heartbeats. Chunk very large loops with `setImmediate`.\n\n**Gotcha:** Per-client personalised encoding is the hidden cost. If every client needs a different message, fan-out is CPU, not network.\n\n**Interview tip:** Quote the order: encode once, never block on one client, bound the queue, batch, shard.",
+      "level": "intermediate",
+      "module": "Server Implementation",
+      "tags": [
+        "websockets",
+        "broadcast",
+        "fan-out",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-038",
+      "question": "How do you build a WebSocket server in Node.js with the `ws` library?",
+      "answer": "**Short answer:** Create an HTTP server, handle its `upgrade` event yourself (so you can authenticate and check Origin before accepting), and pass accepted requests to a `WebSocketServer` created with `noServer: true`. Then handle `connection`, `message`, `close` and `error` on each socket, plus a ping interval.\n\nThis is read-only code for the `ws` package, which was not installed here. I did test the underlying handshake and frame behaviour with a hand-written server using only `http` and `crypto`.\n\n```js\nimport http from 'node:http';\nimport { WebSocketServer } from 'ws';\n\nconst server = http.createServer();\nconst wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });  // 64 KB limit\n\nserver.on('upgrade', async (req, socket, head) => {\n  const user = await checkTicketAndOrigin(req);          // your auth and Origin check\n  if (!user) { socket.write('HTTP/1.1 401 Unauthorized\\r\\n\\r\\n'); return socket.destroy(); }\n  wss.handleUpgrade(req, socket, head, (ws) => {\n    ws.user = user; ws.isAlive = true;\n    wss.emit('connection', ws, req);\n  });\n});\n\nwss.on('connection', (ws) => {\n  ws.on('pong', () => { ws.isAlive = true; });\n  ws.on('message', (data, isBinary) => {\n    let msg;\n    try { msg = JSON.parse(data.toString()); } catch { return ws.close(1003, 'bad json'); }\n    // validate msg.type, check permissions, then handle\n  });\n  ws.on('error', (err) => console.error('socket error', err.code));\n  ws.on('close', () => cleanup(ws));\n});\n\nsetInterval(() => wss.clients.forEach((ws) => {\n  if (!ws.isAlive) return ws.terminate();\n  ws.isAlive = false; ws.ping();\n}), 30000);\nserver.listen(8080);\n```\n\nKey points:\n- `noServer` plus `handleUpgrade` lets you reject before the upgrade, with a real HTTP status code.\n- Set `maxPayload`. Without a sensible limit, one client can send huge messages.\n- Handle `error` on every socket, or an unhandled `error` event can crash the process.\n- Keep the message handler fast. Heavy CPU work blocks the single event loop, and that delays pings and every other user.\n- `message` data is a `Buffer` (`isBinary` tells you the frame type).\n- By default, `ws` does not enable permessage-deflate on the server, which is a safe default for memory.\n\n**Gotcha:** `ws.send()` when the socket is not open throws or calls back with an error. Check `readyState`, or pass a callback.\n\n**Interview tip:** Mention the upgrade handler first. It shows you know where authentication and Origin checks belong.",
+      "level": "intermediate",
+      "module": "Server Implementation",
+      "tags": [
+        "websockets",
+        "nodejs",
+        "ws"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-039",
+      "question": "How do you structure a WebSocket server in Go?",
+      "answer": "**Short answer:** Use one goroutine to read and one to write per connection (read pump and write pump). The write pump owns all writes and gets messages from a buffered channel. This respects the rule that most libraries allow only one concurrent writer and one concurrent reader per connection.\n\nThis is read-only code for `github.com/gorilla/websocket`, which is not installed here. The `coder/websocket` library (formerly nhooyr) is another good choice, and it allows concurrent writes.\n\n```go\npackage main\n\nimport (\n\t\"net/http\"\n\t\"time\"\n\n\t\"github.com/gorilla/websocket\"\n)\n\nconst (\n\twriteWait  = 10 * time.Second\n\tpongWait   = 60 * time.Second\n\tpingPeriod = pongWait * 9 / 10\n)\n\ntype Client struct {\n\tconn *websocket.Conn\n\tsend chan []byte // bounded: a full channel means a slow consumer\n}\n\nvar upgrader = websocket.Upgrader{\n\tReadBufferSize: 1024, WriteBufferSize: 1024,\n\tCheckOrigin: func(r *http.Request) bool { return r.Header.Get(\"Origin\") == \"https://app.example.com\" },\n}\n\nfunc (c *Client) readPump() {\n\tdefer c.conn.Close()\n\tc.conn.SetReadLimit(64 * 1024)\n\tc.conn.SetReadDeadline(time.Now().Add(pongWait))\n\tc.conn.SetPongHandler(func(string) error {\n\t\treturn c.conn.SetReadDeadline(time.Now().Add(pongWait)) // alive: extend deadline\n\t})\n\tfor {\n\t\t_, msg, err := c.conn.ReadMessage()\n\t\tif err != nil {\n\t\t\treturn // close or timeout: let defer clean up\n\t\t}\n\t\t_ = msg // validate, authorise, handle\n\t}\n}\n\nfunc (c *Client) writePump() {\n\tticker := time.NewTicker(pingPeriod)\n\tdefer func() { ticker.Stop(); c.conn.Close() }()\n\tfor {\n\t\tselect {\n\t\tcase msg, ok := <-c.send:\n\t\t\tc.conn.SetWriteDeadline(time.Now().Add(writeWait))\n\t\t\tif !ok {\n\t\t\t\tc.conn.WriteMessage(websocket.CloseMessage, nil)\n\t\t\t\treturn\n\t\t\t}\n\t\t\tif err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {\n\t\t\t\treturn\n\t\t\t}\n\t\tcase <-ticker.C:\n\t\t\tc.conn.SetWriteDeadline(time.Now().Add(writeWait))\n\t\t\tif err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {\n\t\t\t\treturn\n\t\t\t}\n\t\t}\n\t}\n}\n\nfunc serveWS(w http.ResponseWriter, r *http.Request) {\n\tconn, err := upgrader.Upgrade(w, r, nil)\n\tif err != nil {\n\t\treturn // Upgrade already wrote an HTTP error\n\t}\n\tc := &Client{conn: conn, send: make(chan []byte, 256)}\n\tgo c.writePump()\n\tc.readPump() // runs in this goroutine, blocks until the connection ends\n}\n```\n\nWhy this shape:\n- **Single writer.** Only `writePump` writes, so there are no concurrent write panics. Other code puts messages on `send`.\n- **Read deadline plus pong handler** detects dead peers. The ping period must be shorter than the pong wait.\n- **Bounded channel.** Broadcast code does `select { case c.send <- m: default: close(c.send) }` to drop slow clients.\n- **Cleanup.** When either pump ends, close the connection and remove the client from rooms.\n- For shutdown, pass a `context` and close connections with code 1001 when it is cancelled.\n\n**Gotcha:** The default `CheckOrigin` in gorilla rejects cross-origin requests only when an Origin header differs from the host. Write your own allow-list for production.\n\n**Interview tip:** The phrase \"one reader, one writer, bounded channel\" shows you know the concurrency rule.",
+      "level": "intermediate",
+      "module": "Server Implementation",
+      "tags": [
+        "websockets",
+        "golang",
+        "concurrency",
+        "goroutines"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-040",
+      "question": "How do you write a robust `useWebSocket` hook in React?",
+      "answer": "**Short answer:** Open the socket in `useEffect`, close it in the cleanup function, keep the socket in a ref, store received data in state, and keep callbacks fresh without reconnecting. In React 18 development, StrictMode mounts the component twice, so the cleanup must be correct or you will see two connections.\n\nThis is browser code and is read-only here.\n\n```tsx\nimport { useEffect, useRef, useState, useCallback } from 'react';\n\nexport function useWebSocket(url: string, onMessage: (data: unknown) => void) {\n  const wsRef = useRef<WebSocket | null>(null);\n  const handlerRef = useRef(onMessage);\n  const [status, setStatus] = useState<'connecting' | 'open' | 'closed'>('connecting');\n\n  useEffect(() => { handlerRef.current = onMessage; }, [onMessage]); // always the latest handler\n\n  useEffect(() => {\n    let closedByUs = false;\n    let attempt = 0;\n    let timer: ReturnType<typeof setTimeout>;\n\n    const connect = () => {\n      const ws = new WebSocket(url);\n      wsRef.current = ws;\n      ws.onopen = () => { attempt = 0; setStatus('open'); };\n      ws.onmessage = (e) => handlerRef.current(JSON.parse(e.data));\n      ws.onclose = () => {\n        setStatus('closed');\n        if (closedByUs) return;                       // do not reconnect after cleanup\n        const wait = Math.random() * Math.min(30000, 500 * 2 ** attempt++);\n        timer = setTimeout(connect, wait);\n      };\n    };\n    connect();\n\n    return () => { closedByUs = true; clearTimeout(timer); wsRef.current?.close(1000); };\n  }, [url]);\n\n  const send = useCallback((msg: unknown) => {\n    if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify(msg));\n  }, []);\n\n  return { status, send };\n}\n```\n\nWhat the code handles:\n- **Cleanup.** The flag stops reconnecting after unmount, and the timer is cleared.\n- **StrictMode.** In development React mounts, unmounts and mounts again. The first socket is closed by cleanup, so only one stays. Seeing one extra connect and close in dev is normal, not a bug.\n- **Stale closure.** If `onMessage` were used directly inside `onmessage`, it would capture old state. The handler ref always points at the latest function.\n- **State versus refs.** The socket and attempt counter are refs or locals, because changing them must not re-render. Only `status` and the data you show go in state.\n- **Dependency on `url`.** A changing url (for example a new ticket each time) reconnects. Get the ticket inside `connect`, not in the url prop, if you want stable connections.\n\n**Common mistakes**\n- Opening the socket in the component body (a new socket on every render).\n- Creating a socket per component instead of one shared connection through a context or a store.\n\n**Interview tip:** For a bigger app I would create one connection in a provider and let components subscribe to channels, not open a socket per component.",
+      "level": "intermediate",
+      "module": "Client Patterns",
+      "tags": [
+        "react",
+        "hooks",
+        "websockets",
+        "strict-mode"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-041",
+      "question": "How do you combine WebSocket updates with React Query, Redux or other client state?",
+      "answer": "**Short answer:** Treat the socket as an event source that updates the same cache your screens already read. With React Query, either patch the cached data with `setQueryData` or call `invalidateQueries` to refetch. Keep one place that maps socket events to cache updates.\n\nTwo common ways:\n\n| Approach | How | Use when |\n| --- | --- | --- |\n| Patch the cache | `queryClient.setQueryData(key, updater)` with the event | Small, frequent events where you know the shape |\n| Invalidate and refetch | `queryClient.invalidateQueries({ queryKey })` | Complex data, low event rate, simplicity |\n\n```tsx\n// One subscriber, mounted once near the app root (browser code, read-only)\nfunction useOrderEvents(client: QueryClient) {\n  useWebSocket('/ws', (msg: any) => {\n    switch (msg.type) {\n      case 'order.updated':\n        client.setQueryData(['orders', msg.order.id], msg.order);         // patch one item\n        client.invalidateQueries({ queryKey: ['orders', 'list'] });       // refetch the list\n        break;\n      case 'order.deleted':\n        client.removeQueries({ queryKey: ['orders', msg.id] });\n        break;\n    }\n  });\n}\n```\n\nWhy this works well: components keep using `useQuery`, and they re-render when the cache changes. There is no second source of truth. HTTP stays the way to load data, the socket only keeps it fresh. If the socket is down, polling (`refetchInterval`) or refetch-on-reconnect brings the cache up to date.\n\nTips:\n- On reconnect, invalidate the queries that might have missed events, or use the sequence number to decide.\n- With Redux or Zustand, dispatch actions from the socket handler, the same single-subscriber idea.\n- Throttle state updates when events come very fast (for example batch within `requestAnimationFrame`), to avoid re-render storms.\n- Keep message handling out of components. A plain module with `handleEvent(msg)` is easy to unit test.\n- Be careful with optimistic updates: reconcile them with the echo from the server using the client message id.\n\n**Gotcha:** Patching the cache from a stale event can overwrite newer data. Compare `version` or `seq` before writing.\n\n**Interview tip:** Say \"the socket does not replace the data layer, it feeds it\". Interviewers like that separation.",
+      "level": "intermediate",
+      "module": "Client Patterns",
+      "tags": [
+        "react",
+        "react-query",
+        "state",
+        "websockets"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-042",
+      "question": "What are the details and limits of implementing SSE?",
+      "answer": "**Short answer:** An SSE endpoint sets `Content-Type: text/event-stream`, disables caching and buffering, writes `data:` lines followed by a blank line, and sends a comment or event regularly to keep the connection alive. Its limits are text only, one direction, and per-browser connection limits on HTTP/1.1.\n\nServer in Node, tested locally with a built-in client:\n\n```js\nimport http from 'node:http';\n\nhttp.createServer((req, res) => {\n  res.writeHead(200, {\n    'Content-Type': 'text/event-stream',\n    'Cache-Control': 'no-cache',\n    'X-Accel-Buffering': 'no',            // ask NGINX not to buffer this response\n  });\n  let id = Number(req.headers['last-event-id'] ?? 0);   // resume point after reconnect\n  res.write('retry: 3000\\n\\n');                          // reconnect delay in ms\n  const timer = setInterval(() => {\n    id += 1;\n    res.write(`id: ${id}\\nevent: tick\\ndata: {\"n\":${id}}\\n\\n`);\n  }, 1000);\n  const beat = setInterval(() => res.write(': keep-alive\\n\\n'), 15000);\n  req.on('close', () => { clearInterval(timer); clearInterval(beat); });   // always clean up\n}).listen(8080, '127.0.0.1');\n```\n\nMy local run with `Last-Event-ID: 3` returned events 4, 5, 6 with `content-type text/event-stream`, as expected.\n\nLimits and details:\n- **Six connections per host on HTTP/1.1.** Browsers share a small pool per domain, so several tabs with SSE can starve normal requests. HTTP/2 multiplexes streams, and the default limit is about 100 concurrent streams.\n- **No binary.** Only UTF-8 text. Use base64 or WebSockets.\n- **No custom headers with `EventSource`.** Use cookies, or a fetch-based client library for tokens.\n- **Auto reconnect and `Last-Event-ID`** are built in, but your server must support the replay.\n- **Proxies.** Buffering, compression and idle timeouts break streams. Set `proxy_buffering off`, and a read timeout above your keep-alive comment period.\n- **One request per stream, not per tab** if you can share it between tabs (a SharedWorker or BroadcastChannel leader).\n\n**Gotcha:** Not cleaning up on `req.on('close')` leaves timers running for dead clients. That is a memory and CPU leak.\n\n**Interview tip:** Say \"SSE over HTTP/2 removes the six-connection problem\" to show you know the limit and its fix.",
+      "level": "intermediate",
+      "module": "SSE & Alternatives",
+      "tags": [
+        "sse",
+        "http",
+        "limits",
+        "proxies"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-043",
+      "question": "Can WebSockets run over HTTP/2 and HTTP/3?",
+      "answer": "**Short answer:** Yes, in concept. RFC 8441 defines WebSockets over HTTP/2 using an extended CONNECT request, and RFC 9220 does the same for HTTP/3. One WebSocket then becomes one stream on a shared connection, instead of its own TCP connection. Support depends on browser, server and proxy, so many systems still use HTTP/1.1 upgrade.\n\nHow it differs from the classic way:\n\n| Point | HTTP/1.1 upgrade | Over HTTP/2 or HTTP/3 |\n| --- | --- | --- |\n| Handshake | `GET` with `Upgrade: websocket`, answer `101` | `CONNECT` with `:protocol = websocket`, answer `200` |\n| Connection | One TCP connection per WebSocket | A stream inside a shared connection |\n| Many sockets to one host | Many TCP connections | One connection, many streams |\n| Head-of-line blocking | TCP level, per socket | HTTP/2: TCP level shared. HTTP/3: per stream, no shared TCP blocking |\n| Frames | Same WebSocket frames | Same WebSocket frames |\n\nBenefits: fewer connections to one host (good for tabs and proxies), and with HTTP/3 a lost packet does not stall every stream.\n\nPractical points:\n- The server must advertise support (the setting `SETTINGS_ENABLE_CONNECT_PROTOCOL` in HTTP/2).\n- Your application code usually does not change. The library or proxy hides the difference.\n- Many load balancers still downgrade WebSocket traffic to HTTP/1.1 to the upstream, and that works fine.\n- The browser chooses the protocol. A browser may use HTTP/2 WebSockets only where it is supported by the browser and server. Check the current support tables before relying on it.\n- WebTransport is the newer option designed for HTTP/3, with streams and unreliable datagrams, but it is not a drop-in replacement.\n\nBecause the exact support differs by version, I treat this as \"know it exists and what it solves\". In production most teams use HTTP/1.1 upgrade today and test the rest in staging.\n\n**Gotcha:** Putting a proxy in front that speaks HTTP/2 to the browser and HTTP/1.1 to your app is normal. Make sure it translates the upgrade correctly, or WebSocket connections fail only for some clients.\n\n**Interview tip:** Name both RFC numbers (8441 and 9220) only if asked. The key idea is multiplexing many sockets on one connection.",
+      "level": "intermediate",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "http2",
+        "http3",
+        "protocol"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-044",
+      "question": "When should you use permessage-deflate compression?",
+      "answer": "**Short answer:** permessage-deflate (RFC 7692) compresses each message with zlib, negotiated in the handshake. It saves bandwidth on large text messages such as JSON, but costs CPU and memory per connection, so it is usually a poor trade for many small messages or for servers with many connections.\n\nHow it is negotiated:\n\n```text\nClient: Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\nServer: Sec-WebSocket-Extensions: permessage-deflate\n```\n\nEach connection then keeps a compression state. With \"context takeover\" the compressor remembers earlier messages and compresses repeated text better, but uses more memory. Without it (`no_context_takeover`), each message is compressed alone.\n\n| Factor | Compression helps | Compression hurts |\n| --- | --- | --- |\n| Message size | Large JSON (several KB or more) | Tiny messages (under about 200 bytes) |\n| Data | Repetitive text | Already compressed data (images, protobuf) |\n| Connections | A few thousand | Hundreds of thousands (memory) |\n| CPU | Spare CPU | Busy gateways, TLS heavy |\n| Network | Metered or slow mobile links | Fast internal links |\n\nOther points:\n- **Security.** Compression plus secrets in the same stream can leak information (CRIME and BREACH style attacks). Do not mix attacker-controlled text with secrets in compressed messages.\n- **Library defaults.** The Node `ws` library does not enable it by default on the server, and its docs warn about memory use and fragmentation. Browsers usually offer it.\n- **Alternatives.** Send smaller messages first: deltas instead of full objects, short field names agreed in a schema, or binary formats like protobuf. These often beat compression and cost less.\n- **Broadcast.** If many clients receive the same message, compressing once and sharing the compressed bytes is only possible if all settings match. Per-connection compression repeats the work for each client.\n\n**Interview tip:** Say you would measure bytes and CPU with and without it in a load test, and that deltas and binary encoding are usually the first fix.",
+      "level": "intermediate",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "compression",
+        "performance",
+        "memory"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-045",
+      "question": "How do you handle large payloads and chunking over WebSockets?",
+      "answer": "**Short answer:** Avoid large payloads on WebSockets. Send a small message with a reference, and move the bulk data over HTTP, where range requests, caching, resumable uploads and CDNs exist. If you must stream big data, split it into chunks with ids and sizes, and watch backpressure.\n\nWhy large messages hurt:\n- One big message blocks that connection's queue. Pings and other messages wait behind it (head-of-line blocking within the socket).\n- Servers must buffer the whole message before delivering it (libraries allow a `maxPayload`). Big messages raise memory use and close code 1009 appears when the limit is exceeded.\n- Retries and resume are not built in. A failed 50 MB message starts over.\n- Compression and parsing time grow.\n\nBetter patterns:\n1. **Reference pattern.** Send `{type:\"report.ready\", url:\"/reports/42\"}`. The client fetches the file by HTTP, with auth and caching.\n2. **Presigned upload.** The client uploads straight to object storage, then sends a small \"upload done\" message.\n3. **Chunking.** For binary streaming, use frames of 16 to 64 KB with a header:\n\n```ts\ntype Chunk = { id: string; index: number; total: number; bytes: ArrayBuffer };\n// Sender: send a chunk only when socket.bufferedAmount is small\nasync function sendChunks(ws: WebSocket, id: string, data: Uint8Array, size = 32 * 1024) {\n  const total = Math.ceil(data.length / size);\n  for (let i = 0; i < total; i++) {\n    while (ws.bufferedAmount > 256 * 1024) await new Promise((r) => setTimeout(r, 20)); // backpressure\n    ws.send(encodeChunk(id, i, total, data.subarray(i * size, (i + 1) * size)));\n  }\n}\n```\n\nThe receiver collects chunks by `id`, checks `index`, discards after a timeout, and verifies a checksum. Limit the number of unfinished transfers per connection.\n\nWebSocket fragmentation (continuation frames) is a protocol feature and invisible to your code. Application chunking is a separate layer that you control and can resume.\n\n**Interview tip:** The shortest good answer: \"Keep sockets for small, frequent messages and use HTTP for big files\".",
+      "level": "intermediate",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "large-messages",
+        "chunking",
+        "uploads"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-046",
+      "question": "How do you design binary protocols and evolve their schema safely?",
+      "answer": "**Short answer:** Pick a format with explicit field identity, such as Protocol Buffers, and follow the compatibility rules: only add optional fields, never reuse or change field numbers, and ignore unknown fields. Negotiate the protocol version in the handshake, and support old and new clients together during a rollout.\n\nWhy this matters more for sockets than for REST: clients stay connected for hours and update later. After a deploy, the server meets old clients that still send the old format. Mobile apps and embedded devices (an aircraft unit) can lag by months.\n\nSafe evolution rules (Protobuf):\n\n```proto\nmessage OrderUpdated {\n  string order_id = 1;\n  string status = 2;\n  reserved 3;                     // field 3 was removed: never reuse the number\n  reserved \"legacy_flag\";\n  int64 updated_at_ms = 4;        // new optional field: old clients ignore it\n}\n```\n\n| Change | Safe? |\n| --- | --- |\n| Add a field with a new number | Yes |\n| Remove a field | Yes, if you reserve its number and name |\n| Rename a field | Yes on the wire (names are not sent), but breaks JSON mapping |\n| Change a field type | Usually no |\n| Reuse a number | No, never |\n| Make a field required | Avoid `required` (removed in proto3) |\n\nProcess and practice:\n- Put the version in the subprotocol (`orders.v2`), and keep v1 until usage drops to zero. Measure the share of clients on each version.\n- Use an **envelope** with `type` and `version`, then a payload. Unknown types are logged and ignored, not fatal.\n- Keep one schema repository, and run a compatibility check (such as `buf breaking`) in CI.\n- Generate TypeScript and Go code from the same `.proto`, so the React app and the Go service always agree.\n- For JSON, apply the same rules: add fields, ignore unknown ones, never change meaning.\n- Include a way to force upgrade: a close code like 4426 (\"upgrade required\") that the client shows as a prompt.\n\n**Gotcha:** A hand-made binary layout with fixed byte offsets is compact but very hard to evolve. Use it only when profiling proves you need it.\n\n**Interview tip:** Mention \"reserved\" and \"unknown fields are ignored\". Those two words show real experience.",
+      "level": "intermediate",
+      "module": "WebSocket Protocol",
+      "tags": [
+        "websockets",
+        "protobuf",
+        "schema-evolution",
+        "versioning"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-047",
+      "question": "How do GraphQL subscriptions and gRPC streaming compare with plain WebSockets?",
+      "answer": "**Short answer:** GraphQL subscriptions let a client subscribe to events using a GraphQL query, usually delivered over WebSockets with the `graphql-transport-ws` protocol. gRPC streaming gives typed streams between services over HTTP/2. Plain WebSockets give a raw channel where you define everything.\n\n| Point | Plain WebSocket | GraphQL subscription | gRPC streaming |\n| --- | --- | --- | --- |\n| Contract | Your own messages | GraphQL schema | `.proto` service |\n| Client chooses fields | No | Yes | No (fixed messages) |\n| Transport | WebSocket | Usually WebSocket (SSE is also possible) | HTTP/2 |\n| Browser | Native | Native via WebSocket | Needs gRPC-Web and a proxy, no bidirectional |\n| Reconnect, resume | You build | Client library reconnects, you resume | You build (deadlines and cancel exist) |\n| Best for | Chat, custom protocols | UI that already uses GraphQL | Service to service, devices |\n\nGraphQL subscriptions:\n- The client sends `subscription { orderUpdated(id: \"42\") { id status } }`, and the server pushes results for each event.\n- Good fit if your front end already uses GraphQL and you want one schema for queries, mutations and live updates.\n- Costs: you still run long-lived connections, and filtering and authorisation per subscription must be designed. Each subscription runs resolvers per event, which can be expensive at large fan-out.\n- Subscriptions need a pub/sub backend to work across servers, just like WebSockets.\n\ngRPC streaming:\n- Four kinds: unary, server stream, client stream, bidirectional stream.\n- In Go it is a natural way to stream telemetry between services, with deadlines, cancellation, metadata and status codes.\n- Balance it at layer 7 (Envoy or a service mesh), or all streams of one client pin to one pod.\n\nMy rule: browser to gateway uses WebSockets or SSE (or GraphQL subscriptions if the stack is GraphQL). Service to service uses gRPC streams or a broker. Devices on weak links use MQTT.\n\n**Interview tip:** Say \"GraphQL subscriptions are a query language on top of the same transport problems, they do not remove them\".",
+      "level": "intermediate",
+      "module": "Real-time Basics",
+      "tags": [
+        "graphql",
+        "grpc",
+        "subscriptions",
+        "websockets"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-048",
+      "question": "How do you configure NGINX, Envoy and ingress for WebSocket upgrades and timeouts?",
+      "answer": "**Short answer:** Each proxy must forward the `Upgrade` and `Connection` headers, use HTTP/1.1 to the upstream where needed, and have idle and stream timeouts longer than your heartbeat. Configure a timeout per route for WebSocket paths instead of raising it for everything.\n\nNGINX (the key lines):\n\n```nginx\nlocation /ws {\n    proxy_pass http://gateway;\n    proxy_http_version 1.1;\n    proxy_set_header Upgrade $http_upgrade;\n    proxy_set_header Connection \"upgrade\";\n    proxy_read_timeout 3600s;\n    proxy_buffering off;\n}\n```\n\nEnvoy (HTTP connection manager and route):\n\n```yaml\nhttp_filters:\n  - name: envoy.filters.http.router\n    typed_config:\n      \"@type\": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router\nupgrade_configs:\n  - upgrade_type: websocket          # allow the upgrade on this listener\nroute_config:\n  virtual_hosts:\n    - name: app\n      domains: [\"*\"]\n      routes:\n        - match: { prefix: \"/ws\" }\n          route:\n            cluster: gateway\n            timeout: 0s              # disable the route timeout for long-lived streams\n            idle_timeout: 3600s      # close if nothing flows for an hour\n```\n\nKubernetes ingress (community NGINX controller annotations, read-only; verify for your version, and note the project's announced retirement):\n\n```yaml\nmetadata:\n  annotations:\n    nginx.ingress.kubernetes.io/proxy-read-timeout: \"3600\"\n    nginx.ingress.kubernetes.io/proxy-send-timeout: \"3600\"\n```\n\n| Concern | Setting to look for |\n| --- | --- |\n| Upgrade headers | `Upgrade` and `Connection` forwarded, `upgrade_configs` in Envoy |\n| Idle timeout | `proxy_read_timeout`, Envoy `idle_timeout`, cloud gateway idle setting |\n| Max connection age | CDN, gateway or mesh limits |\n| Retries | Disable for upgrade routes |\n| Buffering | Off for streams and SSE |\n| Request size | Large frames need enough header and body limits |\n\nAfter configuring, test it: connect, stay silent for longer than the timeout, and confirm the connection survives (with your heartbeat running). Also test through the real public path, including the CDN or WAF, not only inside the cluster.\n\n**Gotcha:** The default Envoy route timeout (15 seconds) can close WebSocket connections that stay open without finishing a \"request\". Set it explicitly for those routes.\n\n**Interview tip:** Say you keep a table of every hop and its timeout. It is the quickest answer to \"why do connections drop at exactly N seconds\".",
+      "level": "intermediate",
+      "module": "Scaling & Operations",
+      "tags": [
+        "nginx",
+        "envoy",
+        "ingress",
+        "configuration"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-049",
+      "question": "What Kubernetes settings matter for WebSocket workloads?",
+      "answer": "**Short answer:** Four things: readiness probes that reflect real capacity, a `preStop` hook and a long `terminationGracePeriodSeconds` for draining, session affinity only when the transport needs it, and resource limits sized for connection memory. Add a PodDisruptionBudget so node upgrades do not evict everything at once.\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ws-gateway\nspec:\n  replicas: 6\n  strategy:\n    rollingUpdate: { maxUnavailable: 0, maxSurge: 25% }\n  template:\n    spec:\n      terminationGracePeriodSeconds: 120\n      containers:\n        - name: gateway\n          image: registry.example.com/ws-gateway:1.4.0\n          ports: [{ containerPort: 8080 }]\n          readinessProbe:\n            httpGet: { path: /ready, port: 8080 }   # fails when draining or over the connection cap\n            periodSeconds: 5\n          lifecycle:\n            preStop:\n              exec: { command: [\"sleep\", \"5\"] }    # let endpoint removal propagate\n          resources:\n            requests: { cpu: \"500m\", memory: \"1Gi\" }\n            limits: { memory: \"2Gi\" }\n---\napiVersion: policy/v1\nkind: PodDisruptionBudget\nmetadata:\n  name: ws-gateway\nspec:\n  minAvailable: 80%\n  selector:\n    matchLabels: { app: ws-gateway }\n```\n\n| Setting | Why it matters here |\n| --- | --- |\n| Readiness | Fail when draining or at the connection cap, so new sockets go elsewhere |\n| Liveness | Keep it light. Do not kill a busy pod only because the event loop is slow |\n| `preStop` and grace period | Give time to send close frames and let clients reconnect with jitter |\n| Session affinity | Needed only for Socket.IO polling or similar. `sessionAffinity: ClientIP` on the Service, or cookie affinity at the ingress |\n| HPA | Scale on connections or memory, not only CPU. Scale up early, scale down slowly |\n| Memory limit | Include queue buffers, and set a connection cap below the limit |\n| Anti-affinity or topology spread | Spread pods over nodes and zones so one failure drops fewer sockets |\n| `ulimit` / file descriptors | Container default is usually enough, but check at high connection counts |\n\nScale-down is where WebSocket systems hurt. When the HPA removes a pod, all its clients must reconnect. Use a long stabilisation window for scale-down, and drain, so the shrink is gradual.\n\n**Gotcha:** `ClientIP` affinity breaks down behind NAT or a proxy that hides the client address, and it spreads load unevenly.\n\n**Interview tip:** Mention \"readiness is how you shed load\": at the connection cap, a pod marks itself unready for new traffic but keeps serving existing sockets.",
+      "level": "intermediate",
+      "module": "Scaling & Operations",
+      "tags": [
+        "kubernetes",
+        "readiness",
+        "graceful-shutdown",
+        "affinity"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-050",
+      "question": "How would you design a presence service for millions of users?",
+      "answer": "**Short answer:** Presence is a large set of leases. Each gateway reports its connected users to a fast store with a short TTL, a presence service answers \"is user X online\" from that store, and changes are published to interested subscribers only. The design goal is to limit write amplification, because heartbeats times users is a huge number.\n\n```mermaid\nflowchart LR\n    G[\"Gateways\"] -- \"batched heartbeats\" --> R[(\"Redis with TTL keys\")]\n    G -- \"change events\" --> B[\"Event bus\"]\n    B --> P[\"Presence service\"]\n    P --> R\n    Q[\"Clients ask who is online\"] --> P\n```\n\nCore design:\n- **State.** `presence:{user}` holds a set of connection ids with a TTL of about 2 to 3 times the heartbeat interval.\n- **Heartbeat cost.** One million users with a 30 second refresh is about 33,000 writes per second. Gateways batch refreshes in a pipeline, one call per few hundred users. Shard the store by user id.\n- **Status changes.** Publish only transitions (offline to online, online to offline), debounced by a few seconds so quick reconnects do not flicker.\n- **Who needs to know?** Do not broadcast to everyone. Subscribers are the user's contacts who are online now, or clients viewing a list. Use subscription on `presence:user:{id}` only for visible users, and fetch the batch state for a page.\n- **Multi-device.** A user is online while any connection exists. Keep per-device entries.\n- **Gateway crash.** Keys expire after the TTL. A crashed gateway's users go offline within about one TTL. To speed it up, keep a per-gateway lease and remove all users of an expired gateway.\n- **Last seen.** Write it to the database on the offline transition only, not on every heartbeat.\n\n| Design choice | Option A | Option B |\n| --- | --- | --- |\n| Accuracy | Short TTL (more writes, quick detection) | Long TTL (fewer writes, slower) |\n| Fan-out | Push to all contacts (expensive) | Pull on demand, push for visible only |\n| Consistency | Single region store | Per-region store, accept stale cross-region state |\n\nTrade-off to say out loud: presence does not need to be exact. Seconds of delay are fine, and stale state is better than a store melting under writes.\n\n**Gotcha:** Showing presence for huge groups (10,000 members) is rarely useful. Show a count, or only the first few online users.\n\n**Interview tip:** Open with \"presence is a lease with a TTL\", then talk about batching and who gets notified. That structure covers the scoring points.",
+      "level": "advanced",
+      "module": "Real-time Design",
+      "tags": [
+        "presence",
+        "design",
+        "redis",
+        "scaling"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-051",
+      "question": "How would you design chat with history, read receipts and offline delivery?",
+      "answer": "**Short answer:** Make the database the source of truth and the socket a fast path. A message is accepted, stored with a per-conversation sequence number, then fanned out to online members over WebSockets. Offline users get it from history when they return, plus a push notification. Read receipts are small position updates per user per conversation, not per message.\n\n```mermaid\nsequenceDiagram\n    participant A as Sender\n    participant G as Gateway\n    participant DB as Message store\n    participant B as Recipient\n    A->>G: send m1 with client id\n    G->>DB: insert, assign seq 18\n    G-->>A: ack m1 seq 18\n    G-->>B: message seq 18 if online\n    B->>G: read up to 18\n    G->>DB: update read position\n```\n\nKey decisions:\n- **Identifiers.** The client creates a message id for de-duplication on retry. The server assigns `seq` per conversation, which orders messages and drives resume.\n- **Ordering.** One writer per conversation: partition by conversation id so inserts are serialised.\n- **Storage.** A table keyed by `(conversation_id, seq)`, queried by range for pagination (`seq < cursor LIMIT 50`). Cassandra-style or SQL both work; choose what your team operates.\n- **Offline delivery.** On connect, the client sends `lastSeq` per conversation (or a global cursor) and fetches missing messages by HTTP. Send a mobile push notification (APNs or FCM) for users with no live connection, with a minimal payload.\n- **Read receipts.** Store `last_read_seq` per `(user, conversation)`. Send a receipt event at most every second or two. \"Delivered\" is when the client acked the seq, \"read\" is when the user viewed it. Do not store one row per message per reader in large groups.\n- **Group size.** Small groups: push every event. Huge channels: send a \"new messages\" hint and let the client fetch.\n- **Unread counts.** Compute as `latest_seq - last_read_seq`, cached.\n- **Edits and deletes** are events with their own seq, applied by the client.\n\n| Concern | Choice |\n| --- | --- |\n| Delivery | At-least-once with client-side de-duplication |\n| History | Database, paginated by seq |\n| Online fan-out | Backplane topic per conversation |\n| Offline | Push notification plus fetch on connect |\n| Receipts | Last read position, throttled |\n\n**Gotcha:** Sending the message to recipients before it is stored can show a message that later fails to save. Store first.\n\n**Interview tip:** Draw the \"send, store, ack, fan-out\" sequence and say the socket never holds the only copy.",
+      "level": "advanced",
+      "module": "Real-time Design",
+      "tags": [
+        "chat",
+        "design",
+        "offline",
+        "read-receipts"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-052",
+      "question": "How would you design a live-updates feed for one million concurrent connections?",
+      "answer": "**Short answer:** Split the system into stateless publishers, a durable log, a sharded backplane, and many gateway pods that each hold about 30,000 to 100,000 connections (a number you must measure). Shard users across gateways and channels across the backplane, bound every queue, and assume reconnect storms will happen.\n\n```mermaid\nflowchart LR\n    P[\"Producers\"] --> K[(\"Event log, partitioned\")]\n    K --> F[\"Fan-out workers\"]\n    F --> N[(\"Backplane shards\")]\n    N --> G1[\"Gateway pods\"]\n    G1 --> C[\"1M clients\"]\n    C -. \"reconnect, resume\" .-> G1\n    G1 --> S[(\"Snapshot cache\")]\n```\n\nNumbers to reason with. With 1,000,000 connections and 50,000 per pod you need at least 20 pods, plus headroom, so about 30. If every user gets 1 message per second, that is 1,000,000 socket writes per second across the fleet, about 33,000 per pod, which is fine for Go and workable for Node with batching.\n\nDesign points:\n- **Connection layer.** Stateless gateway pods. A load balancer spreads new connections evenly by least connections. Connection cap per pod, enforced by readiness.\n- **Routing.** Subscribe each gateway only to channels it has members for. A per-user channel (`user:{id}`) for personal events, and shared channels (`topic:{id}`) for common ones.\n- **Backplane.** Shard by channel with consistent hashing. One Redis instance does not do 1M fan-out events per second, so use a cluster, or NATS, with several nodes.\n- **Producers.** Write to the log first, and let fan-out workers publish. Producers never talk to gateways directly.\n- **Back-pressure.** Per-connection bounded queues. Conflate state feeds (keep latest), drop or disconnect slow clients.\n- **Reconnect protection.** Jittered backoff, snapshot cache with a short TTL, connect rate limits per pod, and slow rollouts.\n- **Data size.** Send deltas, binary formats, and batch in small windows.\n- **Regions.** Put gateways near users, with regional backplanes, and replicate events between regions.\n- **Observability.** Per-pod connections, queue depth, publish lag and p99 delivery latency.\n\n| Risk | Mitigation |\n| --- | --- |\n| One hot channel (a celebrity) | Shard the channel, or tier fan-out (relay gateways) |\n| Memory growth | Queue limits, pod memory limits and caps |\n| Reconnect storm | Jitter, snapshot cache, rate limits |\n| Backplane failure | Clients resync from snapshots when it recovers |\n\n**Interview tip:** Start by asking numbers: message rate, fan-out, size, latency target and loss tolerance. Then show the arithmetic.",
+      "level": "advanced",
+      "module": "Real-time Design",
+      "tags": [
+        "scaling",
+        "design",
+        "fan-out",
+        "backpressure"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-053",
+      "question": "How does collaborative editing work, and how do OT and CRDTs differ?",
+      "answer": "**Short answer:** In collaborative editing, several people change the same document at once, and everyone must end up with the same result. Operational Transformation (OT) uses a central server that transforms concurrent operations against each other. CRDTs (conflict-free replicated data types) give each change a structure that merges automatically in any order, with no central ordering.\n\nTake the text `cat`. User A inserts `s` at the end. User B, at the same time, inserts `h` at the start. Both operations were made against `cat`. If A applies B's operation without care, the position of A's insert is wrong, because the text moved by one. The system must adjust it, so that both users end with `hcats`.\n\n| Point | OT | CRDT |\n| --- | --- | --- |\n| Idea | Transform an operation against operations that happened concurrently | Make operations commutative using unique ids per element |\n| Server | Central server decides order | Optional; peers can merge directly |\n| Offline editing | Harder | Natural |\n| Complexity | Hard to get right (transform functions), small data | Simpler convergence logic, larger metadata |\n| Memory | Small documents | Metadata grows (tombstones), needs compaction |\n| Used in | Classic Google Docs style editors | Many newer libraries, such as Yjs and Automerge |\n\nHow CRDT text works in plain words: every character gets a unique id (such as a site id and a counter) and a position relative to neighbours. An insert says \"put this character after character X\". Deletes keep a \"tombstone\", so concurrent operations still find their reference. Merging is just applying all operations in any order.\n\nThe WebSocket part is simple: send operations (small), keep a version vector or revision, and resync on reconnect. The hard part is the algorithm, so use a library instead of writing your own.\n\nPractical guidance:\n- Use a proven library (Yjs, Automerge) and a WebSocket provider for it.\n- Persist document updates in a log and compact occasionally.\n- Presence and cursors are separate ephemeral messages.\n- Authorise per document, and limit update size and rate.\n\n**Gotcha:** Offline editing lasting days creates large merges. Plan for snapshots and size limits.\n\n**Interview tip:** Do not claim to implement OT from scratch. Say what the trade-off is and that you would pick a library.",
+      "level": "advanced",
+      "module": "Real-time Design",
+      "tags": [
+        "collaboration",
+        "ot",
+        "crdt",
+        "consistency"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-054",
+      "question": "Which TCP-level behaviours cause WebSocket problems, and how do you handle them?",
+      "answer": "**Short answer:** WebSockets inherit TCP's weaknesses. A connection can be half-open (one side thinks it is alive, the other is gone), NAT and firewall devices forget idle connections, and mobile clients switch networks and change IP addresses. Application-level heartbeats are the reliable fix, because OS keepalive defaults are far too slow.\n\n| Problem | What happens | Fix |\n| --- | --- | --- |\n| Half-open connection | Peer crashed or lost power, no FIN or RST sent. Your writes seem to succeed for a while | Ping with a deadline, terminate if no pong |\n| NAT or firewall idle timeout | Device drops the mapping after a period of silence (often between 30 seconds and a few minutes). Next packet is dropped or reset | Heartbeat shorter than the timeout |\n| Network switch (Wi-Fi to mobile) | Old TCP connection dies silently as the IP changes | Detect fast, reconnect and resume |\n| Proxy idle timeout | Looks like a drop at a fixed time (for example 60 s) | Heartbeat, raise timeout |\n| Slow detection | Linux TCP keepalive starts after 2 hours of idle by default | Do not rely on it |\n| Unacked data | Retransmission can take minutes before TCP gives up | `TCP_USER_TIMEOUT` (Linux) or write deadlines |\n\nTCP keepalive can be tuned per socket (idle time, interval, number of probes), but it is still less useful than an application heartbeat, because it runs below proxies and TLS terminators. A load balancer may answer keepalive probes on behalf of a dead backend.\n\nI ran a local test where the server destroyed the socket after 1 second with no close frame, the way a proxy timeout looks. The client saw:\n\n```text\ncode 1006 wasClean false after ms ~ 1000\n```\n\nHeartbeat settings I would use:\n- Server ping every 20 to 30 seconds, with a pong deadline of 10 seconds.\n- Client sends an app-level ping and expects a reply in the same window, so it can detect a dead server.\n- Both add jitter so heartbeats do not synchronise.\n\nWrite deadlines matter too. In Go, `SetWriteDeadline` prevents a goroutine from blocking forever on a dead peer. In Node, a `terminate()` after a missed pong frees the socket.\n\n**Gotcha:** `navigator.onLine` only says whether the device has a network interface, not whether your server is reachable.\n\n**Interview tip:** Say \"TCP will not tell you quickly that the peer is gone, so I do not wait for it\".",
+      "level": "advanced",
+      "module": "Reliability & Delivery",
+      "tags": [
+        "tcp",
+        "half-open",
+        "nat",
+        "keepalive"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-055",
+      "question": "How do you handle mobile devices, battery and flaky networks?",
+      "answer": "**Short answer:** Mobile networks drop, switch and sleep. Keep connections only while the app is in use, make reconnect and resume fast and cheap, reduce wake-ups, and use push notifications (APNs, FCM) when the app is in the background. A WebSocket is a foreground tool on phones.\n\nChallenges:\n- **Background limits.** iOS and Android suspend background apps and close their sockets. You cannot hold a WebSocket reliably in the background.\n- **Radio cost.** Each wake of the mobile radio costs battery. Frequent small messages keep it active.\n- **Network changes.** Switching from Wi-Fi to cellular breaks TCP connections, often without a close.\n- **Slow and lossy links.** Packet loss and high latency make handshakes slow.\n- **Captive portals and proxies** that block upgrades.\n\nPractices:\n1. **Connect on foreground, disconnect on background.** In a browser use the `visibilitychange` event; in native apps use lifecycle callbacks. Close with 1000 after a short grace period.\n2. **Push for background.** Send a data or notification push with a minimal payload. When the app opens, it connects and catches up through resume.\n3. **Fast resume.** Send the last seq on reconnect and fetch deltas, not the whole state. Cache the last snapshot on the device.\n4. **Adaptive heartbeats.** Longer interval in the background or on cellular, but below the NAT timeout.\n5. **Batch and coalesce.** Combine updates, drop obsolete ones (latest position only), compress with binary formats.\n6. **Network awareness.** Listen for online and offline events and network type changes; reconnect at once when the network returns, with jitter.\n7. **Smaller handshakes.** TLS session resumption and HTTP keep-alive reduce reconnect cost.\n8. **Show state to the user.** \"Reconnecting...\" with the age of data, and keep working offline with an outbox that retries.\n\n| Situation | Behaviour |\n| --- | --- |\n| App in foreground | Live socket |\n| App in background | Close socket, use push |\n| Network lost | Queue outgoing messages, show offline state |\n| Network returns | Reconnect with jitter, resume, flush the outbox |\n\n**Gotcha:** A reconnect loop that never backs off can drain a battery in hours.\n\n**Interview tip:** Say \"on mobile the socket is an optimisation, push and sync are the guarantee\".",
+      "level": "advanced",
+      "module": "Client Patterns",
+      "tags": [
+        "mobile",
+        "battery",
+        "reconnect",
+        "push-notifications"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-056",
+      "question": "How do you do real-time messaging on constrained or intermittent links, such as aircraft and satellite?",
+      "answer": "**Short answer:** Assume the link is down more often than you expect. Put a broker or queue on both sides, store messages locally until the link returns, send only deltas, and design every message to be idempotent and ordered by a sequence number. Real-time then means \"as soon as the link allows\", with no loss.\n\n```mermaid\nflowchart LR\n    D[\"Device or app on aircraft\"] --> E[\"Edge broker with local storage\"]\n    E -- \"link up or down\" --> L[\"Satellite or ground link\"]\n    L --> C[\"Cloud broker\"]\n    C --> S[\"Cloud services\"]\n    S -. \"commands, deltas\" .-> C\n```\n\nTraits of such links: high latency (hundreds of milliseconds on geostationary satellite), low and variable bandwidth, long outages (tunnels, coverage gaps, ground stations), and cost per megabyte. A plain browser WebSocket directly to the cloud over this link fails often and reconnects badly.\n\nDesign principles:\n1. **Store-and-forward.** Producers write to a local durable queue at the edge. A forwarder sends when the link is up and deletes after acknowledgement.\n2. **At-least-once plus idempotency.** Messages have ids and sequence numbers. Duplicates after a retry are safe.\n3. **Delta sync.** Send only what changed, using version numbers or hashes. After a long outage, exchange a summary (last seq per stream) and fill the gap.\n4. **Prioritise.** Safety or status messages go first, bulk telemetry later, and old samples can be thinned (keep one per minute).\n5. **Compact formats.** Binary encoding (protobuf, CBOR) and compression save bytes. Batch small messages in one transmission.\n6. **Expiry.** Some messages lose value with time. Give them a TTL and drop them rather than send stale data.\n7. **Short, resumable sessions.** Keep connections cheap to rebuild (session resume), with long keepalive and backoff tuned to the link.\n8. **Edge autonomy.** The cabin or local system must work with no cloud connection. The cloud is eventually consistent.\n9. **Security.** Mutual TLS and per-device identity, with certificate rotation that survives long offline periods.\n\n| Choice | Use when |\n| --- | --- |\n| WebSocket directly | Stable link, browser or gateway session |\n| MQTT with persistent sessions | Devices, unreliable links, many topics |\n| Local queue plus HTTPS batch upload | Very bad links, bulk data |\n| AMQP broker | Enterprise routing, between data centres |\n\n**Gotcha:** An unbounded local queue fills storage during a long outage. Define limits and a drop policy per message class.\n\n**Interview tip:** Say \"the design is eventually consistent with a clear priority and expiry policy\", and mention idempotency. It shows you understand the real constraint.",
+      "level": "advanced",
+      "module": "Reliability & Delivery",
+      "tags": [
+        "intermittent-connectivity",
+        "store-and-forward",
+        "edge",
+        "aircraft"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-057",
+      "question": "How do MQTT, WebSockets and AMQP compare for device messaging?",
+      "answer": "**Short answer:** MQTT is a light publish and subscribe protocol designed for unreliable networks and small devices, with delivery levels, retained messages and a last will. WebSockets are a general channel with no delivery rules. AMQP is a richer enterprise messaging protocol with queues and routing, usually between servers.\n\nMQTT concepts:\n- **Topics** are hierarchical strings like `fleet/ac-123/status`. Subscribers use wildcards: `+` for one level and `#` for the rest.\n- **QoS levels** per message:\n  - QoS 0: at most once, no ack. Fastest, may be lost.\n  - QoS 1: at least once, acknowledged, may duplicate.\n  - QoS 2: exactly once for the broker hop, using a four-step handshake. Slower and more state.\n- **Retained message.** The broker stores the last message of a topic and gives it to new subscribers at once. Good for \"current state\".\n- **Last will and testament (LWT).** The device registers a message that the broker publishes if the device disconnects without a clean goodbye. This is how presence works in MQTT.\n- **Persistent sessions.** With a persistent session, the broker keeps subscriptions and queued QoS 1 and 2 messages while the client is offline (MQTT 5 calls it session expiry).\n- **Keep alive.** The client pings within an interval, and the broker detects dead clients.\n\n| Point | MQTT | WebSocket | AMQP |\n| --- | --- | --- | --- |\n| Model | Pub/sub with topics | Raw bidirectional channel | Queues, exchanges, routing |\n| Delivery rules | QoS 0, 1, 2 | None, you build | Acks, durable queues, transactions |\n| Overhead | Very small header (2 bytes minimum) | Small frames | Heavier |\n| Offline clients | Persistent sessions, queued messages | Nothing | Queues hold messages |\n| Browser | Over WebSocket | Native | Not directly |\n| Best for | Devices, telemetry, flaky links | Browser real-time | Service to service workflows |\n\nMQTT can run over WebSockets (subprotocol `mqtt`), so a browser can speak to an MQTT broker, which is a neat way to share one topic model between devices and web dashboards.\n\nTrade-offs: topic design and access control (ACL per topic) must be planned, a broker is stateful infrastructure that needs clustering, and QoS 2 is rarely needed (QoS 1 plus idempotent handlers is the usual choice).\n\n**Gotcha:** Subscribers on the same wildcard topic can create fan-out surprises. Keep the topic tree meaningful and limit wildcards.\n\n**Interview tip:** Mention LWT and retained messages. They solve presence and \"current value\" without custom code.",
+      "level": "advanced",
+      "module": "Reliability & Delivery",
+      "tags": [
+        "mqtt",
+        "amqp",
+        "websockets",
+        "iot"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-058",
+      "question": "How do you prevent a thundering herd when many clients reconnect?",
+      "answer": "**Short answer:** Spread the reconnects in time and cheapen each reconnect. Clients use exponential backoff with full jitter, the server tells clients when to come back, expensive work behind the connection is cached or limited, and rollouts are slow enough that the fleet is never asked to reconnect all at once.\n\nA herd happens after a deploy, a load balancer restart, a network blip, or a backend outage. All clients drop at the same time and, without jitter, return at the same times: after 1 second, 2 seconds, 4 seconds. Each wave is as large as the first, and a recovering system falls over again.\n\nDefences:\n1. **Client side.** Exponential backoff with full jitter (random between 0 and the cap). A minimum initial random delay on the first retry, for example 0 to 5 seconds, helps mass drops. Reset the backoff only after a stable connection.\n2. **Server-directed delay.** On shutdown, the close frame carries a hint (code 1012, or a message `{retryAfterMs}`), and the delay is random per client. For overload, send `Retry-After` on the handshake reject (503).\n3. **Cheaper reconnects.** Cache the auth result (ticket validation) and snapshot data for a few seconds. Avoid per-connect database queries. Use TLS session resumption.\n4. **Admission control.** Limit new connections per second per pod. Over the limit, reject quickly with 503 and `Retry-After`, never accept and then stall.\n5. **Gradual drain.** Close a few percent of connections per second during a deploy (see the zero-downtime question).\n6. **Capacity for reconnect.** Size TLS and auth capacity for several times the steady rate, or use autoscaling that reacts in seconds.\n7. **Protect dependencies.** Circuit breakers and bulkheads on the auth service and database, so the herd does not take down shared systems.\n\n```ts\n// Server: tell the client when to come back, with a random delay\nfunction shedLoad(ws: { close(code: number, reason: string): void }, maxDelayMs = 60_000) {\n  const retryAfter = Math.floor(Math.random() * maxDelayMs);\n  ws.close(1013, JSON.stringify({ retryAfterMs: retryAfter }));   // 1013 = try again later\n}\n```\n\nAlso test it: kill a pod holding 20% of connections in staging and watch the reconnect rate, auth latency and snapshot load.\n\n**Gotcha:** Jitter added only to the maximum delay still synchronises the first retry. Randomise the whole range.\n\n**Interview tip:** Use the sentence \"spread it out, make it cheap, and cap the rate\".",
+      "level": "advanced",
+      "module": "Scaling & Operations",
+      "tags": [
+        "reconnect-storm",
+        "jitter",
+        "resilience",
+        "load"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-059",
+      "question": "How do you achieve zero-downtime deployments for stateful connections?",
+      "answer": "**Short answer:** You cannot move a live TCP connection to a new pod, so zero downtime means zero visible downtime: clients reconnect quickly and resume without gaps. Combine gradual draining, resume with sequence numbers, backward compatible protocol versions, and a rollout strategy that keeps capacity high.\n\nElements:\n1. **Resume makes reconnects invisible.** Clients keep `lastSeq` and fetch missed events, so a reconnect costs a second, with no lost data.\n2. **State outside the pod.** Subscriptions can be restored from the client, and presence and sessions live in Redis or the database. A new pod has everything it needs.\n3. **Gradual drain.** Old pods fail readiness, then close connections in batches with jitter over 30 to 120 seconds.\n4. **Capacity first.** Surge new pods before removing old ones (`maxSurge`, `maxUnavailable: 0`), so reconnecting clients have a place to go.\n5. **Protocol compatibility.** New server versions must accept old clients and old versions of messages. Deploy server first, clients later. Use version negotiation.\n6. **Strategies.**\n\n| Strategy | How | Notes |\n| --- | --- | --- |\n| Rolling | Replace pods in batches | Default, simple, mixed versions during the roll |\n| Blue-green | Start new fleet, move new connections, drain old | Easy rollback, double capacity temporarily |\n| Canary | Send a small share of new connections to the new version | Safe for protocol changes |\n\n7. **Rollback.** Keep the old fleet until the new one has run for a while. If you roll back, clients reconnect again, so rate-limit that too.\n8. **Database changes** use expand and contract, so old and new pods run together.\n9. **Observability during deploy.** Watch reconnect rate, handshake errors, resume gap size and p99 latency. Pause the rollout automatically if they pass a threshold.\n\nClients can help: show \"reconnecting\" only after 2 seconds of failure, so a quick resume is invisible to users.\n\nFor truly stateful designs (one connection owns in-memory game state), you need handover: persist state on drain, and the new pod loads it when the user returns. Keep such state to a minimum.\n\n**Gotcha:** A rollout that restarts all pods in quick succession (high `maxUnavailable`) turns into a reconnect storm.\n\n**Interview tip:** Say \"zero downtime does not mean zero disconnects, it means no visible loss\". It shows realism.",
+      "level": "advanced",
+      "module": "Scaling & Operations",
+      "tags": [
+        "deployments",
+        "graceful-shutdown",
+        "blue-green",
+        "resume"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-060",
+      "question": "How do you debug WebSocket problems in practice?",
+      "answer": "**Short answer:** Start where the problem is visible and go inward: browser devtools for frames and close codes, a command line client to test the server without the browser, proxy and server logs with a correlation id, and packet captures only as a last step.\n\nTools and what they show:\n\n| Tool | Use |\n| --- | --- |\n| Browser devtools, Network tab, WS filter | Handshake headers, status 101, each frame with direction and size, close code and reason |\n| `wscat` or `websocat` | Connect from the terminal, send messages, test auth and headers (custom headers possible) |\n| `curl` with upgrade headers | See the raw handshake response (`curl -i` with `Connection: Upgrade` and `Upgrade: websocket`) |\n| Server logs | Connection id, user, close code, duration, bytes, last message type |\n| Proxy and ingress logs | Status of the upgrade, timeouts (look for 499, 502, 504, and timing) |\n| Metrics | Disconnect rate by code, handshake failures, queue depth |\n| `tcpdump` or Wireshark | Last resort: see TCP resets, retransmissions, who closed first (Wireshark can decode WebSocket frames, but TLS needs keys or an unencrypted capture) |\n\nDebug steps for \"it does not connect\":\n1. Look at the handshake in devtools. 101 means success. 400, 401, 403 point to auth or Origin. 426 or 200 usually means a proxy did not pass the upgrade. 502 or 504 means the upstream or a timeout.\n2. Reproduce with `wscat` against the pod directly, then through the ingress, then through the public URL. The hop where it breaks is the culprit.\n\nFor \"it drops\": record the time between connect and close. Equal intervals (30, 60, 120 seconds) point to an idle timeout somewhere. Random intervals point to network or pod restarts. Check the close code: 1006 means no close frame (network or proxy), 1001 or 1012 means the server asked.\n\nLogging rules:\n- Create a connection id at upgrade, and a correlation id for each message. Put both in every log line, and return them in an error message so users can report them.\n- Never log message bodies or tokens by default. Add a sampled debug mode for one user id.\n\nI tested the first step locally with the raw handshake (status 101 and the Accept header), which is the same view you get from `curl -i` or devtools.\n\n**Interview tip:** Say you bisect the path (pod, ingress, public URL). It is quick and it always finds the broken hop.",
+      "level": "advanced",
+      "module": "Scaling & Operations",
+      "tags": [
+        "debugging",
+        "devtools",
+        "wscat",
+        "tcpdump"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-061",
+      "question": "How do you load test a WebSocket service, and what do you measure?",
+      "answer": "**Short answer:** Simulate realistic clients, not just many sockets: connect with auth, subscribe, send and receive at a realistic rate, reconnect, and stay idle. Ramp up gradually, then run a soak, and measure connections, delivery latency percentiles, errors, and server memory and CPU.\n\nTools:\n\n| Tool | Notes |\n| --- | --- |\n| k6 | Scripts in JavaScript, has a WebSocket module, good for scenarios and thresholds |\n| Artillery | YAML scenarios, WebSocket engine, simple to start |\n| Custom Go client | Best for 100,000 or more connections, you control behaviour, uses little memory per client |\n| Distributed generators | Many machines or pods, because one machine has port and descriptor limits |\n\nPlan the test around these scenarios:\n1. **Connection ramp.** Open N connections at a rate. Watch handshake latency and failures.\n2. **Steady state.** Hold connections with a message mix (for example 1 message per user every 10 seconds, plus broadcasts).\n3. **Fan-out.** One publisher to a room of 10,000. Measure the spread of arrival times.\n4. **Churn.** Clients connect and disconnect continuously.\n5. **Reconnect storm.** Drop 30% of connections at once.\n6. **Slow consumers.** Some clients read slowly, to test backpressure.\n7. **Soak.** Hours at steady load, to find leaks.\n\nWhat to measure:\n- Connections: success rate, time to connect, number open.\n- Latency: from publish timestamp to receive timestamp, as p50, p95, p99 (use clocks from the same machine or synchronised clocks).\n- Throughput: messages per second in and out.\n- Errors: close codes, timeouts, dropped messages, duplicates, gaps in sequence numbers.\n- Server: CPU, memory per connection (RSS divided by connections), GC pauses or event loop lag, file descriptors, network.\n- Dependencies: Redis or NATS latency, database load.\n\nPractical points:\n- Raise limits on the generator machines (descriptors, ephemeral ports), or you test your laptop.\n- Use the same path as production: TLS, ingress, and proxy.\n- Define pass criteria before the run, for example \"p99 under 500 ms at 100,000 connections with memory under 70%\".\n\n```js\n// k6 sketch (read-only, k6 not installed here)\nimport ws from 'k6/ws';\nexport default function () {\n  ws.connect('wss://staging.example.com/ws?ticket=...', {}, (socket) => {\n    socket.on('open', () => socket.send(JSON.stringify({ type: 'subscribe', channel: 'room:1' })));\n    socket.on('message', (m) => { /* record latency from m.sentAt */ });\n    socket.setTimeout(() => socket.close(), 60000);\n  });\n}\n```\n\n**Interview tip:** Say \"I measure what the user sees (delivery latency percentiles), then look at the server limits\".",
+      "level": "advanced",
+      "module": "Scaling & Operations",
+      "tags": [
+        "load-testing",
+        "k6",
+        "artillery",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-062",
+      "question": "What are the deeper security risks of WebSockets and how do you defend against them?",
+      "answer": "**Short answer:** Beyond authentication and Origin checks, defend against resource exhaustion (huge messages, slow handshakes, many connections), malformed or hostile input, tokens that outlive their validity, and leaking data through broadcast. Use limits at every layer, validate every message, and close fast on violations.\n\nRisks and defences:\n\n| Risk | What it is | Defence |\n| --- | --- | --- |\n| Oversized messages | A client sends a very large frame to exhaust memory | `maxPayload`, close with 1009, reject at the proxy |\n| Slow handshake (slowloris style) | Many half-open upgrade requests hold sockets | Handshake timeout, header size limit, per-IP limits, connection cap at the edge |\n| Many connections | One user opens thousands | Per-user and per-IP caps, evict oldest |\n| Message floods | High rate of tiny messages | Token bucket per connection, close with 4429 |\n| Protocol violations | Unmasked client frames, invalid UTF-8, bad opcodes, oversized control frames | Use a well-maintained library, close with 1002 or 1007 |\n| Frame or message injection | Attacker-controlled data forwarded raw to others, or injected into JSON strings | Parse and validate with a schema, build outgoing messages from typed data, never concatenate strings |\n| Cross-site hijacking | Malicious page uses the victim's cookies | Origin allow-list, tickets |\n| Auth expiry | Token valid at connect but expired or revoked later | Store expiry, close or refresh, handle revocation events |\n| Data leakage | Sending a full object to all subscribers | Per-user projection, authorise per channel |\n| Stored XSS | Chat message rendered as HTML | Escape on render, never use `dangerouslySetInnerHTML` with message data |\n| Dependency flaws | Known CVEs in WebSocket libraries | Pin and update, dependency scanning in CI |\n| Replay | Captured messages replayed | `wss`, nonces or sequence checks for sensitive commands |\n\nDefence in depth:\n1. Edge: WAF, TLS, connection and rate limits.\n2. Gateway: auth, Origin, size, rate, subscriptions limits.\n3. Application: schema validation and authorisation for every message.\n4. Monitoring: alerts for auth failures, rate-limit closures, odd close code spikes.\n\nRevocation deserves a design. Short token lifetimes (5 to 15 minutes) with refresh messages, plus a revoke channel: when a user is blocked, publish `revoke:user:42` and gateways drop that user's sockets within seconds.\n\n**Common mistakes**\n- Trusting a role or user id in the message body.\n- Logging full messages, including tokens or personal data.\n\n**Interview tip:** Group the answer as: limits (size, rate, count), identity (auth, Origin, expiry), and content (validation, escaping, projection).",
+      "level": "advanced",
+      "module": "Security",
+      "tags": [
+        "security",
+        "dos",
+        "frame-injection",
+        "token-expiry"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-063",
+      "question": "Interview scenario: connections drop after exactly 60 seconds in production. What do you do?",
+      "answer": "**Short answer:** A fixed interval means an idle timeout. Something in the path closes connections that carry no data for 60 seconds. The NGINX default `proxy_read_timeout` is 60 seconds, so that is the first suspect. Add a heartbeat below the timeout and raise the timeout on that route.\n\nMy process:\n1. **Confirm the pattern.** In the browser devtools, look at the time between the 101 and the close. Check the close code. Code 1006 with a fixed time means a hop cut the connection without a close frame.\n2. **Bisect the path.** Connect with `wscat` directly to the pod (port-forward), then via the service, then via the ingress, then the public URL. The first path where it drops at 60 seconds shows the culprit. Local tests work because there is no proxy.\n3. **List every hop and its timeout.** CDN or WAF, cloud load balancer, ingress controller, service mesh sidecar, and the app server.\n4. **Look at logs.** The ingress log shows the request ending at about 60 seconds (often a 499 or a completed request with a long duration).\n5. **Fix in layers.**\n   - Send a ping or app heartbeat every 25 seconds. It keeps the connection busy and also detects dead peers.\n   - Raise the timeout for the WebSocket path (`proxy_read_timeout 3600s` or the ingress annotation).\n   - Check other hops, such as a cloud gateway idle timeout, and fix them too.\n6. **Verify.** Hold a quiet connection for 10 minutes in staging and in production, and add a synthetic probe that does this continuously.\n7. **Prevent.** Document hop timeouts in the runbook and add a test that fails if a connection with a heartbeat dies before 5 minutes.\n\nI reproduced the client-side symptom locally: a server that destroyed the socket after a fixed delay produced `code 1006 wasClean false` on the built-in client at exactly that delay.\n\nRoot cause examples:\n- NGINX or ingress `proxy_read_timeout` left at 60 seconds.\n- A cloud load balancer idle timeout shorter than the heartbeat.\n- A mesh route timeout (for example 15 or 60 seconds) applied to the upgraded stream.\n\n**Gotcha:** Raising timeouts alone hides dead connections. Keep the heartbeat anyway.\n\n**Interview tip:** The structure \"pattern, bisect, list hops, fix, verify\" shows a method, which matters more than guessing the right setting.",
+      "level": "advanced",
+      "module": "Scaling & Operations",
+      "tags": [
+        "scenario",
+        "timeouts",
+        "troubleshooting",
+        "nginx"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-064",
+      "question": "Interview scenario: messages arrive out of order. How do you find and fix it?",
+      "answer": "**Short answer:** First find where order is lost: the publisher, the backplane, the gateway or the client. Then add a per-stream sequence number assigned by one writer, and make the client apply messages by sequence, buffering or resyncing on gaps. A single TCP connection keeps order, so the loss almost always comes from concurrency elsewhere.\n\nWhere out-of-order delivery comes from:\n\n| Source | Why |\n| --- | --- |\n| Concurrent handlers | `await` or worker pools let message 2 finish before message 1 |\n| Several publishers | Two services publish for the same entity without one clock |\n| Multiple backplane paths | Different partitions or channels for related events |\n| Retries | A retried message arrives after a newer one |\n| Reconnect | Replayed events mix with live events |\n| Multiple connections | The same user has two sockets (two tabs or a reconnect overlap) |\n\nInvestigation:\n1. Add a `seq` and a timestamp to the events, and log them at the publisher, the gateway and the client.\n2. Find the first hop where the order is wrong.\n3. Reproduce with a test that sends events quickly while delaying some handlers.\n\nFixes:\n- **One writer per stream.** Assign `seq` from the database sequence, a partition leader, or an atomic counter per stream. Partition the bus by stream id, so one stream always flows through one ordered partition.\n- **Serialise processing per stream.** Use a per-key queue (in Go, one goroutine per stream key, or a keyed worker; in Node, chain promises per key).\n- **Client logic.** Keep `lastSeq`. A lower number is ignored, a higher-than-expected number triggers buffering for a short time and then a replay request or resync.\n- **For \"latest state\" data,** send a version and drop older versions. Order does not matter then.\n- **After reconnect,** finish the replay before applying live events, or buffer live events until replay ends.\n\n```ts\nfunction apply(state: { lastSeq: number }, m: { seq: number }) {\n  if (m.seq <= state.lastSeq) return 'ignore';                    // old or duplicate\n  if (m.seq > state.lastSeq + 1) return 'gap: buffer or resync';\n  state.lastSeq = m.seq;\n  return 'apply';\n}\n```\n\n**Interview tip:** Say \"TCP keeps order on one connection, so I look for concurrency before and after the socket\". Then name the sequence number fix.",
+      "level": "advanced",
+      "module": "Reliability & Delivery",
+      "tags": [
+        "scenario",
+        "ordering",
+        "sequence-numbers",
+        "concurrency"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "websockets-real-time-065",
+      "question": "Interview scenario: server memory keeps growing as more users connect. How do you investigate?",
+      "answer": "**Short answer:** Separate expected memory per connection from a leak. Check whether memory returns to baseline when users leave. If it does not, find what holds references: forgotten room entries, listeners, timers, unbounded queues, or large buffers. Use heap snapshots in Node or pprof in Go.\n\nStep by step:\n1. **Plot memory against open connections.** A straight line with connections is normal cost per connection. Memory that stays high after connections drop is a leak. A step pattern after deploys points to caches.\n2. **Check the usual suspects.**\n\n| Suspect | Symptom | Fix |\n| --- | --- | --- |\n| Connection not removed from rooms or maps on close | Map sizes grow forever | Clean up in one `close` handler, and test it |\n| Event listeners or timers per connection never cleared | Timers and listeners count grows | Clear intervals on close, use `once` or `AbortController` |\n| Unbounded send queues for slow clients | Memory spike with a few bad clients | Bound the queue, close slow consumers |\n| Large per-connection buffers or compression state | High memory per connection | Lower buffer sizes, disable permessage-deflate |\n| Closures holding big objects | Heap snapshot shows retained closures | Do not capture large objects in per-connection callbacks |\n| Per-user caches without eviction | Cache size grows | Use LRU and TTL |\n| Goroutine leaks (Go) | Goroutine count grows | Ensure both pumps exit, use contexts |\n| Half-open connections never closed | Sockets stay in the registry | Heartbeat and terminate |\n\n3. **Take evidence.**\n   - Node: heap snapshots before and after, compare retained size by constructor (Chrome devtools or `--heapsnapshot-signal`), and watch `process.memoryUsage()`.\n   - Go: `net/http/pprof` heap and goroutine profiles, and count goroutines (a leak is usually two per dead connection).\n   - Expose gauges for open connections, room sizes, queue bytes and timers.\n4. **Reproduce.** A load test that connects and disconnects 100,000 clients, then checks memory after a GC.\n5. **Fix and guard.** Add a test that connects and closes N clients and asserts the registries are empty. Add alerts on the ratio of memory to connections.\n\nA quick sanity check for design: if each user also has a 1 MB queue allowance, 100,000 users mean 100 GB in the worst case. Set per-connection and per-pod limits.\n\n**Gotcha:** Containers killed by the memory limit (OOMKilled) look like random restarts, and they trigger reconnect storms. Alert on them.\n\n**Interview tip:** Say \"I first prove it is a leak by dropping the connections and watching if memory returns, then I use heap snapshots to find the owner\".",
+      "level": "advanced",
+      "module": "Server Implementation",
+      "tags": [
+        "scenario",
+        "memory-leak",
+        "profiling",
+        "backpressure"
+      ],
+      "favorite": false
+    }
+  ]
+}

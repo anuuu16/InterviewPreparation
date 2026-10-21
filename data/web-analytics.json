@@ -1,0 +1,820 @@
+{
+  "name": "Web Analytics",
+  "group": "Tools & Observability",
+  "questions": [
+    {
+      "id": "web-analytics-001",
+      "question": "What is web analytics, and what questions does it answer?",
+      "answer": "**Short answer:** Web analytics is collecting and analysing data about how people find and use your site or app, so you can make better product and marketing decisions. It answers \"what happened\", and with some extra work \"why\", but it does not tell you what to build by itself.\n\nThink of it as a shop with a door counter and a camera. You learn how many people came in, where they walked and where they left without buying.\n\nThe main questions fall into four groups:\n\n| Group | Example question | Typical data |\n| --- | --- | --- |\n| Acquisition | Where do visitors come from? | Source, medium, campaign |\n| Behaviour | What do they do? Where do they get stuck? | Events, pages, funnels |\n| Outcome | Do they sign up, pay, download? | Conversions, revenue |\n| Retention | Do they come back? | Cohorts, returning users |\n\nFor a resume builder, a good question is \"Of the people who pick a template, how many download a resume within seven days, and which channel brings the best ones?\" A weak question is \"How many page views did we get?\", because it does not lead to an action.\n\nAnalytics has limits. It is sampled or modelled in places, blocked by some browsers, and it only sees what you tracked. It shows behaviour, not intent. Use it together with user research and experiments.\n\n**Gotcha:** Data without a question becomes a dashboard nobody reads. Start from a decision (\"should we simplify the signup form?\") and then decide what to measure.\n\n**Interview tip:** Say that analytics is a decision tool. Mention one concrete decision you changed because of data, and one time the data was wrong or misleading and how you found out.",
+      "level": "basic",
+      "module": "Analytics Fundamentals",
+      "tags": [
+        "fundamentals",
+        "metrics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-002",
+      "question": "Which key metrics matter in web analytics, and how are they commonly misread?",
+      "answer": "**Short answer:** The core metrics are users, sessions, engagement, conversion and retention. Most mistakes come from comparing numbers that are defined differently, or from trusting totals without looking at segments.\n\n| Metric | Meaning | Common misreading |\n| --- | --- | --- |\n| Users | Distinct people, really distinct browsers or devices | One person on phone and laptop counts twice |\n| Sessions | A group of events from one user in a time window | Session length rules differ between tools |\n| Engagement rate | Share of sessions that were \"engaged\" in GA4 | It is not the same as the old bounce rate |\n| Conversion rate | Conversions divided by sessions or users | Denominator changes the answer |\n| Retention | Share of users who return after day N | Averages hide new versus old cohorts |\n\nIn GA4 an engaged session is one that lasted longer than 10 seconds by default, or had a key event, or had at least two page or screen views. Bounce rate in GA4 is simply the opposite of engagement rate. It is not the same formula as Universal Analytics, so you cannot compare old and new bounce rates.\n\nAlways ask: what is the denominator, and which time window? A conversion rate \"per session\" falls when you add cheap traffic, even if revenue grows.\n\n**Common mistakes**\n- Treating users as people. They are cookies or app instances.\n- Comparing the average of a skewed number (like session duration) instead of the median.\n- Reading one week of data and calling it a trend.\n- Celebrating total traffic when the conversion rate drops.\n\n**Interview tip:** Show you know that a metric is a definition plus a denominator. Interviewers like it when you say \"I would first check how this number is calculated\".",
+      "level": "basic",
+      "module": "Analytics Fundamentals",
+      "tags": [
+        "metrics",
+        "kpi"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-003",
+      "question": "How does web tracking work: page tags, cookies and collection requests?",
+      "answer": "**Short answer:** A small script (the tag) runs in the page, reads or creates an anonymous identifier stored in a first-party cookie, and sends events as HTTP requests to a collection endpoint. The vendor's servers then process the events into reports.\n\n```mermaid\nsequenceDiagram\n    participant B as Browser\n    participant S as Your server\n    participant T as Analytics tag\n    participant C as Collection endpoint\n    B->>S: Request page\n    S-->>B: HTML with tag snippet\n    B->>T: Load tag script\n    T->>T: Read or create client ID cookie\n    T->>C: Send page_view event with client ID\n    C-->>T: Empty response\n    Note over C: Processed later into reports\n```\n\nRead the diagram top to bottom. The tag does the work in the browser. The server of the vendor only receives requests.\n\nKey parts:\n- **Tag or SDK:** JavaScript for the web, an SDK for mobile apps.\n- **Client ID:** a random value saved in a cookie. It lets the tool connect events from the same browser. It is not a login.\n- **Request:** the tag sends a request, often a GET or POST to a `collect` path, with event name and parameters. You can see it in the browser network tab.\n- **Processing:** the vendor adds fields such as country (from IP), device and channel, then stores the data.\n\nIf the cookie is cleared or blocked, the next visit looks like a new user. If the tag fails to load, nothing is sent at all.\n\n**Gotcha:** Data collection is client side, so it is lost when scripts are blocked, the page closes early, or consent is denied.\n\n**Interview tip:** Explain this flow in 30 seconds. It sets up every later debugging answer, because each step is a place where data can be lost.",
+      "level": "basic",
+      "module": "Analytics Fundamentals",
+      "tags": [
+        "tracking",
+        "cookies",
+        "client-id"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-004",
+      "question": "How is the GA4 data model different from Universal Analytics?",
+      "answer": "**Short answer:** In GA4 every interaction is an event with parameters. There are no hit types such as pageview, event or transaction, and sessions are derived from events. Universal Analytics (UA) used hit types and a category, action, label structure. UA stopped processing data in 2023, so GA4 is the current product.\n\n| Idea | Universal Analytics | GA4 |\n| --- | --- | --- |\n| Unit of data | Hit (pageview, event, transaction) | Event |\n| Event shape | Category, action, label, value | Name plus up to many parameters |\n| Session | Defined and stored in the tool | Derived from the `session_start` event and `ga_session_id` |\n| Users | Mostly cookie based | Client ID, optional user ID, signals |\n| Bounce rate | Single page session | Opposite of engagement rate |\n| Data export | Paid feature | BigQuery export available |\n\nExample: in UA a \"template picked\" action needed a category, action and label. In GA4 you send one event named `template_selected` with parameters like `template_id` and `category`.\n\n```js\n// GA4 event with parameters\ngtag('event', 'template_selected', {\n  template_id: 'modern-02',\n  category: 'ats-friendly',\n});\n```\n\nParameters are free-form until you register them as custom dimensions or metrics (see the custom dimensions question). Only registered parameters show in standard reports and Explorations, although all of them are in the BigQuery export.\n\n**Gotcha:** Metrics with the same name, such as \"users\" or \"bounce rate\", do not match UA. Do not compare them as if they did.\n\n**Interview tip:** Say \"events with parameters, sessions derived\" and mention that you plan the parameters before launch, because custom definitions are not retroactive.",
+      "level": "basic",
+      "module": "Google Analytics 4",
+      "tags": [
+        "ga4",
+        "data-model"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-005",
+      "question": "What are the GA4 event categories: automatic, enhanced measurement, recommended and custom?",
+      "answer": "**Short answer:** GA4 has four kinds of events. Automatically collected events come with the tag, enhanced measurement events are optional toggles in the data stream, recommended events have names and parameters Google defines, and custom events are anything you invent.\n\n| Category | Examples | Who sets it up |\n| --- | --- | --- |\n| Automatically collected | `first_visit`, `session_start`, `page_view` | Nothing to do |\n| Enhanced measurement | scroll, outbound click, site search, file download, video | Toggle in the stream settings |\n| Recommended | `login`, `sign_up`, `purchase`, `add_to_cart` | You implement, using Google's names |\n| Custom | `template_selected`, `resume_downloaded` | You design and implement |\n\nPrefer a recommended event when one fits. Standard reports, ecommerce reports and some features expect those names and parameters. Use custom events only for things that have no recommended equivalent.\n\nEnhanced measurement can surprise you. For example, the file download event fires for common file extensions on links. If your resume download is generated by JavaScript and not a plain link, that event will not fire, and you need your own `resume_downloaded` event. In a single page app, enhanced measurement can also record page views from history changes, which can double count if you also send your own (see the SPA question).\n\n**Gotcha:** Event names are case sensitive. `Sign_Up` and `sign_up` are two events. Reserved names and prefixes exist, so check the current event reference in the Google documentation.\n\n**Interview tip:** Mention that you check the official recommended event list before inventing a name, then record every custom event in a tracking plan.",
+      "level": "basic",
+      "module": "Google Analytics 4",
+      "tags": [
+        "ga4",
+        "events"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-006",
+      "question": "What are key events (conversions) in GA4 and how do you choose them?",
+      "answer": "**Short answer:** A key event is an event you mark as important for the business, such as `sign_up` or `purchase`. GA4 used to call these \"conversions\". Google renamed the idea to key events in 2024, and \"conversion\" now often refers to key events used in Google Ads. Check the current terms in the docs.\n\nHow to choose them:\n- Pick few. Three to six key events is usual for one product.\n- Choose outcomes, not clicks. `resume_downloaded` is better than `button_clicked`.\n- Include micro steps if they predict outcomes, for example `template_selected`.\n- Make sure each one can be counted reliably, ideally from a server confirmed action.\n\nFor a resume builder the list might be: `sign_up`, `resume_downloaded`, `purchase` (or `subscription_started`).\n\nCounting method matters. An event can be counted once per event or once per session. Check the current setting in the key event options. If a user downloads five resumes, you may want one count for the funnel but all five for volume.\n\nKey events also feed Google Ads bidding, so a wrong key event can waste ad budget by teaching the bidder to find the wrong people.\n\n**Common mistakes**\n- Marking page views of a thank-you page as the conversion, so a refresh counts twice.\n- Marking too many events, so nothing stands out.\n- Changing the definition without noting the date. Trends then break.\n\n**Interview tip:** Link every key event to a business goal and an owner. Say that you annotate changes so the team can explain a jump in the numbers later.",
+      "level": "basic",
+      "module": "Google Analytics 4",
+      "tags": [
+        "ga4",
+        "conversions",
+        "key-events"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-007",
+      "question": "What is the difference between dimensions and metrics, and what are scopes?",
+      "answer": "**Short answer:** A dimension is an attribute you group by, such as country or page path. A metric is a number you measure, such as event count or users. Scope says what level the attribute belongs to: event, session or user.\n\nThink of a spreadsheet. Dimensions are the row labels. Metrics are the numbers in the cells.\n\n| Example | Type | Scope |\n| --- | --- | --- |\n| Page path | Dimension | Event |\n| Session source / medium | Dimension | Session |\n| User first source | Dimension | User |\n| Event count | Metric | Event |\n| Active users | Metric | User |\n\nScope causes real bugs. If you register a custom dimension at event scope but try to segment users by it, the numbers do not behave as you expect. Some combinations of dimension and metric are not compatible, and the report shows an error or a zero. The Google documentation has a dimensions and metrics explorer that shows which fields work together.\n\nExample: a user property such as `plan = pro` is user scoped. It stays on the user across events. A parameter such as `template_id` is event scoped. It describes just that one event.\n\n```js\n// user scope: describes the person from now on\ngtag('set', 'user_properties', { plan: 'pro' });\n// event scope: describes only this event\ngtag('event', 'template_selected', { template_id: 'modern-02' });\n```\n\n**Gotcha:** A custom dimension only collects data from the day you register it. It is not retroactive.\n\n**Interview tip:** If asked \"why is my report empty\", mention incompatible scopes as a cause alongside missing registration.",
+      "level": "basic",
+      "module": "Google Analytics 4",
+      "tags": [
+        "ga4",
+        "dimensions",
+        "metrics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-008",
+      "question": "What is the difference between GA4 standard reports and Explorations?",
+      "answer": "**Short answer:** Standard reports are fixed, fast, pre-aggregated views for everyday questions. Explorations are a flexible workspace where you build funnels, paths, segment overlaps and free-form tables. Explorations are more powerful but more limited by sampling, thresholds and row limits.\n\n| Feature | Standard reports | Explorations |\n| --- | --- | --- |\n| Purpose | Regular monitoring | Deep investigation |\n| Flexibility | Low, some customisation | High |\n| Speed | Fast | Slower on large data |\n| Sampling | Rarely | Possible on large queries |\n| Sharing | Easy | Shareable, but needs care |\n\nUseful exploration types:\n- **Funnel exploration:** step by step drop-off, open or closed funnel.\n- **Path exploration:** what users do after or before an event.\n- **Free form:** a pivot table with segments and filters.\n- **Segment overlap and user lifetime:** compare groups.\n\nA good habit is to build in the Explorations, then move the valuable view to a saved report, a dashboard (for example in Looker Studio), or SQL on the BigQuery export for a stable definition.\n\n**Gotcha:** Explorations have data retention settings. Event level data used there is kept for a limited period that you set in the property settings, so very old behavioural drill-downs may not be available. Check the current maximum in the docs.\n\n**Interview tip:** Say you prototype in Explorations and then freeze the metric definition in one governed place, so the whole company reads the same number.",
+      "level": "basic",
+      "module": "Google Analytics 4",
+      "tags": [
+        "ga4",
+        "reports",
+        "explorations"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-009",
+      "question": "What is Google Tag Manager: containers, tags, triggers and variables?",
+      "answer": "**Short answer:** Google Tag Manager (GTM) is a tool that lets you manage tracking scripts without changing site code every time. You add one container snippet to the site, and then configure tags, triggers and variables in the GTM web interface.\n\n| Concept | What it is | Example |\n| --- | --- | --- |\n| Container | The bundle of config loaded by one snippet | One per site or app |\n| Tag | A piece of work to run | Send a GA4 event |\n| Trigger | The condition that fires a tag | Click on a button, custom event |\n| Variable | A value tags and triggers read | Page path, data layer value |\n\nThe flow is simple: something happens, a trigger matches, the tag fires, and variables supply the data.\n\n```mermaid\nflowchart LR\n    A[\"Page event or dataLayer push\"] --> B[\"Trigger matches?\"]\n    B -->|yes| C[\"Tag fires\"]\n    V[\"Variables\"] --> B\n    V --> C\n    C --> D[\"GA4, Ads, Clarity and others\"]\n```\n\nRead it left to right. Variables feed both the trigger check and the tag content.\n\nChanges are made in a workspace, tested in preview mode, saved as a version and then published. This gives you history and a way to roll back.\n\n**Gotcha:** GTM is powerful. Anyone with publish rights can run arbitrary JavaScript on your site through a custom HTML tag. That is a security and performance risk, so limit access and review changes.\n\n**Interview tip:** Describe GTM as a delivery mechanism and a place for rules, not a replacement for a clean tracking design.",
+      "level": "basic",
+      "module": "Tag Manager & Data Layer",
+      "tags": [
+        "gtm",
+        "tags",
+        "triggers"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-010",
+      "question": "What is the data layer, and how does Preview mode help you debug GTM?",
+      "answer": "**Short answer:** The data layer is a JavaScript array named `dataLayer` where your code puts structured information for GTM to read. Preview mode (Tag Assistant) shows, step by step, which events happened, which tags fired and what the variables contained.\n\nYour code pushes plain objects. GTM reads them in order. A push with an `event` key creates a custom event that triggers can match.\n\n```js\nwindow.dataLayer = window.dataLayer || [];\nwindow.dataLayer.push({\n  event: 'resume_downloaded', // used by a Custom Event trigger\n  format: 'pdf',\n  template_id: 'modern-02',\n});\n```\n\nIn GTM you create a Custom Event trigger for `resume_downloaded`, data layer variables for `format` and `template_id`, and a GA4 event tag that uses them.\n\nIn Preview mode you open your site, and a panel lists every event in order, such as Container Loaded, DOM Ready, Window Loaded and your custom events. For each one you can see:\n- tags that fired and tags that did not fire, with the reason,\n- variable values at that moment,\n- the data layer state.\n\nUsing this panel is the fastest way to find out why a tag did not fire, for example because the trigger condition did not match or a variable was undefined.\n\n**Gotcha:** The data layer is read at the time of each event. If you push the data after the event that needs it, the variable is empty. Push data first, or in the same object as the event.\n\n**Interview tip:** Say that the data layer is the contract between developers and the tagging tool, so DOM scraping in GTM is a last resort.",
+      "level": "basic",
+      "module": "Tag Manager & Data Layer",
+      "tags": [
+        "gtm",
+        "datalayer",
+        "debugging"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-011",
+      "question": "Why use Google Tag Manager instead of hard-coding gtag.js?",
+      "answer": "**Short answer:** GTM lets non-developers add and change tags without a code release and gives you versioning and preview. Hard-coded gtag gives you fewer moving parts, less overhead and full control in code review. The right choice depends on who owns tracking and how many tools you use.\n\n| Question | GTM | Hard-coded gtag |\n| --- | --- | --- |\n| Change speed | Fast, no deploy | Needs a code release |\n| Reviewed in Git | Not by default | Yes |\n| Multiple vendors | Easy | More code |\n| Risk of misuse | Higher, arbitrary scripts | Lower |\n| Performance | Extra container script | Lean |\n| Testing in CI | Harder | Easier |\n\nUse GTM when marketing runs many tags (ads, pixels, Clarity, GA4) and needs to move quickly. Use hard-coded or a thin code layer when the team is mostly engineers, tracking is small, and quality and reviews matter most.\n\nA common middle path works well: engineers push clean events to the data layer from code, reviewed in Git, and GTM only maps those events to vendors. Then the contract is in code and distribution is in GTM.\n\n**Gotcha:** With GTM, tracking logic can live in a UI where nobody reviews it. Use workspaces, version notes and approvals, and export the container JSON to Git on a schedule.\n\n**Interview tip:** Avoid saying GTM is always better. Show that you weigh speed against control, and describe the data layer contract as the compromise.",
+      "level": "basic",
+      "module": "Tag Manager & Data Layer",
+      "tags": [
+        "gtm",
+        "gtag",
+        "trade-offs"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-012",
+      "question": "What are UTM parameters, and how do source, medium and campaign work?",
+      "answer": "**Short answer:** UTM parameters are tags you add to a link URL, such as `utm_source` and `utm_medium`, so analytics knows which campaign sent a visitor. Source says where, medium says the type of channel, and campaign says which initiative.\n\nExample link:\n\n```text\nhttps://app.example.com/?utm_source=newsletter&utm_medium=email&utm_campaign=spring_launch\n```\n\n| Parameter | Meaning | Example |\n| --- | --- | --- |\n| `utm_source` | The sender | `google`, `newsletter`, `linkedin` |\n| `utm_medium` | The channel type | `cpc`, `email`, `social` |\n| `utm_campaign` | The named campaign | `spring_launch` |\n| `utm_content` | Which ad or link variant | `hero_button` |\n| `utm_term` | Paid keyword | `resume_builder` |\n\nGA4 also reads `gclid` automatically for Google Ads when auto-tagging is on. Do not tag Google Ads links by hand if auto-tagging is enabled, because they can conflict.\n\nRules that keep data clean:\n- Use lowercase only. `Email` and `email` are different values.\n- Agree on a fixed list of mediums so channel groups work.\n- Never put personal data in UTMs. They show in URLs, logs and referrers.\n- Do not use UTMs on internal links. They start a new session and overwrite the real source.\n\n**Gotcha:** Typos produce an \"unassigned\" channel in reports. Use a shared builder sheet or a small validator.\n\n**Interview tip:** Mention internal-link UTMs as a classic mistake. It shows you have seen real data.",
+      "level": "basic",
+      "module": "Analytics Fundamentals",
+      "tags": [
+        "utm",
+        "attribution",
+        "campaigns"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-013",
+      "question": "What is Microsoft Clarity, and how is it different from Google Analytics?",
+      "answer": "**Short answer:** Microsoft Clarity is a free behaviour analytics tool that shows how people use pages: session recordings, heatmaps and signals of frustration. Google Analytics counts and attributes events. Clarity lets you watch what happened. They answer different questions and work well together.\n\n| Feature | Google Analytics 4 | Microsoft Clarity |\n| --- | --- | --- |\n| Main output | Numbers, funnels, attribution | Recordings, heatmaps |\n| Question | How many? Which channel? | What exactly did the user do? |\n| Event model | Events with parameters | Mostly automatic interaction capture |\n| Frustration signals | No | Rage clicks, dead clicks, quick backs |\n| Best for | Measuring and reporting | Investigating and explaining |\n\nUseful Clarity terms:\n- **Rage click:** many fast clicks in one spot, often a sign something looks clickable but does not respond.\n- **Dead click:** a click that causes nothing visible.\n- **Excessive scrolling and quick back:** signs of confusion.\n- **Heatmap:** an overlay of clicks or scroll depth on a page.\n\nExample: GA4 shows that 60 percent of people leave the template page. Clarity recordings reveal that on mobile the \"Next\" button sits under a cookie banner. The number told you where, the recording told you why.\n\nCheck current free-plan limits and data retention in the official Clarity documentation, since they can change.\n\n**Gotcha:** Recordings may capture sensitive text. You must configure masking and respect consent (see the Clarity practice question).\n\n**Interview tip:** Present them as a pair: GA4 finds the problem, Clarity helps to understand it, an experiment proves the fix.",
+      "level": "basic",
+      "module": "Clarity & Behaviour Analytics",
+      "tags": [
+        "clarity",
+        "heatmaps",
+        "session-recordings"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-014",
+      "question": "What is the difference between quantitative and qualitative analytics?",
+      "answer": "**Short answer:** Quantitative analytics measures how many and how much, with numbers. Qualitative analytics explains why, with observations, recordings, interviews and open feedback. Good product decisions use both.\n\n| Type | Tools | Answers | Weakness |\n| --- | --- | --- | --- |\n| Quantitative | GA4, product analytics, SQL | How many users drop at step 3? | Does not say why |\n| Qualitative | Clarity, interviews, surveys, usability tests | Why do they drop? | Small samples, can mislead |\n\nA simple loop:\n1. Use numbers to find a problem (funnel step with high drop-off).\n2. Use qualitative tools to form a hypothesis (recordings, user calls).\n3. Run an A/B test to check the fix (quantitative again).\n4. Roll out and monitor.\n\nBe careful with qualitative samples. Watching ten recordings can show you real bugs, but it cannot tell you how common the issue is. Go back to the numbers to size it, for example by filtering Clarity sessions by the same segment and comparing with GA4.\n\nAnother example: a survey says users want more templates. Analytics shows 80 percent of downloads use only three templates. The two together suggest quality over quantity.\n\n**Gotcha:** Do not treat a vivid recording as proof. One strange session is a story, not a statistic.\n\n**Interview tip:** Describe the loop above. It shows you use methods in order instead of picking a favourite tool.",
+      "level": "basic",
+      "module": "Analytics Fundamentals",
+      "tags": [
+        "quantitative",
+        "qualitative",
+        "research"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-015",
+      "question": "What is the difference between first-party and third-party cookies in analytics?",
+      "answer": "**Short answer:** A first-party cookie is set by the site the user is visiting (or its own domain). A third-party cookie is set by another domain loaded in the page, such as an ad network. Browsers block or limit third-party cookies, so modern analytics relies on first-party cookies.\n\nGA4 sets its cookies (like `_ga`) on your own domain through JavaScript, so they are first-party in the technical sense. The data still goes to Google's servers. Being first-party does not mean the tracking is exempt from consent laws.\n\n| Cookie type | Set by | Browser treatment | Typical use |\n| --- | --- | --- | --- |\n| First-party | Your domain | Allowed, but lifetime may be capped | Client ID, session |\n| Third-party | Another domain | Blocked in Safari and Firefox by default | Ad tracking, cross-site |\n\nSome browsers (Safari with ITP) cap the lifetime of cookies written by JavaScript. This shortens how long a returning visitor is recognised, so returning users may be counted as new. Server-set first-party cookies can last longer, which is one reason teams use server-side tagging.\n\nRegarding consent: in the EU the ePrivacy rules cover storing or reading information on the device, not only cookies. That includes local storage and similar. In general terms, analytics cookies need consent in many cases. This is not legal advice, so involve your legal team.\n\n**Gotcha:** \"First-party\" is a technical label, not a legal one.\n\n**Interview tip:** Show you separate three things: where a cookie is set, how long the browser lets it live, and whether the law needs consent.",
+      "level": "basic",
+      "module": "Privacy & Consent",
+      "tags": [
+        "cookies",
+        "privacy",
+        "first-party"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-016",
+      "question": "What are sampling and data thresholds in analytics, at a concept level?",
+      "answer": "**Short answer:** Sampling means a report is calculated from a subset of the data to be faster, then scaled up. Thresholds mean the tool hides rows when counts are small, to protect privacy. Both make numbers approximate or missing, and you should know when they apply.\n\nWhy tools do it:\n- **Sampling** saves compute on big queries, mostly in flexible reports like Explorations. The tool shows an indicator when the data was sampled.\n- **Thresholds** can apply when Google signals or demographic data is in use. Rows with very few users are withheld so that individuals cannot be identified.\n\nRelated effects in GA4:\n- High cardinality dimensions (such as page URL with random IDs) can group extra values into an \"(other)\" row.\n- Some reports use modelled data to fill gaps from denied consent.\n\nHow to cope:\n- Narrow the date range or reduce dimensions to avoid sampling.\n- Use the BigQuery export for exact event counts.\n- Do not use a report with thresholds for small segment decisions.\n- Check the current limits in the official documentation because they change.\n\n```text\nExploration shows a shield or percentage icon -> data is sampled or thresholded\n```\n\n**Gotcha:** Two reports can disagree by a few percent only because one is sampled and the other is not. Check this before filing a bug.\n\n**Interview tip:** A strong answer says that for money or compliance numbers you use unsampled sources such as BigQuery or the database, and use GA4 for trends.",
+      "level": "basic",
+      "module": "Data & Reporting",
+      "tags": [
+        "sampling",
+        "thresholds",
+        "data-quality"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-017",
+      "question": "[Tech Lead] How do you design and govern a tracking plan?",
+      "answer": "**Short answer:** A tracking plan is a living document that lists every event, its parameters, when it fires, who owns it and which business question it serves. You govern it like an API: naming rules, review for every change, versioning and a clear owner.\n\nWhat goes in the plan:\n- **Event name** in a fixed style, for example `snake_case`, verb in past tense: `template_selected`.\n- **Trigger description:** exactly when it fires, and where in the code.\n- **Parameters:** name, type, allowed values, example, and whether it is required.\n- **Destinations:** GA4, Clarity, warehouse.\n- **Owner and status:** proposed, live, deprecated.\n- **Question it answers.** If there is none, do not track it.\n\n```mermaid\nflowchart LR\n    Q[\"Business question\"] --> P[\"Plan entry\"]\n    P --> R[\"Review: PM, dev, analyst\"]\n    R --> I[\"Implement and test\"]\n    I --> L[\"Live and monitored\"]\n    L --> D[\"Deprecate when unused\"]\n    L -. new question .-> Q\n```\n\nRead it as a loop: nothing gets tracked without a question, and unused events are retired.\n\nNaming conventions that save pain: lowercase, one word order (`object_action`), no spaces, no PII, one shared parameter dictionary (`template_id` means the same thing everywhere), and reserved GA4 names avoided.\n\nTreat the plan as code: keep it in the repository as JSON or YAML, so a CI check and TypeScript types can be generated from it. Changes go through a pull request, which gives history and review for free.\n\n**Gotcha:** A spreadsheet that nobody enforces drifts within weeks. The plan must be connected to code and tests.\n\n**Interview tip:** Say \"the tracking plan is a contract, with an owner and a change process\". It shows you lead analytics like engineering, not like a one-off task.",
+      "level": "intermediate",
+      "module": "Governance & Leadership",
+      "tags": [
+        "tech-lead",
+        "tracking-plan",
+        "governance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-018",
+      "question": "[Tech Lead] How do you implement analytics in a React SPA so it stays maintainable?",
+      "answer": "**Short answer:** Put one analytics layer between your components and the vendors. Components call typed functions like `track('resume_downloaded', {...})`. The layer handles consent, validation, queueing and the vendor calls. No component should call `gtag` or `dataLayer.push` directly.\n\nBenefits: you can change vendors, test with a fake, add consent rules in one place, and enforce the tracking plan with types.\n\n```ts\n// analytics/events.ts: the plan as types\nexport type AnalyticsEvents = {\n  template_selected: { template_id: string; category: string };\n  resume_downloaded: { template_id: string; format: 'pdf' | 'docx' };\n  sign_up: { method: 'email' | 'google' };\n};\n\n// analytics/track.ts\ntype Sink = (name: string, params: object) => void;\nconst sinks: Sink[] = [(n, p) => (window as any).dataLayer?.push({ event: n, ...p })];\n\nexport function track<K extends keyof AnalyticsEvents>(\n  name: K,\n  params: AnalyticsEvents[K],\n) {\n  if (!hasConsent('analytics')) return; // one place for consent\n  sinks.forEach((s) => s(name, params));\n}\ndeclare function hasConsent(kind: string): boolean;\n```\n\n```tsx\n// a component only knows the typed function\n<button onClick={() => track('resume_downloaded', { template_id: id, format: 'pdf' })}>\n  Download\n</button>\n```\n\nOther parts of the layer:\n- A `usePageView` hook that sends a view on route change.\n- Declarative tracking for simple clicks, if you have many (a `data-track` attribute handled centrally).\n- A test sink that records events so unit tests can assert on them.\n\n**Gotcha:** Do not track inside render or effects with unstable dependencies. This causes duplicate events. Track from event handlers and from route changes.\n\n**Interview tip:** Mention that typed events make a wrong parameter a compile error, so QA starts before the code runs.",
+      "level": "intermediate",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "tech-lead",
+        "react",
+        "architecture"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-019",
+      "question": "[Tech Lead] How do you ensure data quality and test tracking?",
+      "answer": "**Short answer:** Test tracking in layers: types and unit tests for event shapes, automated browser tests for the critical events, manual checks in debug tools before release, and monitoring in production to catch broken tags quickly.\n\n| Layer | What it catches | Tool |\n| --- | --- | --- |\n| Types and schema | Wrong names or parameters | TypeScript, a plan validator in CI |\n| Unit test | Handler calls `track` with right data | Jest or Vitest with a fake sink |\n| End-to-end | Event really reaches the network | Playwright, intercept the `collect` request |\n| Manual QA | GTM triggers, consent behaviour | GTM Preview, GA4 DebugView |\n| Production | Sudden drops, spikes, nulls | Alerts on daily event counts |\n\nA good monitoring plan:\n- Alert when a key event count drops by a large share compared with the same weekday last week.\n- Watch for `(not set)` growth in important dimensions.\n- Keep a test property or a separate GTM environment for staging, so test traffic never pollutes production.\n- Compare analytics totals to a source of truth, such as orders in the database, each week.\n\nIn CI, a short script can check that every `track()` call uses an event in the plan. Failing the build for an unknown event is cheap and effective.\n\n**Common mistakes**\n- Testing only the happy path and skipping consent-denied and ad-blocked cases.\n- Releasing the app and the GTM container in the wrong order.\n- Having no owner for the alerts.\n\n**Interview tip:** Say you treat tracking as a feature with acceptance criteria and a definition of done, not as a task after release.",
+      "level": "intermediate",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "tech-lead",
+        "data-quality",
+        "testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-020",
+      "question": "[Tech Lead] How do you handle privacy, consent and compliance as a product team?",
+      "answer": "**Short answer:** Collect only what you need, never send personal data to analytics tools, ask for consent where the law requires it and make the tags respect the answer. Keep retention short and have a way to delete data on request. Work with legal advice. This answer is general information, not legal advice.\n\nPrinciples in plain words:\n- **Data minimisation:** if you cannot name the decision a field supports, do not collect it.\n- **No PII in analytics:** no emails, names, phone numbers, CV text, or IDs that can be reversed. This applies to URLs and page titles too, for example `/profile?email=...`.\n- **Consent:** in the EU and UK, most analytics and advertising needs prior consent. Use a consent management platform (CMP) and connect it to GTM and Consent Mode.\n- **Retention:** set the shortest retention that serves your needs and check it in the property settings.\n- **Deletion and access requests:** know where a user's data lives (analytics, warehouse, support tools) and how to remove it.\n- **Vendors:** keep a list of processors and the data they receive.\n\n```mermaid\nflowchart TD\n    V[\"Visitor arrives\"] --> B[\"Consent banner\"]\n    B -->|accept| A[\"Tags fire normally\"]\n    B -->|reject| D[\"Tags blocked or consent signals denied\"]\n    A --> R[\"Retention and deletion rules apply\"]\n    D --> M[\"Limited or modelled measurement\"]\n```\n\nFor a resume builder this matters a lot: resumes contain names, addresses and work history. Analytics events must carry template IDs and counts, never resume content.\n\n**Gotcha:** Developers often leak PII through error messages, URLs and custom dimensions. Add automated scans for email patterns in outgoing events.\n\n**Interview tip:** Show shared ownership: product defines purpose, engineering enforces it in code, legal confirms the rules.",
+      "level": "intermediate",
+      "module": "Privacy & Consent",
+      "tags": [
+        "tech-lead",
+        "privacy",
+        "consent"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-021",
+      "question": "[Tech Lead] How do tags affect performance, and how do you keep Core Web Vitals healthy?",
+      "answer": "**Short answer:** Every tag adds network requests and JavaScript work, which can hurt loading and interaction metrics. Keep the tag count small, load scripts asynchronously and late, audit the GTM container regularly, and consider server-side tagging to move work off the device.\n\nCore Web Vitals are Largest Contentful Paint (LCP, loading), Interaction to Next Paint (INP, responsiveness) and Cumulative Layout Shift (CLS, stability). Tags mostly hurt INP through long main-thread tasks, and LCP through competing requests. Banners and widgets injected late can hurt CLS.\n\nPractical rules:\n- Load the GA4 and GTM scripts with `async`. Never block rendering.\n- Delay non-essential tags (chat widgets, heatmaps) until after the page is interactive, or after first user input.\n- Remove tags nobody uses. A yearly container clean-up usually finds many.\n- Avoid custom HTML tags with heavy scripts. Prefer official templates.\n- Reserve space for banners to avoid layout shift.\n- Measure before and after with field data (real users), not only lab runs.\n\n| Option | Idea | Trade-off |\n| --- | --- | --- |\n| Client-side tags | Simple | More work on user device |\n| Server-side GTM | Browser sends one request, server forwards | Hosting cost and complexity |\n| Web Worker offload | Run tag code off main thread | Setup effort and compatibility |\n\nCheck the current list of tag template and consent features in the docs before choosing.\n\n**Gotcha:** Server-side tagging reduces browser work, but it does not remove consent duties.\n\n**Interview tip:** Quote the trade-off: measurement has a performance cost, so each tag must justify itself with a decision it supports.",
+      "level": "intermediate",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "tech-lead",
+        "performance",
+        "core-web-vitals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-022",
+      "question": "[Tech Lead] How do you align product, marketing and engineering on metrics?",
+      "answer": "**Short answer:** Agree on a small set of shared metrics with written definitions, one owner and one source of truth. Start from a north star metric that reflects delivered customer value, add a few supporting KPIs, and guard against vanity metrics.\n\nSteps I would take:\n1. **Pick the north star.** For a resume builder it could be \"resumes downloaded by users who then apply for jobs\", or a simpler proxy like weekly users who download a resume. It must reflect value, not just activity.\n2. **Break it into drivers:** visits, signup rate, template selection, completion rate, return rate.\n3. **Define each metric in writing:** numerator, denominator, time window, exclusions, and the system it comes from.\n4. **Name an owner** who answers questions about each number.\n5. **Review on a schedule,** weekly for operations, monthly for strategy.\n\n| Good metric | Vanity metric |\n| --- | --- |\n| Activation rate within 7 days | Total registered users |\n| Download completion rate | Page views |\n| Retained users after 30 days | App downloads |\n\nEach team sees a different side. Marketing cares about acquisition cost and channel quality. Product cares about activation and retention. Engineering cares about reliability and speed that drive both. A shared dashboard with the same definitions stops arguments about whose number is right.\n\n**Gotcha:** If two dashboards show different totals for the same name, trust drops quickly. Publish the definition next to the number.\n\n**Interview tip:** Say that a metric without an owner and a definition is an opinion. Also mention guardrail metrics, such as page speed, so a growth push does not damage quality.",
+      "level": "intermediate",
+      "module": "Governance & Leadership",
+      "tags": [
+        "tech-lead",
+        "metrics",
+        "kpi"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-023",
+      "question": "[Tech Lead] How do you run A/B tests properly?",
+      "answer": "**Short answer:** Start with a hypothesis and one primary metric, compute the sample size before you start, randomise properly, run for full weekly cycles, check for sample ratio mismatch, and do not stop early just because the result looks good.\n\nChecklist:\n- **Hypothesis:** \"Showing a progress bar will raise signup completion by at least 2 percentage points because people see how short the form is.\"\n- **Primary metric and guardrails:** signup rate is primary. Guardrails such as page load time and support tickets must not get worse.\n- **Sample size:** depends on the baseline rate, the smallest effect worth detecting, significance (often 5 percent) and power (often 80 percent). Decide it up front.\n- **Duration:** include at least one or two full weeks to cover weekday patterns. Do not stop at the first day.\n- **Randomisation unit:** usually user, kept stable across visits.\n- **SRM check:** compare the actual split with the planned one.\n- **One decision rule,** written before the test.\n\nPitfalls to name:\n- **Peeking:** checking daily and stopping on the first significant result inflates false positives.\n- **Novelty effect:** a new design gets extra clicks at first, then settles.\n- **Many metrics:** if you check 20 metrics, one will look significant by luck.\n- **Interaction:** two tests on the same page can influence each other.\n\nA test that shows no significant difference is still a result. It says the change did not matter at that size.\n\n**Gotcha:** Statistical significance is not business significance. A tiny lift may not repay the maintenance cost.\n\n**Interview tip:** Mention SRM and peeking. Most candidates only mention significance, so these two stand out.",
+      "level": "intermediate",
+      "module": "Experimentation & Statistics",
+      "tags": [
+        "tech-lead",
+        "ab-testing",
+        "statistics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-024",
+      "question": "[Tech Lead] How do you use analytics to prioritise work and measure feature success?",
+      "answer": "**Short answer:** Before building, define the success metric and the target. After release, compare against that target and a baseline, and decide whether to keep, improve or remove the feature. Use funnels and drop-offs to find where the biggest user pain is.\n\nA simple process:\n1. **Find the problem.** Use a funnel to see the largest drop (for example, 45 percent leave at template selection).\n2. **Size the opportunity.** If you fix half of that drop, how many more downloads per month?\n3. **Compare options** with a simple score: expected impact, confidence, effort.\n4. **Define success** before building: \"template selection to editor start rises from 55 to 62 percent in four weeks\".\n5. **Ship behind a flag** and, where traffic allows, test it.\n6. **Review** after the agreed period and write down what you learned.\n\nAlso measure feature adoption: how many eligible users used the feature, how often, and whether those users retain better. Be careful with correlation. Users who use a feature may be your most active users anyway. An experiment or a before-and-after with a control group is better evidence.\n\nDo not forget the cost side. A feature used by 1 percent of users that needs a lot of maintenance may be a candidate to remove.\n\n**Common mistakes**\n- Shipping with no success metric, then arguing about whether it worked.\n- Measuring the launch week only.\n- Ignoring segments such as mobile versus desktop.\n\n**Interview tip:** Say \"no feature without a success metric and a review date\". It shows ownership of outcomes, not only delivery.",
+      "level": "intermediate",
+      "module": "Data & Reporting",
+      "tags": [
+        "tech-lead",
+        "product",
+        "prioritisation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-025",
+      "question": "[Tech Lead] How do you choose an analytics vendor strategy and handle data export?",
+      "answer": "**Short answer:** Choose based on the questions you must answer, the privacy rules you face and the skills you have. Use GA4 for marketing and acquisition, a product analytics tool for in-product behaviour, and a warehouse as the source of truth. Always keep an export path so you are not locked in.\n\n| Option | Strength | Watch out for |\n| --- | --- | --- |\n| GA4 | Free to start, ads integration, acquisition | Complex model, sampling in the UI, privacy review |\n| Mixpanel, Amplitude | Strong funnels, cohorts, user-level analysis | Cost grows with volume, needs governance |\n| PostHog | Open source, self-host or cloud, analytics plus flags and replay | You run and tune it if self-hosting |\n| Matomo | Self-host, strong data ownership | Operations effort, fewer ad integrations |\n| Warehouse (BigQuery and similar) | Full control, SQL, joins with business data | Needs data engineering skills |\n\nDecision factors: data residency and privacy needs, volume, who will use it (marketers or product analysts), integration with ad platforms, cost, and the skills in the team. Check current pricing and free tiers in vendor documentation. They change.\n\nGA4 offers a BigQuery export of raw events, which is the main way to avoid UI limits. In the warehouse you can join events with orders and subscriptions, build stable metric definitions, and keep data longer than the UI allows. The export has its own cost and daily or streaming options. Check current details.\n\nPlan for exit: keep your event schema vendor neutral, store a copy of raw events, and avoid vendor-specific logic in components.\n\n**Gotcha:** Running two tools without a clear split makes numbers disagree and nobody trusts either. Say which tool answers which question.\n\n**Interview tip:** Say \"own the event schema, rent the tool\". It signals strategy.",
+      "level": "intermediate",
+      "module": "Data & Reporting",
+      "tags": [
+        "tech-lead",
+        "vendors",
+        "bigquery"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-026",
+      "question": "[Tech Lead] How do you explain analytics results to stakeholders?",
+      "answer": "**Short answer:** Lead with the decision and the answer, show one clear chart, state how confident you are and why, and say what you recommend. Avoid dumping dashboards or tool jargon.\n\nA simple structure:\n1. **Answer first:** \"Signup completion fell from 38 to 31 percent after the form change.\"\n2. **Evidence:** one chart with a baseline and clear labels. Show the date of the change.\n3. **Confidence:** sample size, whether it is statistically supported, known data issues such as consent loss.\n4. **Cause or hypothesis:** what you checked and ruled out (traffic mix, tracking bug, seasonality).\n5. **Recommendation and next step:** revert, test a variant, or investigate further, with an owner and a date.\n\nTips for different audiences:\n- **Executives:** impact on money and goals, in a few sentences.\n- **Marketing:** channel and campaign level, with comparable periods.\n- **Engineering:** exact event names, release dates, segments affected.\n\nBe honest about uncertainty. Say \"the data suggests\", not \"the data proves\". Explain that numbers from analytics tools are estimates because of blocking, consent and sampling. If the number matters for money, say you checked it against the database.\n\nMistakes to avoid: showing averages without distribution, comparing a holiday week with a normal week, and hiding a tracking issue that you found.\n\n**Gotcha:** Telling a story without checking data quality first can send the team in the wrong direction. State your data checks.\n\n**Interview tip:** Give an example where you changed a stakeholder's mind with one chart. Keep it short and concrete.",
+      "level": "intermediate",
+      "module": "Governance & Leadership",
+      "tags": [
+        "tech-lead",
+        "communication",
+        "reporting"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-027",
+      "question": "How do you implement GA4 with gtag.js in a React single page app, including page views on route change?",
+      "answer": "**Short answer:** Load gtag.js once, turn off the automatic page view in the config, and send a `page_view` event yourself whenever the route changes. In a single page app (SPA) the browser does not load a new page on navigation, so without this you only count the first page.\n\nAdd the script once (in `index.html`), with `send_page_view` disabled:\n\n```html\n<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX\"></script>\n<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag(){ dataLayer.push(arguments); }\n  gtag('js', new Date());\n  gtag('config', 'G-XXXXXXX', { send_page_view: false });\n</script>\n```\n\nThen a hook sends a view on each route change (React Router example):\n\n```tsx\nimport { useEffect } from 'react';\nimport { useLocation } from 'react-router-dom';\n\ndeclare function gtag(...args: unknown[]): void;\n\nexport function usePageViews() {\n  const { pathname, search } = useLocation();\n  useEffect(() => {\n    gtag('event', 'page_view', {\n      page_path: pathname + search,\n      page_location: window.location.href,\n      page_title: document.title,\n    });\n  }, [pathname, search]);\n}\n```\n\nCall `usePageViews()` once, in a component inside the router, such as the app layout.\n\n**Gotchas**\n- **Double counting:** GA4 enhanced measurement can also record page views on history changes. If you send your own, turn off \"Page changes based on browser history events\" in the stream settings, or do not send your own. Choose one.\n- **React StrictMode** runs effects twice in development only. Do not judge counts in dev.\n- **Page title:** it may not have updated yet when the effect runs. Set the title before the call.\n- Remove query parameters that contain personal data from `page_location`.\n\n**Interview tip:** Say \"one source of page views\". Naming the double counting risk shows real experience.",
+      "level": "intermediate",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "ga4",
+        "gtag",
+        "react",
+        "spa"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-028",
+      "question": "What is the difference between history change triggers in GTM and router hooks for SPA page views?",
+      "answer": "**Short answer:** A GTM History Change trigger listens to the browser history API from outside your code and fires a tag. A router hook inside the app pushes an explicit event to the data layer. The hook is more reliable and testable; the history trigger needs no code change but can mis-fire.\n\n| Approach | Pros | Cons |\n| --- | --- | --- |\n| GTM History Change trigger | No code change, quick | Fires on hash or query changes you may not want, page title timing, hard to test in CI |\n| Router hook pushes event | Exact control, typed, testable | Needs a developer |\n\nRouter hook version:\n\n```tsx\nimport { useEffect } from 'react';\nimport { useLocation } from 'react-router-dom';\n\nexport function useVirtualPageView() {\n  const location = useLocation();\n  useEffect(() => {\n    window.dataLayer = window.dataLayer || [];\n    window.dataLayer.push({\n      event: 'virtual_page_view',\n      page_path: location.pathname,\n      page_title: document.title,\n    });\n  }, [location.pathname]);\n}\n```\n\nIn GTM you create a Custom Event trigger for `virtual_page_view` and a GA4 event tag named `page_view` using the data layer variables. Make sure the automatic page view on the GA4 configuration is not firing a second time on history changes.\n\nProblems with the history trigger: the variables for page URL can still hold the old value when the tag fires, redirects fire several events, and a modal that changes the URL hash may be counted as a page.\n\nFor Next.js, use the router events (or `usePathname` and `useSearchParams` in the App Router) in a client component. Check the current Next.js docs for the supported hooks.\n\n**Gotcha:** Whichever you pick, test with GTM Preview and watch the network tab to confirm exactly one `page_view` per navigation.\n\n**Interview tip:** Recommend explicit events from code and use the history trigger only as a quick fix.",
+      "level": "intermediate",
+      "module": "Tag Manager & Data Layer",
+      "tags": [
+        "gtm",
+        "spa",
+        "page-view"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-029",
+      "question": "How does the dataLayer work in depth: push order, variables and ecommerce objects?",
+      "answer": "**Short answer:** `dataLayer` is an array that GTM watches. Each `push` merges its keys into GTM's internal data model, and a push containing an `event` key also fires the matching triggers. Order matters, because a trigger sees the model as it is at that moment.\n\nRules that matter:\n- Keys from earlier pushes stay in the model until you overwrite them. This is useful for page-level values, and dangerous for stale event values.\n- The GTM snippet reads items pushed before it loaded, in order.\n- Never reassign `window.dataLayer = [...]` after GTM loads. This breaks the connection. Always use `push`.\n- Nested objects are merged recursively, but arrays are replaced.\n\nEcommerce data should be cleared before each push so old items do not leak into the next event:\n\n```js\nwindow.dataLayer = window.dataLayer || [];\ndataLayer.push({ ecommerce: null }); // clear the previous ecommerce object\ndataLayer.push({\n  event: 'purchase',\n  ecommerce: {\n    transaction_id: 'T-1042',\n    value: 9.99,\n    currency: 'USD',\n    items: [{ item_id: 'pro-monthly', item_name: 'Pro plan', price: 9.99, quantity: 1 }],\n  },\n});\n```\n\nIn GTM you read these through a Data Layer Variable, for example `ecommerce.items`. The GA4 event tag can send the `ecommerce` object directly with the \"send ecommerce data\" option.\n\nThink of the data layer as a message bus plus a small shared state. Prefer small, flat, well-named keys with stable types (a number stays a number).\n\n**Gotcha:** Pushing the event before the data (`event` first, details in a second push) means the tag fires with empty variables. Put everything in the same push.\n\n**Interview tip:** Mention clearing the ecommerce object and never reassigning `dataLayer`. These are classic bugs.",
+      "level": "intermediate",
+      "module": "Tag Manager & Data Layer",
+      "tags": [
+        "gtm",
+        "datalayer",
+        "ecommerce"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-030",
+      "question": "Which GTM triggers do you use most, and what are their pitfalls?",
+      "answer": "**Short answer:** Custom Event triggers on data layer pushes are the most reliable. Click, form, scroll, visibility and history triggers are useful when you cannot change the code, but each has traps with dynamic or React pages.\n\n| Trigger | Use | Pitfall |\n| --- | --- | --- |\n| Custom Event | Fire on a `dataLayer` event name | Name must match exactly; case sensitive |\n| Click (all or links only) | Track buttons and links | Click target may be a child element; use \"Click Element matches CSS selector\" |\n| Form Submission | Classic form submits | Does not work for AJAX or React forms without a real submit; often fires before validation passes |\n| Scroll Depth | 25, 50, 75, 90 percent | Page height changes in SPAs; double fires |\n| Element Visibility | When an element appears | Needs a stable selector; can fire repeatedly |\n| History Change | SPA navigation | See the SPA question; mis-fires on hash changes |\n| Timer | Time on page | Keeps running in background tabs |\n| Page View, DOM Ready, Window Loaded | Basic timing | Use DOM Ready only when you need elements |\n\nA better approach for React apps: let the component push a custom event in its handler, because the code knows exactly when the action succeeded. For example, push `sign_up` only after the server confirms the account, not on the button click.\n\n```js\n// in the success handler of the signup request\nwindow.dataLayer.push({ event: 'sign_up', method: 'email' });\n```\n\n**Gotcha:** CSS class names generated by build tools (hashed class names) change on every release and silently break click triggers. Use `data-` attributes if you must use DOM triggers.\n\n**Interview tip:** Say \"success event from code, not click on the button\". It shows you track outcomes.",
+      "level": "intermediate",
+      "module": "Tag Manager & Data Layer",
+      "tags": [
+        "gtm",
+        "triggers"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-031",
+      "question": "What variable types does GTM offer, and when is custom JavaScript a bad idea?",
+      "answer": "**Short answer:** GTM variables supply values to tags and triggers: data layer variables, DOM element values, constants, lookup tables, URL parts, cookies, and custom JavaScript. Use built-in types first. Custom JavaScript is flexible but runs on every evaluation, is hard to test and can break silently.\n\n| Variable | Typical use |\n| --- | --- |\n| Data Layer Variable | Read a value pushed by the code |\n| Constant | GA4 measurement ID, so it is defined once |\n| Lookup Table | Map one value to another, for example hostname to measurement ID |\n| RegEx Table | Pattern based mapping, like path to page group |\n| URL variable | Parts of the URL, such as a query parameter |\n| 1st-party Cookie | Read a cookie value |\n| DOM Element | Text or attribute of an element; fragile |\n| Custom JavaScript | A function that returns a value |\n\nExample of a small custom JavaScript variable that removes an email from a URL before it is sent:\n\n```js\nfunction () {\n  // returns the page URL with the email query parameter hidden\n  return {{Page URL}}.replace(/([?&]email=)[^&]+/, '$1redacted');\n}\n```\n\nWhen to avoid it: when a Lookup Table or the data layer can do the job; when the logic needs tests; when it reads DOM that changes often. Custom JavaScript runs in the browser on the main thread, so heavy code costs performance.\n\nGood habits: name variables with a consistent prefix (for example `dlv - template_id`), use constants for IDs, and document every custom JavaScript variable with the reason it exists.\n\n**Gotcha:** GTM custom JavaScript variables must use older JavaScript syntax in many cases (ES5 style), so modern syntax can fail. Check current GTM support in the docs.\n\n**Interview tip:** Say that logic belongs in the codebase, and GTM should map values, not compute business rules.",
+      "level": "intermediate",
+      "module": "Tag Manager & Data Layer",
+      "tags": [
+        "gtm",
+        "variables"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-032",
+      "question": "How do you handle tag sequencing, consent-aware firing, workspaces, versions and safe publishing in GTM?",
+      "answer": "**Short answer:** Use tag sequencing when one tag must fire before another, use consent settings so tags only fire when allowed, and manage changes through workspaces, versions and environments with review before you publish.\n\n**Tag sequencing:** set a setup tag that must fire before the main tag (for example, set user properties, then fire the event). You can also stop the main tag if the setup fails. Use it sparingly. A data layer event order is often a cleaner fix.\n\n**Consent-aware firing:** each tag can require consent types, such as `analytics_storage` or `ad_storage`. Built-in Google tags check consent mode themselves. For other vendors, add \"additional consent checks\" so the tag only fires after the user agrees.\n\n**Change management**\n\n| Feature | Use |\n| --- | --- |\n| Workspaces | Parallel work by several people without clashing |\n| Versions | A frozen snapshot you can publish or roll back |\n| Environments | Separate containers for dev, staging and live |\n| Roles and approvals | Limit who can publish (on supported plans) |\n| Version notes | Say what and why |\n\nA safe publish process:\n1. Make changes in a workspace and give the version a clear name.\n2. Test with Preview on staging and then on production in preview mode.\n3. Have a second person review the changes list.\n4. Publish at a low-traffic time and watch the real-time reports.\n5. Keep the previous version ready for rollback.\n\nExport the container JSON now and then and commit it to Git, so you have an audit trail outside GTM.\n\n**Gotcha:** Two people editing the same tag in different workspaces creates merge conflicts. Keep workspaces short-lived.\n\n**Interview tip:** Say that GTM publishing is a production deployment and treat it the same way: review, test, rollback.",
+      "level": "intermediate",
+      "module": "Tag Manager & Data Layer",
+      "tags": [
+        "gtm",
+        "consent",
+        "publishing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-033",
+      "question": "How do custom dimensions, custom metrics, user_id and user properties work in GA4?",
+      "answer": "**Short answer:** Event parameters and user properties are collected freely, but to use them in reports you must register them as custom dimensions or metrics in the property. `user_id` is a special field you set for logged-in users so GA can recognise them across devices.\n\nSteps:\n1. Send the parameter with events (`template_id`).\n2. In Admin, create a custom dimension with scope Event, the same parameter name, and a clear display name.\n3. Wait for data to appear. It is not retroactive and can take a day.\n\n```js\n// event scoped parameter\ngtag('event', 'template_selected', { template_id: 'modern-02' });\n// user scoped property\ngtag('set', 'user_properties', { plan: 'pro' });\n// user id after login, using a non-personal internal id\ngtag('config', 'G-XXXXXXX', { user_id: 'u_8f3a91' });\n```\n\nCustom metrics work in the same way for numbers, such as `pages_in_resume`.\n\n| Item | Scope | Example |\n| --- | --- | --- |\n| Event parameter | Event | `template_id` |\n| User property | User | `plan` |\n| Item parameter | Item (ecommerce) | `item_color` |\n\nNotes:\n- There are limits on the number of custom definitions per property. Check the current numbers in the docs, and plan the use of slots.\n- The user ID must be an internal identifier, never an email address or anything personal.\n- Avoid high cardinality parameters (such as random IDs) as dimensions, because reports group the extra values into \"(other)\".\n- Set `user_id` only after login and stop sending it after logout.\n\n**Gotcha:** Typos in the parameter name register nothing, silently. Copy the name from the tracking plan.\n\n**Interview tip:** Mention that registering a custom dimension is a data governance step: it consumes a limited slot and goes into the plan.",
+      "level": "intermediate",
+      "module": "Google Analytics 4",
+      "tags": [
+        "ga4",
+        "custom-dimensions",
+        "user-id"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-034",
+      "question": "How does cross-domain tracking work in GA4, and what are referral exclusions?",
+      "answer": "**Short answer:** When a user moves between domains you own, GA4 passes the client ID in a URL parameter (`_gl`) so the session continues. Without it, the second domain starts a new session and shows the first domain as a referrer. Referral exclusions (unwanted referrals) tell GA not to treat certain domains as new traffic sources.\n\nTypical case: a marketing site on `www.example.com` and the app on `app.example.com` (a subdomain, which shares cookies automatically in most setups) or on `example-app.io` (a different domain, which needs configuration). Another is a third-party payment page that sends the user back.\n\nSetup in GA4:\n- In the data stream, open \"Configure tag settings\" and then \"Configure your domains\". Add all domains that should be linked.\n- Make sure every domain uses the same measurement ID.\n- Links and forms between those domains get the `_gl` parameter added by the tag when the user clicks.\n- For payment providers that you do not control, add their domain under \"List unwanted referrals\" so the return does not start a new session labelled as referral.\n\n```text\nBefore: user -> shop.example.com (session 1) -> pay.provider.com -> shop.example.com (new session, source: pay.provider.com)\nAfter : same session; payment domain excluded from referrals\n```\n\n**Common mistakes**\n- Using JavaScript redirects that drop the `_gl` parameter.\n- Forgetting a domain, so one hop breaks the chain.\n- Conflicts with strict ad blockers and ITP, which can strip parameters.\n\nHow to check: click through in a browser with the network tab open and look for the `_gl` parameter and the same `client_id`/`cid` on both domains.\n\n**Interview tip:** Mention that the symptom is \"self-referrals\" and a high count of new sessions after checkout. This is the exact thing interviewers test.",
+      "level": "intermediate",
+      "module": "Google Analytics 4",
+      "tags": [
+        "ga4",
+        "cross-domain",
+        "referrals"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-035",
+      "question": "How would you design GA4 events and a funnel for a resume builder?",
+      "answer": "**Short answer:** Model the user journey as a small set of clear events: view, template choice, editing progress, signup, download, payment. Use recommended event names where they fit, and custom events for product-specific steps, with consistent parameters.\n\nJourney and events:\n\n| Step | Event | Key parameters |\n| --- | --- | --- |\n| Lands on site | `page_view` | page path, source |\n| Opens templates | `view_item_list` | `item_list_name` |\n| Picks a template | `select_item` or `template_selected` | `template_id` |\n| Starts building | `resume_started` | `template_id` |\n| Signs up | `sign_up` | `method` |\n| Downloads | `resume_downloaded` | `format`, `template_id` |\n| Starts checkout | `begin_checkout` | `value`, `currency`, `items` |\n| Pays | `purchase` | `transaction_id`, `value`, `currency` |\n\nUse the recommended ecommerce events when you sell something, because the ecommerce reports then work out of the box. Treat a template as an item, with `item_id` and `item_name`.\n\n```js\ngtag('event', 'resume_downloaded', {\n  template_id: 'modern-02',\n  format: 'pdf',\n  sections_count: 5, // register as custom metric if you need it\n});\n```\n\nFunnel: in Explorations create a funnel with the steps `template_selected`, `sign_up`, `resume_downloaded`, `purchase`. Decide between open and closed funnels. A closed funnel counts only users who enter at the first step.\n\nDesign points: fire `purchase` only from a confirmed server payment, include a unique `transaction_id` so retries do not double count, and send `download` after the file is actually generated.\n\n**Gotcha:** Events fired on button click before success overcount. Fire on success.\n\n**Interview tip:** Name the question each event answers. Events without a question are noise.",
+      "level": "intermediate",
+      "module": "Google Analytics 4",
+      "tags": [
+        "ga4",
+        "funnel",
+        "ecommerce"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-036",
+      "question": "How does GA4 attribution work, and what are default channel groupings?",
+      "answer": "**Short answer:** Attribution decides which touchpoint gets credit for a conversion. GA4 offers data-driven attribution by default and last click models, and it groups traffic into default channel groups like Organic Search, Paid Search, Direct and Email based on source and medium rules.\n\nCommon models:\n- **Last click:** all credit to the final touchpoint.\n- **First click:** all credit to the first one.\n- **Data-driven:** credit split by a model trained on your conversion paths. Needs enough data.\n- Other rule based models have been removed or changed over time, so check what is available now.\n\nDefault channel group logic (simplified):\n\n| Channel | Rule idea |\n| --- | --- |\n| Direct | No source information, source is \"(direct)\" |\n| Organic Search | Source is a known search engine and medium is organic |\n| Paid Search | Medium is cpc or ppc on a search source |\n| Email | Medium contains email |\n| Referral | Medium is referral |\n| Organic Social | Source is a known social site and medium is social |\n| Unassigned | Nothing matched, usually caused by bad UTMs |\n\nGA4 has session scoped and user scoped source fields. \"First user source\" is for acquisition, \"session source\" is for what drove one visit. Mixing them in one report causes confusion.\n\nYou can set the reporting attribution model and lookback windows in the property settings. This changes how conversions are credited in reports and also what gets sent to Ads.\n\n**Gotcha:** Direct traffic is a bucket for \"unknown\". A lot of it is dark social, privacy blockers, or untagged links, not people typing your URL.\n\n**Interview tip:** Say \"attribution is a model, not a fact\". Then talk about using a holdout test to check what a channel truly adds.",
+      "level": "intermediate",
+      "module": "Google Analytics 4",
+      "tags": [
+        "ga4",
+        "attribution",
+        "channels"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-037",
+      "question": "How do you debug missing or wrong GA4 data?",
+      "answer": "**Short answer:** Follow the data path in order: is the tag loaded, does the event fire, does the request leave the browser and succeed, does it arrive in DebugView, does it appear in reports after processing. The first broken step is your cause.\n\nTools:\n- **Browser network tab:** filter for `collect` or `g/collect`. Check the status and the query parameters (`en` is the event name, `tid` the measurement ID).\n- **GTM Preview (Tag Assistant):** which tags fired, which not, and why.\n- **GA4 DebugView:** a live stream of events from a debug-enabled device (use the debug mode flag or the Tag Assistant).\n- **Realtime report:** quick check, but not for details.\n\n```js\n// enable debug for this browser\ngtag('config', 'G-XXXXXXX', { debug_mode: true });\n```\n\nCommon reasons data is missing:\n\n| Symptom | Likely cause |\n| --- | --- |\n| No requests at all | Tag not on the page, blocked by ad blocker, consent denied, script error |\n| Request sent, no data in reports | Wrong measurement ID, internal traffic filter, processing delay |\n| Event in DebugView but missing in reports | Not registered as dimension, filter, or still processing |\n| Duplicated events | Two tags (hard-coded plus GTM), history change plus manual page view |\n| Parameter shows as not set | Parameter name typo, or not registered as custom dimension |\n| Lower than the database | Consent, blockers, failed requests on unload |\n\nIsolate with a clean browser profile, without extensions, and in a private window to rule out blockers.\n\n**Gotcha:** Standard reports can take many hours to process. Use DebugView and Realtime for immediate checks.\n\n**Interview tip:** Walk through the path step by step. Interviewers want a method, not a guess.",
+      "level": "intermediate",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "ga4",
+        "debugging",
+        "tag-assistant"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-038",
+      "question": "How do you filter internal traffic and bots in GA4?",
+      "answer": "**Short answer:** Define your office or VPN IP ranges as internal traffic, mark that traffic with a traffic type, then activate a data filter that excludes it. GA4 excludes known bots and spiders automatically, but suspicious traffic still needs checking in the reports.\n\nSteps for internal traffic:\n1. In the web stream tag settings, define internal traffic rules (match IP address equals, or range).\n2. The tag then adds `traffic_type=internal` to events.\n3. In Data Settings, Data Filters, create or use the internal traffic filter. Start in testing state, check that data is marked, then switch it to active.\n\nA filter that is active drops the data permanently, and it cannot be recovered. This is why testing mode exists.\n\nDevelopers work from home on changing IPs. Alternatives:\n- Send a `debug` or `internal_user` flag from the app for staff accounts, and filter on it.\n- Use a separate GA4 property or a separate GTM environment for staging and development.\n- Block tracking in non-production builds at the code level.\n\nBots: look for patterns such as sessions with one event and zero engagement, strange countries, a single user agent hitting many pages, or very regular timing. You can exclude these by creating segments, and fix at the source with server rules or a bot management service. Not all bot traffic runs JavaScript, so tag-based analytics sees only part of it.\n\n**Gotcha:** Filters apply only to new data. Past data stays as it was.\n\n**Interview tip:** Say you separate environments first. This prevents most internal pollution without any filter.",
+      "level": "intermediate",
+      "module": "Google Analytics 4",
+      "tags": [
+        "ga4",
+        "filters",
+        "bots"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-039",
+      "question": "How do data retention, thresholds and sampling work in GA4 Explorations?",
+      "answer": "**Short answer:** GA4 keeps event-level data for a period you set in the property (the choices are short, a few months to a couple of years, so check the current options). After that period, Explorations that need event-level detail cannot look further back, though standard aggregated reports remain. Large Exploration queries can be sampled, and small counts can be hidden by thresholds.\n\nWhat is affected by what:\n\n| Limit | Applies to | Effect |\n| --- | --- | --- |\n| Event data retention | Explorations, user-level data | Older detail is gone; reports with aggregated data stay |\n| Sampling | Large Exploration queries | Results are estimates from a subset |\n| Thresholds | Reports when signals or demographics are on | Rows with few users are hidden |\n| Cardinality | Dimensions with many unique values | Extra values grouped as \"(other)\" |\n| Quota and row limits | API and large tables | Truncated results |\n\nWhat to do:\n- Set event data retention to the longest allowed value if your privacy policy allows it. The default is often the shorter option, so it is a common thing to miss.\n- Reduce the date range or number of dimensions to avoid sampling. The data quality icon in the report shows the state.\n- Turn off Google signals if thresholding hurts decisions and you do not need the features it enables.\n- For exact long-term analysis, use the BigQuery export, which stores raw events beyond the UI window.\n\n```text\nRule of thumb\nUI for exploring and trends, BigQuery for exact numbers and history.\n```\n\n**Gotcha:** Changing the retention setting does not bring back data that is already deleted.\n\n**Interview tip:** Mention that retention is a privacy choice and an analysis choice at once, so you decide it deliberately with legal input.",
+      "level": "intermediate",
+      "module": "Data & Reporting",
+      "tags": [
+        "ga4",
+        "retention",
+        "sampling"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-040",
+      "question": "How do you query the GA4 BigQuery export with SQL, including unnesting event_params?",
+      "answer": "**Short answer:** The GA4 export has one row per event in a table named `events_YYYYMMDD`. Event parameters are stored as a repeated record (`event_params`) of key and value pairs, so you extract a value with a subquery on `UNNEST(event_params)`.\n\nThis is a read-only example. I could not run it here because it needs a BigQuery project, so check column names against the current export schema in the docs.\n\n```sql\n-- Downloads per template for the last 7 days (GA4 export, standard SQL)\nSELECT\n  (SELECT value.string_value\n     FROM UNNEST(event_params) WHERE key = 'template_id') AS template_id,\n  COUNT(*) AS downloads,\n  COUNT(DISTINCT user_pseudo_id) AS users\nFROM `my-project.analytics_123456789.events_*`\nWHERE event_name = 'resume_downloaded'\n  AND _TABLE_SUFFIX BETWEEN\n      FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY))\n      AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())\nGROUP BY template_id\nORDER BY downloads DESC;\n```\n\nPoints to know:\n- `user_pseudo_id` is the client-level ID. `user_id` is set only if you send it.\n- Values are in `string_value`, `int_value`, `float_value` or `double_value`, depending on the type you sent.\n- `event_timestamp` is in microseconds since the epoch.\n- Use `_TABLE_SUFFIX` to limit the tables scanned. BigQuery charges by data scanned, so filter dates first and select only the columns you need.\n- Daily tables are exported once a day, and an intraday table can receive streaming data if enabled. Check current options and costs.\n\nSessions are not a column. You build them from `ga_session_id` in the parameters together with `user_pseudo_id`.\n\n**Gotcha:** BigQuery numbers can differ a little from the GA4 UI, because of modelling, thresholds and different user counting.\n\n**Interview tip:** Say that you use the export for stable KPIs and joins with business data, and the UI for quick exploration.",
+      "level": "intermediate",
+      "module": "Data & Reporting",
+      "tags": [
+        "bigquery",
+        "sql",
+        "ga4"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-041",
+      "question": "What is Consent Mode v2, and how do cookieless pings and modelling work at a concept level?",
+      "answer": "**Short answer:** Consent Mode lets Google tags adjust their behaviour to the user's consent choices. When consent is denied, tags do not use cookies for those purposes, and may send limited, cookieless pings. Google can then use these signals to model some of the missing behaviour. Version 2 added two signals for advertising: `ad_user_data` and `ad_personalization`.\n\nThe four main consent types:\n\n| Type | Controls |\n| --- | --- |\n| `analytics_storage` | Analytics cookies and identifiers |\n| `ad_storage` | Advertising cookies |\n| `ad_user_data` | Sending user data to Google for ads |\n| `ad_personalization` | Personalised advertising |\n\nYou set defaults before any tag loads, then update after the user chooses:\n\n```js\nwindow.dataLayer = window.dataLayer || [];\nfunction gtag(){ dataLayer.push(arguments); }\n\n// 1. default: denied (set BEFORE the GA/GTM tag runs)\ngtag('consent', 'default', {\n  analytics_storage: 'denied',\n  ad_storage: 'denied',\n  ad_user_data: 'denied',\n  ad_personalization: 'denied',\n  wait_for_update: 500, // ms to wait for the banner\n});\n\n// 2. update when the user accepts analytics only\ngtag('consent', 'update', { analytics_storage: 'granted' });\n```\n\nTwo implementation modes exist: basic (tags are blocked until consent, so no pings at all) and advanced (tags load and send cookieless pings with consent signals). Which is allowed for you is a legal and policy decision.\n\nModelling: GA4 can estimate behaviour for denied users when the property meets data volume requirements. Modelled data is an estimate, and some reports and the BigQuery export may not include it in the same way. Check the current documentation.\n\nIn the EU, Google requires consent signals for advertising features in the EEA. This is general information, not legal advice.\n\n**Gotcha:** If the default is set after the tag loads, the tag has already started without consent. Order matters.\n\n**Interview tip:** Explain that Consent Mode does not collect consent. A consent banner (CMP) does. Consent Mode only passes the answer to Google tags.",
+      "level": "intermediate",
+      "module": "Privacy & Consent",
+      "tags": [
+        "consent-mode",
+        "gdpr",
+        "ga4"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-042",
+      "question": "How do server-side GTM and the Measurement Protocol work?",
+      "answer": "**Short answer:** Server-side GTM runs a tagging server that you host. The browser sends events to your own endpoint, and the server forwards them to vendors. The Measurement Protocol is a separate HTTP API that lets your backend send events to GA4 directly, for example a confirmed payment.\n\n```mermaid\nflowchart LR\n    B[\"Browser\"] --> W[\"Web container\"]\n    W --> S[\"Your tagging server (sGTM)\"]\n    S --> G[\"GA4\"]\n    S --> A[\"Ads and others\"]\n    API[\"Your backend\"] --> MP[\"Measurement Protocol\"]\n    MP --> G\n```\n\nWhy teams use server-side tagging:\n- Fewer scripts in the browser, which helps performance.\n- First-party endpoint on your domain, which can extend cookie lifetimes and reduce blocking.\n- Control: you can drop or hash fields before they go to vendors.\n\nCosts: you host and monitor the server (for example on Cloud Run), pay for compute, and maintain it. It does not remove consent obligations.\n\nMeasurement Protocol request shape (read only example, replace placeholders; do not use real secrets in code):\n\n```text\nPOST https://www.google-analytics.com/mp/collect?measurement_id=G-XXXXXXX&api_secret=SECRET\nContent-Type: application/json\n\n{\n  \"client_id\": \"1234567890.1700000000\",\n  \"events\": [\n    { \"name\": \"purchase\",\n      \"params\": { \"transaction_id\": \"T-1042\", \"value\": 9.99, \"currency\": \"USD\" } }\n  ]\n}\n```\n\nRules: use the same `client_id` as the browser to join with the web session, keep the API secret on the server, and use a validation endpoint while testing. The Measurement Protocol is meant to add to client-side tracking, not replace it, and it has limits on attribution data. Check the current docs.\n\n**Gotcha:** Sending a purchase from both the browser and the server causes duplicates. Use a unique `transaction_id` and choose one source.\n\n**Interview tip:** Say server-side is for control and data quality, not a free pass around privacy.",
+      "level": "intermediate",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "server-side",
+        "measurement-protocol",
+        "gtm"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-043",
+      "question": "How do you use Microsoft Clarity in practice: install, mask, filter and read signals?",
+      "answer": "**Short answer:** Install the Clarity snippet (directly or through GTM), respect consent, mask sensitive content, then use filters and frustration signals to find sessions worth watching. Treat recordings as personal data.\n\nInstall: Clarity gives you a small script with your project ID. Add it to the page, or create a GTM custom HTML tag that fires after consent.\n\n```js\n// shape of the Clarity snippet (project id is a placeholder)\n(function(c,l,a,r,i,t,y){\n  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};\n  t=l.createElement(r);t.async=1;t.src=\"https://www.clarity.ms/tag/\"+i;\n  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);\n})(window, document, \"clarity\", \"script\", \"YOUR_PROJECT_ID\");\n```\n\nCustom tags and events, to find sessions faster:\n\n```js\nclarity(\"set\", \"plan\", \"pro\");               // custom tag: filter sessions by plan\nclarity(\"event\", \"resume_downloaded\");       // custom event\nclarity(\"consent\");                          // tell Clarity consent was given (check current API)\n```\n\nMasking: Clarity has masking modes in the project settings (strict, balanced, relaxed). You can mask specific elements with the `data-clarity-mask=\"True\"` attribute. For a resume builder, mask all form fields and the resume preview, because they contain personal data. Check the current masking options in the docs.\n\nUsing it well:\n- Filter by rage clicks, dead clicks, device, country, or a custom tag.\n- Watch 10 to 20 sessions for one problem, not random ones.\n- Use the heatmaps for scroll depth and clicks per page.\n- Check Clarity's own impact on performance, as it adds a script and data capture.\n\n**Gotcha:** Masking is not retroactive. A session recorded before you changed the setting may contain visible text.\n\n**Interview tip:** Say you decided masking before launch with the legal team, and that recordings follow the same consent as analytics.",
+      "level": "intermediate",
+      "module": "Clarity & Behaviour Analytics",
+      "tags": [
+        "clarity",
+        "privacy",
+        "session-recordings"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-044",
+      "question": "How do you combine Clarity and GA4 for a UX investigation?",
+      "answer": "**Short answer:** Use GA4 to find where and how big the problem is, then use Clarity to see why. Link the two with shared tags (like a template ID or experiment variant) so you can jump from a number to the matching recordings.\n\nA worked method:\n1. **Find it in GA4.** A funnel shows 40 percent of mobile users leave after `template_selected`.\n2. **Segment it.** Compare device, browser, source. Say it is Android Chrome from paid social.\n3. **Watch it in Clarity.** Filter recordings by the same device, page and a custom tag, then watch a set of them. Look for rage clicks, dead clicks, layout shifts and form errors.\n4. **Form a hypothesis.** \"The sticky Next button is hidden behind the cookie banner on small screens.\"\n5. **Test the fix.** Ship a change or run an A/B test, and compare the GA4 funnel again.\n\nLinking: Clarity has an integration with Google Analytics that lets you see the GA4 link in Clarity (check current setup steps). You can also send the same IDs to both tools with custom tags, for example:\n\n```js\nclarity(\"set\", \"variant\", \"checkout_b\");\ngtag('event', 'experiment_view', { experiment_id: 'checkout', variant: 'b' });\n```\n\nLimits to remember: Clarity records only users who allow it and whose browsers load the script; counts will not match GA4 exactly; and Clarity data retention is limited, so save insights (screenshots, notes) in your own documents.\n\n**Gotcha:** Do not let recordings override numbers. If only one user had the problem, it is a story, not a priority.\n\n**Interview tip:** Give the example of \"numbers locate, recordings explain, experiments confirm\".",
+      "level": "intermediate",
+      "module": "Clarity & Behaviour Analytics",
+      "tags": [
+        "clarity",
+        "ga4",
+        "ux"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-045",
+      "question": "How do you run a funnel analysis and investigate drop-off?",
+      "answer": "**Short answer:** Define ordered steps, count users who reach each one, compute the step conversion and the overall conversion, then segment the biggest drop to find out who leaves and why. Check data quality first, because a missing event looks like a drop.\n\nI ran this small example in Python on sample events. Each user must reach the steps in order.\n\n```python\nevents = [(\"u1\",\"visit\",1),(\"u1\",\"template_selected\",2),(\"u1\",\"sign_up\",3),(\"u1\",\"resume_downloaded\",4),\n          (\"u2\",\"visit\",1),(\"u2\",\"template_selected\",2),(\"u2\",\"sign_up\",5),\n          (\"u3\",\"visit\",1),(\"u3\",\"template_selected\",3),\n          (\"u4\",\"visit\",1),(\"u5\",\"visit\",1),(\"u5\",\"sign_up\",2),(\"u5\",\"template_selected\",4)]\nsteps = [\"visit\",\"template_selected\",\"sign_up\",\"resume_downloaded\"]\nby_user = {}\nfor u, e, t in events: by_user.setdefault(u, []).append((t, e))\nreached = [0] * len(steps)\nfor evs in by_user.values():\n    i = 0\n    for t, e in sorted(evs):                 # walk the user's events in time order\n        if i < len(steps) and e == steps[i]: i += 1\n    for k in range(i): reached[k] += 1       # reached steps 0..i-1\nfor k, s in enumerate(steps):\n    step = reached[k] / reached[k-1] if k else 1\n    print(f\"{s:18} users={reached[k]} step={step:.0%} overall={reached[k]/reached[0]:.0%}\")\n# prints:\n# visit              users=5 step=100% overall=100%\n# template_selected  users=4 step=80% overall=80%\n# sign_up            users=2 step=50% overall=40%\n# resume_downloaded  users=1 step=50% overall=20%\n```\n\nUser u5 signed up before choosing a template, so in this strict order they stop at the template step.\n\nInvestigation method:\n1. Verify tracking at each step (is the sign-up event really firing for all methods?).\n2. Find the largest relative drop (here sign-up, 50 percent).\n3. Segment by device, source, country, new versus returning.\n4. Look at qualitative data (recordings, errors, support tickets).\n5. Check timing: are people leaving quickly (confusion) or slowly (hesitation)?\n6. Form a hypothesis and test.\n\n**Gotcha:** Open and closed funnels give different numbers. State which one you used and the time window.\n\n**Interview tip:** Mention checking the tracking first. It is the most common real cause of a sudden \"drop\".",
+      "level": "intermediate",
+      "module": "Data & Reporting",
+      "tags": [
+        "funnel",
+        "conversion",
+        "analysis"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-046",
+      "question": "How do cohort and retention analysis work?",
+      "answer": "**Short answer:** A cohort is a group of users who share a starting point, such as the week they signed up. Retention analysis shows what share of each cohort comes back after one day, one week, one month. It separates real improvement from the effect of mixing old and new users.\n\nExample table (percent of users active):\n\n| Signup week | Week 0 | Week 1 | Week 2 | Week 3 |\n| --- | --- | --- | --- | --- |\n| Jan 1 | 100 | 32 | 22 | 18 |\n| Jan 8 | 100 | 35 | 25 | 20 |\n| Jan 15 | 100 | 41 | 30 | 26 |\n\nReading it: each row is a cohort. The curve should flatten at some level, which shows a loyal core. Newer cohorts higher than older ones suggest the product improved.\n\nChoose the return event carefully. \"Any visit\" is easy but weak. \"Created or downloaded a resume\" is closer to value. A resume builder has a natural low frequency (people need a resume rarely), so weekly retention may be low by design. Use a window that fits the product, and consider \"return within 30 or 90 days\" or \"returns for a second job application\".\n\nIn GA4 you can use the Cohort exploration and the retention overview report. For exact definitions use SQL on the export.\n\n**Common mistakes**\n- Comparing a mature cohort with a fresh one at different ages.\n- Counting returns of anonymous users who clear cookies as new users, so retention looks worse.\n- Using averages across all users, which hides trends.\n\n**Interview tip:** Say that retention is the best test of real value. Acquisition can be bought, retention cannot.",
+      "level": "intermediate",
+      "module": "Data & Reporting",
+      "tags": [
+        "cohort",
+        "retention",
+        "analysis"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-047",
+      "question": "What are the basics of A/B testing tools and statistics: significance, power and peeking?",
+      "answer": "**Short answer:** In an A/B test you compare a metric between two randomly assigned groups. The p-value tells you how surprising the difference would be if there were no true difference. Power is the chance to detect an effect that is really there. Peeking at results and stopping early inflates false positives.\n\nKey terms in simple words:\n- **Significance level (alpha):** the false alarm rate you accept, often 5 percent.\n- **Power:** chance to detect the minimum effect you care about, often 80 percent.\n- **Minimum detectable effect:** the smallest change worth acting on.\n- **Sample size:** depends on baseline rate, effect size, alpha and power.\n\nI ran this with Python's standard library. It checks the split, compares two conversion rates and estimates sample size.\n\n```python\nimport math\nfrom statistics import NormalDist\ndef ztest(ca, na, cb, nb):\n    pa, pb = ca/na, cb/nb; p = (ca+cb)/(na+nb)\n    se = math.sqrt(p*(1-p)*(1/na+1/nb)); z = (pb-pa)/se\n    return pa, pb, z, 2*(1-NormalDist().cdf(abs(z)))\ndef sample_size(base, mde, alpha=0.05, power=0.8):\n    za = NormalDist().inv_cdf(1-alpha/2); zb = NormalDist().inv_cdf(power)\n    p2 = base + mde\n    return math.ceil((za+zb)**2 * (base*(1-base) + p2*(1-p2)) / mde**2)\nprint(ztest(500, 5000, 570, 5000))      # A=10.0% B=11.4% z=2.26 p=0.0235\nprint(sample_size(0.10, 0.01))          # 14749 users per arm for 10% -> 11%\n```\n\nOutput: A converts at 10.0 percent, B at 11.4 percent, z is 2.26 and p is about 0.024. For a lift from 10 to 11 percent you need about 14,749 users per group.\n\nTools: Google Optimize was shut down in 2023. Today teams use tools such as Optimizely, VWO, Statsig, GrowthBook or an in-house setup with GA4 or a warehouse. Check current options.\n\n**Gotcha:** Peeking each day and stopping at the first p below 0.05 gives far more false winners than 5 percent. Fix the sample size first, or use a sequential method designed for it.\n\n**Interview tip:** Explain p-value in plain words and mention power. Most people only mention significance.",
+      "level": "intermediate",
+      "module": "Experimentation & Statistics",
+      "tags": [
+        "ab-testing",
+        "statistics",
+        "power"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-048",
+      "question": "How is Core Web Vitals field data collected, and how do analytics tools report performance?",
+      "answer": "**Short answer:** Field data comes from real users' browsers, collected by Chrome (the CrUX dataset) and by Real User Monitoring (RUM) scripts you add. Lab tools like Lighthouse test one run on one machine. Analytics tools can store the web vitals you send as events.\n\nMetrics in the Core Web Vitals set: Largest Contentful Paint (LCP), Interaction to Next Paint (INP) and Cumulative Layout Shift (CLS). The thresholds Google uses to rate \"good\" are published and may change, so check web.dev.\n\nSending vitals from the browser to GA4 with the open source `web-vitals` library:\n\n```ts\nimport { onLCP, onINP, onCLS, type Metric } from 'web-vitals';\n\ndeclare function gtag(...args: unknown[]): void;\n\nfunction send(m: Metric) {\n  gtag('event', m.name, {\n    value: Math.round(m.name === 'CLS' ? m.value * 1000 : m.value),\n    metric_id: m.id,        // lets you remove duplicates\n    metric_rating: m.rating, // good, needs-improvement, poor\n  });\n}\nonLCP(send); onINP(send); onCLS(send);\n```\n\nWhere to look:\n\n| Source | Type | Good for |\n| --- | --- | --- |\n| Lighthouse, WebPageTest | Lab | Debugging and CI checks |\n| CrUX, Search Console report | Field (Chrome users) | What Google sees at 75th percentile |\n| Your RUM events | Field | Your own segments, releases, routes |\n\nUse the 75th percentile, not the average, because averages hide the slow tail. Segment by device and network. In an SPA, soft navigations may not be reported the same way as full page loads, so check the current library and browser support.\n\n**Gotcha:** Adding a heavy analytics tag can itself worsen INP. Measure with and without it.\n\n**Interview tip:** Say lab data helps you fix, field data tells you if you actually fixed it for users.",
+      "level": "intermediate",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "core-web-vitals",
+        "rum",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-049",
+      "question": "How do ad blockers, ITP and cookie lifetimes affect analytics data?",
+      "answer": "**Short answer:** Ad blockers can stop analytics scripts or requests, and browsers like Safari limit the lifetime of cookies set by JavaScript. The result is missing sessions, returning users counted as new, and weaker attribution. You can reduce the loss, but not remove it.\n\n| Cause | Effect | Mitigation |\n| --- | --- | --- |\n| Ad and tracker blockers | Tag blocked, no events | Server-side tagging on your own domain, accept some loss |\n| Safari ITP | JavaScript cookies expire quickly (a few days up to about 7) | Server-set first-party cookies |\n| Firefox and Brave tracking protection | Third-party and known tracker requests blocked | First-party endpoint |\n| Consent denied | No cookies or events | Consent Mode modelling |\n| Link decoration cleaning | Click IDs stripped from URLs | Capture on landing, server-side |\n| Private mode | Short-lived storage | Nothing to fix |\n\nEffects you may see: lower user counts than server logs, more \"new users\", more \"direct\" traffic, and a gap between your database and the analytics numbers.\n\nWays to measure the gap:\n- Compare analytics sessions with server access logs or CDN counts for the same period.\n- Compare analytics purchases with database orders. The ratio tells you your capture rate.\n- Break the gap down by browser. A larger gap in Safari or Firefox points to cookie and blocker effects.\n\nRemember that circumventing a user's explicit choice to block tracking can be an ethical and legal problem. A first-party setup is fine for the data you are allowed to collect, but it must still follow consent.\n\n**Gotcha:** Do not promise exact numbers. Say that analytics shows direction and relative change, and the database shows the exact business totals.\n\n**Interview tip:** Quote the measurable gap with an example (for example, analytics sees 85 percent of orders) and say how you track it over time.",
+      "level": "intermediate",
+      "module": "Privacy & Consent",
+      "tags": [
+        "ad-blockers",
+        "itp",
+        "data-quality"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-050",
+      "question": "How would you build an event pipeline end to end, and how does it compare with GA4?",
+      "answer": "**Short answer:** A custom pipeline has a client SDK that batches events, an ingestion endpoint that validates them, a queue, a stream or batch processor, and a warehouse. You gain control of schema, identity and privacy. You pay in engineering time and operations.\n\n```mermaid\nflowchart LR\n    C[\"Client SDK: batch, retry\"] --> I[\"Ingestion API: auth, validate\"]\n    I --> Q[\"Queue or log\"]\n    Q --> P[\"Processor: enrich, dedupe\"]\n    P --> W[(\"Warehouse\")]\n    P --> D[\"Dead letter store\"]\n    W --> M[\"Models and dashboards\"]\n```\n\nRead it left to right. Bad events go to the dead letter store, so nothing is silently lost.\n\nDesign points:\n- **Event envelope:** `event_id` (unique, for deduplication), `name`, `ts_client`, `ts_server`, `anonymous_id`, `user_id`, `schema_version`, and `props`.\n- **Client:** batch events, flush on size, time and page hide, retry with backoff, cap the queue size.\n- **Ingestion:** check schema, reject unknown events, reject PII patterns, add the server time and a coarse location.\n- **Processing:** deduplicate by `event_id`, parse the user agent, drop bots, enrich with plan or account data.\n- **Warehouse:** an append-only events table, plus derived session and user tables.\n\n| Need | GA4 | Own pipeline |\n| --- | --- | --- |\n| Time to start | Hours | Weeks to months |\n| Schema control | Limited by GA model | Full |\n| Raw data | Via BigQuery export | Native |\n| Ads integration | Built in | Custom |\n| Cost | Mostly free tool, pay for export and queries | Infrastructure and people |\n\nMany teams use both: GA4 for marketing, and a pipeline or a product analytics tool for deep product questions. Buy where you can, build where the data is a core asset.\n\n**Gotcha:** Without an `event_id`, retries create duplicates. Idempotency is the first thing to design.\n\n**Interview tip:** Mention exactly-once as a goal reached by at-least-once delivery plus deduplication.",
+      "level": "advanced",
+      "module": "Data & Reporting",
+      "tags": [
+        "pipeline",
+        "architecture",
+        "warehouse"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-051",
+      "question": "How does identity resolution work, and what are its privacy implications?",
+      "answer": "**Short answer:** Identity resolution links the events of one person across anonymous visits, logins and devices. Typically an anonymous ID is created in the browser, and when the person logs in, you connect it to a user ID. The more you link, the more useful and the more sensitive the data becomes.\n\nCommon model:\n1. Visitor arrives. The tool assigns an `anonymous_id` (cookie).\n2. After login or signup, you call an identify step with a stable internal `user_id`.\n3. The warehouse maps all events for that anonymous ID to the user ID, including earlier ones (backfilled stitching).\n4. On another device, the same `user_id` connects the second anonymous ID too.\n\n```text\nanon_A (phone)  --login-->  user_42  <--login--  anon_B (laptop)\nevents before login are stitched to user_42 in the model\n```\n\nHard cases:\n- **Shared devices:** two people use one browser, and merges are wrong.\n- **One person, many accounts:** merging users is destructive. Decide the rules in advance.\n- **Cleared cookies:** the same person appears as new until login.\n- **Late identification:** a person buys without ever logging in. Use an email hash captured at checkout, with care.\n\nGA4 has \"reporting identity\" settings (blended, observed, device based) that choose how user IDs and device IDs combine in reports. Check the current names in the docs.\n\nPrivacy points:\n- Stitching creates a profile, so tell users in your privacy notice.\n- Use internal IDs, not emails. Hashing an email is pseudonymous, not anonymous, because it can be matched.\n- Deletion must remove both the user ID mapping and the linked events.\n- Respect consent: if analytics is denied, do not link identities.\n\n**Gotcha:** Merging profiles cannot be undone cleanly. Keep the merge log.\n\n**Interview tip:** Say you collect the minimum identifiers needed to answer the question and design deletion before you design stitching.",
+      "level": "advanced",
+      "module": "Privacy & Consent",
+      "tags": [
+        "identity",
+        "privacy",
+        "cross-device"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-052",
+      "question": "What are the attribution models, and what pitfalls do they have?",
+      "answer": "**Short answer:** Attribution splits credit for a conversion across the touchpoints that came before it. Simple rules (first click, last click, linear, position based, time decay) are easy to explain. Data-driven models estimate each touchpoint's contribution from data. All of them describe correlation, not cause.\n\n| Model | Credit rule | Bias |\n| --- | --- | --- |\n| Last click | Final touchpoint gets everything | Favours bottom funnel, such as brand search and email |\n| First click | First touchpoint gets everything | Favours awareness channels |\n| Linear | Equal share | Ignores importance |\n| Time decay | More credit nearer the conversion | Favours late touches |\n| Position based | Most credit to first and last | Arbitrary weights |\n| Data-driven | Learned from conversion paths | Needs volume, not transparent |\n\nHere is a small example. A user clicks a social ad, then a search ad, then an email, then buys. Last click gives all credit to email. Linear gives each one a third. The channel budgets you set will differ.\n\nPitfalls:\n- **Correlation, not cause:** people who already intended to buy search for your brand. Brand search gets credit it did not create. Use holdout or geo tests to measure incrementality.\n- **View-through and cross-device gaps:** many touches are invisible.\n- **Lookback windows:** a short window loses long consideration journeys.\n- **Consent and blockers:** the missing touches are not random.\n- **Platform self-reporting:** each ad platform credits itself, so the totals add up to more than reality.\n- **Direct traffic** hides untracked sources.\n\nPractical approach: use one agreed model for reporting, check it against incrementality tests, and look at several models side by side before shifting big budgets.\n\n**Gotcha:** Changing the model changes history in reports. Note the date.\n\n**Interview tip:** Say \"attribution tells you who is standing near the sale, experiments tell you who caused it\".",
+      "level": "advanced",
+      "module": "Google Analytics 4",
+      "tags": [
+        "attribution",
+        "marketing",
+        "models"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-053",
+      "question": "How would you design an experimentation platform at a high level?",
+      "answer": "**Short answer:** An experimentation platform needs stable random assignment, exposure logging, a metrics layer, a stats engine and guardrails. The key idea: assign users deterministically, log when they were actually exposed, and analyse only people who were exposed.\n\n```mermaid\nflowchart LR\n    U[\"User or request\"] --> A[\"Assignment service: hash of user and experiment\"]\n    A --> V[\"Variant shown\"]\n    V --> E[\"Exposure event logged\"]\n    E --> L[(\"Event store\")]\n    L --> M[\"Metrics layer\"]\n    M --> S[\"Stats engine and guardrails\"]\n    S --> R[\"Report and decision\"]\n```\n\nComponents:\n- **Assignment:** hash `user_id + experiment_key` into a bucket from 0 to 9999, then map ranges to variants. It is stateless, stable and fast. Use salt per experiment so tests do not correlate.\n- **Exposure logging:** record an event when the variant is really shown, not when it is assigned. Users who never reach the page should not count.\n- **Metrics layer:** one governed definition of each metric (numerator, denominator, window).\n- **Stats engine:** fixed-horizon tests or sequential methods, checks such as sample ratio mismatch, multiple comparison control.\n- **Guardrails and kill switch:** stop automatically if error rate or latency rises.\n- **Mutual exclusion:** layers or namespaces so related tests do not overlap.\n\nCUPED, in plain words: use each user's behaviour before the test as a predictor of their behaviour during the test, and subtract the part you could already predict. What remains is noise-reduced, so you reach the same confidence with fewer users. It works only when pre-experiment data exists and correlates with the metric.\n\nA simple assignment function:\n\n```ts\nimport { createHash } from 'node:crypto';\nexport function bucket(userId: string, experiment: string, buckets = 10000): number {\n  const h = createHash('sha256').update(`${experiment}:${userId}`).digest();\n  return h.readUInt32BE(0) % buckets; // stable for the same input\n}\n```\n\n**Gotcha:** Assigning on a cookie that can be cleared makes a user switch variants. Prefer user ID after login.\n\n**Interview tip:** Say \"exposure, not assignment\". It shows you understand the biggest source of diluted results.",
+      "level": "advanced",
+      "module": "Experimentation & Statistics",
+      "tags": [
+        "experimentation",
+        "architecture",
+        "cuped"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-054",
+      "question": "What statistical pitfalls should you watch for in analytics and A/B tests?",
+      "answer": "**Short answer:** The main traps are multiple comparisons, sample ratio mismatch, Simpson's paradox, survivorship bias and peeking. All of them produce confident but wrong conclusions.\n\n| Pitfall | What happens | Defence |\n| --- | --- | --- |\n| Multiple comparisons | Test 20 metrics, one looks significant by luck | One primary metric, correct for many tests |\n| Sample ratio mismatch (SRM) | Actual split differs from the planned split | Check the split before reading results |\n| Simpson's paradox | A trend in each group reverses in the total | Segment, look at the mix |\n| Survivorship bias | Analysing only users who stayed | Include everyone who started |\n| Peeking | Stopping at the first significant result | Fixed sample or sequential method |\n| Novelty effect | Early lift fades | Run longer, look at later cohorts |\n\nI ran an SRM check in Python. With a 50/50 plan, 5000 versus 5050 is fine, but 5000 versus 5400 is not.\n\n```python\nimport math\nfrom statistics import NormalDist\ndef srm(na, nb, ratio=0.5):\n    n = na + nb; exp_a = n * ratio; exp_b = n - exp_a\n    chi2 = (na - exp_a)**2 / exp_a + (nb - exp_b)**2 / exp_b\n    p = 2 * (1 - NormalDist().cdf(math.sqrt(chi2)))  # chi-square, 1 degree of freedom\n    return chi2, p\nprint(srm(5000, 5050))  # chi2=0.25 p=0.618 -> fine\nprint(srm(5000, 5400))  # chi2=15.38 p=0.00009 -> SRM, do not trust the result\n```\n\nAn SRM usually means a bug: a redirect that loses users in one variant, a tracking event that fires differently, bots, or a bad assignment. Fix it and rerun. Do not \"adjust\" the numbers.\n\nSimpson's paradox example: variant B converts better on both mobile and desktop, but worse overall, because B received more of the lower-converting mobile traffic. The segment mix, not the design, drove the total.\n\n**Gotcha:** A p-value does not tell you the probability that the variant is better. It says how rare the data would be if there were no difference.\n\n**Interview tip:** Offer SRM as your first check. It signals real experience.",
+      "level": "advanced",
+      "module": "Experimentation & Statistics",
+      "tags": [
+        "statistics",
+        "srm",
+        "pitfalls"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-055",
+      "question": "How would you model analytics events in a data warehouse, including sessionisation with SQL?",
+      "answer": "**Short answer:** Keep a raw append-only events table, then build derived tables: sessions, users and daily metrics. Sessions are created in SQL with window functions: find the gap since the previous event for the same user, start a new session when the gap exceeds a limit (often 30 minutes), then number the sessions with a running sum.\n\nI ran this in SQLite, which supports window functions. Timestamps are in seconds and the gap limit is 1800 seconds.\n\n```sql\nCREATE TABLE events(user_id TEXT, ts INTEGER, name TEXT);\nINSERT INTO events VALUES\n('u1',0,'page_view'),('u1',60,'click'),('u1',2000,'page_view'),('u1',2100,'purchase'),\n('u2',10,'page_view'),('u2',5000,'page_view');\n\nWITH gaps AS (\n  SELECT *, ts - LAG(ts) OVER (PARTITION BY user_id ORDER BY ts) AS gap FROM events),\nflagged AS (\n  SELECT *, CASE WHEN gap IS NULL OR gap > 1800 THEN 1 ELSE 0 END AS new_session FROM gaps),\nsessions AS (\n  SELECT *, SUM(new_session) OVER (PARTITION BY user_id ORDER BY ts) AS session_no FROM flagged)\nSELECT user_id, session_no, COUNT(*) AS events, MIN(ts) AS start, MAX(ts)-MIN(ts) AS duration\nFROM sessions GROUP BY user_id, session_no ORDER BY user_id, session_no;\n```\n\n```text\nuser_id  session_no  events  start  duration\nu1       1           2       0      60\nu1       2           2       2000   100\nu2       1           1       10     0\nu2       2           1       5000   0\n```\n\nUser u1 has a gap of 1,940 seconds between two events, so a second session starts. The same idea works in BigQuery or Postgres.\n\nModelling tips:\n- Partition the events table by date and cluster by event name and user to cut cost.\n- Store the raw parameters as JSON or a repeated field, but build typed columns for the common ones.\n- Build the models incrementally (only new days) and test them (not null, unique `event_id`).\n- Keep one definition of a session. GA4's own sessions differ slightly because they also use session IDs and the 30 minute inactivity rule plus other conditions, so expect small differences.\n\n**Gotcha:** Sort order ties. Two events with the same timestamp need a tiebreaker, such as an event sequence number.\n\n**Interview tip:** Offer the LAG, flag and running SUM pattern. It is a very common SQL interview technique.",
+      "level": "advanced",
+      "module": "Data & Reporting",
+      "tags": [
+        "sql",
+        "warehouse",
+        "sessionisation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-056",
+      "question": "What does privacy engineering for analytics involve?",
+      "answer": "**Short answer:** It means building privacy into the system: a consent architecture the code actually obeys, automatic detection of personal data, pseudonymisation, data residency choices, and automated retention and deletion. Legal rules vary by country, so involve legal advice.\n\nBuilding blocks:\n- **Consent architecture:** one consent state object, stored and versioned. The analytics layer reads it before every send. Tags and SDKs listen for changes. Record the consent proof (what, when, which banner version).\n- **PII detection:** scan outgoing events and URLs for patterns such as emails, phone numbers and long digit strings. Block or redact in the client layer and again on the server.\n- **Pseudonymisation:** replace direct identifiers by internal IDs or salted hashes. A hash of an email is still personal data if the email can be guessed or matched.\n- **Data residency:** choose regions for the property, the warehouse and the tagging server, based on your legal needs.\n- **Retention automation:** table expiry in the warehouse, short retention in the tool, scheduled deletion jobs, and proof that they ran.\n- **Subject requests:** a list of every system with user data, and a tested process to find and delete one user's data.\n\nA tiny redaction helper for URLs:\n\n```ts\nconst EMAIL = /[\\w.+-]+@[\\w-]+\\.[\\w.]+/g;\nexport function redact(url: string): string {\n  return url.replace(EMAIL, '[email]');\n}\n// redact('/done?email=a.b@example.com') -> '/done?email=[email]'\n```\n\nReview it with a data protection officer where you have one. Keep records of what you collect and why.\n\n**Gotcha:** Free text fields (search boxes, feedback) and error messages are the usual leaks.\n\n**Interview tip:** Say you treat privacy requirements like security requirements: design, automate, test, audit.",
+      "level": "advanced",
+      "module": "Privacy & Consent",
+      "tags": [
+        "privacy",
+        "pii",
+        "retention"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-057",
+      "question": "How do you measure browser performance and errors (RUM and error tracking) next to analytics?",
+      "answer": "**Short answer:** Analytics tells you what users do, RUM tells you how fast and smooth it felt, and error tracking tells you what broke. Join them with shared identifiers such as release version, route and session ID, so you can say \"users who hit this error converted 40 percent less\".\n\nWhat to collect:\n- **RUM:** Core Web Vitals, navigation timing, long tasks and API latency per route.\n- **Errors:** uncaught exceptions, unhandled promise rejections, failed network calls, with release version and a stack trace (source maps uploaded privately).\n- **Analytics:** business events and funnels.\n\nWiring errors to analytics:\n\n```ts\nwindow.addEventListener('error', (e) => {\n  track('client_error', { message: String(e.message).slice(0, 100), route: location.pathname });\n});\nwindow.addEventListener('unhandledrejection', () => {\n  track('client_error', { message: 'unhandled_rejection', route: location.pathname });\n});\ndeclare function track(name: string, params: Record<string, unknown>): void;\n```\n\nKeep error messages short and free of personal data. For detail use a dedicated tool (for example Sentry or Datadog RUM), and send only an error ID or count to analytics.\n\nUseful questions this answers:\n- Did the new release raise errors on the checkout route?\n- Is a drop in conversion linked to slow LCP on mobile?\n- Which browser versions have the highest error rates?\n\n| Signal | Tool type | Sampling note |\n| --- | --- | --- |\n| Behaviour | Analytics | Usually all events |\n| Performance | RUM | Often sampled |\n| Errors | Error tracker | Deduplicated and grouped |\n\n**Gotcha:** Too many error events can hit analytics quotas and costs. Group and sample them.\n\n**Interview tip:** Connect to your observability background. Say that analytics, RUM and tracing share the release and session IDs.",
+      "level": "advanced",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "rum",
+        "error-tracking",
+        "observability"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-058",
+      "question": "How would you track analytics for AI features?",
+      "answer": "**Short answer:** Track usage, outcome and quality. Usage shows who uses the feature. Outcome shows if it helped the user's goal. Quality uses signals such as ratings, edits and retries. Never send prompts or generated personal content to analytics.\n\nUseful events for an AI resume suggestion feature:\n\n| Event | Parameters |\n| --- | --- |\n| `ai_suggestion_requested` | `feature`, `section_type` |\n| `ai_suggestion_shown` | `latency_ms`, `model_version` |\n| `ai_suggestion_accepted` | `edited` (true or false) |\n| `ai_suggestion_rejected` | `reason_code` |\n| `ai_feedback` | `rating` (up or down) |\n\nQuality signals that do not need the text: acceptance rate, edit distance bucket, regenerate rate, time to accept, abandonment after a suggestion, and error or timeout rate.\n\nGood practice:\n- Log `model_version` and `prompt_version` so you can compare releases.\n- Keep prompts and outputs out of analytics. If you need them for evaluation, store them in a separate, access-controlled system with consent and retention rules.\n- Add cost per request and latency as guardrails.\n- Run A/B tests for prompt or model changes, with acceptance and downstream conversion as metrics.\n\n**Gotcha:** A high acceptance rate can mean users trust the output, or only that accepting is the easiest button. Pair it with later outcomes such as downloads and returns.\n\n**Interview tip:** Say \"measure the outcome, not just the clicks, and keep the content out of analytics\".",
+      "level": "advanced",
+      "module": "Analytics Fundamentals",
+      "tags": [
+        "ai",
+        "product-analytics",
+        "feedback"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-059",
+      "question": "How do you make tracking reliable on flaky networks and when the page closes?",
+      "answer": "**Short answer:** Use `navigator.sendBeacon` or `fetch` with `keepalive: true` for events sent while the page is closing, listen to `visibilitychange` instead of `unload`, and keep a small persistent queue with retries for offline periods. Always include an event ID to deduplicate.\n\nWhy `unload` is a poor choice: it is unreliable on mobile and blocks the browser back/forward cache in many cases. The `visibilitychange` event to `hidden` is the recommended moment to flush.\n\n```ts\nconst queue: object[] = [];\n\nexport function enqueue(event: object) {\n  queue.push({ ...event, event_id: crypto.randomUUID(), ts: Date.now() });\n}\n\nfunction flush() {\n  if (queue.length === 0) return;\n  const body = JSON.stringify(queue.splice(0, queue.length));\n  // sendBeacon survives page close; returns false if the browser refused it\n  const ok = navigator.sendBeacon('/collect', body);\n  if (!ok) {\n    fetch('/collect', { method: 'POST', body, keepalive: true }); // fallback\n  }\n}\n\ndocument.addEventListener('visibilitychange', () => {\n  if (document.visibilityState === 'hidden') flush();\n});\nsetInterval(flush, 5000); // also flush on a timer\n```\n\nReliability checklist:\n- **Batching:** fewer requests, but flush by time too.\n- **Retries with backoff** for network errors and server errors, with a maximum.\n- **Persistence:** store unsent events in `localStorage` or IndexedDB, with a size cap, and send them on the next visit. Check that storage use fits the consent rules.\n- **Idempotency:** the server drops events with a repeated `event_id`.\n- **Size limits:** beacon and keepalive payloads have size limits (about 64 KB in many browsers), so split large batches.\n- **Critical events** such as purchases should come from the server, not from the browser.\n\n**Gotcha:** Clicking a link that leaves the page can cancel a normal request. Use a beacon, or `keepalive`.\n\n**Interview tip:** Mention bfcache and `visibilitychange`. It shows modern knowledge.",
+      "level": "advanced",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "reliability",
+        "sendbeacon",
+        "offline"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-060",
+      "question": "How do you migrate from Universal Analytics or another tool to GA4?",
+      "answer": "**Short answer:** Map what you actually use, not every old report. Redesign the events in the GA4 model, run both tools in parallel where possible, validate against a source of truth, and keep exports of old data, because history does not carry over. Universal Analytics stopped processing data in 2023 and old data access ended later, so this is now mostly about older setups or moves between tools.\n\nPlan:\n1. **Inventory:** list reports, goals, dashboards and who uses them. Drop unused ones.\n2. **Define questions and KPIs** instead of porting each goal.\n3. **Map the model:** UA categories, actions and labels become event names and parameters. Goals become key events. Views become data streams or filters.\n4. **Build the tracking plan** and implement it with the data layer and GTM.\n5. **Run in parallel** for a few weeks to compare, and expect differences in users, sessions and bounce rate because the definitions differ.\n6. **Backfill and archive:** export old data to BigQuery or files before you lose access. Warehouse data from the old tool can be joined to GA4 data by date in reporting, but metrics will not line up exactly.\n7. **Cut over and communicate** the date and the definition changes.\n8. **Retire the old tags.**\n\n| Old thing | GA4 equivalent |\n| --- | --- |\n| Pageview hit | `page_view` event |\n| Event category, action, label | Event name plus parameters |\n| Goal | Key event |\n| View filters | Data filters, streams |\n| Custom dimension | Custom dimension (event or user scope) |\n\nYou cannot import old history as if it were GA4 events. Report year-over-year comparisons with a clear note about the change.\n\n**Gotcha:** Do not compare UA and GA4 numbers one to one. They measure differently.\n\n**Interview tip:** Say you treat a migration as a chance to remove noise and write the tracking plan, not as a copy job.",
+      "level": "advanced",
+      "module": "Google Analytics 4",
+      "tags": [
+        "migration",
+        "universal-analytics",
+        "ga4"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-061",
+      "question": "Interview scenario: GA4 shows 30 percent fewer purchases than the database. How do you investigate?",
+      "answer": "**Short answer:** First quantify and compare the exact definition. Then check each place a purchase can be lost: consent, blockers, the confirmation page flow, duplicate or missing events, payment redirects, and filters. The usual causes are consent and blockers, which are expected, plus implementation bugs, which you must fix.\n\nA structured approach:\n1. **Align the definitions.** Same time zone, same period, same currency, same statuses (do refunds, failed payments and test orders appear in the database?). Match by `transaction_id`.\n2. **Find which orders are missing.** Export order IDs from the database and from the GA4 export, then diff them. Look for patterns: browser, payment method, country, device, new versus returning.\n3. **Check the trigger.** Does the `purchase` event fire on the thank-you page or after the API confirms? A redirect from a payment provider may lose the page, or the user closes the tab before the tag runs.\n4. **Check consent.** What share of users deny analytics? That share is an expected gap.\n5. **Check blockers and Safari.** If the gap is bigger there, it is likely blockers.\n6. **Check for filters and thresholds,** internal traffic filters, and session or cross-domain problems from payment domains.\n7. **Fix and monitor.** Send the purchase from the server with the Measurement Protocol, keep the browser event, and use `transaction_id` for deduplication. Set a weekly report that tracks the ratio.\n\nA typical outcome: 10 to 15 percent loss from consent and blockers, and the rest from a redirect that skipped the tag. Do not promise 100 percent. Agree with finance that the database is the truth for revenue and analytics is for behaviour.\n\n```text\ncapture_rate = analytics_purchases / database_purchases   (watch it weekly)\n```\n\n**Gotcha:** A sudden step change in the ratio usually means a release or container change. Check the dates.\n\n**Interview tip:** Start with \"what exactly is being compared\". Interviewers like the definition check first.",
+      "level": "advanced",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "scenario",
+        "data-quality",
+        "ecommerce"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-062",
+      "question": "Interview scenario: bounce rate suddenly dropped to nearly zero. What happened?",
+      "answer": "**Short answer:** A sudden drop to nearly zero is almost always a tracking change, not a behaviour change. Look for an extra event firing on every page that counts as engagement, a duplicate tag, or a change in the session definition. In GA4 bounce rate is the opposite of engagement rate, so anything that makes sessions look engaged lowers it.\n\nSteps:\n1. **Find the date** of the step change in the trend. Compare with release, GTM publish and consent banner change dates.\n2. **Check the event counts** by name for that day. A new event with a high count per session, or `page_view` doubled, is a clue.\n3. **Check the engagement rules.** A session is engaged if it lasts over the engaged-time threshold (10 seconds by default), has a key event, or has two or more page views. A new automatic page view on load (for example an SPA that sends two views) turns every single-page visit into an engaged session.\n4. **Check key events.** If someone marked a very common event as a key event, every session becomes engaged.\n5. **Look for a second tag** from a duplicate GTM publish or a hard-coded tag added again.\n6. **Verify with the network tab:** do you see two `page_view` requests on load?\n\n```text\nsymptom: events per session doubled, bounce rate near 0\ncause  : history-change page view and manual page view both fire\nfix    : keep one source and annotate the date in GA4\n```\n\nFix the cause, annotate the data, and note that the period in between is not comparable. Consider excluding it from trend charts.\n\n**Gotcha:** Do not celebrate. Better numbers that arrive suddenly need an explanation first.\n\n**Interview tip:** Say \"a sudden change is a tracking suspect before it is a user suspect\". Then show the checks.",
+      "level": "advanced",
+      "module": "Implementation & Debugging",
+      "tags": [
+        "scenario",
+        "debugging",
+        "bounce-rate"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "web-analytics-063",
+      "question": "Interview scenario: design analytics for a signup funnel.",
+      "answer": "**Short answer:** Start with the decisions the team must make, define the funnel steps and one success metric, write a small tracking plan, implement success events from the code, add quality checks and consent handling, and agree on a review routine.\n\nStep by step:\n1. **Goal and question.** \"Why do only 38 percent of visitors who start signup finish, and where do we lose them?\" Success metric: signup completion rate within one session.\n2. **Funnel steps.**\n\n| Step | Event | Parameters |\n| --- | --- | --- |\n| Sees signup form | `signup_form_viewed` | `entry_point` |\n| Starts typing | `signup_started` | `method` |\n| Submits | `signup_submitted` | `method` |\n| Error | `signup_error` | `field`, `error_code` |\n| Success | `sign_up` | `method` |\n\n3. **Instrumentation.** Fire `sign_up` after the server confirms. Send the error codes, not the typed values. Never send email or name. Use an internal `user_id` after success.\n4. **Segments to compare:** device, source, new versus returning, method (email or Google).\n5. **Qualitative layer:** Clarity recordings filtered by `signup_error` sessions, with all form fields masked.\n6. **Data quality:** test in staging, validate event names with the plan checker, compare the `sign_up` count with new accounts in the database each week.\n7. **Experiments:** pick the largest drop and test one change, with a guardrail such as page load time.\n8. **Consent:** respect the banner choice, the funnel will undercount denied users. Say so in the report.\n9. **Review:** weekly funnel check and a monthly review of the plan.\n\nMention trade-offs: more events give more detail but more maintenance and more privacy risk. A minimal set that answers the question beats a large set that nobody uses.\n\n**Gotcha:** If sign-up has several methods (email, Google, Apple), make sure all of them send the same final event.\n\n**Interview tip:** Walk through question, plan, implementation, quality, decision. Structure beats detail in design questions.",
+      "level": "advanced",
+      "module": "Governance & Leadership",
+      "tags": [
+        "scenario",
+        "funnel",
+        "design"
+      ],
+      "favorite": false
+    }
+  ]
+}

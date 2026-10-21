@@ -1,0 +1,106 @@
+[
+  {
+    "title": "Google Analytics Help Center",
+    "url": "https://support.google.com/analytics/",
+    "type": "official-docs",
+    "description": "GA4 concepts, reports and setup guides.",
+    "level": "beginner",
+    "module": "Google Analytics 4"
+  },
+  {
+    "title": "GA4 developer guide (gtag.js)",
+    "url": "https://developers.google.com/analytics/devguides/collection/ga4",
+    "type": "official-docs",
+    "description": "Sending events, user properties and ecommerce from code.",
+    "level": "intermediate",
+    "module": "Implementation & Debugging"
+  },
+  {
+    "title": "GA4 recommended events",
+    "url": "https://developers.google.com/analytics/devguides/collection/ga4/reference/events",
+    "type": "reference",
+    "description": "Event names and parameters to reuse before inventing your own.",
+    "level": "intermediate",
+    "module": "Google Analytics 4"
+  },
+  {
+    "title": "GA4 Measurement Protocol",
+    "url": "https://developers.google.com/analytics/devguides/collection/protocol/ga4",
+    "type": "official-docs",
+    "description": "Send events from servers.",
+    "level": "advanced",
+    "module": "Implementation & Debugging"
+  },
+  {
+    "title": "Google Tag Manager Help",
+    "url": "https://support.google.com/tagmanager/",
+    "type": "official-docs",
+    "description": "Containers, tags, triggers, variables and publishing.",
+    "level": "beginner",
+    "module": "Tag Manager & Data Layer"
+  },
+  {
+    "title": "Tag Manager developer guide: the data layer",
+    "url": "https://developers.google.com/tag-platform/tag-manager/datalayer",
+    "type": "official-docs",
+    "description": "How dataLayer pushes work.",
+    "level": "intermediate",
+    "module": "Tag Manager & Data Layer"
+  },
+  {
+    "title": "Consent mode overview",
+    "url": "https://developers.google.com/tag-platform/security/guides/consent",
+    "type": "official-docs",
+    "description": "Consent signals and basic vs advanced mode.",
+    "level": "intermediate",
+    "module": "Privacy & Consent"
+  },
+  {
+    "title": "GA4 BigQuery export schema",
+    "url": "https://support.google.com/analytics/answer/7029846",
+    "type": "reference",
+    "description": "Event table fields and nested parameters.",
+    "level": "advanced",
+    "module": "Data & Reporting"
+  },
+  {
+    "title": "Microsoft Clarity documentation",
+    "url": "https://learn.microsoft.com/en-us/clarity/",
+    "type": "official-docs",
+    "description": "Heatmaps, recordings, masking and the client API.",
+    "level": "beginner",
+    "module": "Clarity & Behaviour Analytics"
+  },
+  {
+    "title": "web.dev: Web Vitals",
+    "url": "https://web.dev/articles/vitals",
+    "type": "article",
+    "description": "LCP, INP and CLS and how to measure them in the field.",
+    "level": "intermediate",
+    "module": "Implementation & Debugging"
+  },
+  {
+    "title": "Evan Miller: How not to run an A/B test",
+    "url": "https://www.evanmiller.org/how-not-to-run-an-ab-test.html",
+    "type": "article",
+    "description": "Why peeking at results breaks significance.",
+    "level": "intermediate",
+    "module": "Experimentation & Statistics"
+  },
+  {
+    "title": "Trustworthy Online Controlled Experiments",
+    "url": "https://experimentguide.com/",
+    "type": "book",
+    "description": "The standard book on A/B testing at scale (Kohavi, Tang, Xu).",
+    "level": "advanced",
+    "module": "Experimentation & Statistics"
+  },
+  {
+    "title": "GDPR (EUR-Lex)",
+    "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+    "type": "reference",
+    "description": "The regulation text; read the principles and consent articles.",
+    "level": "advanced",
+    "module": "Privacy & Consent"
+  }
+]

@@ -1,0 +1,137 @@
+[
+  {
+    "title": "Datadog documentation",
+    "url": "https://docs.datadoghq.com/",
+    "type": "official-docs",
+    "description": "Start here for every product: Agent, metrics, logs, APM, RUM.",
+    "level": "beginner"
+  },
+  {
+    "title": "Getting started with the Agent",
+    "url": "https://docs.datadoghq.com/getting_started/agent/",
+    "type": "tutorial",
+    "description": "What the Agent collects and how it runs.",
+    "level": "beginner",
+    "module": "Agent & Setup"
+  },
+  {
+    "title": "Unified service tagging",
+    "url": "https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/",
+    "type": "official-docs",
+    "description": "env, service and version tags and why they connect everything.",
+    "level": "beginner",
+    "module": "Observability Basics"
+  },
+  {
+    "title": "Datadog on Kubernetes",
+    "url": "https://docs.datadoghq.com/containers/kubernetes/",
+    "type": "official-docs",
+    "description": "Helm chart, Operator, Cluster Agent and Autodiscovery.",
+    "level": "intermediate",
+    "module": "Agent & Setup"
+  },
+  {
+    "title": "Metric types",
+    "url": "https://docs.datadoghq.com/metrics/types/",
+    "type": "official-docs",
+    "description": "Count, rate, gauge, histogram and distribution.",
+    "level": "beginner",
+    "module": "Metrics"
+  },
+  {
+    "title": "DogStatsD",
+    "url": "https://docs.datadoghq.com/developers/dogstatsd/",
+    "type": "official-docs",
+    "description": "Send custom metrics, events and service checks.",
+    "level": "intermediate",
+    "module": "Metrics"
+  },
+  {
+    "title": "Log pipelines",
+    "url": "https://docs.datadoghq.com/logs/log_configuration/pipelines/",
+    "type": "official-docs",
+    "description": "Parsing, processors, remappers and facets.",
+    "level": "intermediate",
+    "module": "Logs"
+  },
+  {
+    "title": "APM: tracing",
+    "url": "https://docs.datadoghq.com/tracing/",
+    "type": "official-docs",
+    "description": "Instrumentation, services, resources, ingestion and retention.",
+    "level": "intermediate",
+    "module": "APM & Tracing"
+  },
+  {
+    "title": "Connect logs and traces",
+    "url": "https://docs.datadoghq.com/tracing/other_telemetry/connect_logs_and_traces/",
+    "type": "official-docs",
+    "description": "Inject trace ids into logs per language.",
+    "level": "intermediate",
+    "module": "APM & Tracing"
+  },
+  {
+    "title": "Monitors",
+    "url": "https://docs.datadoghq.com/monitors/",
+    "type": "official-docs",
+    "description": "Monitor types, notifications, downtimes and templates.",
+    "level": "intermediate",
+    "module": "Dashboards & Monitors"
+  },
+  {
+    "title": "Service Level Objectives",
+    "url": "https://docs.datadoghq.com/service_management/service_level_objectives/",
+    "type": "official-docs",
+    "description": "SLO types and burn-rate alerts.",
+    "level": "intermediate",
+    "module": "SLOs & Alerting"
+  },
+  {
+    "title": "RUM browser monitoring",
+    "url": "https://docs.datadoghq.com/real_user_monitoring/browser/",
+    "type": "official-docs",
+    "description": "Browser SDK, session replay and user actions.",
+    "level": "intermediate",
+    "module": "RUM & Synthetics"
+  },
+  {
+    "title": "Synthetic Monitoring",
+    "url": "https://docs.datadoghq.com/synthetics/",
+    "type": "official-docs",
+    "description": "API and browser tests, private locations and CI.",
+    "level": "intermediate",
+    "module": "RUM & Synthetics"
+  },
+  {
+    "title": "Terraform Datadog provider",
+    "url": "https://registry.terraform.io/providers/DataDog/datadog/latest/docs",
+    "type": "reference",
+    "description": "Monitors, dashboards and SLOs as code.",
+    "level": "advanced",
+    "module": "Platform & Leadership"
+  },
+  {
+    "title": "Google SRE book: Monitoring distributed systems",
+    "url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+    "type": "book",
+    "description": "The four golden signals and what makes a good alert.",
+    "level": "intermediate",
+    "module": "SLOs & Alerting"
+  },
+  {
+    "title": "Google SRE workbook: Alerting on SLOs",
+    "url": "https://sre.google/workbook/alerting-on-slos/",
+    "type": "book",
+    "description": "Multi-window, multi-burn-rate alerting explained.",
+    "level": "advanced",
+    "module": "SLOs & Alerting"
+  },
+  {
+    "title": "OpenTelemetry documentation",
+    "url": "https://opentelemetry.io/docs/",
+    "type": "official-docs",
+    "description": "Vendor-neutral traces, metrics and logs.",
+    "level": "advanced",
+    "module": "Platform & Leadership"
+  }
+]

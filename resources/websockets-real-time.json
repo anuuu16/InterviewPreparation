@@ -1,0 +1,114 @@
+[
+  {
+    "title": "MDN: The WebSocket API",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API",
+    "type": "official-docs",
+    "description": "The browser API, events and examples.",
+    "level": "beginner",
+    "module": "Client Patterns"
+  },
+  {
+    "title": "RFC 6455: The WebSocket Protocol",
+    "url": "https://datatracker.ietf.org/doc/html/rfc6455",
+    "type": "reference",
+    "description": "The handshake, framing, masking and close codes.",
+    "level": "advanced",
+    "module": "WebSocket Protocol"
+  },
+  {
+    "title": "MDN: Writing WebSocket servers",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers",
+    "type": "tutorial",
+    "description": "The handshake and frame format, step by step.",
+    "level": "intermediate",
+    "module": "WebSocket Protocol"
+  },
+  {
+    "title": "MDN: Using server-sent events",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events",
+    "type": "official-docs",
+    "description": "EventSource, the event stream format and reconnection.",
+    "level": "beginner",
+    "module": "SSE & Alternatives"
+  },
+  {
+    "title": "HTML spec: Server-sent events",
+    "url": "https://html.spec.whatwg.org/multipage/server-sent-events.html",
+    "type": "reference",
+    "description": "The exact SSE format and Last-Event-ID rules.",
+    "level": "advanced",
+    "module": "SSE & Alternatives"
+  },
+  {
+    "title": "ws (Node.js)",
+    "url": "https://github.com/websockets/ws",
+    "type": "repo",
+    "description": "The standard Node WebSocket library: server, client, backpressure.",
+    "level": "intermediate",
+    "module": "Server Implementation"
+  },
+  {
+    "title": "Socket.IO (repository and docs links)",
+    "url": "https://github.com/socketio/socket.io",
+    "type": "official-docs",
+    "description": "Rooms, acknowledgements, adapters and connection recovery.",
+    "level": "intermediate",
+    "module": "Scaling & Operations"
+  },
+  {
+    "title": "gorilla/websocket",
+    "url": "https://github.com/gorilla/websocket",
+    "type": "repo",
+    "description": "Go WebSocket library with the chat example (read and write pumps).",
+    "level": "intermediate",
+    "module": "Server Implementation"
+  },
+  {
+    "title": "coder/websocket",
+    "url": "https://github.com/coder/websocket",
+    "type": "repo",
+    "description": "A minimal, context-aware Go WebSocket library.",
+    "level": "intermediate",
+    "module": "Server Implementation"
+  },
+  {
+    "title": "NGINX: WebSocket proxying",
+    "url": "https://nginx.org/en/docs/http/websocket.html",
+    "type": "official-docs",
+    "description": "Upgrade headers and timeouts behind NGINX.",
+    "level": "intermediate",
+    "module": "Scaling & Operations"
+  },
+  {
+    "title": "AWS: Exponential backoff and jitter",
+    "url": "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/",
+    "type": "article",
+    "description": "Why jitter prevents reconnect storms.",
+    "level": "intermediate",
+    "module": "Reliability & Delivery"
+  },
+  {
+    "title": "OWASP: Cross-site WebSocket hijacking",
+    "url": "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/11-Client-side_Testing/10-Testing_WebSockets",
+    "type": "reference",
+    "description": "Testing WebSockets for origin, auth and input issues.",
+    "level": "advanced",
+    "module": "Security"
+  },
+  {
+    "title": "MQTT specification",
+    "url": "https://mqtt.org/mqtt-specification/",
+    "type": "reference",
+    "description": "QoS levels, retained messages and last will.",
+    "level": "advanced",
+    "module": "Real-time Design"
+  },
+  {
+    "title": "CRDT resources",
+    "url": "https://crdt.tech/",
+    "type": "article",
+    "description": "Learn conflict-free replicated data types for collaborative editing.",
+    "level": "advanced",
+    "module": "Real-time Design"
+  }
+]

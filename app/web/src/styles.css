@@ -600,3 +600,6 @@ button { cursor: pointer; }
 .view-group-head { font-weight: 700; padding: 4px 0; }
 .small-modal { width: min(460px, 100%); }
 @media (prefers-reduced-motion: reduce) { .group-head .chev { transition: none; } }
+.nav-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.nav-title-row .link-btn { border: 0; background: transparent; color: var(--muted); font-size: 11px; text-transform: none; letter-spacing: 0; padding: 2px 4px; border-radius: 4px; cursor: pointer; }
+.nav-title-row .link-btn:hover, .nav-title-row .link-btn:focus-visible { color: var(--text); }

@@ -272,6 +272,11 @@ Target shape for a "complete" topic: **50–130 questions**, roughly 25% basic, 
 | Leadership & Behavioral | `data/leadership-behavioral.json` | Complete (63) |
 | Problems (code library) | `problems/` | 10 done: sorting, binary search, two sum, valid parentheses, linked list, tree traversals, fibonacci and DP, LRU cache, anagrams, number of islands; see section 15.9 for what is next |
 | SDLC & Agile | `data/sdlc-agile.json` | Complete (20); extend with more Scrum and estimation depth |
+| Software Testing | `data/software-testing.json` | Complete (84); JS/Python/Go examples run, tool-specific snippets (Jest, Cypress, Playwright, Pact, BrowserStack) read-only |
+| Datadog | `data/datadog.json` | Complete (73); all config/query examples read-only (no account); verify metric names, Helm keys, product renames |
+| WebSockets & Real-time | `data/websockets-real-time.json` | Complete (65); handshake, frames, SSE and long polling run against a hand-written local server |
+| Web Analytics | `data/web-analytics.json` | Complete (63); stats and SQL examples run; GA4/GTM/Clarity snippets read-only, limits deliberately not stated |
+| Frontend Tooling & UI | `data/frontend-tooling-ui.json` | Complete (72); Nx, Vite, webpack, MUI, Tailwind, Redux Toolkit, Storybook; library snippets read-only |
 | Planned | | Python, .NET/C#, more code problems (linked list, trees, graphs, DP, LRU cache) |
 
 Every topic also has a curated list in `resources/<topic>.json` (official docs, tutorials, references). Add one when you create a topic; verify links with `npm run resources:check`.
@@ -528,7 +533,7 @@ Read this first when you pick the project up again.
 
 ### State (last updated at the end of the first long build session)
 
-- **17 topics, about 1,160 questions** (see the table in section 11), each with a Technical Lead section, modules and a curated `resources/<topic>.json`. **10 code problems** with about 290 solutions in 7 languages that all pass `npm run problems:test`.
+- **22 topics, about 1,515 questions** (see the table in section 11), each with a Technical Lead section, modules and a curated `resources/<topic>.json`. **10 code problems** with about 290 solutions in 7 languages that all pass `npm run problems:test`.
 - **App features:** rendered Markdown with code highlighting and Mermaid (diagrams are cached so they never flash), search/filter/group by level or module, favorites, notes and feedback for agents (`npm run feedback`), resources dialog and "Further reading", opt-in reading progress, view options (hide topics/modules, move or hide panels, edge arrows, swipe on phones), compact reader header/footer, and a text-to-speech player (browser voices or optional Piper) with reading styles, quiz mode, sleep timer, lock-screen controls, "Play all", and audio for problem guides.
 - **Quality gates:** `npm run validate` (0 errors expected; ~127 style warnings are normal, mostly "no Interview tip"), `npm run problems:test`, `npm run resources:check`. All Mermaid diagrams were rendered once in the app (all passed); re-check after adding many.
 - Everything is committed and pushed to `main`. The generated Markdown (`questions/`, `problems/*/README.md`, README tables) must be committed with the sources: run `npm run build` first.
@@ -550,6 +555,7 @@ npm run tts:setup # optional: Piper with ONE English voice (about 60 MB)
 
 - **Phones and voices:** the Piper voice runs on the computer that runs `npm start`. On a phone the app falls back to the browser voice, which some phones pause when the screen locks. Making Piper reachable from a phone on the home network (serve the app on the LAN, keep the Piper port internal) is the main audio backlog item.
 - **Progress is browser-only** (`localStorage`, key `ip.progress.v1`), behind the `ProgressStorage` adapter in `app/web/src/progress.ts`; add a server adapter to sync across devices.
+- **New topics (second session) facts to double-check:** Datadog APM metric names (`trace.*`), Helm chart keys, dd-trace-go v1 vs v2, Service/Software Catalog naming; GA4 engaged-session rule, Consent Mode v2 signal names, Clarity consent API; Nx inferred-task versions, MUI v6/v7 Grid and CSS-layer APIs, Tailwind v4 details; Envoy WebSocket timeouts, Socket.IO recovery version; Node `--experimental-strip-types` defaults, MSW v2 and Cypress version claims.
 - **Facts to double-check** (flagged by the writing agents as written from memory; verify against current docs before relying on them): Node permission-model flags and type-stripping versions; Kubernetes feature versions (native sidecars, nftables kube-proxy, in-place resize), Ingress-NGINX retirement timing; kubenet retirement, Managed Redis naming and Functions plan names on Azure; PostgreSQL 18 `uuidv7()` and several SQL Server edition/feature claims; the OWASP Top 10 and LLM Top 10 category lists; provider-specific LLM features and the MCP spec; Kaniko status and tool versions in the DevOps topic; Git reftable version, `filter-repo` options, GitLab-specific behaviours; the React Compiler/`useEffectEvent` versions. The Raft, multi-region RPO/RTO and Kafka exactly-once wording in the microservices topic were also flagged.
 - Diagrams and audio were verified by automated checks and by reading, not by listening to every answer. Spot-check new content in the app (light and dark theme).
 - `pnpm-lock.yaml` in the repo root is an empty file created by some other tool; it is intentionally not tracked.

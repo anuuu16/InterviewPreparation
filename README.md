@@ -18,6 +18,7 @@ Interview questions and answers, organised by language/topic. Read them right he
 
 | Topic | Total | Basic | Intermediate | Advanced | ⭐ |
 | --- | ---: | ---: | ---: | ---: | ---: |
+| [Frontend Tooling & UI](questions/frontend-tooling-ui.md) | 72 | 18 | 34 | 20 | 0 |
 | [React](questions/react.md) | 57 | 15 | 28 | 14 | 0 |
 
 **Architecture & Design**
@@ -43,11 +44,25 @@ Interview questions and answers, organised by language/topic. Read them right he
 | [Git & Version Control](questions/git-version-control.md) | 68 | 20 | 34 | 14 | 0 |
 | [Kubernetes](questions/kubernetes.md) | 57 | 15 | 28 | 14 | 0 |
 
+**Quality & Testing**
+
+| Topic | Total | Basic | Intermediate | Advanced | ⭐ |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [Software Testing](questions/software-testing.md) | 84 | 20 | 43 | 21 | 0 |
+
+**Tools & Observability**
+
+| Topic | Total | Basic | Intermediate | Advanced | ⭐ |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [Datadog](questions/datadog.md) | 73 | 19 | 36 | 18 | 0 |
+| [Web Analytics](questions/web-analytics.md) | 63 | 16 | 33 | 14 | 0 |
+
 **Web & Security**
 
 | Topic | Total | Basic | Intermediate | Advanced | ⭐ |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | [Networking & Security](questions/networking-security.md) | 73 | 20 | 39 | 14 | 0 |
+| [WebSockets & Real-time](questions/websockets-real-time.md) | 65 | 16 | 33 | 16 | 0 |
 
 **AI**
 

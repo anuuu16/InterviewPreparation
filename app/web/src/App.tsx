@@ -493,7 +493,18 @@ export default function App() {
               </div>
             </>
           )}
-          <div className="nav-title">Topics</div>
+          {(() => {
+            const names = groupTopics(topics, groupOrder).map((g) => g.name);
+            const allClosed = names.length > 0 && names.every((n) => collapsedGroups.includes(n));
+            return (
+              <div className="nav-title nav-title-row">
+                <span>Topics</span>
+                <button className="link-btn" onClick={() => setCollapsedGroups(allClosed ? [] : names)} aria-label={allClosed ? 'Expand all topic groups' : 'Collapse all topic groups'}>
+                  {allClosed ? 'Expand all' : 'Collapse all'}
+                </button>
+              </div>
+            );
+          })()}
           {groupTopics(topics, groupOrder).map((g) => {
             const activeHere = view.kind === 'topic' && g.topics.some((t) => t.slug === view.slug);
             const open = activeHere || !collapsedGroups.includes(g.name);
