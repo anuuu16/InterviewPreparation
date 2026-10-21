@@ -513,3 +513,24 @@ button { cursor: pointer; }
   .player.sheet .now { grid-column: 1 / -1; order: 3; font-size: 13px; }
   .player.sheet .now-label { display: none; }
 }
+
+/* ---------- section dots instead of a scrollbar ---------- */
+.reader { scrollbar-width: none; }
+.reader::-webkit-scrollbar { display: none; }
+.list, .sidebar-scroll, .modal-body, .voice-list, .prose pre, .table-wrap { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.list::-webkit-scrollbar, .sidebar-scroll::-webkit-scrollbar, .modal-body::-webkit-scrollbar, .voice-list::-webkit-scrollbar { width: 8px; height: 8px; }
+.list::-webkit-scrollbar-thumb, .sidebar-scroll::-webkit-scrollbar-thumb, .modal-body::-webkit-scrollbar-thumb, .voice-list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+.rail-wrap { position: sticky; top: 0; height: 0; z-index: 3; }
+.rail { position: absolute; right: 8px; top: 24vh; display: flex; flex-direction: column; align-items: center; padding: 6px 2px 4px; }
+.rail-line { position: absolute; top: 19px; bottom: 30px; left: 50%; width: 2px; margin-left: -1px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.rail-line i { display: block; width: 100%; background: var(--accent); opacity: 0.55; border-radius: 2px; }
+.rail-dot { position: relative; width: 24px; height: 26px; padding: 0; border: 0; background: transparent; display: grid; place-items: center; }
+.rail-dot::before { content: ''; width: 9px; height: 9px; box-sizing: border-box; border-radius: 50%; background: var(--panel); border: 2px solid var(--muted); transition: width 0.15s, height 0.15s, background 0.15s, border-color 0.15s; }
+.rail-dot.past::before { background: var(--accent); border-color: var(--accent); }
+.rail-dot.current::before { width: 15px; height: 15px; border: 3px solid var(--accent); background: var(--panel); }
+.rail-dot:hover::before { border-color: var(--accent); }
+.rail-label { position: absolute; right: 30px; top: 50%; transform: translate(4px, -50%); white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; padding: 3px 10px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 12px; line-height: 1.4; opacity: 0; pointer-events: none; transition: opacity 0.12s, transform 0.12s; }
+.rail:hover .rail-label, .rail-dot:focus-visible .rail-label { opacity: 1; transform: translate(0, -50%); }
+.rail-left { margin-top: 2px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 700px) { .rail { right: 0; top: 18vh; } .rail-dot { width: 20px; } .rail-label { display: none; } }
+@media (prefers-reduced-motion: reduce) { .rail-dot::before, .rail-label { transition: none; } }

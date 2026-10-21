@@ -3,6 +3,7 @@ import Markdown from './Markdown';
 import Inline from './Inline';
 import { CheckIcon, CloseIcon, PlayIcon } from './Icons';
 import { ResourceList } from './Resources';
+import ReadRail from './ReadRail';
 import type { Problem, Question, Resource, Topic, Variant } from './types';
 
 interface Props {
@@ -85,6 +86,7 @@ export default function Problems({ problems, resources, topics, slug, part, lang
       </section>
 
       <main className="reader" ref={reader}>
+        <ReadRail container={reader} contentKey={`${problem?.slug ?? ''}/${part}`} />
         {problem ? (
           <article key={problem.slug + part}>
             <div className="crumbs">

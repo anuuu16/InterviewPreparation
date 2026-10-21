@@ -15,6 +15,7 @@ import { useProgress } from './progress';
 import { useReadTracker } from './useReadTracker';
 import { FurtherReading, ResourcesDialog } from './Resources';
 import Problems from './Problems';
+import ReadRail from './ReadRail';
 import { Speaker, type SpeakOptions } from './speaker';
 import { usePiper } from './speech';
 import { buildSteps, type PlayerSettings } from './tts';
@@ -579,6 +580,7 @@ export default function App() {
         </section>
 
         <main className="reader" ref={readerRef}>
+          <ReadRail container={readerRef} contentKey={selected?.q.id ?? ''} />
           {selected ? (
             <article key={selected.q.id}>
               <div className="mini-head-wrap">
