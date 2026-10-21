@@ -12,7 +12,7 @@ const problemsLib = require('./problems-lib');
 
 const PORT = process.env.PORT || 3000;
 const DIST = path.join(__dirname, 'web', 'dist');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.png': 'image/png', '.woff2': 'font/woff2' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.png': 'image/png', '.woff2': 'font/woff2' };
 const SLUG = /^[a-z0-9-]+$/;
 const file = (slug) => path.join(DATA_DIR, `${slug}.json`);
 

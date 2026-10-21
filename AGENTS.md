@@ -532,6 +532,11 @@ npm start         # http://localhost:3000 (PORT=4000 npm start); stale app/Piper
 npm run tts:setup # optional: Piper with ONE English voice (about 60 MB)
 ```
 
+### Dashboard, Interview prep and study sets
+
+- Home (`app/web/src/Dashboard.tsx`) is the default view. Interview prep lives in `app/web/src/interview/`: `skills.ts` (skills dictionary mapping resume/JD wording to a bank topic, modules and keywords), `analyze.ts` (plan, rounds, study set, AI prompt), `readFile.ts` (text and PDF via lazy `pdfjs-dist`), `InterviewView.tsx`. Study sets are browser-only (`studySets.ts`, key `ip.sets.v1`).
+- **When you add a topic or module, add or extend its skill in `skills.ts`** so the planner can pick its questions. Test with the sample resume and job description (`SAMPLE_RESUME`, `SAMPLE_JD`); never put a real resume in the repo.
+
 ### Known issues and limits
 
 - **Phones and voices:** the Piper voice runs on the computer that runs `npm start`. On a phone the app falls back to the browser voice, which some phones pause when the screen locks. Making Piper reachable from a phone on the home network (serve the app on the LAN, keep the Piper port internal) is the main audio backlog item.

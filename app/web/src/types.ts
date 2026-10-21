@@ -24,7 +24,14 @@ export interface Item {
   number: number;
 }
 
-export type View = { kind: 'topic'; slug: string } | { kind: 'favorites' } | { kind: 'all' } | { kind: 'problems' };
+export type View =
+  | { kind: 'home' }
+  | { kind: 'topic'; slug: string }
+  | { kind: 'favorites' }
+  | { kind: 'all' }
+  | { kind: 'problems' }
+  | { kind: 'interview' }
+  | { kind: 'set'; id: string };
 
 export type FeedbackType = 'more-detail' | 'code-issue' | 'incorrect' | 'unclear' | 'missing' | 'other';
 
@@ -83,4 +90,13 @@ export interface Resource {
   description: string;
   level?: 'beginner' | 'intermediate' | 'advanced';
   module?: string; // matches a question module, used for "Further reading"
+}
+
+/** A saved selection of questions from the bank, for example one made for a job description. */
+export interface StudySet {
+  id: string;
+  name: string;
+  createdAt: number;
+  ids: string[]; // question ids, in reading order
+  note?: string; // where it came from
 }

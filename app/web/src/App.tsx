@@ -15,6 +15,9 @@ import { useProgress } from './progress';
 import { useReadTracker } from './useReadTracker';
 import { FurtherReading, ResourcesDialog } from './Resources';
 import Problems from './Problems';
+import Dashboard from './Dashboard';
+import InterviewView from './interview/InterviewView';
+import { useStudySets } from './studySets';
 import ReadRail from './ReadRail';
 import { Speaker, type SpeakOptions } from './speaker';
 import { usePiper } from './speech';
@@ -47,7 +50,7 @@ function useDark(pref: ThemePref) {
 export default function App() {
   const [allTopics, setTopics] = useState<Topic[]>([]);
   const [loadError, setLoadError] = useState('');
-  const [view, setView] = useLocal<View>('ip.view', { kind: 'all' });
+  const [view, setView] = useLocal<View>('ip.view', { kind: 'home' });
   const [level, setLevel] = useState<Level | ''>('');
   const [groupBy, setGroupBy] = useLocal<'level' | 'module'>('ip.group', 'level');
   const [moduleFilter, setModuleFilter] = useState('');
@@ -68,6 +71,8 @@ export default function App() {
   const [readFilter, setReadFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [toast, setToast] = useState<{ id: string; text: string } | null>(null);
   const progress = useProgress();
+  const studySets = useStudySets();
+  const [pendingPlay, setPendingPlay] = useState('');
   const problemsReaderRef = useRef<HTMLElement>(null);
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useLocal<string>('ip.selected', '');
@@ -101,8 +106,9 @@ export default function App() {
     [allTopics, hidden],
   );
   useEffect(() => {
-    if (view.kind === 'topic' && allTopics.length && !topics.some((t) => t.slug === view.slug)) setView({ kind: 'all' });
-  }, [topics]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (view.kind === 'topic' && allTopics.length && !topics.some((t) => t.slug === view.slug)) setView({ kind: 'home' });
+    if (view.kind === 'set' && !studySets.sets.some((x) => x.id === view.id)) setView({ kind: 'home' });
+  }, [topics, studySets.sets]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reload = useCallback(() => api.getAll().then(setTopics).catch((e: Error) => setLoadError(e.message)), []);
   useEffect(() => { void reload(); }, [reload]);
@@ -120,10 +126,15 @@ export default function App() {
   // ---- derive the visible list ------------------------------------------------------------
   const items = useMemo<Item[]>(() => {
     const scope = view.kind === 'topic' ? topics.filter((t) => t.slug === view.slug) : topics;
-    const all: Item[] = [];
+    let all: Item[] = [];
     for (const t of scope) {
       const ordered = LEVELS.flatMap((l) => t.questions.filter((q) => q.level === l));
       ordered.forEach((q, i) => all.push({ q, topic: t, number: i + 1 }));
+    }
+    if (view.kind === 'set') {
+      // a study set keeps the order it was made in
+      const byId = new Map(all.map((it) => [it.q.id, it]));
+      all = (studySets.sets.find((x) => x.id === view.id)?.ids ?? []).map((id) => byId.get(id)).filter((it): it is Item => !!it);
     }
     const needle = search.trim().toLowerCase();
     const out = all.filter(({ q, topic }) =>
@@ -138,7 +149,7 @@ export default function App() {
     // module view: modules in order of first appearance (so fundamentals come first), questions keep their level order inside
     const order = [...new Set(numbered.map((it) => it.q.module ?? 'Other'))];
     return order.flatMap((m) => numbered.filter((it) => (it.q.module ?? 'Other') === m));
-  }, [topics, view, level, search, groupBy, moduleFilter, readFilter, readSnapshot, tracking]);
+  }, [topics, view, level, search, groupBy, moduleFilter, readFilter, readSnapshot, tracking, studySets.sets]);
 
   // modules available in the current scope (ignoring the module filter itself) for the filter dropdown
   const modules = useMemo(() => {
@@ -203,6 +214,15 @@ export default function App() {
   }, [settings.style]); // eslint-disable-line react-hooks/exhaustive-deps
   const listKey = readables.map((r) => r.id).join('|');
   useEffect(() => { player.stop(); }, [listKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // "Listen" on the home page opens the question first, then starts playing once the list has switched
+  useEffect(() => {
+    if (!pendingPlay || view.kind !== 'topic') return;
+    const i = items.findIndex((it) => it.q.id === pendingPlay);
+    if (i < 0) return;
+    setPendingPlay('');
+    player.play(i);
+  }, [pendingPlay, items, view]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const select = (i: number) => {
     if (!readables[i]) return;
@@ -278,7 +298,7 @@ export default function App() {
   };
 
   // ---- reading progress -------------------------------------------------------------------
-  const inQuestions = view.kind !== 'problems';
+  const inQuestions = view.kind !== 'problems' && view.kind !== 'home' && view.kind !== 'interview';
   const selWords = selected ? selected.q.answer.split(/\s+/).length : 0;
   const problemObj = problems.find((p) => p.slug === (problemSel.slug || problems[0]?.slug));
   const problemVariant = problemObj?.variants.find((v) => v.slug === problemSel.part);
@@ -342,7 +362,7 @@ export default function App() {
   const keys = useRef<(e: KeyboardEvent) => void>(() => {});
   keys.current = (e) => {
     const t = e.target as HTMLElement;
-    if (t.matches('input, textarea, select, [contenteditable]') || e.metaKey || e.ctrlKey || e.altKey || editor) return;
+    if (t.matches('input, textarea, select, [contenteditable]') || e.metaKey || e.ctrlKey || e.altKey || editor || view.kind === 'home' || view.kind === 'interview') return;
     if (e.key === ' ' && !t.matches('button, a')) {
       e.preventDefault();
       if (player.status === 'playing') player.pause();
@@ -359,9 +379,9 @@ export default function App() {
   }, []);
 
   // ---- render -----------------------------------------------------------------------------
-  const title = view.kind === 'problems' ? 'Problems' : view.kind === 'favorites' ? 'Favorites' : view.kind === 'all' ? 'All questions' : topics.find((t) => t.slug === view.slug)?.name ?? '';
+  const title = view.kind === 'home' ? 'Home' : view.kind === 'interview' ? 'Interview prep' : view.kind === 'set' ? studySets.sets.find((x) => x.id === view.id)?.name ?? 'Study set' : view.kind === 'problems' ? 'Problems' : view.kind === 'favorites' ? 'Favorites' : view.kind === 'all' ? 'All questions' : topics.find((t) => t.slug === view.slug)?.name ?? '';
   const go = (v: View) => { setView(v); setModuleFilter(''); setDrawer(''); };
-  const isView = (v: View) => v.kind === view.kind && (v.kind !== 'topic' || (view.kind === 'topic' && v.slug === view.slug));
+  const isView = (v: View) => v.kind === view.kind && (v.kind !== 'topic' || (view.kind === 'topic' && v.slug === view.slug)) && (v.kind !== 'set' || (view.kind === 'set' && v.id === view.id));
   const nextTheme = () => setThemePref(themePref === 'system' ? (dark ? 'light' : 'dark') : themePref === 'dark' ? 'light' : 'dark');
   const openNotes = selected ? feedback.filter((f) => f.topic === selected.topic.slug && (f.question === selected.q.id || f.question === null) && f.status === 'open').length : 0;
   const activeFilters = (level ? 1 : 0) + (moduleFilter ? 1 : 0) + (groupBy === 'module' ? 1 : 0) + (tracking && readFilter !== 'all' ? 1 : 0);
@@ -374,9 +394,10 @@ export default function App() {
     setSearch('');
     setSelectedId(id);
   };
-  const showSide = layout.sidebar || view.kind === 'problems';
-  const showList = layout.list !== 'hidden' || view.kind === 'problems';
-  const panesColumns = [showSide ? '250px' : '', ...(layout.list === 'right' ? ['minmax(0, 1fr)', showList ? '360px' : ''] : [showList ? '360px' : '', 'minmax(0, 1fr)'])].filter(Boolean).join(' ');
+  const pageView = view.kind === 'home' || view.kind === 'interview'; // full-width pages without a question list
+  const showSide = layout.sidebar || view.kind === 'problems' || pageView;
+  const showList = !pageView && (layout.list !== 'hidden' || view.kind === 'problems');
+  const panesColumns = pageView ? [showSide ? '250px' : '', 'minmax(0, 1fr)'].filter(Boolean).join(' ') : [showSide ? '250px' : '', ...(layout.list === 'right' ? ['minmax(0, 1fr)', showList ? '360px' : ''] : [showList ? '360px' : '', 'minmax(0, 1fr)'])].filter(Boolean).join(' ');
   // Phones and tablets: swipe right for the topics menu, swipe left for the question list (and swipe back to close).
   // Wide screens: the edge tabs show or hide the same panels.
   const onTouchStart = (e: React.TouchEvent) => { touch.current = (e.target as HTMLElement).closest('pre, table, svg, input, textarea, [data-noswipe]') ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
@@ -403,7 +424,7 @@ export default function App() {
   }, [layout.list]);
   useEffect(() => {
     const root = readerRef.current;
-    if (!root || view.kind === 'problems') return;
+    if (!root || view.kind === 'problems' || view.kind === 'home' || view.kind === 'interview') return;
     setFullHeadVisible(true);
     setPagerVisible(false);
     const actions = root.querySelector('.actions');
@@ -432,13 +453,15 @@ export default function App() {
 
   return (
     <div className="app">
-      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className={'panes' + (layout.list === 'right' ? ' l-right' : layout.list === 'hidden' ? ' l-hidden' : '') + (!layout.sidebar && view.kind !== 'problems' ? ' no-side' : '')} style={{ '--cols': panesColumns } as React.CSSProperties}>
+      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className={'panes' + (layout.list === 'right' ? ' l-right' : layout.list === 'hidden' ? ' l-hidden' : '') + (!layout.sidebar && view.kind !== 'problems' && !pageView ? ' no-side' : '') + (pageView ? ' page-view' : '')} style={{ '--cols': panesColumns } as React.CSSProperties}>
         {drawer && <div className="backdrop" onClick={() => setDrawer('')} />}
 
         <nav className={'sidebar' + (drawer === 'topics' ? ' open' : '')} aria-label="Topics">
           <div className="brand"><HeadphonesIcon /> Interview Prep</div>
           <div className="sidebar-scroll">
           <div className="nav-group">
+            <button className={'nav' + (isView({ kind: 'home' }) ? ' active' : '')} onClick={() => go({ kind: 'home' })}>Home</button>
+            <button className={'nav' + (isView({ kind: 'interview' }) ? ' active' : '')} onClick={() => go({ kind: 'interview' })}>Interview prep</button>
             <button className={'nav' + (isView({ kind: 'all' }) ? ' active' : '')} onClick={() => go({ kind: 'all' })}>All questions</button>
             <button className={'nav' + (isView({ kind: 'favorites' }) ? ' active' : '')} onClick={() => go({ kind: 'favorites' })}>
               <span>Favorites</span><span className="count">{favCount}</span>
@@ -450,6 +473,18 @@ export default function App() {
                 <span>Code problems</span><span className="count">{problems.length}</span>
               </button>
             </div>
+          )}
+          {studySets.sets.length > 0 && (
+            <>
+              <div className="nav-title">Study sets</div>
+              <div className="nav-group">
+                {studySets.sets.map((x) => (
+                  <button key={x.id} className={'nav' + (isView({ kind: 'set', id: x.id }) ? ' active' : '')} onClick={() => go({ kind: 'set', id: x.id })}>
+                    <span className="nav-line"><span>{x.name}</span><span className="count">{x.ids.length}</span></span>
+                  </button>
+                ))}
+              </div>
+            </>
           )}
           <div className="nav-title">Topics</div>
           <div className="nav-group">
@@ -472,7 +507,29 @@ export default function App() {
           </div>
         </nav>
 
-        {view.kind === 'problems' ? (
+        {view.kind === 'home' ? (
+          <Dashboard
+            topics={topics}
+            problems={problems}
+            sets={studySets.sets}
+            tracking={tracking}
+            isRead={progress.isRead}
+            favCount={favCount}
+            lastId={selectedId}
+            onGo={go}
+            onOpenQuestion={(id) => { openQuestion(id); setDrawer(''); }}
+            onListenQuestion={(id) => { openQuestion(id); setPendingPlay(id); setDrawer(''); }}
+            onRenameSet={studySets.rename}
+            onRemoveSet={studySets.remove}
+          />
+        ) : view.kind === 'interview' ? (
+          <InterviewView
+            topics={topics}
+            onOpenQuestion={(id) => { openQuestion(id); setDrawer(''); }}
+            onCreateSet={studySets.add}
+            onOpenSet={(id) => go({ kind: 'set', id })}
+          />
+        ) : view.kind === 'problems' ? (
           <Problems
             problems={problems}
             resources={resources}
@@ -667,10 +724,10 @@ export default function App() {
 
       {!drawer && !dialogOpen && (
         <>
-          {(narrow || view.kind !== 'problems') && <button className="edge-tab left" style={leftTabStyle} onClick={toggleSide} aria-label="Show or hide the topics menu" title="Topics menu (swipe right)">
+          {(narrow || (view.kind !== 'problems' && !pageView)) && <button className="edge-tab left" style={leftTabStyle} onClick={toggleSide} aria-label="Show or hide the topics menu" title="Topics menu (swipe right)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={!narrow && showSide ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'} /></svg>
           </button>}
-          {view.kind !== 'problems' && (
+          {view.kind !== 'problems' && !pageView && (
             <button className={'edge-tab ' + (listTabLeft ? 'left' : 'right')} style={listTabStyle} onClick={toggleList} aria-label="Show or hide the question list" title="Questions (swipe left)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={(listTabLeft ? listShown : !listShown) && !narrow ? 'm15 6-6 6 6 6' : narrow ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'} /></svg>
             </button>
