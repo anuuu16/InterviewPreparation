@@ -9,6 +9,7 @@ export interface Question {
   module?: string;
   tags: string[];
   favorite: boolean;
+  remove?: boolean; // Personal topics only: marked for the author/agent to delete later
 }
 
 export interface Topic {

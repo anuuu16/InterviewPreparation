@@ -6,7 +6,7 @@
     "kill": "node app/kill.js",
     "prestart": "node app/kill.js --quiet",
     "start": "node app/server.js",
-    "dev": "npm --prefix app/web run dev",
+    "dev": "node app/dev.js",
     "build": "node app/build.js",
     "validate": "node app/validate.js",
     "import": "node app/import.js",

@@ -126,6 +126,8 @@ button { cursor: pointer; }
 .qmeta { font-size: 12px; color: var(--muted); text-transform: capitalize; display: flex; align-items: center; gap: 6px; }
 .qstar { color: var(--star); display: grid; }
 .qstar svg { width: 16px; height: 16px; }
+.qremove { color: var(--bad); display: grid; }
+.qremove svg { width: 15px; height: 15px; }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .dot.basic, .badge.basic { --c: var(--good); } .dot.intermediate, .badge.intermediate { --c: var(--warn); } .dot.advanced, .badge.advanced { --c: var(--bad); }
 .dot { background: var(--c); }

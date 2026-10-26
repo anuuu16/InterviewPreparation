@@ -316,8 +316,8 @@ Every topic also has a curated list in `resources/<topic>.json` (official docs, 
 | Command | What it does |
 | --- | --- |
 | `npm run setup` | Install and build the UI (once) |
-| `npm start` | Run the study app on http://localhost:3000 (`PORT=4000 npm start` to change) |
-| `npm run dev` | UI hot-reload on :5173 (needs `npm start` running for the API) |
+| `npm start` | Run the study app on http://localhost:4401 (`PORT=4000 npm start` to change) |
+| `npm run dev` | API on :4401 and UI hot-reload on :4400, together |
 | `npm run build` | Regenerate `questions/*.md` and the README topic table |
 | `npm run import -- file.md --topic "Name" [--replace]` | Import a Markdown batch into `data/` |
 | `npm run validate [-- topic…] [problems] [--strict] [--go]` | Quality checks |
@@ -542,7 +542,7 @@ Read this first when you pick the project up again.
 
 ```sh
 npm run setup     # once
-npm start         # http://localhost:3000 (PORT=4000 npm start); stale app/Piper processes are stopped first
+npm start         # http://localhost:4401 (PORT=4000 npm start); stale app/Piper processes are stopped first
 npm run tts:setup # optional: Piper with ONE English voice (about 60 MB)
 ```
 

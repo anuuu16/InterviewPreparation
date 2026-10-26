@@ -257,6 +257,12 @@ export default function App() {
     try { await api.updateQuestion(it.topic.slug, it.q.id, { favorite: next }); } catch { void reload(); }
   };
 
+  const toggleRemove = async (it: Item) => {
+    const next = !it.q.remove;
+    patch(it.topic.slug, it.q.id, (q) => ({ ...q, remove: next || undefined }));
+    try { await api.updateQuestion(it.topic.slug, it.q.id, { remove: next }); } catch { void reload(); }
+  };
+
   const save = async (r: EditorResult) => {
     if (editor?.question) await api.updateQuestion(r.topicSlug, editor.question.id, r.data);
     else {
@@ -671,6 +677,7 @@ export default function App() {
                     </span>
                   </span>
                   {it.q.favorite && <span className="qstar"><StarIcon filled /></span>}
+                  {it.q.remove && <span className="qremove" aria-label="Marked for removal"><TrashIcon /></span>}
                   {tracking && progress.isRead(it.q.id) && <span className="qdone" aria-label="Read"><CheckIcon />{progress.state.counts && progress.timesRead(it.q.id) > 1 && <span className="qtimes">{progress.timesRead(it.q.id)}×</span>}</span>}
                 </button>
                 <button className="qplay" onClick={() => { player.play(i); setDrawer(''); }} aria-label={`Play question ${it.number}`} title="Play from this question"><PlayIcon /></button>
@@ -713,6 +720,7 @@ export default function App() {
                 {tracking && <button className={'btn' + (progress.isRead(selected.q.id) ? ' done' : '')} onClick={() => toggleRead(selected.q.id, !progress.isRead(selected.q.id))} aria-pressed={progress.isRead(selected.q.id)}>
                   <CheckIcon /> {progress.isRead(selected.q.id) ? 'Read' : 'Mark as read'}
                 </button>}
+                {selected.topic.group === 'Personal' && <button className={'btn' + (selected.q.remove ? ' danger' : '')} onClick={() => toggleRemove(selected)} aria-pressed={!!selected.q.remove} title="Marks it so the author removes it later. Nothing is deleted now."><TrashIcon /> {selected.q.remove ? 'Marked for removal' : 'Mark for removal'}</button>}
                 {features.editQuestions && <button className="btn" onClick={() => setEditor({ topicSlug: selected.topic.slug, question: selected.q })}><EditIcon /> Edit</button>}
                 <button className="btn desktop-only" onClick={() => setViewOpen(true)} title="Layout and what to show"><LayoutIcon /> Layout</button>
                 <button className={'btn' + (notesOpen ? ' on' : '')} onClick={() => setNotesOpen(!notesOpen)} aria-expanded={notesOpen}>

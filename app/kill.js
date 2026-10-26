@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Frees the ports used by the study app (PORT, default 3000) and the Piper TTS server (PIPER_PORT, default 5199),
+ * Frees the ports used by the study app (PORT, default 4401) and the Piper TTS server (PIPER_PORT, default 5199),
  * so a stale run never blocks `npm start`.
  *
  *   npm run kill            stop leftovers of this app (only processes that look like app/server.js or piper/server.py)
@@ -12,7 +12,7 @@ const { execSync } = require('child_process');
 
 const force = process.argv.includes('--force');
 const quiet = process.argv.includes('--quiet');
-const ports = [Number(process.env.PORT || 3000), Number(process.env.PIPER_PORT || 5199)];
+const ports = [Number(process.env.PORT || 4401), Number(process.env.PIPER_PORT || 5199)];
 const log = (m) => { if (!quiet) console.log(m); };
 
 if (process.platform === 'win32') {

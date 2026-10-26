@@ -107,7 +107,7 @@ A local web app for reading and listening: React + TypeScript on top of a zero-d
 
 ```sh
 npm run setup    # once: installs and builds the UI (needs Node 18+)
-npm start        # http://localhost:3000   (PORT=4000 npm start to change the port)
+npm start        # http://localhost:4401   (PORT=4000 npm start to change the port)
 ```
 
 The screen stays simple. Topics on the left, the question list in the middle, the answer on the right. Everything else appears only when you need it:
@@ -134,7 +134,7 @@ Restart `npm start`. Nothing else to configure; see [tools/piper/README.md](tool
 
 ### Developing the UI
 
-Run `npm start` in one terminal and `npm run dev` in another (hot reload on http://localhost:5173, API proxied to port 3000).
+Run `npm run dev` (starts the API on port 4401 and the UI with hot reload on http://localhost:4400).
 
 ## Hosting
 

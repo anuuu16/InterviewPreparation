@@ -1,5 +1,5 @@
 // Local manager UI. Edits data/*.json and regenerates the Markdown on every change.
-// Usage: node app/server.js  (then open http://localhost:3000)
+// Usage: node app/server.js  (then open http://localhost:4401)
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -10,7 +10,7 @@ const feedback = require('./feedback-lib');
 const resources = require('./resources-lib');
 const problemsLib = require('./problems-lib');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4401;
 const DIST = path.join(__dirname, 'web', 'dist');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.png': 'image/png', '.woff2': 'font/woff2' };
 const SLUG = /^[a-z0-9-]+$/;
@@ -37,6 +37,7 @@ function clean(body, base = {}) {
   if (typeof body.module === 'string') { const m = body.module.trim(); if (m) q.module = m; else delete q.module; }
   if (Array.isArray(body.tags)) q.tags = body.tags.map((t) => String(t).trim()).filter(Boolean);
   if (typeof body.favorite === 'boolean') q.favorite = body.favorite;
+  if (typeof body.remove === 'boolean') { if (body.remove) q.remove = true; else delete q.remove; }
   return q;
 }
 
