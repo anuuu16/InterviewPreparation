@@ -1,0 +1,1164 @@
+{
+  "name": "Interviewing Freshers (Internship)",
+  "group": "Personal",
+  "questions": [
+    {
+      "id": "intern-001",
+      "question": "What is a variable, and what is a data type?",
+      "answer": "**Short answer:** A variable is a named box in memory that holds a value. A data type says what kind of value it is (number, text, true/false, list) and what you can do with it.\n\n**What a good answer has:** an example such as `age = 21` and `name = \"Asha\"`, and the idea that `\"5\" + 1` is not the same as `5 + 1` because the types differ.\n\n**Follow-up:** What happens if you add a number and a text? (Depends on the language: an error in Python, a joined text in JavaScript.)\n\n**Red flag:** cannot name three types. Memorised a definition but cannot give an example.\n\n**Interview tip:** Start with this one to relax the candidate. Anyone with a college programming course should get it.",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "variables"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-002",
+      "question": "What is the difference between a `for` loop and a `while` loop?",
+      "answer": "**Short answer:** A `for` loop is used when you know how many times to repeat, for example once per item in a list. A `while` loop repeats as long as a condition is true, so it fits when you do not know the count in advance, for example \"read until the user types quit\".\n\n**What a good answer has:** the three parts of a loop (start, condition, update) and what an infinite loop is: the condition never becomes false because the update is missing.\n\n**Follow-up:** How do you stop a loop early? (`break`.) How do you skip one round? (`continue`.)\n\n**Red flag:** says \"there is no difference\" without explaining when to choose each.",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "loops"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-003",
+      "question": "What is a function and why do we use functions?",
+      "answer": "**Short answer:** A function is a named block of code that takes input (parameters), does one job and can return a result. We use it to avoid repeating code, to test small pieces, and to make a program easier to read.\n\n**What a good answer has:** a small example, like `isEven(n)`, and the words \"reuse\" and \"readability\".\n\n**Follow-up:** What is the difference between a parameter and an argument? (Parameter is the name in the definition, argument is the actual value you pass.)\n\n**Red flag:** writes one huge function for everything in their projects.",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "functions"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-004",
+      "question": "Explain Object-Oriented Programming in simple words.",
+      "answer": "**Short answer:** OOP organises code around objects, which bundle data and the actions on that data. The four ideas are encapsulation (hide the details, expose a few methods), abstraction (show only what matters), inheritance (a child class reuses a parent class) and polymorphism (the same method call behaves differently for different objects).\n\n**What a good answer has:** a real-life example, such as `Car` with `start()`, and `ElectricCar` that inherits from `Car` and starts differently.\n\n**Follow-up:** What is the difference between a class and an object? (Class is the blueprint, object is one thing built from it.) When would you use composition instead of inheritance?\n\n**Red flag:** can recite the four words but cannot give a single example.",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "oop",
+        "basics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-005",
+      "question": "What is the difference between a class and an object?",
+      "answer": "**Short answer:** A class is a blueprint that describes the data and behaviour. An object is one real instance made from that blueprint, with its own values.\n\n**What a good answer has:** \"House plan versus the actual houses\". Two objects of the same class can hold different values.\n\n**Follow-up:** What is a constructor? (Special method that runs when the object is created and sets it up.)",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "oop"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-006",
+      "question": "What is recursion? What can go wrong with it?",
+      "answer": "**Short answer:** Recursion is a function that calls itself on a smaller version of the problem until it reaches a simple case that it can answer directly. That simple case is the base case. Without it the calls never stop and the program crashes with a stack overflow.\n\n**What a good answer has:** factorial or Fibonacci as the example, and the base case named clearly.\n\n```python\ndef factorial(n):\n    if n <= 1:          # base case\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(5))     # prints: 120\n```\n\n**Follow-up:** Why can plain recursive Fibonacci be very slow? (It repeats the same work. Fix with memoisation or a loop.)\n\n**Red flag:** no base case in their example.",
+      "level": "intermediate",
+      "module": "Programming Basics",
+      "tags": [
+        "recursion"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-007",
+      "question": "What is the difference between a compiled and an interpreted language?",
+      "answer": "**Short answer:** A compiled language (C, C++, Go) is translated to machine code before it runs, so it usually starts and runs faster. An interpreted language (Python, JavaScript) is read and run line by line by another program. Many languages are in between: Java compiles to bytecode that a virtual machine runs.\n\n**Follow-up:** Which category is Java? Which is TypeScript? (TypeScript compiles to JavaScript.)\n\n**Interview tip:** Do not push on exact details. A fresher who knows \"compile first, or run directly\" is fine.",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "languages"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-008",
+      "question": "What is variable scope?",
+      "answer": "**Short answer:** Scope is the part of the program where a variable can be used. A variable declared inside a function is local and not visible outside. A global variable is visible everywhere, which is why it is risky: any code can change it.\n\n**Follow-up:** What happens if a local and a global variable have the same name? (The local one hides the global one inside the function.)",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "scope"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-009",
+      "question": "What is the difference between pass by value and pass by reference?",
+      "answer": "**Short answer:** Pass by value gives the function a copy, so changing it does not affect the caller. Pass by reference gives the function access to the original, so changes are visible outside. In Python and JavaScript, numbers and strings behave like a copy, while lists and objects can be changed from inside a function because the function receives a reference to them.\n\n**Follow-up:** What does this print? `def add(xs): xs.append(1)` then `a = []; add(a); print(a)` (prints `[1]`.)\n\n**Red flag:** says \"everything is pass by value\" or \"everything is pass by reference\" with total confidence and no nuance.",
+      "level": "intermediate",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "memory"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-010",
+      "question": "What is the difference between an error and an exception? How do you handle exceptions?",
+      "answer": "**Short answer:** An exception is a problem that happens while the program runs, such as dividing by zero or opening a file that does not exist. You handle it with `try` and `catch` (or `try` and `except`), so the program can show a message or recover instead of crashing.\n\n**What a good answer has:** `finally` for cleanup, and not swallowing errors silently with an empty catch.\n\n**Follow-up:** Name three kinds of mistakes: syntax errors (code does not parse), runtime errors (crash while running), logic errors (runs but gives wrong result). Which is hardest to find? (Logic errors, because nothing complains.)",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "errors"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-014",
+      "question": "Swap two variables without using a third one.",
+      "answer": "**Short answer:** In Python and JavaScript, use tuple or destructuring swap: `a, b = b, a` or `[a, b] = [b, a]`. The classic trick works with numbers: `a = a + b; b = a - b; a = a - b`. XOR also works: `a ^= b; b ^= a; a ^= b`.\n\n**What a good answer has:** knows at least one method. The best candidates also say that in real code you just use a temp variable or destructuring, because clever tricks hurt readability and the arithmetic trick can overflow in languages with fixed-size integers.\n\n**Follow-up:** Trace it with a = 5, b = 3: a becomes 8, b becomes 5, a becomes 3.",
+      "level": "basic",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "logic",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-016",
+      "question": "How do you check whether a string is a palindrome?",
+      "answer": "**Short answer:** Compare the string with its reverse, or use two pointers: one at the start and one at the end, move inwards and stop at the first mismatch. Two pointers needs no extra memory.\n\n**What a good answer has:** thinks about edge cases: empty string, single character, upper and lower case, spaces and punctuation (\"A man, a plan, a canal: Panama\").\n\n**Follow-up:** What is the time complexity? (O(n) time, O(1) space for two pointers.)",
+      "level": "basic",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "logic",
+        "strings",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-017",
+      "question": "Reverse a string without using the built-in reverse function.",
+      "answer": "**Short answer:** Loop from the last character to the first and build a new string, or convert to a list and swap the first and last, second and second last, and so on until you meet in the middle.\n\n**Follow-up:** Why is repeated string concatenation in a loop slow in some languages? (Strings are immutable, so each step may copy the whole string.) How would you reverse the words of a sentence instead of letters?",
+      "level": "basic",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "logic",
+        "strings",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-018",
+      "question": "Find the largest and the second largest number in an array in one pass.",
+      "answer": "**Short answer:** Keep two variables, `largest` and `second`. For each number: if it is bigger than `largest`, then `second` takes the old `largest` and `largest` takes the new number. Otherwise, if it is bigger than `second` and not equal to `largest`, update `second`. One pass, O(n) time, O(1) space.\n\n**What a good answer has:** handles duplicates (`[5, 5, 3]` has second largest 3), an array with fewer than two distinct values, and negative numbers (do not start with 0).\n\n**Red flag:** sorts the array without being asked about cost, and cannot say what it costs. Sorting is acceptable if they say it is O(n log n) and that one pass is better.",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "logic",
+        "arrays",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-019",
+      "question": "How do you check whether a number is prime?",
+      "answer": "**Short answer:** A prime is greater than 1 and divisible only by 1 and itself. Try dividing by every number from 2 up to the square root of n. If any divides evenly, it is not prime. You can stop at the square root because factors come in pairs, and one of each pair is at most the square root.\n\n**What a good answer has:** handles 0, 1 and 2 correctly. A brute force loop up to n is acceptable at first; the square-root improvement is the stronger answer.\n\n**Follow-up:** How would you list all primes up to a million? (Sieve of Eratosthenes.)",
+      "level": "basic",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "logic",
+        "math",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-020",
+      "question": "Count how often each character appears in a string.",
+      "answer": "**Short answer:** Use a hash map (dictionary) from character to count. Loop over the string and add one to the count for each character. One pass, O(n) time.\n\n```python\ntext = \"banana\"\ncounts = {}\nfor ch in text:\n    counts[ch] = counts.get(ch, 0) + 1\nprint(counts)   # prints: {'b': 1, 'a': 3, 'n': 2}\n```\n\n**Follow-up:** How would you find the first character that appears only once? (Second pass over the string, checking the count.) How would you check whether two words are anagrams? (Compare their counts.)",
+      "level": "basic",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "logic",
+        "hashing",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-021",
+      "question": "An array has the numbers 1 to n, with one number missing. Find it.",
+      "answer": "**Short answer:** The sum of 1 to n is `n * (n + 1) / 2`. Subtract the sum of the array from it and the difference is the missing number. It takes one pass and no extra memory. Alternatives: a set lookup (extra memory) or XOR of all numbers.\n\n**What a good answer has:** a first idea that works (sorting or a set) and, with a hint, the sum formula.\n\n**Follow-up:** What if two numbers are missing? (Use the sum and the sum of squares, or a boolean array.) What if the sum overflows? (Use a wider type or XOR.)",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "logic",
+        "arrays",
+        "math",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-022",
+      "question": "Given an array and a target, find two numbers that add up to the target.",
+      "answer": "**Short answer:** Brute force checks every pair, which is O(n squared). Better: walk through the array once, and for each number look up `target - number` in a hash map of numbers seen so far. If found, you have the pair. O(n) time and O(n) space.\n\n**What a good answer has:** starts with brute force, then improves. Mentions that using the same element twice is not allowed, and asks whether the input is sorted (if so, two pointers need no extra memory).\n\n**Interview tip:** This is the best single question to separate people who can improve a solution from people who only know one. Give credit for the process, not only the final code.",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "logic",
+        "hashing",
+        "arrays",
+        "coding"
+      ],
+      "favorite": true
+    },
+    {
+      "id": "intern-023",
+      "question": "You have a 3-litre jug and a 5-litre jug and no markings. How do you measure exactly 4 litres?",
+      "answer": "**Short answer:** Fill the 5-litre jug. Pour into the 3-litre jug until it is full, leaving 2 litres in the 5. Empty the 3-litre jug. Pour the 2 litres into it. Fill the 5-litre jug again. Pour from it into the 3-litre jug, which only needs 1 more litre, so 4 litres remain in the 5-litre jug.\n\n**What a good answer has:** tracks the state after each step, for example (5-jug, 3-jug): (5,0), (2,3), (2,0), (0,2), (5,2), (4,3).\n\n**Interview tip:** Watch how they think. Do they try things randomly, or write down the state? Both can work, tidy tracking is a good sign.",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "classic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-024",
+      "question": "You have 8 balls that look the same. One is heavier. Using a balance scale, what is the minimum number of weighings to find it?",
+      "answer": "**Short answer:** Two weighings. Weigh 3 balls against 3 balls. If they balance, the heavy ball is one of the remaining 2, so weigh those two against each other. If one side is heavier, take those 3 balls, weigh any 2 against each other: if one is heavier it is the answer, if they balance the third one is.\n\n**What a good answer has:** splits into three groups (3, 3, 2) instead of two groups. Splitting into three is the key idea because each weighing has three outcomes: left heavier, right heavier, balanced.\n\n**Follow-up:** How many balls can you handle with 3 weighings? (27, because 3 to the power of 3.)",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "classic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-025",
+      "question": "Three switches are outside a room, and three bulbs are inside. You can enter the room only once. How do you find which switch controls which bulb?",
+      "answer": "**Short answer:** Turn on switch 1 and wait several minutes. Turn it off, turn on switch 2, and go in. The bulb that is on belongs to switch 2. The bulb that is off but warm belongs to switch 1. The bulb that is off and cold belongs to switch 3.\n\n**What a good answer has:** uses heat as a second signal. Most people start with only on and off and get stuck, so this tests lateral thinking.\n\n**Interview tip:** If they are stuck, give a hint: \"What else can a bulb tell you besides light?\"",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "classic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-026",
+      "question": "You have two ropes. Each takes exactly 60 minutes to burn, but they burn unevenly. How do you measure 45 minutes?",
+      "answer": "**Short answer:** Light rope A at both ends and rope B at one end at the same time. Rope A burns out after 30 minutes. At that moment light the other end of rope B. It had 30 minutes left, and now burns from both ends, so it finishes in 15 more minutes. Total: 45 minutes.\n\n**What a good answer has:** knows that lighting both ends halves the time, no matter how uneven the rope is.",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "classic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-028",
+      "question": "A farmer has a wolf, a goat and a cabbage and must cross a river in a boat that carries only the farmer and one item. How?",
+      "answer": "**Short answer:** Take the goat across. Go back alone. Take the wolf across, and bring the goat back. Take the cabbage across, go back alone, and take the goat across again. The wolf and the goat are never left together, and the goat and the cabbage are never left together.\n\n**What a good answer has:** the key step of bringing the goat back. Candidates who see that moving something backwards can help are thinking well.",
+      "level": "basic",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "classic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-029",
+      "question": "Two guards stand at two doors. One door leads to freedom and one to danger. One guard always lies, the other always tells the truth, and you do not know which is which. You may ask one question to one guard. What do you ask?",
+      "answer": "**Short answer:** Ask either guard: \"What would the other guard say is the door to freedom?\" The liar lies about what the truth-teller would say, and the truth-teller honestly reports what the liar would say. Both point to the wrong door, so you go through the other door.\n\n**What a good answer has:** can explain why both cases give the same wrong door. Accept a candidate who works it out slowly on paper with all four cases.",
+      "level": "advanced",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "classic",
+        "reasoning"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-032",
+      "question": "At a party of 10 people everyone shakes hands with everyone else once. How many handshakes?",
+      "answer": "**Short answer:** 45. Each of the 10 people shakes hands with 9 others, which counts every handshake twice, so 10 x 9 / 2 = 45. The general formula is n x (n - 1) / 2.\n\n**Follow-up:** Where does this show up in software? (The number of connections in a fully connected network, or the number of pairs you compare in a brute force search.)",
+      "level": "basic",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "math"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-033",
+      "question": "What is the angle between the hour and minute hands at 3:15?",
+      "answer": "**Short answer:** 7.5 degrees. The minute hand is at 15 minutes, which is 90 degrees. The hour hand moves 0.5 degrees per minute, so at 3:15 it is at 3 x 30 + 15 x 0.5 = 97.5 degrees. The difference is 7.5 degrees. Most people wrongly say 0.\n\n**What a good answer has:** remembers that the hour hand keeps moving between the numbers.",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "math"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-035",
+      "question": "Convert the decimal number 13 to binary. Why do computers use binary?",
+      "answer": "**Short answer:** 13 is 1101 in binary: 8 + 4 + 0 + 1. Computers use binary because electronic circuits have two reliable states, on and off, and it is simple and cheap to build hardware that tells them apart.\n\n**Follow-up:** How many different values can 8 bits hold? (256.) What is 2 to the power of 10? (1024.)",
+      "level": "basic",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "binary",
+        "basics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-036",
+      "question": "What is the difference between an array and a linked list?",
+      "answer": "**Short answer:** An array stores items next to each other in memory, so you can jump to any index in constant time, but inserting in the middle means shifting items. A linked list stores each item with a pointer to the next one, so inserting is cheap once you are at the spot, but finding the 50th item means walking through 50 nodes.\n\n**What a good answer has:** a comparison table in words: access by index, insert at the start, insert in the middle, memory use.\n\n**Follow-up:** Which one would you use for a playlist where users reorder songs a lot? What is a doubly linked list?",
+      "level": "basic",
+      "module": "Data Structures & Algorithms",
+      "tags": [
+        "data-structures"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-037",
+      "question": "What is the difference between a stack and a queue? Give a real-life example of each.",
+      "answer": "**Short answer:** A stack is last in, first out: the last item added is the first removed, like a pile of plates, or the undo button. A queue is first in, first out, like people waiting in line, or print jobs.\n\n**Follow-up:** Which one does the function call mechanism use? (The call stack.) Which one would you use to process tasks in order? (A queue.)",
+      "level": "basic",
+      "module": "Data Structures & Algorithms",
+      "tags": [
+        "data-structures"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-039",
+      "question": "When can you use binary search, and what is its time complexity?",
+      "answer": "**Short answer:** Binary search works on sorted data. It compares the target with the middle item and throws away half of the items each step, so it takes O(log n) time. One million items need about 20 steps.\n\n**What a good answer has:** says \"sorted\" without being prompted. A good candidate also writes the middle as `low + (high - low) / 2` and loops `while low <= high`.\n\n**Follow-up:** What happens if the array is not sorted? How would you find the first occurrence of a duplicate value?",
+      "level": "basic",
+      "module": "Data Structures & Algorithms",
+      "tags": [
+        "algorithms",
+        "searching"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-040",
+      "question": "Explain how bubble sort works, and name a faster sorting algorithm.",
+      "answer": "**Short answer:** Bubble sort walks through the list, compares neighbours and swaps them if they are in the wrong order. After each pass the largest item has bubbled to the end. It repeats until no swaps happen. It takes O(n squared) time, which is slow for big inputs. Merge sort and quick sort take O(n log n) on average.\n\n**Follow-up:** What does stable sorting mean? (Equal items keep their original order.) What sort does your language use internally? (Python and Java use Timsort for objects.)",
+      "level": "basic",
+      "module": "Data Structures & Algorithms",
+      "tags": [
+        "algorithms",
+        "sorting"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-043",
+      "question": "How would you find duplicates in an array?",
+      "answer": "**Short answer:** Loop through and keep a set of values already seen. If the value is already in the set it is a duplicate. This is O(n) time and O(n) space. Brute force with two loops uses no extra memory but takes O(n squared). Sorting first and comparing neighbours is O(n log n) with little extra memory.\n\n**What a good answer has:** names the trade-off between time and memory, not only one solution.",
+      "level": "basic",
+      "module": "Data Structures & Algorithms",
+      "tags": [
+        "algorithms",
+        "hashing",
+        "arrays"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-046",
+      "question": "What happens when you type a website address in the browser and press Enter?",
+      "answer": "**Short answer:** The browser looks up the server's IP address using DNS. It opens a connection (TCP, and TLS for https). It sends an HTTP request. The server sends a response, usually HTML. The browser reads the HTML, loads CSS, JavaScript and images and draws the page.\n\n**What a good answer has:** DNS, request and response, and rendering. Extra credit: caching, load balancers, and CDNs.\n\n**Interview tip:** Stop them after three or four steps if they are strong, or ask them to tell you what part they know best. It is an open question with no wrong order.",
+      "level": "intermediate",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "networking",
+        "classic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-047",
+      "question": "What is the difference between GET and POST? Name some HTTP status codes.",
+      "answer": "**Short answer:** GET asks the server for data and should not change anything. POST sends data to the server to create or change something, and the data goes in the request body. Common status codes: 200 OK, 201 Created, 301 redirect, 400 bad request, 401 not logged in, 403 not allowed, 404 not found, 500 server error.\n\n**Follow-up:** Why should you not send a password with GET? (It ends up in the URL, browser history and logs.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "http"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-048",
+      "question": "What is an API? What does REST mean?",
+      "answer": "**Short answer:** An API is a way for one program to talk to another with agreed rules. A REST API uses plain HTTP: URLs name things (`/users/5`), and methods say what to do with them (GET to read, POST to create, PUT or PATCH to update, DELETE to remove). Data usually travels as JSON.\n\n**Follow-up:** What is JSON? (A text format for data, with objects and arrays, easy for people and programs to read.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "api"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-049",
+      "question": "What do HTML, CSS and JavaScript each do in a web page?",
+      "answer": "**Short answer:** HTML is the structure and content: headings, paragraphs, buttons. CSS is the look: colours, layout and spacing. JavaScript is the behaviour: it reacts to clicks, changes the page and talks to servers.\n\n**Red flag:** for a candidate who says they know web development, cannot tell them apart.",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "frontend"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-050",
+      "question": "What is the difference between authentication and authorization?",
+      "answer": "**Short answer:** Authentication checks who you are, for example with a password. Authorization checks what you are allowed to do, for example an admin can delete users and a normal user cannot.\n\n**Follow-up:** Why should you never store passwords as plain text? (A leak exposes everyone. Store a salted hash.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-051",
+      "question": "What is the difference between SQL and NoSQL databases? What is a primary key?",
+      "answer": "**Short answer:** SQL databases store data in tables with fixed columns and relate tables with keys and joins (PostgreSQL, MySQL). NoSQL databases store data in other shapes, such as documents or key-value pairs, and are often more flexible about structure (MongoDB, Redis). A primary key is a column whose value uniquely identifies each row.\n\n**Follow-up:** What is a foreign key? (A column that points to the primary key of another table.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "databases"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-052",
+      "question": "Write a SQL query to find the second highest salary in an `employees` table.",
+      "answer": "**Short answer:** One way is to take the maximum salary below the overall maximum.\n\n```sql\nSELECT MAX(salary)\nFROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);\n```\n\nAnother is `ORDER BY salary DESC LIMIT 1 OFFSET 1` (with `DISTINCT` if duplicates are possible). Many databases also have `DENSE_RANK()`.\n\n**What a good answer has:** a query that works, and a thought about duplicates and what to return when there is no second salary (NULL).\n\n**Follow-up:** What is the difference between `INNER JOIN` and `LEFT JOIN`?",
+      "level": "intermediate",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "databases",
+        "sql",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-053",
+      "question": "What is Git and what is the difference between commit, push and pull?",
+      "answer": "**Short answer:** Git is a version control system that records the history of your code. A commit saves a snapshot on your computer. Push sends your commits to the remote repository, such as GitHub. Pull fetches new commits from the remote and merges them into your branch.\n\n**Follow-up:** What is a branch and why use one? What is a merge conflict and how do you fix it? (Two people changed the same lines. Open the file, choose the right content, remove the markers, commit.)\n\n**Red flag:** has never used Git at all. That is a gap to note for any internship that involves a team.",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "git"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-054",
+      "question": "Your program runs but prints the wrong output. How do you find the problem?",
+      "answer": "**Short answer:** Reproduce it with the smallest input. Read the code and work out what each step should do. Print values at key steps (or use a debugger with breakpoints) to find the first place where reality differs from what you expected. Fix the cause, then run the test again and check nearby cases.\n\n**What a good answer has:** a process, not \"I stare at it\" or \"I ask someone\". Mentions a debugger, print statements, small inputs and checking assumptions.\n\n**Interview tip:** Ask for a real bug they fixed and what finally showed the problem.",
+      "level": "basic",
+      "module": "Debugging & Problem Solving",
+      "tags": [
+        "debugging"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-055",
+      "question": "What is wrong with this loop? `for (i = 0; i <= arr.length; i++) { sum += arr[i]; }`",
+      "answer": "**Short answer:** It is an off-by-one error. Indexes run from 0 to length minus 1, so `<=` goes one step too far and reads past the end. In JavaScript it adds `undefined` and gives `NaN`, in Java it throws an exception. Use `i < arr.length`.\n\n**What a good answer has:** finds it in a few seconds and names the cause.\n\n**Follow-up:** Where else do off-by-one errors show up? (Binary search bounds, substring ranges, pagination.)",
+      "level": "basic",
+      "module": "Debugging & Problem Solving",
+      "tags": [
+        "debugging",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-057",
+      "question": "What is a unit test and why write one?",
+      "answer": "**Short answer:** A unit test is a small automated check for one piece of code, such as a function. You write what input you give and what you expect back. Tests catch bugs early, show that old behaviour still works after a change, and act as living examples of how the code should be used.\n\n**Follow-up:** What cases would you test for a function that finds the maximum of a list? (Normal, one item, negatives, duplicates, empty list.)",
+      "level": "basic",
+      "module": "Debugging & Problem Solving",
+      "tags": [
+        "testing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-059",
+      "question": "You are stuck on a problem for two hours. What do you do?",
+      "answer": "**Short answer:** First, break the problem down and check basic assumptions. Try a smaller version, search the documentation, and explain it aloud to someone or to a rubber duck. If still stuck after a set time, ask a teammate or mentor, showing what I tried so they do not start from zero.\n\n**What a good answer has:** a balance between trying alone and asking for help. Both extremes are problems: never asking wastes days, asking at once without trying shows no effort.",
+      "level": "basic",
+      "module": "Debugging & Problem Solving",
+      "tags": [
+        "debugging",
+        "attitude"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-060",
+      "question": "Tell me about a project you built. What was your part and what was hard?",
+      "answer": "**Short answer:** A good answer names the project goal, the technologies, what the candidate personally built, one real difficulty, and what they learnt.\n\n**What a good answer has:** specific details such as \"the search was slow, I added an index and it dropped from 3 seconds to 200 milliseconds\". Can explain why they chose each tool.\n\n**Follow-up:** What would you change if you built it again? How did you test it? How do you know it works?\n\n**Red flag:** cannot explain code they claim to have written, or says \"we\" for everything and cannot say what they did. Ask them to open the code and explain one function.",
+      "level": "basic",
+      "module": "Attitude & Communication",
+      "tags": [
+        "behavioral",
+        "projects"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-061",
+      "question": "Why do you want this internship, and what do you want to learn?",
+      "answer": "**Short answer:** A good answer is specific: the technology or kind of work that interests them, and what they hope to practise. It also shows they read about the company or team.\n\n**Red flag:** \"I need a job\" or generic phrases with nothing specific. Honest and curious beats polished and empty.",
+      "level": "basic",
+      "module": "Attitude & Communication",
+      "tags": [
+        "behavioral",
+        "motivation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-062",
+      "question": "How do you learn a new technology?",
+      "answer": "**Short answer:** Read the official documentation or a short tutorial, build a small project with it, break things on purpose, and then look at how others use it. They should be able to give one recent example.\n\n**Follow-up:** What did you learn recently on your own? Can you show me or explain it in two minutes?\n\n**Interview tip:** The answer to this predicts how fast they will grow during the internship.",
+      "level": "basic",
+      "module": "Attitude & Communication",
+      "tags": [
+        "behavioral",
+        "learning"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-063",
+      "question": "Do you use AI tools such as ChatGPT or Copilot when you code? How do you make sure the code is correct?",
+      "answer": "**Short answer:** A good answer says yes, they use it as a helper, and they always read and test the output. They understand the code before keeping it, run it with sample and edge-case inputs, and do not paste what they cannot explain.\n\n**What a good answer has:** honest use plus verification. You can test this on the spot: show a small piece of code and ask them to explain it without any tools.\n\n**Red flag:** cannot explain code that they say they wrote, or believes the AI is always right.",
+      "level": "intermediate",
+      "module": "Attitude & Communication",
+      "tags": [
+        "behavioral",
+        "ai"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-066",
+      "question": "Explain what an API is to someone who is not a programmer.",
+      "answer": "**Short answer:** An API is like a waiter in a restaurant. You do not walk into the kitchen. You tell the waiter what you want, the waiter takes the order to the kitchen and brings back the food. In the same way, an app asks another system for something through the API and gets an answer back.\n\n**What a good answer has:** a simple analogy and no jargon. The point is communication, so any clear everyday example is fine.\n\n**Interview tip:** Developers explain things to managers, testers and clients all the time. This tells you how they will do it.",
+      "level": "intermediate",
+      "module": "Attitude & Communication",
+      "tags": [
+        "communication"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-067",
+      "question": "Where do you see yourself in a year, and what questions do you have for us?",
+      "answer": "**Short answer:** A good answer is simple and honest: a stronger developer, working on real code, and maybe a full-time role. The best candidates also ask a question, such as what they would work on, how code review works, or who would mentor them.\n\n**Red flag:** no questions at all. Candidates who care about the work usually have at least one.\n\n**Interview tip:** End every interview with this so the candidate leaves feeling the process was fair.",
+      "level": "basic",
+      "module": "Attitude & Communication",
+      "tags": [
+        "behavioral",
+        "closing"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-068",
+      "question": "What is the difference between `=` and `==`?",
+      "answer": "**Short answer:** A single `=` assigns a value: `x = 5` puts 5 in `x`. A double `==` compares two values and gives true or false: `x == 5` asks whether `x` is 5. Mixing them up is a classic beginner bug, for example writing `if (x = 5)`, which assigns instead of comparing.\n\n**Follow-up:** In JavaScript, what is the difference between `==` and `===`? (`===` also compares the type, so `\"5\" === 5` is false.)\n\n**Red flag:** cannot explain it after a college programming course.",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "operators"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-069",
+      "question": "Why do array indexes usually start at 0?",
+      "answer": "**Short answer:** The index is the distance from the start of the array. The first item is zero steps from the start, so it has index 0. The last item of an array with 5 items has index 4.\n\n**What a good answer has:** knows the last index is length minus one, and can say what happens when you use index 5 on 5 items (error or undefined).\n\n**Follow-up:** How do you get the last item of an array in your language?",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "arrays"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-070",
+      "question": "How do an `if-else` and a `switch` differ? When do you use each?",
+      "answer": "**Short answer:** `if-else` checks any conditions, such as ranges or combinations (`age > 18 and hasId`). `switch` compares one value against a list of fixed choices, such as the day of the week or a menu option. Use `switch` when there are many exact matches, otherwise `if-else`.\n\n**Follow-up:** What happens if you forget `break` in a `switch` in C, Java or JavaScript? (Execution continues into the next case.)",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "conditions"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-071",
+      "question": "What is the difference between frontend and backend?",
+      "answer": "**Short answer:** The frontend is what the user sees and touches in the browser or app: pages, buttons, forms. The backend runs on a server, holds the business rules, talks to the database and sends data to the frontend. When you log in, the frontend collects your password and the backend decides whether it is correct.\n\n**Follow-up:** Which side would you pick to work on and why? Where should input validation happen? (On both: frontend for friendly messages, backend for safety.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "basics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-072",
+      "question": "Why does an application need a database? Why not just a file?",
+      "answer": "**Short answer:** A database stores data safely and lets many users read and change it at the same time, with fast searching, rules about the data and recovery after a crash. A plain file is fine for small, single-user data, but it gets slow, is easy to corrupt and cannot handle two people writing at once.\n\n**Follow-up:** Give an example of data you would put in a database in a shopping app. (Users, products, orders.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "databases",
+        "basics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-073",
+      "question": "Why does 0.1 + 0.2 not equal 0.3 in most programming languages?",
+      "answer": "**Short answer:** Computers store decimals in binary, and some decimal fractions such as 0.1 cannot be stored exactly in binary, just like one third cannot be written exactly in decimal. So the result is 0.30000000000000004 and the comparison with 0.3 is false.\n\n**What a good answer has:** the practical fix: compare with a small tolerance, or store money as whole cents (integers) or use a decimal type.\n\n**Red flag:** says \"it is a bug in the language\".",
+      "level": "intermediate",
+      "module": "Code Tracing & Output",
+      "tags": [
+        "floating-point",
+        "classic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-075",
+      "question": "What does this print? `total = 0` then `for i in 1, 2, 3: total += i * i` then `print(total)`",
+      "answer": "**Short answer:** 14. The loop adds 1 times 1, then 2 times 2, then 3 times 3, so the total is 1 + 4 + 9.\n\n**What a good answer has:** traces it step by step, saying the value of `i` and `total` in each round, instead of guessing.\n\n**Interview tip:** Ask them to explain their trace aloud. Candidates who trace carefully will be good at debugging.",
+      "level": "basic",
+      "module": "Code Tracing & Output",
+      "tags": [
+        "tracing",
+        "loops"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-076",
+      "question": "What is the result of `True and False or True`? Explain how you got it.",
+      "answer": "**Short answer:** True. `and` is evaluated before `or`. So it is `(True and False) or True`, which is `False or True`, which is True.\n\n**What a good answer has:** knows that `and` needs both sides true and `or` needs only one, and that brackets make it clear.\n\n**Follow-up:** What does XOR mean? (True only when the two inputs are different.) Fill in the truth table for `not (A and B)`.",
+      "level": "intermediate",
+      "module": "Code Tracing & Output",
+      "tags": [
+        "boolean-logic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-077",
+      "question": "What is an algorithm? Write the steps to make a cup of tea.",
+      "answer": "**Short answer:** An algorithm is a clear list of steps that solves a problem and always ends. For tea: boil water, put a tea bag in the cup, pour water, wait three minutes, remove the bag, add milk and sugar if wanted.\n\n**What a good answer has:** steps in the right order, no missing step, and then a decision in it: \"if the water is not hot yet, wait\". Strong candidates add conditions and repetition, which are the same as `if` and loops in code.\n\n**Interview tip:** This is a relaxed way to see whether someone thinks in steps before they write code.",
+      "level": "basic",
+      "module": "Basic Coding Logic",
+      "tags": [
+        "algorithm",
+        "thinking"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-082",
+      "question": "Find the sum of the digits of a number, and reverse the number, without converting it to a string.",
+      "answer": "**Short answer:** Repeat while the number is greater than 0: the last digit is `n % 10`, add it to the sum, and then remove it with integer division `n // 10`. To reverse, build the new number with `reversed = reversed * 10 + digit`. For 1234 the digit sum is 10 and the reversed number is 4321.\n\n**What a good answer has:** understands that `% 10` gives the last digit and dividing by 10 drops it. Works through the example on paper.\n\n**Follow-up:** How would you check whether a number is a palindrome using this? (Compare it with its reverse.)",
+      "level": "intermediate",
+      "module": "Basic Coding Logic",
+      "tags": [
+        "logic",
+        "loops",
+        "math",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-084",
+      "question": "Print a triangle of stars with 4 rows using loops. The first row has 1 star and the last has 4.",
+      "answer": "**Short answer:** Use an outer loop for the rows and an inner loop that prints as many stars as the current row number, then moves to a new line.\n\n```python\nfor row in range(1, 5):\n    for _ in range(row):\n        print(\"*\", end=\"\")\n    print()      # new line after each row\n```\n\n**What a good answer has:** can explain what the outer and inner loop each do. Pattern questions show whether the candidate understands nested loops.\n\n**Follow-up:** How would you print the triangle upside down? How would you print a pyramid with spaces on the left?",
+      "level": "basic",
+      "module": "Basic Coding Logic",
+      "tags": [
+        "logic",
+        "loops",
+        "patterns",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-085",
+      "question": "Count the vowels in a sentence. What cases do you need to think about?",
+      "answer": "**Short answer:** Go through each character and add one if it is one of a, e, i, o, u. To handle upper case letters, convert the character to lower case first. Other characters such as spaces, digits and punctuation are skipped.\n\n**What a good answer has:** handles upper and lower case, an empty string, and says whether \"y\" counts (it normally does not here).",
+      "level": "basic",
+      "module": "Basic Coding Logic",
+      "tags": [
+        "logic",
+        "strings",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-086",
+      "question": "Which is heavier: a kilo of cotton or a kilo of iron?",
+      "answer": "**Short answer:** Both weigh the same, one kilo. The trick is that iron feels heavier, but the question gives the same weight for both.\n\n**Interview tip:** A warm-up. Watch whether the candidate reads the question carefully before answering.",
+      "level": "basic",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "trick"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-088",
+      "question": "A snail is at the bottom of a 10-metre well. Each day it climbs 3 metres, and each night it slips back 2 metres. How many days to get out?",
+      "answer": "**Short answer:** 8 days. Each full day and night gains 1 metre, so after 7 days the snail is at 7 metres. On day 8 it climbs 3 metres and reaches 10 metres, so it is out before the night, and does not slip back. The common wrong answer is 10 days.\n\n**What a good answer has:** notices that the last climb is different, because the snail leaves the well before slipping.",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "classic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-091",
+      "question": "A father is three times as old as his son. After 12 years he will be twice as old as his son. How old are they now?",
+      "answer": "**Short answer:** The son is 12 and the father is 36. Let the son's age be x. Then the father is 3x. After 12 years, 3x + 12 equals 2 times (x + 12). That gives 3x + 12 = 2x + 24, so x is 12. Check: in 12 years they are 24 and 48.\n\n**What a good answer has:** sets up an equation, or tries values and checks. Both are fine, the check at the end is the important part.",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "math",
+        "algebra"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-096",
+      "question": "Today is Wednesday. What day will it be after 100 days?",
+      "answer": "**Short answer:** Friday. The days repeat every 7 days. 100 divided by 7 leaves a remainder of 2 (14 weeks is 98 days). So the day is two days after Wednesday, which is Friday.\n\n**What a good answer has:** uses the remainder. This is the same idea as the `%` operator in code.",
+      "level": "intermediate",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "math"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-098",
+      "question": "Three boxes contain apples, oranges, and a mix of both. All three labels are wrong. You may take one fruit from one box. How do you fix all the labels?",
+      "answer": "**Short answer:** Take a fruit from the box labelled \"Mixed\". Its label is wrong, so it holds only one kind of fruit. Say you pick an apple, so that box is \"Apples\". Then the box labelled \"Oranges\" cannot be oranges and cannot be apples, so it must be the mixed box. The remaining box must be oranges.\n\n**What a good answer has:** understands that the label that is certainly wrong gives them certainty. A candidate who thinks aloud about \"what do I know for sure\" is doing well.",
+      "level": "advanced",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "classic",
+        "reasoning"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-099",
+      "question": "Four people must cross a bridge at night with one torch. They take 1, 2, 5 and 10 minutes, at most two can cross at a time, and they walk at the slower person's speed. What is the fastest way to get all four across?",
+      "answer": "**Short answer:** 17 minutes. The 1 and 2 cross together (2 minutes). The 1 returns with the torch (1 minute). The 5 and 10 cross together (10 minutes). The 2 returns (2 minutes). The 1 and 2 cross again (2 minutes). The total is 2 + 1 + 10 + 2 + 2 = 17. The key is to send the two slowest people together.\n\n**What a good answer has:** tries the obvious plan first (the fastest person escorts everyone, which takes 19 minutes) and then looks for a better one.",
+      "level": "advanced",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "classic",
+        "optimisation"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-100",
+      "question": "How many squares are there on a chessboard?",
+      "answer": "**Short answer:** 204. There are 64 small squares, 49 squares of size 2 by 2, 36 of size 3 by 3, then 25, 16, 9, 4 and 1 for the larger sizes. Add the squares of 1 to 8: 64 + 49 + 36 + 25 + 16 + 9 + 4 + 1 = 204.\n\n**What a good answer has:** most candidates say 64. The key is noticing the larger squares made of several small ones. Good candidates try a 2 by 2 board first (5 squares) and find the pattern.",
+      "level": "advanced",
+      "module": "Logic & Puzzles",
+      "tags": [
+        "puzzle",
+        "math",
+        "classic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-101",
+      "question": "Your code works on your laptop but not on your friend's laptop. What could be the reason?",
+      "answer": "**Short answer:** The two environments differ. Possible reasons: a different version of the language or a library, a missing library, a different operating system, a missing configuration file or environment variable, different file paths, or different data. First, read the error message on the friend's laptop, then compare versions and setup.\n\n**What a good answer has:** a list of differences and a plan to check them one at a time.\n\n**Follow-up:** How do teams avoid this? (A lock file for versions, documented setup steps, containers such as Docker.)",
+      "level": "intermediate",
+      "module": "Debugging & Problem Solving",
+      "tags": [
+        "debugging",
+        "environment"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-102",
+      "question": "What is your biggest strength, and what is one thing you are working to improve?",
+      "answer": "**Short answer:** A good answer is honest and specific, with an example for the strength and a real plan for the weakness, such as \"I used to wait too long before asking for help, now I give myself 30 minutes and then ask\".\n\n**Red flag:** \"I have no weakness\", or a fake weakness like \"I work too hard\".",
+      "level": "basic",
+      "module": "Attitude & Communication",
+      "tags": [
+        "behavioral"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-103",
+      "question": "How do you manage your time when many deadlines come together, such as exams and a project?",
+      "answer": "**Short answer:** A good answer lists everything with the deadlines, decides what is most urgent and important, breaks big tasks into small ones, and finishes the most important one first. Candidates who also say they tell people early when they will be late are showing maturity.\n\n**Follow-up:** Describe one time you missed a deadline. What did you learn?",
+      "level": "basic",
+      "module": "Attitude & Communication",
+      "tags": [
+        "behavioral",
+        "time-management"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-104",
+      "question": "Which technology would you like to learn during this internship, and why?",
+      "answer": "**Short answer:** A good answer names something specific, says what attracted them to it and what they already tried, for example a tutorial or a small project.\n\n**Red flag:** names the trendiest tool but cannot say anything about it.",
+      "level": "basic",
+      "module": "Attitude & Communication",
+      "tags": [
+        "behavioral",
+        "motivation",
+        "learning"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-105",
+      "question": "Should code be written fast or written clean? What do you do when both are needed?",
+      "answer": "**Short answer:** Code is read many more times than it is written, so clarity matters. Under pressure, a good approach is to make it work first in a simple way, keep the names clear, and then clean it up before it is shared. There is no single correct answer; look for the reasoning and not a slogan.\n\n**Follow-up:** How would you explain a quick shortcut to a teammate so that it is not forgotten? (A comment or a task noting what to fix later.)",
+      "level": "intermediate",
+      "module": "Attitude & Communication",
+      "tags": [
+        "behavioral",
+        "judgement"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-106",
+      "question": "What is the difference between a client and a server?",
+      "answer": "**Short answer:** The client is the program that asks for something, such as your browser or a mobile app. The server is the program that waits for requests and answers them, such as the machine that holds a website's pages and data. One computer can be both, depending on the job.\n\n**Follow-up:** Is your own laptop ever a server? (Yes, when you run a development server on it.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "basics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-107",
+      "question": "What is the difference between a library and a framework?",
+      "answer": "**Short answer:** You call a library when you need it, to do one job, such as formatting dates. A framework calls your code: it gives the structure of the whole application and you fill in the parts. A simple way to say it: with a library you are in charge, with a framework the framework is in charge.\n\n**Follow-up:** Name one of each that you have used. (For example, a library such as `requests` or `lodash`, a framework such as React, Django or Spring.)",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "tools"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-108",
+      "question": "What is a package manager, and why do we use one?",
+      "answer": "**Short answer:** A package manager (npm, pip, Maven, NuGet) downloads and installs the libraries your project needs, at the right versions, and records them in a file such as `package.json` or `requirements.txt`. Someone else can then set up the same project with one command.\n\n**Follow-up:** Why is it a bad idea to copy library files into the project by hand? (No version record, hard to update.)",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "tools",
+        "basics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-109",
+      "question": "What is the difference between a function and a method?",
+      "answer": "**Short answer:** A function stands on its own. A method is a function that belongs to a class or an object and works on that object's data. In `list.append(5)`, `append` is a method of the list.\n\n**Red flag:** none for this one, it is a vocabulary question. A good answer with an example is enough.",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "functions",
+        "oop"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-110",
+      "question": "What is the difference between method overloading and method overriding?",
+      "answer": "**Short answer:** Overloading means several methods with the same name but different parameters in the same class, and the compiler picks one by the arguments (Java and C# support it, Python and JavaScript do not). Overriding means a child class gives its own version of a method that the parent class already has, so the child's version runs.\n\n**Follow-up:** Which one is runtime polymorphism? (Overriding.)",
+      "level": "intermediate",
+      "module": "Programming Basics",
+      "tags": [
+        "oop",
+        "basics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-111",
+      "question": "What is the difference between a list (array) and a dictionary (map or object)?",
+      "answer": "**Short answer:** A list keeps items in order and you find them by position, such as `names[0]`. A dictionary stores pairs of a key and a value and you find a value by its key, such as `user[\"email\"]`. Use a list for a sequence of similar things and a dictionary when each value has a name.\n\n**Follow-up:** Which would you use to store the marks of each student by roll number?",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "data-types"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-112",
+      "question": "What is the difference between synchronous and asynchronous code?",
+      "answer": "**Short answer:** Synchronous code runs one line after the other, and each line waits for the previous one to finish. Asynchronous code starts a slow task, such as a network request or reading a file, and carries on with other work, then handles the result when it arrives. This keeps a page or app responsive.\n\n**What a good answer has:** an everyday example: ordering food and sitting down while it is cooked, instead of standing at the counter until it is ready.\n\n**Follow-up:** What do `async` and `await` do in JavaScript or Python? (They let you write asynchronous code so that it reads in order.)",
+      "level": "intermediate",
+      "module": "Programming Basics",
+      "tags": [
+        "basics",
+        "async"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-113",
+      "question": "What is an environment variable, and why should passwords not be written in the code?",
+      "answer": "**Short answer:** An environment variable is a setting that lives outside the code, set on the machine or server, such as a database password or an API key. If a password is written in the code, it is saved in Git history and anyone who sees the repository sees the password. With environment variables the code stays the same and each environment has its own values.\n\n**Follow-up:** What should you do if you accidentally pushed a key to GitHub? (Treat it as leaked: revoke it and create a new one. Deleting the commit is not enough.)",
+      "level": "intermediate",
+      "module": "Programming Basics",
+      "tags": [
+        "security",
+        "configuration"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-114",
+      "question": "What makes code easy to read? Give some habits you follow.",
+      "answer": "**Short answer:** Clear names for variables and functions (`totalPrice`, not `x`), small functions that do one job, consistent formatting, comments that explain why and not what, and no repeated code. People read code much more often than they write it.\n\n**What a good answer has:** concrete habits, preferably with an example from their own project.\n\n**Interview tip:** Show them five lines of badly named code and ask how they would improve it. It shows more than the answer.",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "clean-code",
+        "basics"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-115",
+      "question": "What does the JavaScript expression `'5' + 3` give? What about `'5' - 3`?",
+      "answer": "**Short answer:** `'5' + 3` gives the text `\"53\"`, because `+` joins text when one side is text. `'5' - 3` gives the number 2, because `-` only works on numbers, so the text is converted. This is called type coercion.\n\n**Follow-up:** How would you avoid surprises like this? (Convert deliberately with `Number(\"5\")`, and use `===` for comparing.)",
+      "level": "basic",
+      "module": "Code Tracing & Output",
+      "tags": [
+        "javascript",
+        "types",
+        "classic"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-116",
+      "question": "What is the difference between `let`, `const` and `var` in JavaScript?",
+      "answer": "**Short answer:** `let` and `const` are block scoped and `var` is function scoped, so `var` can leak out of a block like an `if` or a loop. `let` can be reassigned. `const` cannot be reassigned, but if it holds an object or array, the contents can still change. Modern code uses `const` by default and `let` when the value must change.\n\n**Follow-up:** What is hoisting? (Declarations are moved to the top of their scope, `var` is set to undefined, while `let` and `const` cannot be used before the line where they are declared.)",
+      "level": "basic",
+      "module": "Programming Basics",
+      "tags": [
+        "javascript",
+        "variables"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-117",
+      "question": "What is the DOM?",
+      "answer": "**Short answer:** The DOM (Document Object Model) is the browser's tree of objects that represents the HTML page. JavaScript uses it to find elements, change their text or style, and react to clicks. When JavaScript changes the DOM, the page on the screen changes.\n\n**Follow-up:** How do you find an element with a given id? (`document.getElementById` or `document.querySelector`.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "frontend",
+        "javascript"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-118",
+      "question": "What is the CSS box model?",
+      "answer": "**Short answer:** Every element on a page is a box made of four layers, from inside to outside: content, padding (space inside the border), border, and margin (space outside the border). It decides the size of an element and the space around it.\n\n**Follow-up:** What does `box-sizing: border-box` change? (Width and height then include the padding and the border, which makes layouts easier to calculate.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "css",
+        "frontend"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-119",
+      "question": "What is responsive design and how do you do it?",
+      "answer": "**Short answer:** Responsive design means the page adapts to different screen sizes, from a phone to a wide monitor. You use flexible layouts (percentages, Flexbox, Grid), media queries that change the style at certain widths, and a viewport meta tag so phones do not zoom out.\n\n**Follow-up:** What does \"mobile first\" mean? (Design for the small screen first, then add rules for bigger ones.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "css",
+        "frontend"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-120",
+      "question": "What are cookies, `localStorage` and `sessionStorage`? How are they different?",
+      "answer": "**Short answer:** All three store small amounts of data in the browser. Cookies are sent to the server with every request and are small (about 4 KB each), so they are used for things like login sessions. `localStorage` stays until it is cleared and is only read by the page's own JavaScript, with room for about 5 MB in most browsers. `sessionStorage` is the same but is cleared when the tab is closed.\n\n**Follow-up:** Would you store a password in `localStorage`? (No, any script on the page can read it.)",
+      "level": "intermediate",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "browser",
+        "storage"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-121",
+      "question": "What is HTTPS and why is it important?",
+      "answer": "**Short answer:** HTTPS is HTTP over an encrypted connection (TLS). It stops other people on the network from reading or changing the data, and the site's certificate proves you are talking to the real server. Without it, passwords and personal data travel as plain text.\n\n**Follow-up:** What does the padlock in the browser tell you? (The connection is encrypted and the certificate is valid. It does not say that the site is trustworthy.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "web",
+        "security"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-122",
+      "question": "What do the SQL commands SELECT, INSERT, UPDATE and DELETE do? Write a query for users older than 18, sorted by name.",
+      "answer": "**Short answer:** SELECT reads rows, INSERT adds a row, UPDATE changes existing rows, DELETE removes rows. Together they are the CRUD operations: create, read, update, delete.\n\n```sql\nSELECT name, age\nFROM users\nWHERE age > 18\nORDER BY name;\n```\n\n**What a good answer has:** knows that `UPDATE` and `DELETE` without a `WHERE` change every row, and says so.\n\n**Follow-up:** How do you count the users in each city? (`GROUP BY city` with `COUNT(*)`.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "databases",
+        "sql",
+        "coding"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-123",
+      "question": "Explain an INNER JOIN with an example.",
+      "answer": "**Short answer:** A join combines rows from two tables using a matching column. An INNER JOIN returns only the rows that have a match in both tables. For example, orders and customers joined on `customer_id` gives each order with the name of the customer who made it. Orders without a matching customer do not appear.\n\n```sql\nSELECT c.name, o.total\nFROM orders o\nINNER JOIN customers c ON c.id = o.customer_id;\n```\n\n**Follow-up:** How is a LEFT JOIN different? (It also keeps the rows from the left table that have no match, filling the other side with NULL.)",
+      "level": "intermediate",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "databases",
+        "sql"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-124",
+      "question": "What is a database index and why can it make queries faster?",
+      "answer": "**Short answer:** An index is like the index at the back of a book: instead of reading every page, the database jumps to the right place. A query that filters on an indexed column is much faster on a big table. The cost is that the index takes space and makes inserts and updates a little slower.\n\n**Follow-up:** Which column would you index in a table of users that you often search by email?",
+      "level": "intermediate",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "databases",
+        "performance"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-125",
+      "question": "What is a Git branch and a pull request? Why do teams use code review?",
+      "answer": "**Short answer:** A branch is a separate line of work, so you can build a feature without breaking the main code. A pull request asks the team to review your branch and merge it. Code review catches bugs early, shares knowledge, and keeps the code consistent.\n\n**Follow-up:** How do you feel about someone commenting on your code? What is a good review comment? (Specific, polite, explains why.)",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "git",
+        "teamwork"
+      ],
+      "favorite": false
+    },
+    {
+      "id": "intern-126",
+      "question": "Which terminal (command line) commands do you use regularly?",
+      "answer": "**Short answer:** A good answer names a handful and says what they do: `cd` (change folder), `ls` or `dir` (list files), `mkdir` (make a folder), `git status`, `git commit`, `npm install` or `pip install`, and running the program such as `python app.py` or `node app.js`.\n\n**What a good answer has:** actual daily use. A candidate who only uses a graphical tool is not wrong, but it is a gap to note.",
+      "level": "basic",
+      "module": "Web, Databases & Git",
+      "tags": [
+        "tools",
+        "basics"
+      ],
+      "favorite": false
+    }
+  ]
+}

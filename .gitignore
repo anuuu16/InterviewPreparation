@@ -2,8 +2,6 @@
 node_modules/
 app/web/dist/
 
-# private, personalised interview notes (resume and job details): never commit
-personal/
 app/web/dist-static/
 .wrangler/
 interview-prep-static.zip

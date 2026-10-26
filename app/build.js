@@ -205,7 +205,7 @@ function build() {
   return topics;
 }
 
-module.exports = { build, loadTopics, DATA_DIR, LEVELS };
+module.exports = { build, renderTopic, loadTopics, DATA_DIR, LEVELS };
 
 if (require.main === module) {
   const topics = build();
